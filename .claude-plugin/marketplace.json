@@ -1,0 +1,13 @@
+{
+  "name": "dev-office",
+  "owner": {
+    "name": "Miguel Ramirez"
+  },
+  "plugins": [
+    {
+      "name": "office",
+      "source": "./plugins/office",
+      "description": "Oficina base: un PM que coordina departamentos, un QA que intenta romper todo y la configuración inicial de cada proyecto."
+    }
+  ]
+}
