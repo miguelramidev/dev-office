@@ -1,6 +1,6 @@
 {
   "name": "office",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Oficina base de dev-office: un PM que conversa con el CEO y coordina departamentos, un QA que intenta romper todo, hooks de protección y la skill office-setup.",
   "author": {
     "name": "Miguel Ramirez"

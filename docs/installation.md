@@ -75,10 +75,11 @@ Para desactivarlo solo para vos, poné lo mismo en `.claude/settings.local.json`
 
 ## 8. Problemas comunes
 
-| Síntoma                                                   | Causa                                                     | Solución                                                       |
-| --------------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
-| El PM no ve a los departamentos                           | La sesión se abrió antes de instalarlos                   | `/reload-plugins` o reiniciar Claude Code                      |
-| Pide permiso para escribir en `/tmp` u otra carpeta       | `acceptEdits` solo aprueba dentro del proyecto            | Rechazalo y pedile que trabaje dentro del proyecto             |
-| Pide permiso para escribir en `.claude/` o `.git/`        | Son rutas protegidas de Claude Code                       | Es lo esperado: aprobalo solo si corresponde                   |
-| Un hook falla con `command not found` (código 127)        | Finales de línea de Windows (CRLF) en el script           | `sed -i 's/\r$//' <archivo>` y trabajar dentro de WSL          |
-| Pide permiso para un comando de tests con `\| tail` o `;` | Cada parte de un comando compuesto se revisa por separado | Que corra los comandos de a uno (ya está en sus instrucciones) |
+| Síntoma                                                                                | Causa                                                                  | Solución                                                                         |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| El PM no ve a los departamentos                                                        | La sesión se abrió antes de instalarlos                                | `/reload-plugins` o reiniciar Claude Code                                        |
+| Pide permiso para escribir en `/tmp` u otra carpeta                                    | `acceptEdits` solo aprueba dentro del proyecto                         | Rechazalo y pedile que trabaje dentro del proyecto                               |
+| Pide permiso para escribir en `.claude/` o `.git/`                                     | Son rutas protegidas de Claude Code                                    | Es lo esperado: aprobalo solo si corresponde                                     |
+| Un hook falla con `command not found` (código 127)                                     | Finales de línea de Windows (CRLF) en el script                        | `sed -i 's/\r$//' <archivo>` y trabajar dentro de WSL                            |
+| Pide permiso para un comando de tests con `\| tail` o `;`                              | Cada parte de un comando compuesto se revisa por separado              | Que corra los comandos de a uno (ya está en sus instrucciones)                   |
+| Advertencia: "Permission allow rule ... has a wildcard before the rest of the command" | Una regla con `*` en el medio aprueba cualquier opción en esa posición | Usar el valor exacto (por ejemplo, el nombre del paquete) y el `*` solo al final |

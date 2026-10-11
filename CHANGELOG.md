@@ -8,6 +8,13 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.1.1] - 2026-10-10
+
+### Corregido
+
+- `office-setup`: ya no propone reglas de permisos con `*` antes del subcomando, que Claude Code marca como inseguras porque aprueban cualquier opción en esa posición.
+- Documentación: problema conocido de reglas con comodín en `docs/installation.md`.
+
 ## [0.1.0] - 2026-10-10
 
 ### Agregado
