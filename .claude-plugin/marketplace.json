@@ -1,13 +1,18 @@
 {
   "name": "dev-office",
   "owner": {
-    "name": "Miguel Ramirez"
+    "name": "Miguel"
   },
   "plugins": [
     {
       "name": "office",
       "source": "./plugins/office",
       "description": "Oficina base: un PM que coordina departamentos, un QA que intenta romper todo y la configuración inicial de cada proyecto."
+    },
+    {
+      "name": "dept-scraper",
+      "source": "./plugins/dept-scraper",
+      "description": "Departamento de scraping: developer y tester especializados en scrapers responsables."
     }
   ]
 }
