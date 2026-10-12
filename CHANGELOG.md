@@ -8,6 +8,30 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.2.0] - 2026-10-12
+
+### Agregado
+
+- Plugin `dept-backend` (0.1.0), depende de `office`:
+  - Agente `architect` (Opus): diseña la API, el flujo de datos, los cambios al modelo, la seguridad y los costos antes de programar, y lo deja en `docs/design/` para que el CEO lo apruebe. No escribe código.
+  - Agente `developer` (Sonnet): implementa el backend siguiendo el diseño aprobado.
+  - Agente `tester` (Sonnet): prueba contratos, entradas caóticas, permisos, dinero y fechas, servicios externos e idempotencia, sin servicios reales.
+  - Skill `solid-backend`: contratos y validación, errores, permisos, dinero y fechas, base de datos, servicios externos, seguridad, costos, logs y estructura.
+- `pm`: fase de diseño. Para funciones nuevas o cambios grandes activa a los roles de diseño, presenta la propuesta al CEO y no implementa hasta que la apruebe. Los bugs y ajustes chicos van directo al developer.
+- Validación automática en GitHub Actions: marketplace, plugins, sintaxis de los scripts y pruebas del hook de protección (`tests/protect.test.sh`).
+
+### Cambiado
+
+- `pm`: orden entre departamentos diseño → base de datos → backend → frontend; el frontend recibe los cambios de la API del reporte del backend.
+- `office-setup`: bloquea la lectura de más variantes de `.env` (`.env.staging`, `.env.test`, las `.local`) y también en subcarpetas.
+
+### Corregido
+
+- `office`: la versión del plugin no se había actualizado desde 0.1.1, así que los proyectos instalados no recibían los cambios de 0.1.2 y 0.1.3.
+- Hook `protect.sh`: también revisa `NotebookEdit` y los comandos de Bash, para que no se puedan leer ni modificar secretos o claves privadas con `cat`, `sed`, `echo` o `cp`.
+- Documentación: `docs/add-departament.md` pasa a `docs/add-department.md`, que es el nombre al que apuntaba el README.
+- `dept-scraper` (0.1.1): autor unificado.
+
 ## [0.1.3] - 2026-10-12
 
 ### Cambiado

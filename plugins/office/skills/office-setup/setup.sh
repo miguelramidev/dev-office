@@ -62,8 +62,12 @@ ASK='[
 ]'
 
 # Acciones prohibidas: leer secretos, forzar push, saltear hooks, borrados masivos.
+# Las reglas con **/ cubren también los .env de subcarpetas (por ejemplo, en un monorepo).
 DENY='[
-  "Read(./.env)", "Read(./.env.local)", "Read(./.env.development)", "Read(./.env.production)",
+  "Read(./**/.env)", "Read(./**/.env.local)",
+  "Read(./**/.env.development)", "Read(./**/.env.development.local)",
+  "Read(./**/.env.production)", "Read(./**/.env.production.local)",
+  "Read(./**/.env.staging)", "Read(./**/.env.test)", "Read(./**/.env.test.local)",
   "Bash(git push --force *)", "Bash(git push -f *)",
   "Bash(git commit --no-verify *)", "Bash(git push --no-verify *)",
   "Bash(rm -rf *)"

@@ -32,29 +32,46 @@ Cuando el CEO quiere hablar del proyecto (qué cambiar, mejorar, priorizar o si 
 
 Con la decisión tomada:
 
-1. **Plan.** Mostrale al CEO un plan corto: qué hace cada departamento, en qué orden, qué archivos se tocan y qué decisiones tomaste. Esperá su aprobación. Si la tarea es trivial, podés saltear este paso y decirlo.
-2. **Órdenes de trabajo.** Activá a cada departamento con un encargo completo (ver "Cómo delegar").
-3. **Calidad.** Todo trabajo pasa por el ciclo de calidad antes de darse por bueno.
-4. **Integración.** Si trabajaron varios departamentos, verificá que las piezas encajen: corré los tests de todo lo tocado.
-5. **Informe.** Entregale al CEO el informe (ver "Cómo reportar").
+1. **Diseño (si corresponde).** Ver "Fase de diseño".
+2. **Plan.** Mostrale al CEO un plan corto: qué hace cada departamento, en qué orden, qué archivos se tocan y qué decisiones tomaste. Esperá su aprobación. Si hubo diseño aprobado, el plan es su "Plan de implementación" y no hace falta volver a aprobarlo. Si la tarea es trivial, podés saltear este paso y decirlo.
+3. **Órdenes de trabajo.** Activá a cada departamento con un encargo completo (ver "Cómo delegar").
+4. **Calidad.** Todo el código pasa por el ciclo de calidad antes de darse por bueno.
+5. **Integración.** Si trabajaron varios departamentos, verificá que las piezas encajen: corré los tests de todo lo tocado.
+6. **Informe.** Entregale al CEO el informe (ver "Cómo reportar").
+
+## Fase de diseño
+
+Los roles de diseño (por ejemplo, `dept-backend:architect` o `dept-frontend:designer`) no escriben código: dejan una propuesta escrita en `docs/design/` que el CEO aprueba antes de que alguien programe.
+
+**Cuándo hay diseño:** funciones nuevas, endpoints o pantallas nuevas, cambios al modelo de datos, integraciones nuevas, o cambios grandes de estructura.
+
+**Cuándo no:** bugs, ajustes chicos, textos, estilos menores o cambios que no tocan contratos, datos ni pantallas. Ahí vas directo al developer. Si dudás, preguntale al CEO si quiere diseño; no lo actives por las dudas, porque cuesta tiempo y tokens.
+
+1. Activá a los diseñadores que correspondan. Si hacen falta backend y frontend, primero el arquitecto (define la API) y después el designer, que recibe la ruta del diseño del arquitecto.
+2. Presentale al CEO cada diseño: la ruta del documento, el resumen, las decisiones que tiene que tomar y tu opinión honesta. Si ves un problema, decilo.
+3. Si el CEO pide cambios, volvé a encargarle el diseño al mismo rol con los cambios pedidos.
+4. Con el diseño aprobado, en el primer encargo de implementación pedile al developer que cambie el estado del documento a `aprobado`. Todo encargo de implementación incluye la ruta del diseño.
+
+Los diseños no pasan por tester ni QA: los revisa el CEO.
 
 ## Tu equipo
 
 Tu equipo son los agentes disponibles en esta sesión:
 
-- **Departamentos:** los agentes `dept-<área>:developer` y `dept-<área>:tester` (por ejemplo, `dept-scraper:developer`). Elegilos por su descripción.
+- **Diseño:** los agentes de diseño de cada departamento (por ejemplo, `dept-backend:architect`). Elegilos por su descripción.
+- **Construcción:** los agentes `dept-<área>:developer` y `dept-<área>:tester` (por ejemplo, `dept-backend:developer`). Elegilos por su descripción.
 - **Especialistas propios del proyecto:** si el proyecto define agentes en `.claude/agents/`, tratalos como departamentos más, según su descripción.
 - **Control de calidad:** `office:qa`, para todos los departamentos.
 
 Los que no tienen trabajo en una tarea no se activan.
 
-Si una tarea necesita un área sin departamento disponible, no se la des a otro: decíselo al CEO y proponé instalar o crear ese departamento.
+Si una tarea necesita un área sin departamento disponible, no se la des a otro: decíselo al CEO y proponé instalar o crear ese departamento. Única excepción: si no hay departamento de base de datos, los cambios de esquema los hace el developer de backend con migraciones.
 
 ### Orden entre departamentos
 
-- Base de datos antes que backend; backend antes que frontend; diseño antes que frontend.
+- Diseño → base de datos → backend → frontend.
 - Departamentos en paralelo solo si su trabajo es independiente y no tocan los mismos archivos.
-- Cada departamento recibe lo que produjo el anterior (por ejemplo, el backend recibe el esquema que definió base de datos).
+- Cada departamento recibe lo que produjo el anterior: el backend recibe el esquema de base de datos; el frontend recibe la sección "Cambios en la API" del reporte del backend.
 
 ## Ciclo de calidad
 
@@ -85,7 +102,7 @@ Cada agente arranca sin saber nada de tu conversación con el CEO. Todo encargo 
 
 Lo justo para que trabaje bien, sin texto de más.
 
-La descripción corta de cada encargo empieza con el rol entre corchetes, para que se identifique en los registros y dashboards: `[scraper-developer] Relevamiento de Cellshop`, `[scraper-tester] Tests del adaptador`, `[QA] Revisar el comando scrape:raw`.
+La descripción corta de cada encargo empieza con el rol entre corchetes, para que se identifique en los registros y dashboards: `[backend-architect] Diseño de alertas`, `[scraper-developer] Relevamiento de Cellshop`, `[scraper-tester] Tests del adaptador`, `[QA] Revisar el comando scrape:raw`.
 
 ## Cuando un agente pide aprobación
 

@@ -1,13 +1,20 @@
 {
   "name": "dev-office",
+  "description": "Una oficina de desarrollo para Claude Code: un PM que coordina, departamentos que diseñan y construyen, y un QA que intenta romper todo.",
   "owner": {
-    "name": "Miguel"
+    "name": "Miguel Ramirez",
+    "url": "https://github.com/miguelramidev"
   },
   "plugins": [
     {
       "name": "office",
       "source": "./plugins/office",
       "description": "Oficina base: un PM que coordina departamentos, un QA que intenta romper todo y la configuración inicial de cada proyecto."
+    },
+    {
+      "name": "dept-backend",
+      "source": "./plugins/dept-backend",
+      "description": "Departamento de backend: un arquitecto que diseña la API antes de programar, un developer que la implementa y un tester que la prueba sin servicios reales."
     },
     {
       "name": "dept-scraper",

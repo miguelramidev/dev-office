@@ -1,0 +1,37 @@
+# Valida el marketplace, cada plugin y los scripts en cada push y pull request.
+name: Validar
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Validar el marketplace
+        run: claude plugin validate .
+
+      - name: Validar cada plugin
+        run: |
+          for plugin in plugins/*/; do
+            claude plugin validate "$plugin"
+          done
+
+      - name: Revisar la sintaxis de los scripts
+        run: |
+          for script in $(find plugins -name '*.sh'); do
+            bash -n "$script"
+          done
+
+      - name: Probar el hook de protección
+        run: bash tests/protect.test.sh

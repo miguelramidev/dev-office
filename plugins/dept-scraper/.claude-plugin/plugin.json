@@ -1,11 +1,13 @@
 {
   "name": "dept-scraper",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Departamento de scraping de dev-office: un developer que construye scrapers responsables (pausas, reintentos con límite, robots.txt, fixtures) y un tester especializado en probarlos sin red.",
   "author": {
-    "name": "Miguel"
+    "name": "Miguel Ramirez"
   },
   "repository": "https://github.com/miguelramidev/dev-office",
   "license": "MIT",
-  "dependencies": ["office"]
+  "dependencies": [
+    "office"
+  ]
 }
