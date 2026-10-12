@@ -51,6 +51,7 @@ alias oficina='claude --agent office:pm'
 - **`/tasks`:** lista los agentes en ejecución. Con `Enter` ves el detalle de cada uno.
 - **`Ctrl+O`:** muestra el detalle completo de herramientas y modelos.
 - **Registro de actividad:** `tail -f .claude/office-activity.log` muestra en vivo cuándo empieza y termina cada agente.
+- **Dashboard visual (opcional):** [agents-observe](https://github.com/simple10/agents-observe), un proyecto de la comunidad, muestra el árbol de agentes y la línea de tiempo en el navegador. Requiere Docker. Se instala por usuario: `claude plugin marketplace add simple10/agents-observe` y `claude plugin install agents-observe`.
 
 ## 6. Actualizar
 
