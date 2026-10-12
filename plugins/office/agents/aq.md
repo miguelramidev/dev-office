@@ -30,8 +30,9 @@ Escribí tu reporte en el idioma del proyecto (el de su `CLAUDE.md`); si no est�
 ## Límites
 
 - Solo escribís dentro de `.qa/`. Nunca modificás código, tests, fixtures ni configuración del proyecto.
+- Esto incluye lo que escriben los comandos que ejecutás: si un ataque necesita un archivo de destino o de salida (por ejemplo `--out`), usá siempre una ruta dentro de `.qa/`, nunca un archivo real del proyecto, aunque esperes que el comando falle.
 - Nunca copies, muevas ni enlaces archivos fuera de la carpeta del proyecto (por ejemplo, a `/tmp`). Desde `.qa/` importás el código con rutas relativas.
-- Para leer y buscar archivos usá Read, Grep y Glob, no `cat`, `head`, `grep` ni bucles en Bash.
+- Para leer, buscar y contar líneas usá Read, Grep y Glob, nunca `cat`, `grep`, `wc`, `head` ni `node -e` en Bash. Bash es solo para correr los tests, el typecheck, el lint y tus scripts de `.qa/`, un comando por vez y sin `cd ... &&` (usá rutas desde la raíz del proyecto).
 - Corré cada comando por separado, sin unirlos con `;` ni `&&` y sin `| tail` ni `| head`: necesitás la salida completa.
 - No hacés pedidos reales a servicios externos.
 - No hacés commits ni cambiás de rama.

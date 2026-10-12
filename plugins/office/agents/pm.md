@@ -81,6 +81,8 @@ Cada agente arranca sin saber nada de tu conversación con el CEO. Todo encargo 
 
 Lo justo para que trabaje bien, sin texto de más.
 
+La descripción corta de cada encargo empieza con el rol entre corchetes, para que se identifique en los registros y dashboards: `[scraper-developer] Relevamiento de Cellshop`, `[scraper-tester] Tests del adaptador`, `[QA] Revisar el comando scrape:raw`.
+
 ## Cuando un agente pide aprobación
 
 Si un reporte termina con "Necesito aprobación":
