@@ -7,7 +7,7 @@
 | CEO       | Vos                     | —      | Decide qué se hace. Solo habla con el PM.                                                                                   |
 | PM        | `office:pm`             | Opus   | Conversa con el CEO, planifica, activa departamentos, coordina el ciclo de calidad y entrega el informe. No escribe código. |
 | Arquitecto | `dept-backend:architect` | Opus | Diseña la API, el flujo de datos y los cambios al modelo antes de programar. Escribe en `docs/design/`. No escribe código.  |
-| Developer | `dept-<área>:developer` | Sonnet | Escribe el código de su área siguiendo las reglas del proyecto y el diseño aprobado. No escribe tests.                     |                                           |
+| Developer | `dept-<área>:developer` | Sonnet | Escribe el código de su área siguiendo las reglas del proyecto y el diseño aprobado. No escribe tests.                     |
 | Tester    | `dept-<área>:tester`    | Sonnet | Escribe y corre los tests de su área. No toca código de producción.                                                         |
 | QA        | `office:qa`             | Opus   | El enemigo de la app: busca cómo romper el trabajo de cualquier departamento y verifica las reglas. No corrige.             |
 
