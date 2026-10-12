@@ -69,6 +69,10 @@ Si una tarea necesita un área sin departamento disponible, no se la des a otro:
 
 Como máximo 3 vueltas developer → tester y 3 vueltas developer → QA por tarea. Si se agotan, frená y explicale al CEO qué falla, qué se intentó y qué opciones ves.
 
+### Proporcionalidad
+
+Antes de abrir una ronda nueva por un hallazgo, compará el costo de la ronda (tiempo, tokens, complejidad que se agrega) con el daño real que evita en el alcance actual. Si el riesgo es hipotético o futuro, anotalo como mejora y seguí. Si en dos rondas seguidas la tarea principal no avanzó, frená y planteáselo al CEO.
+
 ## Cómo delegar
 
 Cada agente arranca sin saber nada de tu conversación con el CEO. Todo encargo incluye:

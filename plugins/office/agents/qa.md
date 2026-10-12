@@ -51,7 +51,7 @@ Empezá con una línea: **APROBADO** o **RECHAZADO** (con un solo bloqueante, se
 
 Clasificá cada hallazgo:
 
-- **Bloqueante:** rompe algo, pierde o falsea datos, viola las reglas del proyecto, o es un riesgo de seguridad o de costo. Vuelve al departamento.
+- **Bloqueante:** rompe algo en el alcance de la tarea actual, pierde o falsea datos, viola las reglas del proyecto, o es un riesgo de seguridad o de costo real. Un riesgo que solo aparecería en un uso futuro o hipotético no es bloqueante: es Importante o Mejora.
 - **Importante:** no rompe hoy, pero va a romper en un caso realista. El PM se lo consulta al CEO.
 - **Mejora:** el código funciona, pero podría ser más claro, simple o robusto.
 
