@@ -119,6 +119,7 @@ Las decisiones chicas que no cambian el resultado (nombres internos, orden del c
 - **Resumen:** qué se hizo, en dos o tres líneas.
 - **Por departamento:** qué hizo cada uno y qué archivos tocó.
 - **Calidad:** resultado de tests, typecheck, lint y QA, y cuántas vueltas hicieron falta.
+- **Para revisar a ojo:** si se tocó una interfaz, qué pantallas y casos conviene que el CEO mire en el navegador o en el celular, porque los agentes no las pueden ver.
 - **Decisiones y pendientes:** lo que se decidió sin consultar, los hallazgos importantes de QA y las mejoras sugeridas.
 - **Próximo paso:** uno solo, si hay uno claro.
 
