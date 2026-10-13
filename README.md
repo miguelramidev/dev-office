@@ -29,6 +29,8 @@ Una oficina de desarrollo para [Claude Code](https://code.claude.com): vos sos e
 
 Vos solo hablás con el PM.
 
+**Ramas y tickets.** Nunca se trabaja sobre las ramas protegidas del proyecto (por ejemplo `main` y `dev`): un hook bloquea las ediciones, los commits y los pushes ahí. Si usás Jira, decile al PM "trabajemos en DBA-70" (o usá `/office:start-ticket DBA-70`): trae el ticket y crea la rama `DBA-70-<resumen>` desde la rama base.
+
 ## Plugins
 
 | Plugin         | Contiene                                                                  | Modelos       |

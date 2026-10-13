@@ -53,6 +53,13 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 - **Cada bloqueante corregido termina en un test nuevo**, para que no vuelva a aparecer.
 - **Si se agotan las vueltas**, el PM frena y le explica al CEO qué falla y qué opciones hay.
 
+## Ramas y tickets
+
+- **Ramas protegidas.** Cada proyecto define en `OFFICE_PROTECTED_BRANCHES` (en `.claude/settings.json`) las ramas donde nunca se trabaja directamente, por ejemplo `main dev`. Si no la define, se protegen `main` y `master`. El hook `branch-guard.sh` bloquea editar archivos del proyecto, commitear o mergear sobre esas ramas, y hacer push hacia ellas desde cualquier rama.
+- **Tickets de Jira.** La skill `start-ticket` trae el ticket con el servidor MCP de Atlassian (que el proyecto configura en `.mcp.json` con el nombre `atlassian`), se lo muestra al CEO y crea o retoma la rama `<TICKET>-<resumen>` desde la rama base. El PM la usa cuando el CEO nombra un ticket.
+- **Jira es de solo lectura para la oficina.** Cambiar el estado de un ticket, asignarlo o comentar lo decide el CEO.
+- **El formato de las ramas, la rama base y el proyecto de Jira** van en la sección "Flujo de trabajo" del `CLAUDE.md` de cada proyecto.
+
 ## Comunicación
 
 - **Los agentes no hablan entre ellos.** Todo pasa por el PM: cada agente le devuelve un reporte y el PM decide el siguiente paso.

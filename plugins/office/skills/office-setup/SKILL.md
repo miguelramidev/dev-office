@@ -1,6 +1,6 @@
 ---
 name: office-setup
-description: Prepara un proyecto para trabajar con la oficina dev-office - permisos base, modo de permisos, zona horaria del registro de actividad, .gitignore y recomendación de skills de la comunidad según el stack. Usar una vez al instalar la oficina en un proyecto, o para volver a aplicar la configuración base.
+description: Prepara un proyecto para trabajar con la oficina dev-office - permisos base, modo de permisos, ramas protegidas, zona horaria del registro de actividad, .gitignore, conexión con Jira y recomendación de skills de la comunidad según el stack. Usar una vez al instalar la oficina en un proyecto, o para volver a aplicar la configuración base.
 disable-model-invocation: true
 ---
 
@@ -12,7 +12,7 @@ Los cambios los hace el script `setup.sh` que está en la misma carpeta que este
 
 1. **Explicá qué va a pasar**, en pocas líneas:
    - Se agregan a `.claude/settings.json` permisos base: comandos de git de solo lectura permitidos; commit, push, instalar paquetes y AWS siempre con consulta; leer secretos, forzar push y saltear hooks prohibidos.
-   - Se define el modo de permisos.
+   - Se define el modo de permisos y las ramas protegidas, donde los agentes no pueden editar ni commitear.
    - Se agregan a `.gitignore` la carpeta temporal de QA, el registro de actividad y la copia de seguridad.
    - No se borra nada de lo que ya existe, y se guarda una copia del archivo anterior.
 
@@ -23,11 +23,12 @@ Los cambios los hace el script `setup.sh` que está en la misma carpeta que este
 4. **Preguntá al CEO:**
    - **Modo de permisos:** `acceptEdits` (recomendado: los agentes editan archivos sin preguntar; los comandos fuera de la lista se consultan), `auto` (un clasificador aprueba los comandos razonables; solo si su cuenta lo tiene disponible) o `default` (todo se consulta).
    - **Zona horaria** del registro de actividad (opcional, por ejemplo `America/Asuncion`). Si no responde, se usa la del sistema.
+   - **Ramas protegidas:** en cuáles nunca se trabaja directamente (por ejemplo `main dev`). Si no responde, se protegen `main` y `master`. Mirá las ramas del remoto (`git branch --all --list *`) para proponerle las que correspondan.
 
 5. **Ejecutá el script una sola vez**, con las respuestas. Pasá cada regla extra con su propio `--allow`, entre comillas:
 
 ```bash
-   bash <carpeta de esta skill>/setup.sh --mode acceptEdits --timezone America/Asuncion --allow "Bash(pnpm test)" --allow "Bash(pnpm test *)"
+   bash <carpeta de esta skill>/setup.sh --mode acceptEdits --timezone America/Asuncion --protected "main dev" --allow "Bash(pnpm test)" --allow "Bash(pnpm test *)"
 ```
 
 Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos a mano.
@@ -46,8 +47,24 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
 
    Si recomendás el plugin de MongoDB, avisale que trae un servidor MCP que se conecta a la base con `MDB_MCP_CONNECTION_STRING`: si lo configura, que sea solo con una base local o de pruebas y con `MDB_MCP_READ_ONLY=true`, nunca con producción. Sin esa variable, las skills funcionan igual.
 
-8. **Cerrá con los próximos pasos:**
+8. **Jira (si el equipo lo usa).** Preguntale al CEO si gestionan las tareas en Jira. Si dice que sí:
+   - Ofrecé crear `.mcp.json` en la raíz con el servidor oficial de Atlassian. El nombre `atlassian` es obligatorio, porque el PM tiene acceso a las herramientas de ese servidor:
+
+     ```json
+     {
+       "mcpServers": {
+         "atlassian": { "type": "http", "url": "https://mcp.atlassian.com/v2/mcp" }
+       }
+     }
+     ```
+
+     Si `.mcp.json` ya existe, agregá solo esa entrada sin tocar las demás.
+   - Pedile la clave del proyecto de Jira (por ejemplo `DBA`), la rama base de la que salen las ramas de trabajo y el formato del nombre de las ramas (por defecto `<TICKET>-<resumen>`). Proponé agregar esos datos a una sección "Flujo de trabajo" del `CLAUDE.md` y mostrale el texto antes de escribirlo.
+   - Cada persona inicia sesión en Jira una vez con `/mcp`: servidor `atlassian`, opción de autenticar.
+
+9. **Cerrá con los próximos pasos:**
    - Revisar los cambios y hacer commit de `.claude/settings.json` y `.gitignore`.
    - Instalar las skills de la comunidad que haya elegido.
+   - Si conectó Jira, autenticarse con `/mcp` y probar con `/office:start-ticket <TICKET>`.
    - Borrar `.claude/settings.json.bak` cuando esté conforme.
    - Reiniciar Claude Code para que tome la configuración nueva.

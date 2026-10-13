@@ -34,6 +34,20 @@ claude plugin install dept-scraper@dev-office --scope project
 
 Los permisos van en el proyecto porque Claude Code no permite que un plugin los defina.
 
+### Ramas protegidas y Jira
+
+`office-setup` pregunta qué ramas proteger (por ejemplo `main dev`) y las guarda en `OFFICE_PROTECTED_BRANCHES`. Si el equipo usa Jira, también crea `.mcp.json` con el servidor de Atlassian:
+
+```json
+{
+  "mcpServers": {
+    "atlassian": { "type": "http", "url": "https://mcp.atlassian.com/v2/mcp" }
+  }
+}
+```
+
+El servidor tiene que llamarse `atlassian`, porque el PM tiene acceso a las herramientas de ese nombre. Cada persona inicia sesión una vez con `/mcp`: servidor `atlassian`, opción de autenticar.
+
 ## 4. Empezar a trabajar
 
 ```bash
@@ -84,6 +98,8 @@ Para desactivarlo solo para vos, poné lo mismo en `.claude/settings.local.json`
 | El PM no ve a los departamentos                                                        | La sesión se abrió antes de instalarlos                                | `/reload-plugins` o reiniciar Claude Code                                        |
 | Pide permiso para escribir en `/tmp` u otra carpeta                                    | `acceptEdits` solo aprueba dentro del proyecto                         | Rechazalo y pedile que trabaje dentro del proyecto                               |
 | Pide permiso para escribir en `.claude/` o `.git/`                                     | Son rutas protegidas de Claude Code                                    | Es lo esperado: aprobalo solo si corresponde                                     |
+| "no se edita el código en la rama protegida"                                         | Estás en una rama protegida (por ejemplo `dev`)                         | Pedile al PM que trabaje en un ticket o creá una rama con `git switch -c`         |
+| El PM no puede traer el ticket de Jira                                                 | Jira no está conectado o no iniciaste sesión                           | `/mcp`, servidor `atlassian`, autenticar                                         |
 | Un hook falla con `command not found` (código 127)                                     | Finales de línea de Windows (CRLF) en el script                        | `sed -i 's/\r$//' <archivo>` y trabajar dentro de WSL                            |
 | Pide permiso para un comando de tests con `\| tail` o `;`                              | Cada parte de un comando compuesto se revisa por separado              | Que corra los comandos de a uno (ya está en sus instrucciones)                   |
 | Advertencia: "Permission allow rule ... has a wildcard before the rest of the command" | Una regla con `*` en el medio aprueba cualquier opción en esa posición | Usar el valor exacto (por ejemplo, el nombre del paquete) y el `*` solo al final |
