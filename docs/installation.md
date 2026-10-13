@@ -14,6 +14,7 @@ Desde la terminal, en la carpeta del proyecto:
 claude plugin marketplace add miguelramidev/dev-office
 claude plugin install office@dev-office --scope project
 claude plugin install dept-backend@dev-office --scope project
+claude plugin install dept-frontend@dev-office --scope project
 claude plugin install dept-scraper@dev-office --scope project
 ```
 

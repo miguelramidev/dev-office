@@ -8,6 +8,20 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.3.0] - 2026-10-12
+
+### Agregado
+
+- Plugin `dept-frontend` (0.1.0), depende de `office`:
+  - Agente `designer` (Sonnet): diseña flujos, pantallas web y móviles, estados, textos y accesibilidad antes de programar, y lo deja en `docs/design/` para que el CEO lo apruebe. Si el arquitecto ya escribió un diseño para la tarea, agrega sus secciones al mismo documento. No escribe código.
+  - Agente `developer` (Sonnet): construye pantallas y componentes en Next.js, React y React Native siguiendo el diseño aprobado, sin tocar el backend.
+  - Agente `tester` (Sonnet): prueba estados, respuestas raras de la API, formularios, dinero y fechas, interacciones y textos, buscando elementos como los encuentra el usuario.
+  - Skill `solid-frontend`: marca y componentes, estados de cada pantalla, datos de la API, formularios, dinero y fechas, accesibilidad, rendimiento, Next.js, React Native, seguridad y textos.
+
+### Cambiado
+
+- `pm` (`office` 0.2.1): el informe al CEO incluye qué pantallas revisar a ojo cuando se tocó una interfaz, porque los agentes no las pueden ver.
+
 ## [0.2.0] - 2026-10-12
 
 ### Agregado

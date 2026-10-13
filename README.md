@@ -12,9 +12,9 @@ Una oficina de desarrollo para [Claude Code](https://code.claude.com): vos sos e
                         PM (Opus)
        ┌─────────────┬───────┴───────┬──────────────┐
     Backend       Frontend        Base de datos   Scraping   ...
-  architect      (próximamente)  (próximamente)  developer
-  developer                                       tester
-  tester
+  architect      designer        (próximamente)  developer
+  developer      developer                        tester
+  tester         tester
        └─────────────┴───────┬───────┴──────────────┘
                              │
                         QA (Opus)
@@ -22,7 +22,7 @@ Una oficina de desarrollo para [Claude Code](https://code.claude.com): vos sos e
 ```
 
 1. **Reunión.** Hablás con el PM sobre qué cambiar, mejorar o priorizar. Opina, te contradice si hace falta y te propone opciones. No activa a nadie hasta que decidas.
-2. **Diseño.** Para funciones nuevas o cambios grandes, los roles de diseño (por ejemplo, el arquitecto de backend) escriben una propuesta en `docs/design/` y vos la aprobás antes de que se programe. Los bugs y ajustes chicos se saltean este paso.
+2. **Diseño.** Para funciones nuevas o cambios grandes, los roles de diseño (el arquitecto de backend y el designer de frontend) escriben una propuesta en `docs/design/` y vos la aprobás antes de que se programe. Los bugs y ajustes chicos se saltean este paso.
 3. **Ejecución.** Con tu decisión, el PM arma un plan, lo aprobás y activa solo a los departamentos que hacen falta. El resto no trabaja ni gasta tokens.
 4. **Calidad.** Todo el código pasa por el tester del departamento y después por QA. Si algo falla, vuelve al departamento, con un máximo de 3 vueltas.
 5. **Informe.** El PM te entrega un resumen por departamento: qué se hizo, qué archivos cambiaron, resultados de calidad y decisiones pendientes.
@@ -35,6 +35,7 @@ Vos solo hablás con el PM.
 | -------------- | ------------------------------------------------------------------------- | ------------- |
 | `office`       | PM, QA, hooks de protección y registro de actividad, skill `office-setup` | PM y QA: Opus |
 | `dept-backend` | Arquitecto, developer y tester de backend, skill de backend sólido        | Arquitecto: Opus; developer y tester: Sonnet |
+| `dept-frontend` | Designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skill de frontend sólido | Sonnet |
 | `dept-scraper` | Developer y tester de scraping, skill de scraping responsable             | Sonnet        |
 
 Cada departamento es un plugin aparte: instalás solo los que tu proyecto necesita. Todos dependen de `office`.
@@ -53,6 +54,7 @@ Dentro de Claude Code, en la carpeta de tu proyecto:
 /plugin marketplace add miguelramidev/dev-office
 /plugin install office@dev-office
 /plugin install dept-backend@dev-office
+/plugin install dept-frontend@dev-office
 /plugin install dept-scraper@dev-office
 ```
 
