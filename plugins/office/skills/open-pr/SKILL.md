@@ -97,7 +97,7 @@ Mostrale: rama de origen → destino, título, descripción y la lista de commit
 
 ## 9. Jira
 
-No cambies el ticket por tu cuenta. Preguntale al CEO si quiere pasarlo al estado de revisión (por ejemplo "REVIEWING"); si dice que sí, usá `transitionJiraIssue`.
+No cambies el ticket por tu cuenta. Mirá a qué estados puede pasar ahora (`listJiraIssueTransitions`): si el flujo de Jira obliga a pasar por cada columna, solo se puede avanzar un paso. Preguntale al CEO si quiere moverlo al siguiente (por ejemplo "REVIEWING") y, si dice que sí, usá `transitionJiraIssue`. Nunca saltees estados.
 
 ## 10. Cerrá
 
