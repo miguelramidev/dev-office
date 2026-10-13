@@ -22,6 +22,7 @@ En el `CLAUDE.md` del proyecto y en `.claude/rules/` buscá el flujo de trabajo.
 | Feature, Historia, Story | `feature/` |
 | Tarea, Task, Request | `task/` |
 | Error, Bug, Flaw, Defect | `fix/` |
+| Refactor | `refactor/` |
 | Hotfix, o cualquiera con la etiqueta `hotfix` | `hotfix/` |
 | Subtarea, Subtask | sin rama propia: se trabaja en la rama de su padre |
 
