@@ -8,6 +8,19 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.6.0] - 2026-10-13
+
+### Agregado
+
+- Skill `open-pr` en `office`: abre el PR de la rama actual con `gh`. Corre las verificaciones del proyecto, elige el destino según el ticket de Jira (su épica, la rama base o producción si es hotfix), arma el título y la descripción con la clave del ticket y se los muestra al CEO; solo con su confirmación sube la rama y abre el PR. Se usa como `/office:open-pr` o pidiéndoselo al PM.
+- Skill `review-fixes` en `office`: lee lo que dejó la revisión de un PR (comentarios sin resolver, reseñas, checks que fallan y los commits que el CEO hizo a mano), arma una lista para que el CEO la confirme y corrige cada punto con el departamento que corresponde y el ciclo de calidad. Commit, push y respuestas en el PR, solo con confirmación. Se usa como `/office:review-fixes` o pidiéndoselo al PM.
+- `office-setup`: permite los comandos de `gh` de solo lectura; abrir PRs, comentar y `gh api` piden confirmación; mergear PRs y borrar repositorios quedan prohibidos.
+
+### Cambiado
+
+- `pm`: usa `open-pr` y `review-fixes`, ofrece abrir el PR cuando un ticket queda terminado, y nunca mergea ni aprueba PRs ni publica en GitHub sin que el CEO lo pida.
+- `office` 0.5.0.
+
 ## [0.5.0] - 2026-10-13
 
 ### Agregado

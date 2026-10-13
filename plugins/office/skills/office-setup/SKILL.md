@@ -11,7 +11,7 @@ Los cambios los hace el script `setup.sh` que está en la misma carpeta que este
 ## Pasos
 
 1. **Explicá qué va a pasar**, en pocas líneas:
-   - Se agregan a `.claude/settings.json` permisos base: comandos de git de solo lectura permitidos; commit, push, instalar paquetes y AWS siempre con consulta; leer secretos, forzar push y saltear hooks prohibidos.
+   - Se agregan a `.claude/settings.json` permisos base: comandos de git y de `gh` de solo lectura permitidos; commit, push, abrir PRs, comentar en GitHub, instalar paquetes y AWS siempre con consulta; leer secretos, forzar push, saltear hooks y mergear PRs prohibidos.
    - Se define el modo de permisos y las ramas protegidas, donde los agentes no pueden editar ni commitear.
    - Se agregan a `.gitignore` la carpeta temporal de QA, el registro de actividad y la copia de seguridad.
    - No se borra nada de lo que ya existe, y se guarda una copia del archivo anterior.
@@ -66,5 +66,6 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
    - Revisar los cambios y hacer commit de `.claude/settings.json` y `.gitignore`.
    - Instalar las skills de la comunidad que haya elegido.
    - Si conectó Jira, autenticarse con `/mcp` y probar con `/office:start-ticket <TICKET>`.
+   - Para abrir PRs y aplicar correcciones de revisión (`/office:open-pr` y `/office:review-fixes`), instalar `gh` e iniciar sesión con `gh auth login`.
    - Borrar `.claude/settings.json.bak` cuando esté conforme.
    - Reiniciar Claude Code para que tome la configuración nueva.

@@ -47,8 +47,8 @@ if ! jq empty "$SETTINGS" 2>/dev/null; then
 fi
 cp "$SETTINGS" "$SETTINGS.bak"
 
-# Comandos de solo lectura de git, los que usa start-ticket para crear la rama de
-# trabajo y la limpieza de la carpeta de QA.
+# Comandos de solo lectura de git y de gh, los que usa start-ticket para crear la
+# rama de trabajo y la limpieza de la carpeta de QA.
 ALLOW='[
   "Bash(git status)", "Bash(git status *)",
   "Bash(git diff)", "Bash(git diff *)",
@@ -57,6 +57,12 @@ ALLOW='[
   "Bash(git remote show origin)",
   "Bash(git fetch origin)", "Bash(git fetch origin *)",
   "Bash(git switch *)",
+  "Bash(git ls-remote --heads origin *)",
+  "Bash(gh auth status)",
+  "Bash(gh repo view *)",
+  "Bash(gh pr view)", "Bash(gh pr view *)",
+  "Bash(gh pr list *)", "Bash(gh pr diff *)",
+  "Bash(gh pr checks)", "Bash(gh pr checks *)",
   "Bash(rm -r .qa)"
 ]'
 
@@ -64,10 +70,12 @@ ALLOW='[
 ASK='[
   "Bash(git commit *)", "Bash(git push *)", "Bash(git checkout *)", "Bash(git reset *)",
   "Bash(npm install *)", "Bash(pnpm add *)", "Bash(yarn add *)", "Bash(bun add *)",
-  "Bash(aws *)"
+  "Bash(aws *)",
+  "Bash(gh pr create *)", "Bash(gh pr comment *)", "Bash(gh pr review *)", "Bash(gh api *)"
 ]'
 
-# Acciones prohibidas: leer secretos, forzar push, saltear hooks, borrados masivos.
+# Acciones prohibidas: leer secretos, forzar push, saltear hooks, borrados masivos,
+# mergear PRs (lo hace el CEO) y borrar repositorios.
 # Las reglas con **/ cubren también los .env de subcarpetas (por ejemplo, en un monorepo).
 DENY='[
   "Read(./**/.env)", "Read(./**/.env.local)",
@@ -76,7 +84,8 @@ DENY='[
   "Read(./**/.env.staging)", "Read(./**/.env.test)", "Read(./**/.env.test.local)",
   "Bash(git push --force *)", "Bash(git push -f *)",
   "Bash(git commit --no-verify *)", "Bash(git push --no-verify *)",
-  "Bash(rm -rf *)"
+  "Bash(rm -rf *)",
+  "Bash(gh pr merge *)", "Bash(gh repo delete *)"
 ]'
 
 if [ ${#EXTRA_ALLOW[@]} -gt 0 ]; then

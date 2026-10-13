@@ -4,6 +4,7 @@
 
 - Claude Code actualizado.
 - `git` y `jq`.
+- `gh` (la herramienta de GitHub para la terminal), si querés que la oficina abra PRs y aplique correcciones de revisión. En Ubuntu o WSL: `sudo apt install gh` y después `gh auth login` (GitHub.com, HTTPS, iniciar sesión con el navegador).
 - En Windows: trabajar dentro de WSL2 (Ubuntu), con el proyecto en el sistema de archivos de Linux (por ejemplo `~/dev/mi-proyecto`), no en `C:\`.
 
 ## 2. Instalar los plugins
@@ -100,6 +101,7 @@ Para desactivarlo solo para vos, poné lo mismo en `.claude/settings.local.json`
 | Pide permiso para escribir en `.claude/` o `.git/`                                     | Son rutas protegidas de Claude Code                                    | Es lo esperado: aprobalo solo si corresponde                                     |
 | "no se edita el código en la rama protegida"                                         | Estás en una rama protegida (por ejemplo `dev`)                         | Pedile al PM que trabaje en un ticket o creá una rama con `git switch -c`         |
 | El PM no puede traer el ticket de Jira                                                 | Jira no está conectado o no iniciaste sesión                           | `/mcp`, servidor `atlassian`, autenticar                                         |
+| `open-pr` o `review-fixes` dicen que falta `gh`                                         | `gh` no está instalado o no tiene sesión                               | `sudo apt install gh` y `gh auth login`                                          |
 | Un hook falla con `command not found` (código 127)                                     | Finales de línea de Windows (CRLF) en el script                        | `sed -i 's/\r$//' <archivo>` y trabajar dentro de WSL                            |
 | Pide permiso para un comando de tests con `\| tail` o `;`                              | Cada parte de un comando compuesto se revisa por separado              | Que corra los comandos de a uno (ya está en sus instrucciones)                   |
 | Advertencia: "Permission allow rule ... has a wildcard before the rest of the command" | Una regla con `*` en el medio aprueba cualquier opción en esa posición | Usar el valor exacto (por ejemplo, el nombre del paquete) y el `*` solo al final |
