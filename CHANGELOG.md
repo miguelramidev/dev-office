@@ -14,6 +14,7 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 - `start-ticket` y `open-pr`: un ticket de tipo Hotfix se trata como hotfix (sale de producción y el PR va a producción y a la base), igual que uno con la etiqueta `hotfix`. Los tipos Flaw y Defect usan el prefijo `fix/`, como Error y Bug, y el tipo Refactor usa `refactor/`.
 - `pm` y `qa`: en un refactor el comportamiento no puede cambiar. El PM se lo avisa a cada departamento, y para QA es bloqueante modificar un test existente, cambiar lo que recibe quien usa el código o agregar una función.
+- `open-pr`: en un refactor confirma que no cambió ningún test existente ni lo que recibe quien usa el código, y lo dice en la descripción del PR.
 - `open-pr`: solo ofrece mover el ticket a un estado al que el flujo de Jira permite pasar, sin saltear columnas.
 - `office` 0.5.1.
 
