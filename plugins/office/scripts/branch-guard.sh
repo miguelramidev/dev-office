@@ -4,13 +4,17 @@
 # de stderr le llega al agente) y con 0 para permitir.
 #
 # Ramas protegidas: las de la variable OFFICE_PROTECTED_BRANCHES, separadas por
-# espacios (por ejemplo "main dev"). Si no está definida, se protegen "main" y
-# "master". Si está definida pero vacía, la guardia no hace nada.
+# espacios. Acepta nombres exactos y patrones (por ejemplo "main dev epic/*").
+# Si no está definida, se protegen "main" y "master". Si está definida pero
+# vacía, la guardia no hace nada.
 #
 # - Edit, Write y NotebookEdit: bloquea editar archivos del proyecto si la rama
 #   actual está protegida (salvo la carpeta temporal de QA, .qa/).
 # - Bash: bloquea commit, merge, cherry-pick, revert y am sobre una rama
 #   protegida, y cualquier push hacia una rama protegida.
+
+# Sin expansión de comodines contra archivos: "epic/*" es un patrón de rama.
+set -f
 
 PROTECTED="${OFFICE_PROTECTED_BRANCHES-main master}"
 [ -z "${PROTECTED// /}" ] && exit 0
@@ -29,7 +33,10 @@ is_protected() {
   local name="${1#refs/heads/}"
   local p
   for p in $PROTECTED; do
-    [ "$name" = "$p" ] && return 0
+    # shellcheck disable=SC2254 # $p es un patrón a propósito
+    case "$name" in
+      $p) return 0 ;;
+    esac
   done
   return 1
 }

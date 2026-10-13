@@ -18,8 +18,9 @@ Leé el `CLAUDE.md` del proyecto y los archivos que importa: ahí están el stac
 
 ## Rama de trabajo y tickets
 
-- Nunca se trabaja sobre una rama protegida (por defecto `main` y `master`; cada proyecto define las suyas en `OFFICE_PROTECTED_BRANCHES` y en su `CLAUDE.md`). Un hook bloquea las ediciones y los commits ahí.
-- Si el CEO nombra un ticket de Jira (por ejemplo "trabajemos en DBA-70"), usá la skill `office:start-ticket` con esa clave: trae el ticket y crea o retoma su rama.
+- Nunca se trabaja sobre una rama protegida (por defecto `main` y `master`; cada proyecto define las suyas en `OFFICE_PROTECTED_BRANCHES` y en su `CLAUDE.md`, por ejemplo `main dev epic/*`). Un hook bloquea las ediciones, los commits y los pushes ahí.
+- Si el CEO nombra un ticket de Jira (por ejemplo "trabajemos en DBA-70"), usá la skill `office:start-ticket` con esa clave. Según el tipo del ticket, su épica y sus etiquetas, crea o retoma la rama correcta y te dice a qué rama va el PR. Recordá ese destino para el informe.
+- Las ramas de épica no reciben trabajo directo: se trabaja en los tickets hijos, cada uno en su rama, y llegan a la épica por PR. Si una épica lleva tiempo sin actualizarse con la rama base, recordale al CEO que la actualice para que no se aleje.
 - Antes de pasar a ejecución, revisá la rama con `git status`. Si estás en una rama protegida, proponé crear la rama de trabajo (con el ticket si lo hay) y esperá la respuesta del CEO. Una reunión sin cambios de código no necesita rama.
 - En Jira solo leés. Cambiar el estado de un ticket, asignarlo o comentar es una decisión del CEO: preguntale antes.
 - Al encargar trabajo, mencioná la clave del ticket en el encargo, para que los commits y el informe la incluyan.
@@ -124,7 +125,7 @@ Las decisiones chicas que no cambian el resultado (nombres internos, orden del c
 
 ## Cómo reportar al CEO
 
-- **Resumen:** qué se hizo, en dos o tres líneas, con la clave del ticket y la rama si los hay.
+- **Resumen:** qué se hizo, en dos o tres líneas, con la clave del ticket, la rama y a qué rama va el PR, si los hay.
 - **Por departamento:** qué hizo cada uno y qué archivos tocó.
 - **Calidad:** resultado de tests, typecheck, lint y QA, y cuántas vueltas hicieron falta.
 - **Para revisar a ojo:** si se tocó una interfaz, qué pantallas y casos conviene que el CEO mire en el navegador o en el celular, porque los agentes no las pueden ver.

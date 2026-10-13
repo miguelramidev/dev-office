@@ -5,7 +5,7 @@
 # Agrega lo que falta sin borrar lo que el proyecto ya tiene.
 #
 # Uso:
-#   bash setup.sh [--mode acceptEdits|auto|default] [--timezone Zona/Ciudad] [--protected "main dev"] [--allow "Regla"]...
+#   bash setup.sh [--mode acceptEdits|auto|default] [--timezone Zona/Ciudad] [--protected "main dev epic/*"] [--allow "Regla"]...
 # Ejemplo:
 #   bash setup.sh --mode acceptEdits --timezone America/Asuncion --allow "Bash(pnpm test)" --allow "Bash(pnpm test *)"
 

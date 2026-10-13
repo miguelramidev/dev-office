@@ -55,10 +55,20 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 
 ## Ramas y tickets
 
-- **Ramas protegidas.** Cada proyecto define en `OFFICE_PROTECTED_BRANCHES` (en `.claude/settings.json`) las ramas donde nunca se trabaja directamente, por ejemplo `main dev`. Si no la define, se protegen `main` y `master`. El hook `branch-guard.sh` bloquea editar archivos del proyecto, commitear o mergear sobre esas ramas, y hacer push hacia ellas desde cualquier rama.
-- **Tickets de Jira.** La skill `start-ticket` trae el ticket con el servidor MCP de Atlassian (que el proyecto configura en `.mcp.json` con el nombre `atlassian`), se lo muestra al CEO y crea o retoma la rama `<TICKET>-<resumen>` desde la rama base. El PM la usa cuando el CEO nombra un ticket.
+- **Ramas protegidas.** Cada proyecto define en `OFFICE_PROTECTED_BRANCHES` (en `.claude/settings.json`) las ramas donde nunca se trabaja directamente, con nombres o patrones, por ejemplo `main dev epic/*`. Si no la define, se protegen `main` y `master`. El hook `branch-guard.sh` bloquea editar archivos del proyecto, commitear o mergear sobre esas ramas, y hacer push hacia ellas desde cualquier rama.
+- **Tickets de Jira.** La skill `start-ticket` trae el ticket con el servidor MCP de Atlassian (que el proyecto configura en `.mcp.json` con el nombre `atlassian`) y decide todo a partir de él. El PM la usa cuando el CEO nombra un ticket.
+
+  | Lo que dice el ticket | Decide |
+  | --- | --- |
+  | Tipo (Epic, Feature, Tarea, Error) | El prefijo: `epic/`, `feature/`, `task/`, `fix/` |
+  | Etiqueta `hotfix` | Prefijo `hotfix/`: sale de producción y el PR va a producción y a la rama base |
+  | Épica padre | Sale de la rama de la épica y el PR va a ella |
+  | Sin épica | Sale de la rama base y el PR va a ella |
+  | Subtarea | Se trabaja en la rama de su padre |
+
+  Las épicas son ramas de integración: reciben los PRs de sus tickets y, cuando están completas, se integran a la rama base. Conviene actualizarlas con la rama base seguido, para que no se alejen.
 - **Jira es de solo lectura para la oficina.** Cambiar el estado de un ticket, asignarlo o comentar lo decide el CEO.
-- **El formato de las ramas, la rama base y el proyecto de Jira** van en la sección "Flujo de trabajo" del `CLAUDE.md` de cada proyecto.
+- **La rama base, la de producción, los prefijos y el proyecto de Jira** van en el flujo de trabajo del proyecto (`CLAUDE.md` o `.claude/rules/`). Si el proyecto no los define, `start-ticket` usa los valores por defecto de la tabla.
 
 ## Comunicación
 

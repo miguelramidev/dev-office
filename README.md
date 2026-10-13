@@ -29,7 +29,7 @@ Una oficina de desarrollo para [Claude Code](https://code.claude.com): vos sos e
 
 Vos solo hablás con el PM.
 
-**Ramas y tickets.** Nunca se trabaja sobre las ramas protegidas del proyecto (por ejemplo `main` y `dev`): un hook bloquea las ediciones, los commits y los pushes ahí. Si usás Jira, decile al PM "trabajemos en DBA-70" (o usá `/office:start-ticket DBA-70`): trae el ticket y crea la rama `DBA-70-<resumen>` desde la rama base.
+**Ramas y tickets.** Nunca se trabaja sobre las ramas protegidas del proyecto (por ejemplo `main`, `dev` y las `epic/*`): un hook bloquea las ediciones, los commits y los pushes ahí. Si usás Jira, decile al PM "trabajemos en DBA-70" (o usá `/office:start-ticket DBA-70`). Según el tipo del ticket, su épica y sus etiquetas, crea la rama correcta (por ejemplo `feature/DBA-70-<resumen>` desde la rama de su épica) y te dice a qué rama va el PR.
 
 ## Plugins
 

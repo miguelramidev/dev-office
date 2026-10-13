@@ -65,6 +65,21 @@ check 2 "push forzado a refs/heads/dev"               "$(bash_cmd 'git push orig
 check 2 "push --all"                                  "$(bash_cmd 'git push --all origin')"
 check 2 "push hacia main después de otro comando"     "$(bash_cmd 'pnpm test && git push origin main')"
 
+# --- Patrones: ramas de épica ---------------------------------------------------------
+export OFFICE_PROTECTED_BRANCHES="main dev epic/*"
+mkdir -p "$REPO/epic"   # una carpeta con ese nombre no tiene que afectar al patrón
+git -C "$REPO" switch -q -c epic/DBA-67-carrito dev
+check 2 "patrón: editar en una épica"                 "$(edit "$REPO/src/app.ts")"
+check 2 "patrón: commit en una épica"                 "$(bash_cmd 'git commit -m x')"
+check 2 "patrón: push desde una épica"                "$(bash_cmd 'git push -u origin epic/DBA-67-carrito')"
+check 0 "patrón: crear una feature desde la épica"    "$(bash_cmd 'git switch -c feature/DBA-70-productos origin/epic/DBA-67-carrito')"
+git -C "$REPO" switch -q -c feature/DBA-70-productos
+check 0 "patrón: editar en una feature"               "$(edit "$REPO/src/app.ts")"
+check 0 "patrón: push de la feature"                  "$(bash_cmd 'git push -u origin feature/DBA-70-productos')"
+check 2 "patrón: push hacia una épica"                "$(bash_cmd 'git push origin HEAD:epic/DBA-67-carrito')"
+check 0 "patrón: rama que solo contiene 'epic'"       "$(bash_cmd 'git push origin feature/epic-ideas')"
+rmdir "$REPO/epic"
+
 # --- Guardia desactivada -------------------------------------------------------------
 export OFFICE_PROTECTED_BRANCHES=""
 git -C "$REPO" switch -q main

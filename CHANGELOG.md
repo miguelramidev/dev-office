@@ -12,8 +12,8 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ### Agregado
 
-- Hook `branch-guard.sh` en `office`: no deja editar archivos del proyecto, commitear ni mergear sobre las ramas protegidas, ni hacer push hacia ellas. Las ramas se configuran con `OFFICE_PROTECTED_BRANCHES`; por defecto, `main` y `master`. Pruebas en `tests/branch-guard.test.sh` y en el CI.
-- Skill `start-ticket` en `office`: trae un ticket de Jira con el servidor MCP de Atlassian, se lo muestra al CEO y crea o retoma la rama `<TICKET>-<resumen>` desde la rama base. Se usa como `/office:start-ticket DBA-70` o pidiéndoselo al PM.
+- Hook `branch-guard.sh` en `office`: no deja editar archivos del proyecto, commitear ni mergear sobre las ramas protegidas, ni hacer push hacia ellas. Las ramas se configuran con `OFFICE_PROTECTED_BRANCHES`, con nombres o patrones (por ejemplo `main dev epic/*`); por defecto, `main` y `master`. Pruebas en `tests/branch-guard.test.sh` y en el CI.
+- Skill `start-ticket` en `office`: trae un ticket de Jira con el servidor MCP de Atlassian y, según lo que dice el ticket, crea o retoma su rama. El tipo decide el prefijo (`epic/`, `feature/`, `task/`, `fix/`), la épica padre decide de qué rama sale y a dónde va el PR, la etiqueta `hotfix` la hace salir de producción, y las subtareas se trabajan en la rama de su padre. Se usa como `/office:start-ticket DBA-70` o pidiéndoselo al PM.
 - `office-setup`: pregunta las ramas protegidas (opción `--protected` de `setup.sh`), permite los comandos de git que usa `start-ticket` y ofrece conectar Jira con `.mcp.json`.
 
 ### Cambiado
