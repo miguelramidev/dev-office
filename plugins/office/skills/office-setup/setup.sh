@@ -5,7 +5,7 @@
 # Agrega lo que falta sin borrar lo que el proyecto ya tiene.
 #
 # Uso:
-#   bash setup.sh [--mode acceptEdits|auto|default] [--timezone Zona/Ciudad] [--allow "Regla"]...
+#   bash setup.sh [--mode acceptEdits|auto|default] [--timezone Zona/Ciudad] [--protected "main dev epic/*"] [--allow "Regla"]...
 # Ejemplo:
 #   bash setup.sh --mode acceptEdits --timezone America/Asuncion --allow "Bash(pnpm test)" --allow "Bash(pnpm test *)"
 
@@ -13,12 +13,14 @@ set -euo pipefail
 
 MODE="acceptEdits"
 TIMEZONE=""
+PROTECTED=""
 EXTRA_ALLOW=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --mode) MODE="$2"; shift 2 ;;
     --timezone) TIMEZONE="$2"; shift 2 ;;
+    --protected) PROTECTED="$2"; shift 2 ;;
     --allow) EXTRA_ALLOW+=("$2"); shift 2 ;;
     *) echo "Opción desconocida: $1" >&2; exit 1 ;;
   esac
@@ -45,12 +47,16 @@ if ! jq empty "$SETTINGS" 2>/dev/null; then
 fi
 cp "$SETTINGS" "$SETTINGS.bak"
 
-# Comandos de solo lectura de git y la limpieza de la carpeta de QA.
+# Comandos de solo lectura de git, los que usa start-ticket para crear la rama de
+# trabajo y la limpieza de la carpeta de QA.
 ALLOW='[
   "Bash(git status)", "Bash(git status *)",
   "Bash(git diff)", "Bash(git diff *)",
   "Bash(git log)", "Bash(git log *)",
-  "Bash(git branch)",
+  "Bash(git branch)", "Bash(git branch --all --list *)",
+  "Bash(git remote show origin)",
+  "Bash(git fetch origin)", "Bash(git fetch origin *)",
+  "Bash(git switch *)",
   "Bash(rm -r .qa)"
 ]'
 
@@ -85,7 +91,8 @@ jq \
   --argjson ask "$ASK" \
   --argjson deny "$DENY" \
   --arg mode "$MODE" \
-  --arg tz "$TIMEZONE" '
+  --arg tz "$TIMEZONE" \
+  --arg protected "$PROTECTED" '
   # Agrega a una lista los elementos que todavía no tiene, sin cambiar el orden.
   def add_missing($current; $new): ($current // []) + ($new - ($current // []));
 
@@ -94,6 +101,7 @@ jq \
   | .permissions.deny = add_missing(.permissions.deny; $deny)
   | .permissions.defaultMode = $mode
   | if $tz != "" then .env.OFFICE_TIMEZONE = $tz else . end
+  | if $protected != "" then .env.OFFICE_PROTECTED_BRANCHES = $protected else . end
 ' "$SETTINGS.bak" > "$SETTINGS"
 
 # --- .gitignore ---------------------------------------------------------------
@@ -110,7 +118,7 @@ done
 # --- Resumen ------------------------------------------------------------------
 
 echo "Listo:"
-echo "  - $SETTINGS: permisos base, modo '$MODE'${TIMEZONE:+, zona horaria $TIMEZONE}."
+echo "  - $SETTINGS: permisos base, modo '$MODE'${TIMEZONE:+, zona horaria $TIMEZONE}${PROTECTED:+, ramas protegidas: $PROTECTED}."
 echo "  - Copia del archivo anterior: $SETTINGS.bak"
 echo "  - $GITIGNORE: .qa/, registro de actividad y la copia de seguridad."
 if [ ! -f "$PROJECT_DIR/CLAUDE.md" ]; then

@@ -35,3 +35,6 @@ jobs:
 
       - name: Probar el hook de protección
         run: bash tests/protect.test.sh
+
+      - name: Probar la guardia de ramas
+        run: bash tests/branch-guard.test.sh
