@@ -45,7 +45,7 @@ Si el CEO la dijo en `$ARGUMENTS`, usá esa. Si no:
 
    | Caso | El PR va a |
    | --- | --- |
-   | Etiqueta `hotfix` (o rama `hotfix/`) | Producción. Después, un segundo PR de la misma rama a la base |
+   | Tipo Hotfix, etiqueta `hotfix` o rama `hotfix/` | Producción. Después, un segundo PR de la misma rama a la base |
    | Epic (rama `epic/`) | La base. Solo si la épica está completa: buscá sus hijos con `searchJiraIssuesUsingJql` (`parent = <CLAVE>`) y mostrale al CEO los que no estén terminados |
    | Con épica padre | La rama de esa épica |
    | Sin épica, o rama `chore/` | La base |
@@ -76,6 +76,7 @@ Si no hay commits nuevos respecto del destino, frená y decíselo.
 - **Cómo probarlo:** los pasos para verificarlo a mano, si aplica.
 - **Compatibilidad:** si el proyecto pide algo (por ejemplo, el contrato con los fronts), qué se tocó y cómo se mantiene compatible. Si no se tocó nada de eso, decilo.
 - **Verificaciones:** qué se corrió en el paso 5 y el resultado.
+- **Refactor:** si el ticket es de tipo Refactor (o la rama es `refactor/`), confirmá que el comportamiento no cambió: que no se modificó ni borró ningún test existente (`git diff --stat origin/<destino>...HEAD` sobre las carpetas de tests) y que no cambió lo que recibe quien usa el código. Decilo en la descripción. Si algo de eso cambió, frená y avisale al CEO: ya no es un refactor.
 - **Para revisar:** decisiones que el revisor debería mirar, si las hay.
 
 ## 7. Mostráselo al CEO y esperá
@@ -97,7 +98,7 @@ Mostrale: rama de origen → destino, título, descripción y la lista de commit
 
 ## 9. Jira
 
-No cambies el ticket por tu cuenta. Preguntale al CEO si quiere pasarlo al estado de revisión (por ejemplo "REVIEWING"); si dice que sí, usá `transitionJiraIssue`.
+No cambies el ticket por tu cuenta. Mirá a qué estados puede pasar ahora (`listJiraIssueTransitions`): si el flujo de Jira obliga a pasar por cada columna, solo se puede avanzar un paso. Preguntale al CEO si quiere moverlo al siguiente (por ejemplo "REVIEWING") y, si dice que sí, usá `transitionJiraIssue`. Nunca saltees estados.
 
 ## 10. Cerrá
 

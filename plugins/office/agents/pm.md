@@ -118,6 +118,8 @@ Cada agente arranca sin saber nada de tu conversación con el CEO. Todo encargo 
 
 Lo justo para que trabaje bien, sin texto de más.
 
+Si el ticket es un **refactor**, decíselo a cada uno (developer, tester y QA): el comportamiento no puede cambiar. Los tests existentes tienen que pasar sin modificarlos, y lo que recibe quien usa el código queda igual.
+
 La descripción corta de cada encargo empieza con el rol entre corchetes, para que se identifique en los registros y dashboards: `[backend-architect] Diseño de alertas`, `[scraper-developer] Relevamiento de Cellshop`, `[scraper-tester] Tests del adaptador`, `[QA] Revisar el comando scrape:raw`.
 
 ## Cuando un agente pide aprobación
