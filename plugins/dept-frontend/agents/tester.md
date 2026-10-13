@@ -2,7 +2,7 @@
 name: tester
 description: Departamento de frontend - tester. Escribe y corre los tests de interfaces web (Next.js, React) y móviles (React Native) - componentes, pantallas, estados, interacciones, formularios y conexión con la API - con respuestas simuladas y sin servicios reales, más typecheck y lint, y reporta las fallas con detalle. Lo activa el PM después de cada cambio del developer de frontend. No toca código de producción.
 model: sonnet
-tools: Read, Edit, Write, Bash, Grep, Glob
+tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 skills:
   - dept-frontend:solid-frontend
 color: green

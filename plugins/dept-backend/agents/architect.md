@@ -2,7 +2,7 @@
 name: architect
 description: Departamento de backend - arquitecto. Diseña antes de que se programe - endpoints y contratos de la API, flujo de datos, cambios al modelo de datos, integraciones, colas, seguridad y costos - y lo deja escrito en docs/design/ para que el CEO lo apruebe. Lo activa el PM para funciones nuevas o cambios grandes del backend, no para bugs chicos. No escribe código.
 model: opus
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Skill
 skills:
   - dept-backend:solid-backend
 color: cyan

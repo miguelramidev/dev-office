@@ -2,7 +2,7 @@
 name: tester
 description: Departamento de backend - tester. Escribe y corre los tests del backend (lógica, endpoints, permisos, integraciones, colas y tareas programadas) con dependencias falsas y sin servicios reales, más typecheck y lint, y reporta las fallas con detalle. Lo activa el PM después de cada cambio del developer de backend. No toca código de producción.
 model: sonnet
-tools: Read, Edit, Write, Bash, Grep, Glob
+tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 skills:
   - dept-backend:solid-backend
 color: green

@@ -8,6 +8,24 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.4.0] - 2026-10-13
+
+### Agregado
+
+- Plugin `dept-database` (0.1.0), depende de `office`:
+  - Agente `developer` (Sonnet), el DB manager: esquemas, migraciones, índices, restricciones, seeds y consultas pesadas en Postgres y MongoDB. Nunca ejecuta nada contra bases reales.
+  - Agente `tester` (Sonnet): prueba que las migraciones suben, bajan y conservan los datos, que las restricciones rechazan lo inválido y que las consultas usan los índices, solo en la base de pruebas del proyecto.
+  - Skill `solid-database`: lo que nunca se hace, migraciones seguras (expandir y contraer, reversibles, copias de datos en lotes), tablas grandes sin bloquear, integridad, tipos, índices y consultas, MongoDB, datos personales y datos de prueba.
+- Soporte para skills de la comunidad: las skills oficiales de Supabase (Postgres), MongoDB, Vercel (React, Next.js, React Native) y Expo. Guía en `docs/community-skills.md`.
+- `office-setup`: recomienda las skills de la comunidad que corresponden al stack del proyecto, con sus comandos de instalación y el aviso sobre el servidor MCP de MongoDB.
+
+### Cambiado
+
+- Todos los agentes de departamento y el QA tienen la herramienta `Skill`, para usar las skills del proyecto y las de la comunidad. Antes los agentes con `tools` explícito no podían invocarlas.
+- `solid-backend`, `solid-frontend` y `solid-database`: sección "Skills de la comunidad" con las recomendadas y la regla de que las de dev-office mandan en seguridad, aprobaciones y límites.
+- `pm`: el backend recibe la sección "Cambios en los datos" del reporte de base de datos.
+- Versiones: `office` 0.3.0, `dept-backend` 0.1.1, `dept-frontend` 0.1.1, `dept-scraper` 0.1.2.
+
 ## [0.3.0] - 2026-10-12
 
 ### Agregado

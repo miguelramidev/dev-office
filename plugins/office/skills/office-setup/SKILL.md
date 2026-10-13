@@ -1,6 +1,6 @@
 ---
 name: office-setup
-description: Prepara un proyecto para trabajar con la oficina dev-office - permisos base, modo de permisos, zona horaria del registro de actividad y .gitignore. Usar una vez al instalar la oficina en un proyecto, o para volver a aplicar la configuración base.
+description: Prepara un proyecto para trabajar con la oficina dev-office - permisos base, modo de permisos, zona horaria del registro de actividad, .gitignore y recomendación de skills de la comunidad según el stack. Usar una vez al instalar la oficina en un proyecto, o para volver a aplicar la configuración base.
 disable-model-invocation: true
 ---
 
@@ -34,7 +34,20 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
 
 6. **Mostrá el resultado:** corré `git diff .claude/settings.json .gitignore` y explicale los cambios en pocas líneas.
 
-7. **Cerrá con los próximos pasos:**
+7. **Recomendá skills de la comunidad.** Mirá las dependencias del proyecto (`package.json` y los de cada aplicación si es un monorepo) y recomendá solo las que correspondan a su stack. No las instales vos: mostrale al CEO los comandos para que decida.
+
+   | Si el proyecto usa | Recomendá | Comandos |
+   | --- | --- | --- |
+   | Postgres (`pg`, `postgres`, `prisma`, `drizzle-orm`, `knex`, `typeorm` con Postgres) | Skills de Postgres de Supabase | `claude plugin marketplace add supabase/agent-skills` y `claude plugin install postgres-best-practices@supabase-agent-skills --scope project` |
+   | MongoDB (`mongodb`, `mongoose`) | Skills de MongoDB | `claude plugin marketplace add mongodb/agent-skills` y `claude plugin install mongodb@mongodb-plugins --scope project` |
+   | React o Next.js (`react`, `next`) | Skills de Vercel | `npx skills add vercel-labs/agent-skills`, eligiendo `react-best-practices` y `composition-patterns` |
+   | React Native (`react-native`) | Skills de Vercel | el mismo comando, eligiendo también `react-native-skills` |
+   | Expo (`expo`) | Skills de Expo | `claude plugin marketplace add expo/skills` y `claude plugin install expo@expo-plugins --scope project` |
+
+   Si recomendás el plugin de MongoDB, avisale que trae un servidor MCP que se conecta a la base con `MDB_MCP_CONNECTION_STRING`: si lo configura, que sea solo con una base local o de pruebas y con `MDB_MCP_READ_ONLY=true`, nunca con producción. Sin esa variable, las skills funcionan igual.
+
+8. **Cerrá con los próximos pasos:**
    - Revisar los cambios y hacer commit de `.claude/settings.json` y `.gitignore`.
+   - Instalar las skills de la comunidad que haya elegido.
    - Borrar `.claude/settings.json.bak` cuando esté conforme.
    - Reiniciar Claude Code para que tome la configuración nueva.

@@ -12,6 +12,8 @@
 | Tester    | `dept-<área>:tester`    | Sonnet | Escribe y corre los tests de su área. No toca código de producción.                                                         |
 | QA        | `office:qa`             | Opus   | El enemigo de la app: busca cómo romper el trabajo de cualquier departamento y verifica las reglas. No corrige.             |
 
+En base de datos, el developer cumple el rol de DB manager: esquemas, migraciones, índices y consultas pesadas. El modelo de datos lo diseña el arquitecto de backend y lo implementa este departamento.
+
 Cada departamento trae su propio tester, porque un tester que conoce su área prueba mejor. Los departamentos que no producen código testeable (por ejemplo, diseño) no llevan tester. QA es uno solo para toda la oficina.
 
 ### Por qué estos modelos

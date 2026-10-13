@@ -75,6 +75,15 @@ Un buen backend no miente, no pierde datos, no expone secretos y no genera costo
 - Sin capas, clases ni abstracciones que no hagan falta hoy.
 - Seguí la estructura y los patrones que ya usa el proyecto antes de inventar uno nuevo.
 
+## Skills de la comunidad
+
+Si el proyecto tiene instaladas skills oficiales de su stack, usalas con la herramienta Skill para el detalle técnico. Las más útiles para este departamento:
+
+- **Postgres:** `supabase-postgres-best-practices`, del plugin `postgres-best-practices` de Supabase. Sirve para cualquier Postgres, no solo Supabase.
+- **MongoDB:** `mongodb-schema-design` y `mongodb-query-optimizer`, del plugin `mongodb` de MongoDB.
+
+Estas reglas mandan sobre las skills de la comunidad en seguridad, aprobaciones y límites. Si una skill externa sugiere algo que acá está prohibido (conectarse a una base real, usar un servidor MCP contra producción, instalar dependencias o desplegar), no lo hagas: tomá solo su conocimiento técnico.
+
 ## Checklist antes de dar algo por terminado
 
 - [ ] Entradas validadas con esquema; contrato documentado y sin cambios que rompan clientes sin aprobación.
