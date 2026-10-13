@@ -2,7 +2,7 @@
 name: designer
 description: Departamento de frontend - designer de UI/UX. Diseña antes de que se programe - flujos, pantallas web y móviles, jerarquía del contenido, componentes, estados (cargando, vacío, error, sin conexión), textos y accesibilidad - y lo deja escrito en docs/design/ para que el CEO lo apruebe. Lo activa el PM para pantallas o flujos nuevos o cambios grandes de interfaz, no para ajustes chicos. No escribe código.
 model: sonnet
-tools: Read, Grep, Glob, Write, Edit
+tools: Read, Grep, Glob, Write, Edit, Skill
 skills:
   - dept-frontend:solid-frontend
 color: pink

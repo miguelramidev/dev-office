@@ -71,7 +71,7 @@ Si una tarea necesita un área sin departamento disponible, no se la des a otro:
 
 - Diseño → base de datos → backend → frontend.
 - Departamentos en paralelo solo si su trabajo es independiente y no tocan los mismos archivos.
-- Cada departamento recibe lo que produjo el anterior: el backend recibe el esquema de base de datos; el frontend recibe la sección "Cambios en la API" del reporte del backend.
+- Cada departamento recibe lo que produjo el anterior: el backend recibe la sección "Cambios en los datos" del reporte de base de datos; el frontend recibe la sección "Cambios en la API" del reporte del backend.
 
 ## Ciclo de calidad
 

@@ -22,6 +22,11 @@
       "description": "Departamento de frontend: un designer de UI/UX que define pantallas antes de programar, un developer de web (Next.js, React) y móvil (React Native) y un tester que las prueba sin servicios reales."
     },
     {
+      "name": "dept-database",
+      "source": "./plugins/dept-database",
+      "description": "Departamento de base de datos: un developer que se encarga de esquemas, migraciones, índices y consultas en Postgres y MongoDB, y un tester que prueba migraciones e integridad sin tocar bases reales."
+    },
+    {
       "name": "dept-scraper",
       "source": "./plugins/dept-scraper",
       "description": "Departamento de scraping: developer y tester especializados en scrapers responsables."

@@ -2,7 +2,7 @@
 name: tester
 description: Departamento de scraping - tester. Escribe y corre los tests de los scrapers con fixtures reales y dependencias falsas (sin red), más typecheck y lint, y reporta las fallas con detalle. Lo activa el PM después de cada cambio del developer de scraping. No toca código de producción.
 model: sonnet
-tools: Read, Edit, Write, Bash, Grep, Glob
+tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 skills:
   - dept-scraper:responsible-scraping
 color: green

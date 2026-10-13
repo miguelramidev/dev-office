@@ -42,6 +42,8 @@ Copiá los agentes de `dept-backend` (o de `dept-scraper` si el área no tiene r
 - **Modelo:** `sonnet` para developer y tester. Los roles de diseño que definen estructura (como `architect`) van en `opus`, porque sus errores se multiplican en todo lo que se construye encima.
 - **Roles de diseño:** solo escriben en `docs/design/`, siguen la plantilla de `dept-backend/agents/architect.md` y terminan siempre pidiendo aprobación del diseño.
 - **Sin `permissionMode`, `hooks` ni `mcpServers`:** en plugins Claude Code los ignora.
+- **`Skill` en `tools`:** sin esa herramienta el agente no puede usar las skills del proyecto ni las de la comunidad.
+- **Skills de la comunidad:** si hay skills oficiales para la tecnología del área, agregá la sección "Skills de la comunidad" en la skill del departamento (ver `dept-database/skills/solid-database/SKILL.md`) y sumalas a [docs/community-skills.md](community-skills.md) y a la tabla de `office-setup`.
 - **Mantener las secciones comunes:** leer el `CLAUDE.md` del proyecto antes de trabajar, límites (no tocar lo del otro rol, no trabajar fuera del proyecto, leer con Read y no con `cat`, comandos de a uno), "Cuando necesitás una aprobación" y el formato de reporte al PM.
 - **Todo el texto en español; nombres de código en inglés.**
 

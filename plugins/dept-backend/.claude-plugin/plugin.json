@@ -1,13 +1,13 @@
 {
-    "name": "dept-backend",
-    "version": "0.1.0",
-    "description": "Departamento de backend de dev-office: un arquitecto que diseña la API y la estructura antes de programar, un developer que la implementa y un tester que la prueba sin servicios reales.",
-    "author": {
-        "name": "Miguel Ramirez"
-    },
-    "repository": "https://github.com/miguelramidev/dev-office",
-    "license": "MIT",
-    "dependencies": [
-        "office"
-    ]
+  "name": "dept-backend",
+  "version": "0.1.1",
+  "description": "Departamento de backend de dev-office: un arquitecto que diseña la API y la estructura antes de programar, un developer que la implementa y un tester que la prueba sin servicios reales.",
+  "author": {
+    "name": "Miguel Ramirez"
+  },
+  "repository": "https://github.com/miguelramidev/dev-office",
+  "license": "MIT",
+  "dependencies": [
+    "office"
+  ]
 }

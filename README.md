@@ -12,8 +12,8 @@ Una oficina de desarrollo para [Claude Code](https://code.claude.com): vos sos e
                         PM (Opus)
        ┌─────────────┬───────┴───────┬──────────────┐
     Backend       Frontend        Base de datos   Scraping   ...
-  architect      designer        (próximamente)  developer
-  developer      developer                        tester
+  architect      designer        developer       developer
+  developer      developer       tester          tester
   tester         tester
        └─────────────┴───────┬───────┴──────────────┘
                              │
@@ -36,9 +36,12 @@ Vos solo hablás con el PM.
 | `office`       | PM, QA, hooks de protección y registro de actividad, skill `office-setup` | PM y QA: Opus |
 | `dept-backend` | Arquitecto, developer y tester de backend, skill de backend sólido        | Arquitecto: Opus; developer y tester: Sonnet |
 | `dept-frontend` | Designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skill de frontend sólido | Sonnet |
+| `dept-database` | Developer (DB manager) y tester de Postgres y MongoDB, skill de base de datos sólida | Sonnet |
 | `dept-scraper` | Developer y tester de scraping, skill de scraping responsable             | Sonnet        |
 
 Cada departamento es un plugin aparte: instalás solo los que tu proyecto necesita. Todos dependen de `office`.
+
+Para el detalle técnico de cada tecnología, los agentes también usan las skills oficiales de Supabase (Postgres), MongoDB, Vercel (React, Next.js y React Native) y Expo, si las instalás en el proyecto. Ver [skills de la comunidad](docs/community-skills.md).
 
 ## Requisitos
 
@@ -55,6 +58,7 @@ Dentro de Claude Code, en la carpeta de tu proyecto:
 /plugin install office@dev-office
 /plugin install dept-backend@dev-office
 /plugin install dept-frontend@dev-office
+/plugin install dept-database@dev-office
 /plugin install dept-scraper@dev-office
 ```
 
@@ -81,6 +85,7 @@ Los agentes leen las reglas de cada proyecto, así que el mismo equipo se adapta
 - [Arquitectura: cómo trabaja la oficina](docs/architecture.md)
 - [Instalar en un proyecto](docs/installation.md)
 - [Agregar un departamento](docs/add-department.md)
+- [Skills de la comunidad](docs/community-skills.md)
 - [Cambios por versión](CHANGELOG.md)
 
 ## Licencia
