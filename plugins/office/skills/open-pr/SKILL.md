@@ -45,7 +45,7 @@ Si el CEO la dijo en `$ARGUMENTS`, usá esa. Si no:
 
    | Caso | El PR va a |
    | --- | --- |
-   | Etiqueta `hotfix` (o rama `hotfix/`) | Producción. Después, un segundo PR de la misma rama a la base |
+   | Tipo Hotfix, etiqueta `hotfix` o rama `hotfix/` | Producción. Después, un segundo PR de la misma rama a la base |
    | Epic (rama `epic/`) | La base. Solo si la épica está completa: buscá sus hijos con `searchJiraIssuesUsingJql` (`parent = <CLAVE>`) y mostrale al CEO los que no estén terminados |
    | Con épica padre | La rama de esa épica |
    | Sin épica, o rama `chore/` | La base |

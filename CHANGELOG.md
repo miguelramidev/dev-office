@@ -8,6 +8,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.6.1] - 2026-10-13
+
+### Cambiado
+
+- `start-ticket` y `open-pr`: un ticket de tipo Hotfix se trata como hotfix (sale de producción y el PR va a producción y a la base), igual que uno con la etiqueta `hotfix`. Los tipos Flaw y Defect usan el prefijo `fix/`, como Error y Bug.
+- `open-pr`: solo ofrece mover el ticket a un estado al que el flujo de Jira permite pasar, sin saltear columnas.
+- `office` 0.5.1.
+
 ## [0.6.0] - 2026-10-13
 
 ### Agregado

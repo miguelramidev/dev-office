@@ -60,8 +60,8 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 
   | Lo que dice el ticket | Decide |
   | --- | --- |
-  | Tipo (Epic, Feature, Tarea, Error) | El prefijo: `epic/`, `feature/`, `task/`, `fix/` |
-  | Etiqueta `hotfix` | Prefijo `hotfix/`: sale de producción y el PR va a producción y a la rama base |
+  | Tipo (Epic, Feature, Tarea, Error o Flaw) | El prefijo: `epic/`, `feature/`, `task/`, `fix/` |
+  | Tipo Hotfix, o la etiqueta `hotfix` | Prefijo `hotfix/`: sale de producción y el PR va a producción y a la rama base |
   | Épica padre | Sale de la rama de la épica y el PR va a ella |
   | Sin épica | Sale de la rama base y el PR va a ella |
   | Subtarea | Se trabaja en la rama de su padre |

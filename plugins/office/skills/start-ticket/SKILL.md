@@ -6,7 +6,7 @@ argument-hint: <TICKET, por ejemplo DBA-70>
 
 Vas a preparar el trabajo del ticket `$ARGUMENTS`. Hablale al CEO en su idioma (si escribe en español, con voseo). Corré los comandos de a uno, sin unirlos con `&&` ni `;`.
 
-Todo sale de lo que dice el ticket en Jira: su tipo decide el prefijo de la rama, su épica decide de qué rama sale y a dónde va el PR, y la etiqueta `hotfix` decide si sale de producción. No adivines: si un dato del ticket no alcanza para decidir, preguntale al CEO.
+Todo sale de lo que dice el ticket en Jira: su tipo decide el prefijo de la rama, su épica decide de qué rama sale y a dónde va el PR, y un ticket de tipo Hotfix (o con la etiqueta `hotfix`) sale de producción. No adivines: si un dato del ticket no alcanza para decidir, preguntale al CEO.
 
 ## 1. Leé el flujo de trabajo del proyecto
 
@@ -21,8 +21,8 @@ En el `CLAUDE.md` del proyecto y en `.claude/rules/` buscá el flujo de trabajo.
 | Epic | `epic/` |
 | Feature, Historia, Story | `feature/` |
 | Tarea, Task, Request | `task/` |
-| Error, Bug | `fix/` |
-| Cualquiera con la etiqueta `hotfix` | `hotfix/` |
+| Error, Bug, Flaw, Defect | `fix/` |
+| Hotfix, o cualquiera con la etiqueta `hotfix` | `hotfix/` |
 | Subtarea, Subtask | sin rama propia: se trabaja en la rama de su padre |
 
 Para un tipo que no esté en la tabla, preguntale al CEO qué prefijo usar.
@@ -52,7 +52,7 @@ Mostrale al CEO un resumen corto: clave, título, tipo, estado, responsable, ép
 
 | Caso | Sale de | El PR va a |
 | --- | --- | --- |
-| Hotfix (etiqueta `hotfix`) | `origin/<producción>` | `<producción>`, y después un segundo PR de la misma rama a `<base>` |
+| Hotfix (tipo Hotfix o etiqueta `hotfix`) | `origin/<producción>` | `<producción>`, y después un segundo PR de la misma rama a `<base>` |
 | Epic | `origin/<base>` | `<base>`, cuando la épica está completa |
 | Con épica padre que ya tiene rama | `origin/epic/<CLAVE-ÉPICA>-...` | esa rama de épica |
 | Con épica padre que todavía no tiene rama | preguntale al CEO (ver abajo) | |
