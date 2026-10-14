@@ -63,6 +63,8 @@ ALLOW='[
   "Bash(gh pr view)", "Bash(gh pr view *)",
   "Bash(gh pr list *)", "Bash(gh pr diff *)",
   "Bash(gh pr checks)", "Bash(gh pr checks *)",
+  "Bash(gh run list)", "Bash(gh run list *)", "Bash(gh run view *)",
+  "Bash(gh workflow list)", "Bash(gh workflow view *)",
   "Bash(rm -r .qa)"
 ]'
 
@@ -71,11 +73,16 @@ ASK='[
   "Bash(git commit *)", "Bash(git push *)", "Bash(git checkout *)", "Bash(git reset *)",
   "Bash(npm install *)", "Bash(pnpm add *)", "Bash(yarn add *)", "Bash(bun add *)",
   "Bash(aws *)",
-  "Bash(gh pr create *)", "Bash(gh pr comment *)", "Bash(gh pr review *)", "Bash(gh api *)"
+  "Bash(gh pr create *)", "Bash(gh pr comment *)", "Bash(gh pr review *)", "Bash(gh api *)",
+  "Bash(gh workflow run *)", "Bash(gh run rerun *)", "Bash(gh run cancel *)",
+  "Bash(gh variable set *)", "Bash(gh variable delete *)",
+  "Bash(terraform apply *)", "Bash(pulumi up *)", "Bash(cdk deploy *)", "Bash(npx cdk deploy *)",
+  "Bash(kubectl *)", "Bash(ssh *)", "Bash(scp *)"
 ]'
 
 # Acciones prohibidas: leer secretos, forzar push, saltear hooks, borrados masivos,
-# mergear PRs (lo hace el CEO) y borrar repositorios.
+# mergear PRs (lo hace el CEO), borrar repositorios, tocar secretos de GitHub y
+# destruir infraestructura.
 # Las reglas con **/ cubren también los .env de subcarpetas (por ejemplo, en un monorepo).
 DENY='[
   "Read(./**/.env)", "Read(./**/.env.local)",
@@ -85,7 +92,9 @@ DENY='[
   "Bash(git push --force *)", "Bash(git push -f *)",
   "Bash(git commit --no-verify *)", "Bash(git push --no-verify *)",
   "Bash(rm -rf *)",
-  "Bash(gh pr merge *)", "Bash(gh repo delete *)"
+  "Bash(gh pr merge *)", "Bash(gh repo delete *)",
+  "Bash(gh secret set *)", "Bash(gh secret delete *)",
+  "Bash(terraform destroy *)", "Bash(pulumi destroy *)", "Bash(cdk destroy *)", "Bash(npx cdk destroy *)"
 ]'
 
 if [ ${#EXTRA_ALLOW[@]} -gt 0 ]; then

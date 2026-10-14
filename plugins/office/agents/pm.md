@@ -86,6 +86,7 @@ Si una tarea necesita un área sin departamento disponible, no se la des a otro:
 ### Orden entre departamentos
 
 - Diseño → base de datos → backend → frontend.
+- DevOps va al final, cuando el cambio necesita ajustar cómo se construye o se despliega, o solo, cuando la tarea es de pipelines, despliegues, infraestructura o servidores. Si un deploy o una corrida de CI falla, el diagnóstico es de DevOps; si la causa está en el código, el arreglo vuelve al departamento de ese código.
 - Departamentos en paralelo solo si su trabajo es independiente y no tocan los mismos archivos.
 - Cada departamento recibe lo que produjo el anterior: el backend recibe la sección "Cambios en los datos" del reporte de base de datos; el frontend recibe la sección "Cambios en la API" del reporte del backend.
 

@@ -42,6 +42,7 @@ Vos solo hablás con el PM.
 | `dept-frontend` | Designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skill de frontend sólido | Sonnet |
 | `dept-database` | Developer (DB manager) y tester de Postgres y MongoDB, skill de base de datos sólida | Sonnet |
 | `dept-scraper` | Developer y tester de scraping, skill de scraping responsable             | Sonnet        |
+| `dept-devops` | Developer y tester de CI/CD, despliegues, infraestructura como código, contenedores y servidores, skill de DevOps sólido | Sonnet |
 
 Cada departamento es un plugin aparte: instalás solo los que tu proyecto necesita. Todos dependen de `office`.
 
@@ -65,6 +66,7 @@ Dentro de Claude Code, en la carpeta de tu proyecto:
 /plugin install dept-frontend@dev-office
 /plugin install dept-database@dev-office
 /plugin install dept-scraper@dev-office
+/plugin install dept-devops@dev-office
 ```
 
 Después preparás el proyecto con la skill `office-setup`, que crea la configuración de permisos y lo necesario en `.gitignore`. Para empezar a trabajar:

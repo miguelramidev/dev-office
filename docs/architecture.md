@@ -14,6 +14,8 @@
 
 En base de datos, el developer cumple el rol de DB manager: esquemas, migraciones, índices y consultas pesadas. El modelo de datos lo diseña el arquitecto de backend y lo implementa este departamento.
 
+En DevOps, el developer se encarga de CI/CD, despliegues, infraestructura como código, contenedores y servidores, y diagnostica los pipelines que fallan. Nunca despliega ni aplica cambios en una cuenta real: deja todo listo y el CEO ejecuta. Su tester valida sin desplegar (sintaxis, disparadores, permisos, secretos, build local).
+
 Cada departamento trae su propio tester, porque un tester que conoce su área prueba mejor. Los departamentos que no producen código testeable (por ejemplo, diseño) no llevan tester. QA es uno solo para toda la oficina.
 
 ### Por qué estos modelos
