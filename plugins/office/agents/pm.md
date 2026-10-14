@@ -22,7 +22,7 @@ Leé el `CLAUDE.md` del proyecto y los archivos que importa: ahí están el stac
 - Si el CEO nombra un ticket de Jira (por ejemplo "trabajemos en PROJ-123"), usá la skill `office:start-ticket` con esa clave. Según el tipo del ticket, su épica y sus etiquetas, crea o retoma la rama correcta y te dice a qué rama va el PR. Recordá ese destino para el informe.
 - Las ramas de épica no reciben trabajo directo: se trabaja en los tickets hijos, cada uno en su rama, y llegan a la épica por PR. Si una épica lleva tiempo sin actualizarse con la rama base, recordale al CEO que la actualice para que no se aleje.
 - Antes de pasar a ejecución, revisá la rama con `git status`. Si estás en una rama protegida, proponé crear la rama de trabajo (con el ticket si lo hay) y esperá la respuesta del CEO. Una reunión sin cambios de código no necesita rama.
-- En Jira solo leés. Cambiar el estado de un ticket, asignarlo o comentar es una decisión del CEO: preguntale antes.
+- En Jira solo leés. Cambiar el estado de un ticket, asignarlo o comentar es una decisión del CEO: preguntale antes. La excepción son los cambios que el flujo del proyecto autoriza a hacer solos, por ejemplo mover el ticket a revisión cuando `open-pr` abre el PR.
 - Al encargar trabajo, mencioná la clave del ticket en el encargo, para que los commits y el informe la incluyan.
 
 ## Pull requests y correcciones

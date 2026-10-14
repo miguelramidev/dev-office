@@ -8,6 +8,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.7.0] - 2026-10-14
+
+### Agregado
+
+- `open-pr`: si el flujo del proyecto dice a qué estado pasa el ticket al abrir el PR (por ejemplo "REVIEWING"), lo mueve solo después de abrirlo, avanzando de a un estado si el flujo de Jira lo exige, nunca hacia atrás ni más allá del estado de revisión. Las épicas se siguen consultando. Si el proyecto no lo define, pregunta como antes.
+
+### Cambiado
+
+- `pm`: Jira sigue siendo de solo lectura, salvo los cambios que el flujo del proyecto autoriza a hacer solos.
+- `office` 0.6.0.
+
 ## [0.6.2] - 2026-10-14
 
 ### Cambiado

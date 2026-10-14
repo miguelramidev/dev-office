@@ -67,12 +67,12 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
   | Subtarea | Se trabaja en la rama de su padre |
 
   Las épicas son ramas de integración: reciben los PRs de sus tickets y, cuando están completas, se integran a la rama base. Conviene actualizarlas con la rama base seguido, para que no se alejen.
-- **Jira es de solo lectura para la oficina.** Cambiar el estado de un ticket, asignarlo o comentar lo decide el CEO.
+- **Jira es de solo lectura para la oficina.** Cambiar el estado de un ticket, asignarlo o comentar lo decide el CEO. La excepción es lo que el flujo del proyecto autoriza por escrito, como pasar el ticket a revisión al abrir el PR.
 - **La rama base, la de producción, los prefijos y el proyecto de Jira** van en el flujo de trabajo del proyecto (`CLAUDE.md` o `.claude/rules/`). Si el proyecto no los define, `start-ticket` usa los valores por defecto de la tabla.
 
 ## Pull requests y revisiones
 
-- **`open-pr`** abre el PR de la rama actual con `gh`: corre las verificaciones del proyecto, elige el destino con la misma tabla de `start-ticket` (la épica, la base o producción si es hotfix), arma el título y la descripción con la clave del ticket y se los muestra al CEO. Solo con su confirmación sube la rama y abre el PR. En un hotfix ofrece el segundo PR hacia la base.
+- **`open-pr`** abre el PR de la rama actual con `gh`: corre las verificaciones del proyecto, elige el destino con la misma tabla de `start-ticket` (la épica, la base o producción si es hotfix), arma el título y la descripción con la clave del ticket y se los muestra al CEO. Solo con su confirmación sube la rama y abre el PR. En un hotfix ofrece el segundo PR hacia la base. Si el flujo del proyecto lo define, después mueve el ticket al estado de revisión (por ejemplo, REVIEWING) sin preguntar, para que el CEO sepa qué tiene que revisar.
 - **`review-fixes`** junta lo que dejó la revisión: los hilos de comentarios sin resolver (con la API GraphQL de GitHub, que dice cuáles están resueltos o desactualizados), las reseñas, los checks que fallan y los commits que el CEO hizo a mano en la rama (los que no tienen la línea `Co-Authored-By: Claude`). Arma una lista, el CEO la confirma y el PM encarga cada punto al departamento que corresponde, con el ciclo de calidad de siempre. Las correcciones a mano del CEO son criterio: no se deshacen y se proponen para el resto del PR.
 - **Límites.** Commit, push, abrir PRs y comentar en GitHub piden confirmación (reglas `ask` de `office-setup`). Mergear un PR está prohibido para los agentes (regla `deny`): lo hace siempre el CEO. Los hilos de revisión los resuelve quien revisó.
 

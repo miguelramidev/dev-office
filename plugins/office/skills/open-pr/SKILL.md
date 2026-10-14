@@ -98,8 +98,21 @@ Mostrale: rama de origen → destino, título, descripción y la lista de commit
 
 ## 9. Jira
 
-No cambies el ticket por tu cuenta. Mirá a qué estados puede pasar ahora (`listJiraIssueTransitions`): si el flujo de Jira obliga a pasar por cada columna, solo se puede avanzar un paso. Preguntale al CEO si quiere moverlo al siguiente (por ejemplo "REVIEWING") y, si dice que sí, usá `transitionJiraIssue`. Nunca saltees estados.
+Fijate si el flujo de trabajo del proyecto (`CLAUDE.md` o `.claude/rules/`) dice a qué estado pasa el ticket al abrir el PR (por ejemplo, "al abrir el PR, el ticket pasa a REVIEWING").
+
+**Si lo dice, movelo sin preguntar:** el CEO ya lo autorizó en las reglas del proyecto, y así sabe qué tiene que revisar.
+
+1. Si el ticket ya está en ese estado o en uno posterior (según el orden de estados del proyecto), no lo toques.
+2. Mirá a qué estados puede pasar ahora con `listJiraIssueTransitions`. Si el estado de revisión está entre ellos, usá `transitionJiraIssue`.
+3. Si no está porque el flujo obliga a pasar por estados intermedios (por ejemplo, el ticket sigue en "por hacer" y primero tiene que pasar por "en curso"), avanzá de a un estado, siempre hacia adelante según el orden del proyecto y sin pasarte del de revisión. Como máximo 3 pasos.
+4. Si no podés llegar, no fuerces nada: decile al CEO en qué estado quedó el ticket y por qué no avanzó.
+5. Si es el PR de una épica completa, no la muevas sola: preguntale al CEO.
+6. En un hotfix, se mueve una sola vez, con el primer PR.
+
+**Si el proyecto no lo dice**, no cambies el ticket por tu cuenta: preguntale al CEO si lo mueve al siguiente estado y, si dice que sí, usá `transitionJiraIssue`.
+
+En ningún caso saltees estados ni muevas un ticket hacia atrás.
 
 ## 10. Cerrá
 
-En pocas líneas: el enlace al PR, origen → destino, el ticket, y que cuando el CEO deje comentarios de revisión, la skill `office:review-fixes` los lee y los corrige.
+En pocas líneas: el enlace al PR, origen → destino, el ticket y a qué estado pasó en Jira, y que cuando el CEO deje comentarios de revisión, la skill `office:review-fixes` los lee y los corrige.
