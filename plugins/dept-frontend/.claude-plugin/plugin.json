@@ -1,6 +1,6 @@
 {
   "name": "dept-frontend",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Departamento de frontend de dev-office: un designer de UI/UX que define pantallas y experiencia antes de programar, un developer de web (Next.js, React) y móvil (React Native) que las construye, y un tester que las prueba sin servicios reales.",
   "author": {
     "name": "Miguel Ramirez"

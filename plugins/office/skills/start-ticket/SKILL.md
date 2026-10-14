@@ -1,7 +1,7 @@
 ---
 name: start-ticket
-description: Empieza el trabajo de un ticket de Jira - lo trae con el servidor MCP de Atlassian y, según lo que diga el ticket (tipo, épica padre, etiquetas), crea o retoma la rama con el prefijo correcto desde la rama que corresponde (la épica, la rama base o la de producción) y dice a qué rama va el PR. Usar cuando el CEO pide trabajar en un ticket (por ejemplo "trabajemos en DBA-70") o antes de cualquier cambio si se está en una rama protegida.
-argument-hint: <TICKET, por ejemplo DBA-70>
+description: Empieza el trabajo de un ticket de Jira - lo trae con el servidor MCP de Atlassian y, según lo que diga el ticket (tipo, épica padre, etiquetas), crea o retoma la rama con el prefijo correcto desde la rama que corresponde (la épica, la rama base o la de producción) y dice a qué rama va el PR. Usar cuando el CEO pide trabajar en un ticket (por ejemplo "trabajemos en PROJ-123") o antes de cualquier cambio si se está en una rama protegida.
+argument-hint: <TICKET, por ejemplo PROJ-123>
 ---
 
 Vas a preparar el trabajo del ticket `$ARGUMENTS`. Hablale al CEO en su idioma (si escribe en español, con voseo). Corré los comandos de a uno, sin unirlos con `&&` ni `;`.
@@ -59,7 +59,7 @@ Mostrale al CEO un resumen corto: clave, título, tipo, estado, responsable, ép
 | Con épica padre que todavía no tiene rama | preguntale al CEO (ver abajo) | |
 | Sin épica | `origin/<base>` | `<base>` |
 
-Para encontrar la rama de la épica: `git fetch origin` y después `git branch --all --list "*epic/<CLAVE-ÉPICA>-*"`. Fijate que la clave sea exacta: `DBA-6-` no es `DBA-67-`.
+Para encontrar la rama de la épica: `git fetch origin` y después `git branch --all --list "*epic/<CLAVE-ÉPICA>-*"`. Fijate que la clave sea exacta: `PROJ-1-` no es `PROJ-12-`.
 
 Si la épica no tiene rama, preguntale al CEO:
 - **Crear primero la rama de la épica.** Volvé a correr esta skill con la clave de la épica y después con este ticket.
@@ -67,7 +67,7 @@ Si la épica no tiene rama, preguntale al CEO:
 
 ## 5. Creá o retomá la rama
 
-1. Armá el nombre: `<prefijo><CLAVE>-<resumen>`. La clave va tal cual (en mayúsculas) y el resumen es el título en minúsculas, sin acentos ni eñes, solo letras, números y guiones, de 6 palabras como máximo. Ejemplo: Feature DBA-70 "Manejo de productos en el carrito" → `feature/DBA-70-manejo-de-productos-en-el-carrito`.
+1. Armá el nombre: `<prefijo><CLAVE>-<resumen>`. La clave va tal cual (en mayúsculas) y el resumen es el título en minúsculas, sin acentos ni eñes, solo letras, números y guiones, de 6 palabras como máximo. Ejemplo: Feature PROJ-123 "Manejo de productos en el carrito" → `feature/PROJ-123-manejo-de-productos-en-el-carrito`.
 2. Fijate si ya existe una rama con esa clave: `git branch --all --list "*/<CLAVE>-*"`, con la clave exacta.
    - **Si existe**, cambiate a ella (`git switch <rama>`, sin el `remotes/origin/` si es remota) y avisale al CEO que retomás el trabajo existente. Si su prefijo no coincide con el tipo actual del ticket, avisale, pero no la renombres.
    - **Si no existe**, creala desde la rama de origen del paso 4: `git switch -c <rama> <origen>`.

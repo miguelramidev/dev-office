@@ -7,7 +7,7 @@
 # Uso:
 #   bash setup.sh [--mode acceptEdits|auto|default] [--timezone Zona/Ciudad] [--protected "main dev epic/*"] [--allow "Regla"]...
 # Ejemplo:
-#   bash setup.sh --mode acceptEdits --timezone America/Asuncion --allow "Bash(pnpm test)" --allow "Bash(pnpm test *)"
+#   bash setup.sh --mode acceptEdits --timezone America/Bogota --allow "Bash(pnpm test)" --allow "Bash(pnpm test *)"
 
 set -euo pipefail
 

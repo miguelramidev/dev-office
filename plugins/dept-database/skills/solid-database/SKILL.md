@@ -38,7 +38,7 @@ Una buena base de datos no pierde datos, no se bloquea en producción, no acepta
 
 ## 5. Tipos
 
-- **Dinero:** entero (`bigint` en Postgres, `Long` o `Decimal128` en MongoDB) en la unidad mínima de la moneda, con una columna o campo para la moneda. Nunca `float` ni `real`. El guaraní no tiene centavos.
+- **Dinero:** entero (`bigint` en Postgres, `Long` o `Decimal128` en MongoDB) en la unidad mínima de la moneda, con una columna o campo para la moneda. Nunca `float` ni `real`. Si la moneda no tiene centavos, la unidad mínima es la entera.
 - **Fechas:** `timestamptz` en Postgres, siempre en UTC. En MongoDB, tipo `Date`, nunca texto.
 - **Texto:** `text` en Postgres salvo que haga falta un límite real. Búsquedas sin distinguir mayúsculas ni acentos con la herramienta adecuada (`citext`, `unaccent`, collation o índices de texto), no con `lower()` sin índice.
 - **Estados y categorías:** un `CHECK`, un enum o una tabla de referencia, no texto libre.

@@ -29,7 +29,7 @@ Un buen backend no miente, no pierde datos, no expone secretos y no genera costo
 
 ## 4. Dinero, números y fechas
 
-- Dinero como entero en la unidad mínima de la moneda, siempre junto a su moneda (`{ amount: 15900, currency: "PYG" }`). Nunca decimales flotantes. El guaraní no tiene centavos: la unidad mínima es el guaraní entero.
+- Dinero como entero en la unidad mínima de la moneda, siempre junto a su moneda (`{ amount: 1590, currency: "USD" }` son 15,90 dólares). Nunca decimales flotantes. Si la moneda no tiene centavos (por ejemplo el yen), la unidad mínima es la entera. La moneda y sus reglas las define el `CLAUDE.md` del proyecto.
 - Fechas guardadas en UTC con zona horaria explícita (ISO 8601). La conversión a la hora local se hace al mostrar. Las tareas programadas declaran en qué zona horaria corren.
 - Los cálculos que redondean definen cómo redondean y en qué paso.
 

@@ -2,7 +2,7 @@
 # Hook SubagentStart/SubagentStop de dev-office: registra cuándo empieza y termina
 # cada agente en .claude/office-activity.log. Nunca bloquea (siempre sale con 0).
 # Zona horaria: la del sistema, o la de la variable OFFICE_TIMEZONE si está definida
-# (por ejemplo, America/Asuncion).
+# (por ejemplo, America/Bogota).
 
 command -v jq >/dev/null 2>&1 || exit 0
 

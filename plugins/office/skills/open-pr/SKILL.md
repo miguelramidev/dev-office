@@ -33,7 +33,7 @@ En `gh auth login`: GitHub.com, HTTPS, usar gh para git, iniciar sesión con el 
 
 1. `git status`. Si hay cambios sin commitear, frená: mostrale qué archivos son y preguntale si los commitea (con su aprobación) o los deja fuera del PR.
 2. Anotá la rama actual. Si es la base o la de producción, frená: no se abre un PR desde ahí. Desde una rama de épica solo se abre el PR de la épica completa (paso 4).
-3. Buscá la clave del ticket en el nombre de la rama (letras, guion, número: `feature/DBA-70-...` → `DBA-70`). Las ramas `chore/` no tienen ticket.
+3. Buscá la clave del ticket en el nombre de la rama (letras, guion, número: `feature/PROJ-123-...` → `PROJ-123`). Las ramas `chore/` no tienen ticket.
 4. Fijate si ya hay un PR abierto para esta rama: `gh pr list --head <rama> --state open`. Si existe, mostrale el enlace al CEO y frená: los cambios nuevos se suben a la misma rama y el PR se actualiza solo.
 
 ## 4. Decidí la rama de destino
@@ -67,7 +67,7 @@ Mirá qué se va a integrar:
 
 Si no hay commits nuevos respecto del destino, frená y decíselo.
 
-**Título:** con el formato de los commits del proyecto y la clave del ticket. Por ejemplo `feat(api): add product handling to cart (DBA-70)`.
+**Título:** con el formato de los commits del proyecto y la clave del ticket. Por ejemplo `feat(api): add product handling to cart (PROJ-123)`.
 
 **Descripción**, en el idioma de la documentación del proyecto, corta:
 

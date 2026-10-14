@@ -45,7 +45,7 @@ block() {
   {
     echo "dev-office: $1"
     echo "Las ramas protegidas de este proyecto son: $PROTECTED."
-    echo "Trabajá en una rama propia: usá la skill office:start-ticket con el ticket (por ejemplo, DBA-70) o creala con 'git switch -c <rama>' desde la rama base."
+    echo "Trabajá en una rama propia: usá la skill office:start-ticket con el ticket (por ejemplo, PROJ-123) o creala con 'git switch -c <rama>' desde la rama base."
   } >&2
   exit 2
 }

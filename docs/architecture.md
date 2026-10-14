@@ -98,8 +98,11 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 | Hooks de protección y de registro de actividad       | Permisos y modo de permisos (`.claude/settings.json`) |
 | Skills genéricas (por ejemplo, scraping responsable) | Skills propias del proyecto                           |
 | Plantilla de los documentos de diseño                | Los diseños aprobados (`docs/design/`)                |
+| Valores por defecto y ejemplos genéricos (`PROJ-123`) | Moneda, idioma, zona horaria, clave de Jira, ramas protegidas y convenciones |
 
 Los agentes leen el `CLAUDE.md` del proyecto (y lo que este importe) antes de trabajar. Así el mismo equipo respeta las reglas de cada proyecto.
+
+**dev-office no se ata a ningún proyecto.** Nada de lo que está en los plugins nombra un proyecto, una empresa, un país, una moneda ni un stack concreto como obligatorio: lo propio de cada proyecto va en su `CLAUDE.md` y en `.claude/`. Los ejemplos usan valores genéricos (`PROJ-123`, `USD`, `main`/`dev`).
 
 ## Limitaciones de Claude Code que condicionan el diseño
 

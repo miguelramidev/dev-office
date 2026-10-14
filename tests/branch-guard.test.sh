@@ -51,32 +51,32 @@ check 2 "push origin desde dev"                       "$(bash_cmd 'git push orig
 check 0 "pull en dev"                                 "$(bash_cmd 'git pull origin dev')"
 check 0 "status en dev"                               "$(bash_cmd 'git status')"
 check 0 "tests en dev"                                "$(bash_cmd 'pnpm test')"
-check 0 "crear rama desde dev"                        "$(bash_cmd 'git switch -c DBA-70-alertas origin/dev')"
+check 0 "crear rama desde dev"                        "$(bash_cmd 'git switch -c PROJ-123-alertas origin/dev')"
 
-git -C "$REPO" switch -q -c DBA-70-alertas
+git -C "$REPO" switch -q -c PROJ-123-alertas
 check 0 "editar en rama de trabajo"                   "$(edit "$REPO/src/app.ts")"
 check 0 "commit en rama de trabajo"                   "$(bash_cmd 'git add -A && git commit -m "feat: x"')"
-check 0 "push de la rama de trabajo"                  "$(bash_cmd 'git push -u origin DBA-70-alertas')"
+check 0 "push de la rama de trabajo"                  "$(bash_cmd 'git push -u origin PROJ-123-alertas')"
 check 0 "push sin argumentos de la rama de trabajo"   "$(bash_cmd 'git push')"
 check 0 "rama con 'dev' en el nombre"                 "$(bash_cmd 'git push origin feature/dev-tools')"
 check 2 "push hacia dev"                              "$(bash_cmd 'git push origin dev')"
 check 2 "push HEAD:main"                              "$(bash_cmd 'git push origin HEAD:main')"
-check 2 "push forzado a refs/heads/dev"               "$(bash_cmd 'git push origin +DBA-70-alertas:refs/heads/dev')"
+check 2 "push forzado a refs/heads/dev"               "$(bash_cmd 'git push origin +PROJ-123-alertas:refs/heads/dev')"
 check 2 "push --all"                                  "$(bash_cmd 'git push --all origin')"
 check 2 "push hacia main después de otro comando"     "$(bash_cmd 'pnpm test && git push origin main')"
 
 # --- Patrones: ramas de épica ---------------------------------------------------------
 export OFFICE_PROTECTED_BRANCHES="main dev epic/*"
 mkdir -p "$REPO/epic"   # una carpeta con ese nombre no tiene que afectar al patrón
-git -C "$REPO" switch -q -c epic/DBA-67-carrito dev
+git -C "$REPO" switch -q -c epic/PROJ-100-carrito dev
 check 2 "patrón: editar en una épica"                 "$(edit "$REPO/src/app.ts")"
 check 2 "patrón: commit en una épica"                 "$(bash_cmd 'git commit -m x')"
-check 2 "patrón: push desde una épica"                "$(bash_cmd 'git push -u origin epic/DBA-67-carrito')"
-check 0 "patrón: crear una feature desde la épica"    "$(bash_cmd 'git switch -c feature/DBA-70-productos origin/epic/DBA-67-carrito')"
-git -C "$REPO" switch -q -c feature/DBA-70-productos
+check 2 "patrón: push desde una épica"                "$(bash_cmd 'git push -u origin epic/PROJ-100-carrito')"
+check 0 "patrón: crear una feature desde la épica"    "$(bash_cmd 'git switch -c feature/PROJ-123-productos origin/epic/PROJ-100-carrito')"
+git -C "$REPO" switch -q -c feature/PROJ-123-productos
 check 0 "patrón: editar en una feature"               "$(edit "$REPO/src/app.ts")"
-check 0 "patrón: push de la feature"                  "$(bash_cmd 'git push -u origin feature/DBA-70-productos')"
-check 2 "patrón: push hacia una épica"                "$(bash_cmd 'git push origin HEAD:epic/DBA-67-carrito')"
+check 0 "patrón: push de la feature"                  "$(bash_cmd 'git push -u origin feature/PROJ-123-productos')"
+check 2 "patrón: push hacia una épica"                "$(bash_cmd 'git push origin HEAD:epic/PROJ-100-carrito')"
 check 0 "patrón: rama que solo contiene 'epic'"       "$(bash_cmd 'git push origin feature/epic-ideas')"
 rmdir "$REPO/epic"
 

@@ -33,7 +33,7 @@ Tu trabajo es encontrar errores, no confirmar que todo anda. Pensá como un usua
 - **Estados:** cargando, vacío, error (con su acción de reintentar) y sin conexión. Cada uno muestra lo que dice el diseño.
 - **Respuestas raras de la API:** error 500, 401 (sesión vencida), timeout, lista vacía, campos faltantes o nulos, textos muy largos. La interfaz no se rompe ni muestra `undefined`, `NaN` o `null`.
 - **Formularios:** validación con el mensaje al lado del campo, doble toque en enviar (se envía una sola vez), error del servidor sin perder lo escrito.
-- **Dinero y fechas:** guaraníes sin decimales y con separador de miles (`Gs. 15.900`), montos grandes, cero; fechas en hora local.
+- **Dinero y fechas:** el formato de la moneda y la región del proyecto (decimales, separador de miles, símbolo), montos grandes, cero; fechas en hora local.
 - **Interacciones:** lo que pasa al tocar, volver, cambiar de pantalla a mitad de una carga.
 - **Textos:** los del diseño, exactos.
 

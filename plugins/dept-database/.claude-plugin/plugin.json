@@ -1,6 +1,6 @@
 {
   "name": "dept-database",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Departamento de base de datos de dev-office: un developer que se encarga de esquemas, migraciones, índices y consultas en Postgres y MongoDB, y un tester que prueba las migraciones y la integridad de los datos sin tocar bases reales.",
   "author": {
     "name": "Miguel Ramirez"
