@@ -8,6 +8,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.8.0] - 2026-10-14
+
+### Agregado
+
+- Plugin `dept-devops` (0.1.0), depende de `office`:
+  - Agente `developer` (Sonnet): CI/CD (GitHub Actions y similares), despliegues por entorno, infraestructura como código, contenedores y procesos en servidores, y diagnóstico de pipelines y deploys que fallan leyendo sus logs (`gh run view --log-failed`). Nunca despliega, aplica infraestructura, entra a servidores ni toca valores de secretos: deja todo listo y le dice al CEO qué ejecutar.
+  - Agente `tester` (Sonnet): valida sin desplegar ni usar credenciales reales: sintaxis, disparadores, permisos, manejo de secretos, inyección en `run:`, versiones fijadas, build local y scripts.
+  - Skill `solid-devops`: lo que nunca se hace, pipelines reproducibles, seguridad de GitHub Actions, despliegues con aprobación y vuelta atrás, migraciones en el despliegue, infraestructura como código, contenedores, procesos en servidores, observabilidad, costos y cómo diagnosticar un pipeline que falla.
+- Skills de la comunidad: las de HashiCorp para Terraform y Packer, recomendadas por `office-setup` cuando el proyecto tiene archivos `*.tf`.
+
+### Cambiado
+
+- `pm`: DevOps va al final (o solo, para tareas de pipelines e infraestructura) y diagnostica los deploys y corridas de CI que fallan.
+- `office-setup`: permite ver las corridas de GitHub Actions; disparar o re-ejecutar workflows, cambiar variables de GitHub, aplicar infraestructura, `kubectl` y SSH piden confirmación; cambiar secretos de GitHub y destruir infraestructura quedan prohibidos.
+- `office` 0.7.0.
+
 ## [0.7.0] - 2026-10-14
 
 ### Agregado

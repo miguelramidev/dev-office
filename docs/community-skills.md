@@ -1,6 +1,6 @@
 # Skills de la comunidad
 
-Las skills de cada departamento de dev-office (`solid-backend`, `solid-frontend`, `solid-database`, `responsible-scraping`) definen **cómo trabaja la oficina**: qué se puede hacer, qué necesita aprobación y qué se prueba. Para el detalle técnico de cada tecnología, los agentes pueden usar además las skills oficiales que publican los creadores de esa tecnología.
+Las skills de cada departamento de dev-office (`solid-backend`, `solid-frontend`, `solid-database`, `responsible-scraping`, `solid-devops`) definen **cómo trabaja la oficina**: qué se puede hacer, qué necesita aprobación y qué se prueba. Para el detalle técnico de cada tecnología, los agentes pueden usar además las skills oficiales que publican los creadores de esa tecnología.
 
 ## Por qué no vienen incluidas
 
@@ -19,6 +19,7 @@ Solo skills de los creadores oficiales de cada tecnología, con mantenimiento ac
 | React y Next.js | `vercel-react-best-practices`, `vercel-composition-patterns` | [Vercel](https://github.com/vercel-labs/agent-skills), MIT | frontend |
 | React Native | `vercel-react-native-skills` | [Vercel](https://github.com/vercel-labs/agent-skills), MIT | frontend |
 | Expo | `expo-router`, `expo-data-fetching` y otras | [Expo](https://github.com/expo/skills), MIT | frontend |
+| Terraform y Packer | `terraform-code-generation`, `terraform-module-generation` y otras | [HashiCorp](https://github.com/hashicorp/agent-skills), MPL 2.0 | DevOps |
 
 La skill de Postgres es de Supabase, pero sirve para cualquier Postgres: no hace falta usar Supabase.
 
@@ -41,6 +42,10 @@ npx skills add vercel-labs/agent-skills
 # Expo
 claude plugin marketplace add expo/skills
 claude plugin install expo@expo-plugins --scope project
+
+# Terraform
+claude plugin marketplace add hashicorp/agent-skills
+claude plugin install terraform-code-generation@hashicorp --scope project
 ```
 
 Con `--scope project` quedan registradas en `.claude/settings.json`, así que cualquiera que trabaje en el proyecto sabe cuáles usa.

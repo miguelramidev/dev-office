@@ -30,6 +30,11 @@
       "name": "dept-scraper",
       "source": "./plugins/dept-scraper",
       "description": "Departamento de scraping: developer y tester especializados en scrapers responsables."
+    },
+    {
+      "name": "dept-devops",
+      "source": "./plugins/dept-devops",
+      "description": "Departamento de DevOps: un developer de CI/CD, despliegues, infraestructura como código, contenedores y servidores, que también diagnostica los pipelines que fallan, y un tester que lo valida todo sin desplegar ni tocar la nube."
     }
   ]
 }

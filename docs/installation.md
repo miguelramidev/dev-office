@@ -18,6 +18,7 @@ claude plugin install dept-backend@dev-office --scope project
 claude plugin install dept-frontend@dev-office --scope project
 claude plugin install dept-database@dev-office --scope project
 claude plugin install dept-scraper@dev-office --scope project
+claude plugin install dept-devops@dev-office --scope project
 ```
 
 - `--scope project` registra los plugins en `.claude/settings.json` del proyecto. Así queda documentado en git qué departamentos usa el proyecto.
