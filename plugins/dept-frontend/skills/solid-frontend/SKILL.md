@@ -39,8 +39,8 @@ Toda pantalla o componente que depende de datos maneja todos sus estados, no sol
 
 ## 5. Dinero, números y fechas
 
-- El dinero llega de la API como entero con su moneda y se muestra con formato local (`Intl.NumberFormat`). El guaraní va sin decimales: `Gs. 15.900`. Nunca se calcula dinero con decimales flotantes en el cliente.
-- Números con el separador local (en Paraguay, punto para miles y coma para decimales).
+- El dinero llega de la API como entero con su moneda y se muestra con formato local (`Intl.NumberFormat` con el idioma y la moneda del proyecto). Las monedas sin centavos se muestran sin decimales. Nunca se calcula dinero con decimales flotantes en el cliente.
+- Números con los separadores de la región del proyecto (según el país, el punto o la coma separan miles o decimales). El `CLAUDE.md` del proyecto dice cuál usar.
 - Las fechas llegan en UTC y se muestran en la hora local del usuario, con un formato claro ("hace 2 horas", "lun 14 oct").
 
 ## 6. Accesibilidad
@@ -99,7 +99,7 @@ Estas reglas mandan sobre las skills de la comunidad en seguridad, aprobaciones 
 - [ ] Estados de cargando, vacío, error y sin conexión resueltos.
 - [ ] Datos por el cliente de API, con tipos del contrato; sin lógica de negocio en el cliente.
 - [ ] Formularios sin doble envío y con errores al lado del campo.
-- [ ] Dinero y fechas con formato local; guaraní sin decimales.
+- [ ] Dinero y fechas con el formato de la región del proyecto; monedas sin centavos, sin decimales.
 - [ ] Accesible con teclado, lector de pantalla y áreas táctiles correctas.
 - [ ] Sin secretos en el navegador ni en la app.
 - [ ] Textos claros, en el idioma del proyecto.

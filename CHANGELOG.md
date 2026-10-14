@@ -8,6 +8,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.6.2] - 2026-10-14
+
+### Cambiado
+
+- dev-office queda independiente de cualquier proyecto: los ejemplos de tickets usan `PROJ-123`, la zona horaria de ejemplo es genérica, y las reglas de dinero de `solid-backend`, `solid-frontend`, `solid-database` y el tester de frontend ya no nombran una moneda ni un país (la moneda y el formato los define el `CLAUDE.md` de cada proyecto).
+- `docs/architecture.md` y `CLAUDE.md` del repositorio: la regla de que nada en los plugins se ata a un proyecto.
+- Versiones: `office` 0.5.2, `dept-backend` 0.1.2, `dept-frontend` 0.1.2, `dept-database` 0.1.1.
+
 ## [0.6.1] - 2026-10-13
 
 ### Cambiado

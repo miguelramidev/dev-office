@@ -59,7 +59,7 @@ Al final corré las verificaciones del proyecto (lint, typecheck y tests), de a 
 
 Mostrale al CEO qué cambió (`git diff --stat`) y preguntale si commiteás y subís. Si dice que sí:
 
-- Un commit con el formato del proyecto y la clave del ticket, por ejemplo `fix(api): address review comments (DBA-70)`. Si los cambios son de temas distintos, un commit por tema.
+- Un commit con el formato del proyecto y la clave del ticket, por ejemplo `fix(api): address review comments (PROJ-123)`. Si los cambios son de temas distintos, un commit por tema.
 - `git push`. El PR se actualiza solo.
 
 ## 7. Respuestas en el PR, solo con permiso

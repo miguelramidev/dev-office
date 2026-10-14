@@ -22,13 +22,13 @@ Los cambios los hace el script `setup.sh` que está en la misma carpeta que este
 
 4. **Preguntá al CEO:**
    - **Modo de permisos:** `acceptEdits` (recomendado: los agentes editan archivos sin preguntar; los comandos fuera de la lista se consultan), `auto` (un clasificador aprueba los comandos razonables; solo si su cuenta lo tiene disponible) o `default` (todo se consulta).
-   - **Zona horaria** del registro de actividad (opcional, por ejemplo `America/Asuncion`). Si no responde, se usa la del sistema.
+   - **Zona horaria** del registro de actividad (opcional, por ejemplo `America/Bogota`). Si no responde, se usa la del sistema.
    - **Ramas protegidas:** en cuáles nunca se trabaja directamente. Acepta nombres y patrones, por ejemplo `main dev epic/*` si usan ramas de épica. Si no responde, se protegen `main` y `master`. Mirá las ramas del remoto (`git branch --all --list *`) para proponerle las que correspondan.
 
 5. **Ejecutá el script una sola vez**, con las respuestas. Pasá cada regla extra con su propio `--allow`, entre comillas:
 
 ```bash
-   bash <carpeta de esta skill>/setup.sh --mode acceptEdits --timezone America/Asuncion --protected "main dev epic/*" --allow "Bash(pnpm test)" --allow "Bash(pnpm test *)"
+   bash <carpeta de esta skill>/setup.sh --mode acceptEdits --timezone America/Bogota --protected "main dev epic/*" --allow "Bash(pnpm test)" --allow "Bash(pnpm test *)"
 ```
 
 Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos a mano.
@@ -59,7 +59,7 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
      ```
 
      Si `.mcp.json` ya existe, agregá solo esa entrada sin tocar las demás.
-   - Pedile la clave del proyecto de Jira (por ejemplo `DBA`), la rama base (por ejemplo `dev`), la de producción (por ejemplo `main`), si usan ramas de épica y si los prefijos por tipo de ticket de `start-ticket` (`epic/`, `feature/`, `task/`, `fix/`, `hotfix/`) le sirven. Proponé agregar esos datos a una sección "Flujo de trabajo" del `CLAUDE.md` (o a `.claude/rules/git-workflow.md`) y mostrale el texto antes de escribirlo.
+   - Pedile la clave del proyecto de Jira (por ejemplo `PROJ`), la rama base (por ejemplo `dev`), la de producción (por ejemplo `main`), si usan ramas de épica y si los prefijos por tipo de ticket de `start-ticket` (`epic/`, `feature/`, `task/`, `fix/`, `hotfix/`) le sirven. Proponé agregar esos datos a una sección "Flujo de trabajo" del `CLAUDE.md` (o a `.claude/rules/git-workflow.md`) y mostrale el texto antes de escribirlo.
    - Cada persona inicia sesión en Jira una vez con `/mcp`: servidor `atlassian`, opción de autenticar.
 
 9. **Cerrá con los próximos pasos:**

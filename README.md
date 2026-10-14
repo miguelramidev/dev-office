@@ -29,7 +29,7 @@ Una oficina de desarrollo para [Claude Code](https://code.claude.com): vos sos e
 
 Vos solo hablás con el PM.
 
-**Ramas y tickets.** Nunca se trabaja sobre las ramas protegidas del proyecto (por ejemplo `main`, `dev` y las `epic/*`): un hook bloquea las ediciones, los commits y los pushes ahí. Si usás Jira, decile al PM "trabajemos en DBA-70" (o usá `/office:start-ticket DBA-70`). Según el tipo del ticket, su épica y sus etiquetas, crea la rama correcta (por ejemplo `feature/DBA-70-<resumen>` desde la rama de su épica) y te dice a qué rama va el PR.
+**Ramas y tickets.** Nunca se trabaja sobre las ramas protegidas del proyecto (por ejemplo `main`, `dev` y las `epic/*`): un hook bloquea las ediciones, los commits y los pushes ahí. Si usás Jira, decile al PM "trabajemos en PROJ-123" (o usá `/office:start-ticket PROJ-123`). Según el tipo del ticket, su épica y sus etiquetas, crea la rama correcta (por ejemplo `feature/PROJ-123-<resumen>` desde la rama de su épica) y te dice a qué rama va el PR.
 
 **Pull requests y revisiones.** Con el trabajo terminado, pedile al PM "abrí el PR" (o usá `/office:open-pr`): corre las verificaciones, elige el destino según el ticket y te muestra el PR antes de abrirlo. Si después dejás comentarios en el PR o corregís algo a mano, decile "revisá mis correcciones del PR" (o `/office:review-fixes`): lee los comentarios sin resolver, los checks y tus commits, y los corrige el departamento que corresponde. Nada se sube ni se publica sin tu confirmación, y los PRs los mergeás vos. Necesita [`gh`](https://cli.github.com/) con sesión iniciada.
 

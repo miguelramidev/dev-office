@@ -1,6 +1,6 @@
 {
   "name": "dept-backend",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Departamento de backend de dev-office: un arquitecto que diseña la API y la estructura antes de programar, un developer que la implementa y un tester que la prueba sin servicios reales.",
   "author": {
     "name": "Miguel Ramirez"
