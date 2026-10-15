@@ -6,7 +6,9 @@
 | --------- | ----------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------- |
 | CEO       | Vos                     | —      | Decide qué se hace. Solo habla con el PM.                                                                                   |
 | PM        | `office:pm`             | Opus   | Conversa con el CEO, planifica, activa departamentos, coordina el ciclo de calidad y entrega el informe. No escribe código. |
-| Arquitecto | `dept-backend:architect` | Opus | Diseña la API, el flujo de datos y los cambios al modelo antes de programar. Escribe en `docs/design/`. No escribe código.  |
+| Arquitecto de backend | `dept-backend:architect` | Opus | Diseña la API, el flujo de datos y los cambios al modelo antes de programar. Escribe en `docs/design/`. No escribe código.  |
+| Arquitecto de frontend | `dept-frontend:architect` | Opus | Diseña la parte técnica del front: estructura, rutas, estado, datos y caché, código compartido entre web y móvil, rendimiento y errores. Escribe en `docs/design/`. No escribe código. |
+| Arquitecto de DevOps | `dept-devops:architect` | Opus | Diseña entornos, pipelines, despliegues, credenciales, infraestructura y vuelta atrás. Escribe en `docs/design/`. No escribe código ni configuración. |
 | Designer  | `dept-frontend:designer` | Sonnet | Diseña flujos, pantallas, estados y textos de la web y la app móvil antes de programar. Escribe en `docs/design/`. No escribe código. |
 | Developer | `dept-<área>:developer` | Sonnet | Escribe el código de su área siguiendo las reglas del proyecto y el diseño aprobado. No escribe tests.                     |
 | Tester    | `dept-<área>:tester`    | Sonnet | Escribe y corre los tests de su área. No toca código de producción.                                                         |
@@ -22,7 +24,7 @@ Cada departamento trae su propio tester, porque un tester que conoce su área pr
 
 - **PM en Opus:** razona con el CEO y coordina; un error de planificación se multiplica en todos los departamentos.
 - **QA en Opus:** es el último filtro antes de que el código llegue al proyecto.
-- **Arquitecto en Opus:** un mal diseño se multiplica en todo lo que se construye encima, igual que un mal plan del PM.
+- **Arquitectos en Opus** (backend, frontend y DevOps): un mal diseño se multiplica en todo lo que se construye encima, igual que un mal plan del PM. Trabajan pocas veces, así que el costo extra es chico.
 - **Designer en Sonnet:** sus decisiones son más fáciles de corregir (un texto, una pantalla) y el CEO las revisa a ojo antes de construir.
 - **Developers y testers en Sonnet:** siguen instrucciones detalladas con buena calidad y a menor costo.
 - **Haiku no se usa para código:** con código de varios archivos y muchas reglas se equivoca más, y cada error cuesta una vuelta completa developer → tester → QA. Queda para tareas mecánicas futuras.

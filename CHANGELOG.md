@@ -8,6 +8,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.9.0] - 2026-10-15
+
+### Agregado
+
+- `dept-devops` (0.2.0): agente `architect` (Opus). Diseña entornos, pipelines de CI/CD, estrategia de despliegue y de vuelta atrás, credenciales y secretos, infraestructura, migraciones en el despliegue, observabilidad y costos en `docs/design/`, con la lista de acciones que tiene que hacer el CEO. Puede leer las corridas de GitHub Actions; no escribe código ni configuración.
+- `dept-frontend` (0.2.0): agente `architect` (Opus). Diseña la parte técnica del front (estructura, rutas, estado, datos y caché, código compartido entre web y móvil, rendimiento, errores y sin conexión, seguridad del cliente) partiendo del diseño de experiencia del designer.
+
+### Cambiado
+
+- `pm` (`office` 0.7.1): fase de diseño con el orden arquitecto de backend → designer → arquitecto de frontend → arquitecto de DevOps, cada uno con los diseños anteriores. Definir o cambiar cómo se despliega el proyecto pasa por diseño.
+- `designer`: define la experiencia; la parte técnica es del arquitecto de frontend.
+
 ## [0.8.0] - 2026-10-14
 
 ### Agregado

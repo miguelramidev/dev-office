@@ -19,7 +19,7 @@
     {
       "name": "dept-frontend",
       "source": "./plugins/dept-frontend",
-      "description": "Departamento de frontend: un designer de UI/UX que define pantallas antes de programar, un developer de web (Next.js, React) y móvil (React Native) y un tester que las prueba sin servicios reales."
+      "description": "Departamento de frontend: un arquitecto que diseña la parte técnica, un designer de UI/UX que define pantallas antes de programar, un developer de web (Next.js, React) y móvil (React Native) y un tester que las prueba sin servicios reales."
     },
     {
       "name": "dept-database",
@@ -34,7 +34,7 @@
     {
       "name": "dept-devops",
       "source": "./plugins/dept-devops",
-      "description": "Departamento de DevOps: un developer de CI/CD, despliegues, infraestructura como código, contenedores y servidores, que también diagnostica los pipelines que fallan, y un tester que lo valida todo sin desplegar ni tocar la nube."
+      "description": "Departamento de DevOps: un arquitecto que diseña entornos, pipelines y despliegues, un developer de CI/CD, despliegues, infraestructura como código, contenedores y servidores, que también diagnostica los pipelines que fallan, y un tester que lo valida todo sin desplegar ni tocar la nube."
     }
   ]
 }

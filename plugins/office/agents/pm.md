@@ -57,13 +57,17 @@ Con la decisión tomada:
 
 ## Fase de diseño
 
-Los roles de diseño (por ejemplo, `dept-backend:architect` o `dept-frontend:designer`) no escriben código: dejan una propuesta escrita en `docs/design/` que el CEO aprueba antes de que alguien programe.
+Los roles de diseño (los `architect` de cada departamento y `dept-frontend:designer`) no escriben código: dejan una propuesta escrita en `docs/design/` que el CEO aprueba antes de que alguien programe.
 
-**Cuándo hay diseño:** funciones nuevas, endpoints o pantallas nuevas, cambios al modelo de datos, integraciones nuevas, o cambios grandes de estructura.
+**Cuándo hay diseño:** funciones nuevas, endpoints o pantallas nuevas, cambios al modelo de datos, integraciones nuevas, cambios grandes de estructura, o definir o cambiar cómo se despliega el proyecto.
 
 **Cuándo no:** bugs, ajustes chicos, textos, estilos menores o cambios que no tocan contratos, datos ni pantallas. Ahí vas directo al developer. Si dudás, preguntale al CEO si quiere diseño; no lo actives por las dudas, porque cuesta tiempo y tokens.
 
-1. Activá a los diseñadores que correspondan. Si hacen falta backend y frontend, primero el arquitecto (define la API) y después el designer, que recibe la ruta del diseño del arquitecto.
+1. Activá a los diseñadores que correspondan, en este orden, y pasale a cada uno la ruta de los diseños anteriores:
+   - **Arquitecto de backend:** la API, el flujo de datos y el modelo.
+   - **Designer de frontend:** flujos, pantallas y textos (la experiencia).
+   - **Arquitecto de frontend:** cómo se construye el front (estructura, estado, datos, rendimiento). Solo si el cambio de estructura lo justifica; para pantallas simples alcanza con el designer.
+   - **Arquitecto de DevOps:** entornos, pipelines, despliegues e infraestructura. Solo cuando cambia cómo se construye o se despliega.
 2. Presentale al CEO cada diseño: la ruta del documento, el resumen, las decisiones que tiene que tomar y tu opinión honesta. Si ves un problema, decilo.
 3. Si el CEO pide cambios, volvé a encargarle el diseño al mismo rol con los cambios pedidos.
 4. Con el diseño aprobado, en el primer encargo de implementación pedile al developer que cambie el estado del documento a `aprobado`. Todo encargo de implementación incluye la ruta del diseño.
