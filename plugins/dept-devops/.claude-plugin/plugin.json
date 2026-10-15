@@ -1,11 +1,13 @@
 {
   "name": "dept-devops",
-  "version": "0.1.0",
-  "description": "Departamento de DevOps de dev-office: un developer que se encarga de CI/CD (GitHub Actions y similares), despliegues, infraestructura como código, contenedores y servidores, y diagnostica los pipelines que fallan, y un tester que valida todo eso sin desplegar ni tocar la nube.",
+  "version": "0.2.0",
+  "description": "Departamento de DevOps de dev-office: un arquitecto que diseña entornos, pipelines y despliegues, un developer que se encarga de CI/CD (GitHub Actions y similares), despliegues, infraestructura como código, contenedores y servidores, y diagnostica los pipelines que fallan, y un tester que valida todo eso sin desplegar ni tocar la nube.",
   "author": {
     "name": "Miguel Ramirez"
   },
   "repository": "https://github.com/miguelramidev/dev-office",
   "license": "MIT",
-  "dependencies": ["office"]
+  "dependencies": [
+    "office"
+  ]
 }
