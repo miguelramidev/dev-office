@@ -72,6 +72,7 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 
   Las épicas son ramas de integración: reciben los PRs de sus tickets y, cuando están completas, se integran a la rama base. Conviene actualizarlas con la rama base seguido, para que no se alejen.
 - **Jira es de solo lectura para la oficina.** Cambiar el estado de un ticket, asignarlo o comentar lo decide el CEO. La excepción es lo que el flujo del proyecto autoriza por escrito, como pasar el ticket a revisión al abrir el PR.
+- **Los tickets nuevos los pide el CEO.** Antes de crear uno, el agente le pregunta a quién se asigna (o si queda sin asignar); nunca lo asume.
 - **La rama base, la de producción, los prefijos y el proyecto de Jira** van en el flujo de trabajo del proyecto (`CLAUDE.md` o `.claude/rules/`). Si el proyecto no los define, `start-ticket` usa los valores por defecto de la tabla.
 
 ## Pull requests y revisiones
