@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.9.1] - 2026-10-15
+
+### Cambiado
+
+- `pm` (`office` 0.7.2): un ticket nuevo se crea solo cuando el CEO lo pide, y antes se le pregunta a quién se asigna o si queda sin asignar.
+
 ## [0.9.0] - 2026-10-15
 
 ### Agregado
