@@ -46,4 +46,31 @@ check 0 "correr tests"                      "$(bash_cmd 'pnpm test')"
 check 0 "git status"                        "$(bash_cmd 'git status')"
 check 0 "borrar .qa"                        "$(bash_cmd 'rm -r .qa')"
 
+# Rutas de Windows (Claude Code en Windows nativo)
+check 2 "Windows: Write sobre C:\\p\\.env"         "$(file_tool Write 'C:\p\.env')"
+check 2 "Windows: Edit sobre .env.local"     "$(file_tool Edit 'C:\p\apps\api\.env.local')"
+check 0 "Windows: Write sobre .env.example"  "$(file_tool Write 'C:\p\.env.example')"
+check 2 "Windows: Write dentro de .git"      "$(file_tool Write 'C:\p\.git\config')"
+check 2 "Windows: Edit sobre un lockfile"    "$(file_tool Edit 'C:\p\pnpm-lock.yaml')"
+check 0 "Windows: Edit sobre código normal"  "$(file_tool Edit 'C:\p\src\app.ts')"
+check 2 "Windows: type sobre .env"           "$(bash_cmd 'type apps\api\.env')"
+
+# jq de Windows: escribe finales de línea CRLF. Se simula con un jq que agrega "\r".
+FAKE_BIN=$(mktemp -d)
+REAL_JQ=$(command -v jq)
+printf '#!/usr/bin/env bash\n"%s" "$@" | sed "s/$/\\r/"\n' "$REAL_JQ" > "$FAKE_BIN/jq"
+chmod +x "$FAKE_BIN/jq"
+PATH="$FAKE_BIN:$PATH" check 2 "jq con CRLF: cat .env"           "$(bash_cmd 'cat .env')"
+PATH="$FAKE_BIN:$PATH" check 2 "jq con CRLF: Write sobre .env"   "$(file_tool Write /p/.env)"
+PATH="$FAKE_BIN:$PATH" check 0 "jq con CRLF: código normal"      "$(file_tool Edit /p/src/app.ts)"
+rm -rf "$FAKE_BIN"
+
+# Sin jq instalado se bloquea, porque no se puede revisar qué se toca.
+NO_JQ=$(mktemp -d)
+for tool in bash cat dirname tr sed grep head basename; do
+  ln -s "$(command -v "$tool")" "$NO_JQ/$tool"
+done
+PATH="$NO_JQ" check 2 "sin jq: se bloquea"                      "$(file_tool Edit /p/src/app.ts)"
+rm -rf "$NO_JQ"
+
 exit $FAILED

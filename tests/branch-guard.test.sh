@@ -80,6 +80,24 @@ check 2 "patrón: push hacia una épica"                "$(bash_cmd 'git push or
 check 0 "patrón: rama que solo contiene 'epic'"       "$(bash_cmd 'git push origin feature/epic-ideas')"
 rmdir "$REPO/epic"
 
+# --- Rutas de Windows y jq con CRLF ---------------------------------------------------
+# En Windows nativo las rutas llegan con barras invertidas (C:\dev\app\src\x.ts).
+# Acá se simulan con la ruta del repositorio temporal escrita con "\".
+export OFFICE_PROTECTED_BRANCHES="main dev"
+git -C "$REPO" switch -q dev
+WIN_REPO="${REPO//\//\\}"
+check 2 "Windows: editar con barras invertidas en dev"  "$(edit "$WIN_REPO\\src\\app.ts")"
+check 0 "Windows: editar en .qa\\ en dev"               "$(edit "$WIN_REPO\\.qa\\attack.spec.ts")"
+check 2 "Windows: ruta relativa con barras invertidas"  "$(edit 'src\app.ts')"
+
+FAKE_BIN=$(mktemp -d)
+REAL_JQ=$(command -v jq)
+printf '#!/usr/bin/env bash\n"%s" "$@" | sed "s/$/\\r/"\n' "$REAL_JQ" > "$FAKE_BIN/jq"
+chmod +x "$FAKE_BIN/jq"
+PATH="$FAKE_BIN:$PATH" check 2 "jq con CRLF: editar en dev"      "$(edit "$REPO/src/app.ts")"
+PATH="$FAKE_BIN:$PATH" check 2 "jq con CRLF: commit en dev"      "$(bash_cmd 'git commit -m x')"
+rm -rf "$FAKE_BIN"
+
 # --- Guardia desactivada -------------------------------------------------------------
 export OFFICE_PROTECTED_BRANCHES=""
 git -C "$REPO" switch -q main

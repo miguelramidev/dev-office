@@ -63,7 +63,17 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
    - Pedile la clave del proyecto de Jira (por ejemplo `PROJ`), la rama base (por ejemplo `dev`), la de producción (por ejemplo `main`), si usan ramas de épica y si los prefijos por tipo de ticket de `start-ticket` (`epic/`, `feature/`, `task/`, `fix/`, `hotfix/`) le sirven. Proponé agregar esos datos a una sección "Flujo de trabajo" del `CLAUDE.md` (o a `.claude/rules/git-workflow.md`) y mostrale el texto antes de escribirlo.
    - Cada persona inicia sesión en Jira una vez con `/mcp`: servidor `atlassian`, opción de autenticar.
 
-9. **Cerrá con los próximos pasos:**
+9. **Diseños (si hay frontend).** Preguntale al CEO si los diseños de las pantallas los entrega otro (un cliente o un equipo de diseño) y si están en Figma.
+   - Si los entrega otro, proponé agregar al `CLAUDE.md` una línea que lo diga y la carpeta de imágenes de referencia (por defecto `docs/design/references/`), y mostrale el texto antes de escribirlo.
+   - Si están en Figma, ofrecé agregar a `.mcp.json` el servidor remoto de Figma con el nombre `figma` (obligatorio, porque el designer tiene acceso a las herramientas de ese nombre), sin tocar las otras entradas:
+
+     ```json
+     "figma": { "type": "http", "url": "https://mcp.figma.com/mcp" }
+     ```
+
+     Avisale que cada persona inicia sesión con `/mcp`, que el servidor solo lee archivos donde tiene acceso de edición (con acceso de solo lectura no sirve), y que con asientos de solo lectura o el plan Starter Figma permite muy pocas llamadas por mes: si no tiene un asiento Dev o Full, conviene trabajar con imágenes exportadas.
+
+10. **Cerrá con los próximos pasos:**
    - Revisar los cambios y hacer commit de `.claude/settings.json` y `.gitignore`.
    - Instalar las skills de la comunidad que haya elegido.
    - Si conectó Jira, autenticarse con `/mcp` y probar con `/office:start-ticket <TICKET>`.

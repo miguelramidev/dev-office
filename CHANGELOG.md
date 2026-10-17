@@ -8,6 +8,25 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.10.0] - 2026-10-17
+
+### Agregado
+
+- `dept-frontend` (0.3.0): skill `design-intake`. Lee un diseño que ya existe (imágenes en `docs/design/references/` o links de Figma) y lo convierte en una especificación con textos exactos, estilos asociados a los tokens del proyecto (lo aproximado, marcado) y la lista de lo que el diseño no define.
+- `designer`: distingue entre diseño propio y diseño entregado; con diseño entregado traduce sin proponer otra experiencia. Puede leer Figma con las herramientas de solo lectura del servidor MCP `figma`, cuidando el límite de llamadas.
+- `developer` (frontend): compara lo que construye con las imágenes de referencia de la especificación.
+- `pm` (`office` 0.8.0): si el CEO pega imágenes de diseño en el chat, le pide guardarlas en el proyecto antes de activar al designer, porque los agentes no ven las imágenes del chat.
+- `office-setup`: pregunta si los diseños los entrega otro y ofrece conectar el servidor remoto de Figma en `.mcp.json`.
+
+### Cambiado
+
+- Soporte para **Windows nativo** (bash de Git for Windows, sin WSL):
+  - Los hooks normalizan rutas de Windows (`C:\dev\app`) antes de compararlas, y en Windows comparan sin distinguir mayúsculas.
+  - Los hooks y `setup.sh` toleran el jq de Windows, que escribe finales de línea CRLF. Sin esto, `protect.sh` dejaba editar `.env` en Windows.
+  - Funciones comunes de los hooks en `scripts/lib.sh`.
+  - Instrucciones para instalar `jq` y `gh` en Windows (`winget`), macOS (`brew`) y Linux (`apt`) en la documentación, `office-setup`, `open-pr` y `review-fixes`.
+- Tests de rutas de Windows, jq con CRLF y falta de jq.
+
 ## [0.9.1] - 2026-10-15
 
 ### Cambiado

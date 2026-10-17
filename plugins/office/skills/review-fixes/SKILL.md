@@ -10,7 +10,7 @@ Se corrige solo lo que pide la revisión: nada de mejoras ni cambios de más. La
 
 ## 1. Revisá que `gh` esté listo
 
-Corré `gh auth status`. Si el comando no existe o no hay sesión, frená y explicale al CEO cómo dejarlo listo (en Linux o WSL con Ubuntu: `sudo apt update`, `sudo apt install gh` y `gh auth login`, eligiendo GitHub.com, HTTPS e iniciar sesión con el navegador).
+Corré `gh auth status`. Si el comando no existe o no hay sesión, frená y explicale al CEO cómo dejarlo listo según su sistema: en Windows nativo `winget install GitHub.cli` (y reiniciar la terminal), en macOS `brew install gh`, en Ubuntu o WSL `sudo apt install gh`; después `gh auth login`, eligiendo GitHub.com, HTTPS e iniciar sesión con el navegador.
 
 ## 2. Encontrá el PR y ponete en su rama
 
