@@ -71,7 +71,7 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
      "figma": { "type": "http", "url": "https://mcp.figma.com/mcp" }
      ```
 
-     Avisale que cada persona inicia sesión con `/mcp` y que con asientos de solo lectura o el plan Starter Figma permite muy pocas llamadas por mes: si no tiene un asiento Dev o Full, conviene trabajar con imágenes exportadas.
+     Avisale que cada persona inicia sesión con `/mcp`, que el servidor solo lee archivos donde tiene acceso de edición (con acceso de solo lectura no sirve), y que con asientos de solo lectura o el plan Starter Figma permite muy pocas llamadas por mes: si no tiene un asiento Dev o Full, conviene trabajar con imágenes exportadas.
 
 10. **Cerrá con los próximos pasos:**
    - Revisar los cambios y hacer commit de `.claude/settings.json` y `.gitignore`.

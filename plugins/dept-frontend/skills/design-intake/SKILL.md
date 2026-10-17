@@ -51,7 +51,7 @@ Si tenés herramientas `mcp__figma__*` y el encargo trae links de Figma:
 - **Orden:** `get_metadata` del frame para ver su estructura, `get_screenshot` para verlo, `get_variable_defs` **una sola vez** por archivo para los tokens (colores, tipografías, espaciados) y `get_design_context` solo para un nodo puntual que no se entienda.
 - **Guardá lo que obtenés** en la especificación (tokens con sus valores, textos, medidas), para que nadie tenga que volver a consultar Figma.
 - Los valores que vienen de Figma son exactos: no lleves la marca **aprox.**
-- Si una llamada falla por permisos o límite, no reintentes: decilo en tu reporte y seguí con imágenes.
+- Si una llamada falla por permisos o límite, no reintentes: decilo en tu reporte y seguí con imágenes. El servidor solo lee archivos donde la cuenta tiene acceso de edición; con acceso de solo lectura todas las llamadas fallan igual.
 - Nunca uses herramientas que escriben en Figma.
 
 ## 5. La especificación

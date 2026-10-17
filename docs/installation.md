@@ -78,7 +78,7 @@ Si los diseños los hace otro (un cliente o un equipo de diseño), el designer d
   }
   ```
 
-  Cada persona inicia sesión una vez con `/mcp`: servidor `figma`, opción de autenticar. Ojo con el límite de uso: con un asiento de solo lectura (View o Collab) o en el plan Starter, Figma permite muy pocas llamadas por mes; para trabajar seguido hace falta un asiento Dev o Full en un plan pago. Ver los [límites de Figma](https://developers.figma.com/docs/figma-mcp-server/rate-limits-access/). Si el límite no alcanza, usá imágenes.
+  Cada persona inicia sesión una vez con `/mcp`: servidor `figma`, opción de autenticar. El servidor **solo lee archivos donde tenés acceso de edición**: si te compartieron el archivo solo para ver, responde "you don't have edit access" y hay que usar imágenes. Ojo también con el límite de uso: con un asiento de solo lectura (View o Collab) o en el plan Starter, Figma permite muy pocas llamadas por mes; para trabajar seguido hace falta un asiento Dev o Full en un plan pago. Ver los [límites de Figma](https://developers.figma.com/docs/figma-mcp-server/rate-limits-access/). Si el límite no alcanza, usá imágenes.
 
 ## 4. Empezar a trabajar
 
