@@ -7,13 +7,16 @@
 # - Bash: revisa si el comando menciona archivos de secretos o claves privadas,
 #   para que no se puedan leer ni modificar con cat, sed, echo, cp, etc.
 
+# shellcheck source=lib.sh
+. "$(dirname "${BASH_SOURCE[0]//\\//}")/lib.sh"
+
 if ! command -v jq >/dev/null 2>&1; then
-  echo "dev-office: falta 'jq' y no se puede verificar qué archivo se toca. Instalalo (sudo apt install jq / brew install jq)." >&2
+  echo "dev-office: falta 'jq' y no se puede verificar qué archivo se toca. $(jq_install_hint)" >&2
   exit 2
 fi
 
 INPUT=$(cat)
-TOOL=$(printf '%s' "$INPUT" | jq -r '.tool_name // empty')
+TOOL=$(json_get '.tool_name // empty')
 
 block() {
   echo "dev-office: no está permitido tocar $1 ($2). Si hace falta, pedile al CEO que lo haga a mano." >&2
@@ -23,14 +26,14 @@ block() {
 # --- Bash ---------------------------------------------------------------------
 
 if [ "$TOOL" = "Bash" ]; then
-  COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty')
+  COMMAND=$(json_get '.tool_input.command // empty')
   [ -z "$COMMAND" ] && exit 0
 
   # Se parte el comando en palabras y se mira el nombre de archivo de cada una
-  # (lo que va después de la última "/"). Así "process.env" no cuenta, pero
-  # ".env" o "apps/api/.env.local" sí. Las plantillas (.env.example, .env.sample,
+  # (lo que va después de la última "/", o de la última "\" en Windows). Así "process.env" no
+  # cuenta, pero ".env", "apps/api/.env.local" o "apps\api\.env" sí. Las plantillas (.env.example, .env.sample,
   # .env.template) están permitidas.
-  NAMES=$(printf '%s' "$COMMAND" | tr " \t\n\"'=<>();|&\`" '\n' | sed 's#.*/##')
+  NAMES=$(printf '%s' "$COMMAND" | tr " \t\n\"'=<>();|&\`" '\n' | sed 's#.*[/\\]##')
 
   ENV_FILE=$(printf '%s\n' "$NAMES" \
     | grep -xE '\.env(\.[[:alnum:]_-]+)*' \
@@ -46,10 +49,12 @@ fi
 
 # --- Edit, Write y NotebookEdit -----------------------------------------------
 
-FILE_PATH=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // .tool_input.notebook_path // empty')
+FILE_PATH=$(json_get '.tool_input.file_path // .tool_input.notebook_path // empty')
 [ -z "$FILE_PATH" ] && exit 0
 
-NAME=$(basename "$FILE_PATH")
+# Rutas de Windows (C:\proyecto\.env) a la forma con "/" para revisarlas igual.
+FILE_PATH=$(norm_path "$FILE_PATH")
+NAME="${FILE_PATH##*/}"
 
 case "$NAME" in
   .env.example | .env.sample | .env.template) ;;

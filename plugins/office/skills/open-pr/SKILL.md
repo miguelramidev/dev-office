@@ -19,15 +19,13 @@ En el `CLAUDE.md` del proyecto y en `.claude/rules/` buscá:
 
 ## 2. Revisá que `gh` esté listo
 
-Corré `gh auth status`. Si el comando no existe o no hay sesión, frená y explicale al CEO que `gh` es la herramienta de GitHub para la terminal, y cómo dejarla lista (en Linux o WSL con Ubuntu):
+Corré `gh auth status`. Si el comando no existe o no hay sesión, frená y explicale al CEO que `gh` es la herramienta de GitHub para la terminal, y cómo dejarla lista según su sistema:
 
-```bash
-sudo apt update
-sudo apt install gh
-gh auth login
-```
+- **Windows nativo (PowerShell):** `winget install GitHub.cli`, cerrar y abrir la terminal y Claude Code.
+- **macOS:** `brew install gh`.
+- **Ubuntu o WSL:** `sudo apt update` y `sudo apt install gh`.
 
-En `gh auth login`: GitHub.com, HTTPS, usar gh para git, iniciar sesión con el navegador.
+Después, en cualquier sistema: `gh auth login` (GitHub.com, HTTPS, usar gh para git, iniciar sesión con el navegador).
 
 ## 3. Revisá la rama
 

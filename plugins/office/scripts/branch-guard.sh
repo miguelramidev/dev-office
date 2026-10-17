@@ -19,11 +19,14 @@ set -f
 PROTECTED="${OFFICE_PROTECTED_BRANCHES-main master}"
 [ -z "${PROTECTED// /}" ] && exit 0
 
+# shellcheck source=lib.sh
+. "$(dirname "${BASH_SOURCE[0]//\\//}")/lib.sh"
+
 # Sin jq no se puede leer la entrada; protect.sh ya bloquea y avisa en ese caso.
 command -v jq >/dev/null 2>&1 || exit 0
 
 INPUT=$(cat)
-TOOL=$(printf '%s' "$INPUT" | jq -r '.tool_name // empty')
+TOOL=$(json_get '.tool_name // empty')
 PROJECT="${CLAUDE_PROJECT_DIR:-$PWD}"
 
 # Rama actual. Fuera de un repositorio git o con HEAD suelto, no hay nada que cuidar.
@@ -55,24 +58,32 @@ block() {
 if [ "$TOOL" != "Bash" ]; then
   is_protected "$BRANCH" || exit 0
 
-  FILE_PATH=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // .tool_input.notebook_path // empty')
+  FILE_PATH=$(json_get '.tool_input.file_path // .tool_input.notebook_path // empty')
   [ -z "$FILE_PATH" ] && exit 0
+
+  # Rutas de Windows (C:\dev\app) a la forma de Git Bash (/c/dev/app) para que
+  # la ruta del archivo y la del proyecto se comparen igual en todos los sistemas.
+  FILE_PATH=$(norm_path "$FILE_PATH")
+  ROOT=$(norm_path "$PROJECT")
+  ROOT="${ROOT%/}"
   case "$FILE_PATH" in
     /*) ;;
-    *) FILE_PATH="$PROJECT/$FILE_PATH" ;;
+    *) FILE_PATH="$ROOT/$FILE_PATH" ;;
   esac
+  FILE_CMP=$(cmp_path "$FILE_PATH")
+  ROOT_CMP=$(cmp_path "$ROOT")
 
   # Solo cuidan los archivos del proyecto; la carpeta de QA es temporal.
-  case "$FILE_PATH" in
-    "$PROJECT"/.qa/*) exit 0 ;;
-    "$PROJECT"/*) block "no se edita el código en la rama protegida '$BRANCH'." ;;
+  case "$FILE_CMP" in
+    "$ROOT_CMP"/.qa/*) exit 0 ;;
+    "$ROOT_CMP"/*) block "no se edita el código en la rama protegida '$BRANCH'." ;;
   esac
   exit 0
 fi
 
 # --- Bash -----------------------------------------------------------------------
 
-COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty')
+COMMAND=$(json_get '.tool_input.command // empty')
 [ -z "$COMMAND" ] && exit 0
 
 # Se revisa cada comando por separado (separados por ; && || | o salto de línea).

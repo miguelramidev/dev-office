@@ -39,7 +39,7 @@ Vos solo hablás con el PM.
 | -------------- | ------------------------------------------------------------------------- | ------------- |
 | `office`       | PM, QA, hooks de protección y registro de actividad, skills `office-setup`, `start-ticket`, `open-pr` y `review-fixes` | PM y QA: Opus |
 | `dept-backend` | Arquitecto, developer y tester de backend, skill de backend sólido        | Arquitecto: Opus; developer y tester: Sonnet |
-| `dept-frontend` | Arquitecto, designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skill de frontend sólido | Arquitecto: Opus; el resto: Sonnet |
+| `dept-frontend` | Arquitecto, designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skills de frontend sólido y de lectura de diseños entregados (imágenes o Figma) | Arquitecto: Opus; el resto: Sonnet |
 | `dept-database` | Developer (DB manager) y tester de Postgres y MongoDB, skill de base de datos sólida | Sonnet |
 | `dept-scraper` | Developer y tester de scraping, skill de scraping responsable             | Sonnet        |
 | `dept-devops` | Arquitecto, developer y tester de CI/CD, despliegues, infraestructura como código, contenedores y servidores, skill de DevOps sólido | Arquitecto: Opus; developer y tester: Sonnet |
@@ -53,7 +53,7 @@ Para el detalle técnico de cada tecnología, los agentes también usan las skil
 - Claude Code actualizado.
 - `git` y `jq` (los usan los hooks).
 - `gh` con sesión iniciada, para abrir PRs y aplicar correcciones de revisión (opcional).
-- Linux, macOS o Windows con WSL2. En Windows, trabajá dentro de WSL, no desde PowerShell.
+- Linux, macOS o Windows. En Windows funciona de forma nativa (con Git for Windows) o dentro de WSL2. Ver [instalación](docs/installation.md).
 
 ## Instalación
 

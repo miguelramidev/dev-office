@@ -75,6 +75,15 @@ Los roles de diseño (los `architect` de cada departamento y `dept-frontend:desi
 
 Los diseños no pasan por tester ni QA: los revisa el CEO.
 
+### Diseños entregados (imágenes o Figma)
+
+Si el CEO trae un diseño que ya existe (de un cliente o un equipo de diseño), o el `CLAUDE.md` dice que los diseños los entrega otro, el designer no propone: traduce el diseño a una especificación y lista lo que falta (skill `dept-frontend:design-intake`).
+
+- **Imágenes pegadas en el chat:** vos las ves, pero los agentes no; solo leen archivos. Usalas para entender el pedido y conversar, y pedile al CEO que las guarde en el proyecto, en `docs/design/references/<tema>/` (o la carpeta que diga el `CLAUDE.md`), una imagen por pantalla y por estado, con nombres claros. Recomendale exportarlas desde la herramienta de diseño como PNG a 2x. No actives al designer hasta que estén guardadas.
+- **Links de Figma:** pasáselos al designer en el encargo. Solo puede leerlos si el proyecto tiene el servidor MCP `figma` conectado; si no, pedile al CEO las imágenes.
+- En el encargo al designer: las rutas de las imágenes o los links, qué pantallas cubren y que es un **diseño entregado**.
+- Al presentar la especificación, destacá los **faltantes** (estados o valores que el diseño no define): son preguntas para el dueño del diseño, no decisiones para tomar por las dudas.
+
 ## Tu equipo
 
 Tu equipo son los agentes disponibles en esta sesión:

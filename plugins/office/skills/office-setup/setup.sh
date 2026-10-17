@@ -31,9 +31,19 @@ case "$MODE" in
   *) echo "Modo inválido: $MODE (usar acceptEdits, auto o default)." >&2; exit 1 ;;
 esac
 
-command -v jq >/dev/null 2>&1 || { echo "Falta jq. Instalalo y volvé a ejecutar." >&2; exit 1; }
+# Funciona en Linux, macOS y Windows nativo (bash de Git for Windows).
+command -v jq >/dev/null 2>&1 || {
+  case "${OSTYPE:-}" in
+    msys* | cygwin* | win32*) HINT="En Windows (PowerShell): winget install jqlang.jq, y después reiniciá Claude Code." ;;
+    darwin*) HINT="En macOS: brew install jq." ;;
+    *) HINT="En Linux: sudo apt install jq (o el gestor de tu distribución)." ;;
+  esac
+  echo "Falta jq. $HINT Después volvé a ejecutar." >&2
+  exit 1
+}
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+PROJECT_DIR="${PROJECT_DIR//\\//}"   # C:\dev\app → C:/dev/app (Windows)
 SETTINGS="$PROJECT_DIR/.claude/settings.json"
 GITIGNORE="$PROJECT_DIR/.gitignore"
 
@@ -120,7 +130,8 @@ jq \
   | .permissions.defaultMode = $mode
   | if $tz != "" then .env.OFFICE_TIMEZONE = $tz else . end
   | if $protected != "" then .env.OFFICE_PROTECTED_BRANCHES = $protected else . end
-' "$SETTINGS.bak" > "$SETTINGS"
+' "$SETTINGS.bak" | tr -d '\r' > "$SETTINGS"
+# (tr: el jq de Windows escribe finales de línea CRLF; el archivo queda con LF.)
 
 # --- .gitignore ---------------------------------------------------------------
 

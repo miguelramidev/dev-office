@@ -1,7 +1,7 @@
 {
   "name": "dept-frontend",
-  "version": "0.2.0",
-  "description": "Departamento de frontend de dev-office: un arquitecto que diseña la parte técnica del front, un designer de UI/UX que define pantallas y experiencia antes de programar, un developer de web (Next.js, React) y móvil (React Native) que las construye, y un tester que las prueba sin servicios reales.",
+  "version": "0.3.0",
+  "description": "Departamento de frontend de dev-office: un arquitecto que diseña la parte técnica del front, un designer de UI/UX que define pantallas y experiencia antes de programar, un developer de web (Next.js, React) y móvil (React Native) que las construye, y un tester que las prueba sin servicios reales. Puede trabajar con diseños entregados como imágenes o desde Figma.",
   "author": {
     "name": "Miguel Ramirez"
   },
