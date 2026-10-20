@@ -96,9 +96,9 @@ Mostrale: rama de origen → destino, título, descripción y la lista de commit
 
 ## 9. Jira
 
-Fijate si el flujo de trabajo del proyecto (`CLAUDE.md` o `.claude/rules/`) dice a qué estado pasa el ticket al abrir el PR (por ejemplo, "al abrir el PR, el ticket pasa a REVIEWING").
+Con el PR abierto, **mové el ticket al estado de revisión sin preguntar**: abrir el PR con esta skill ya es la autorización del CEO, y así sabe qué tiene que revisar.
 
-**Si lo dice, movelo sin preguntar:** el CEO ya lo autorizó en las reglas del proyecto, y así sabe qué tiene que revisar.
+**Qué estado:** el que diga el flujo de trabajo del proyecto (`CLAUDE.md` o `.claude/rules/`) para cuando se abre el PR (por ejemplo, "al abrir el PR, el ticket pasa a REVIEWING"). Si no lo dice, buscá entre los estados del proyecto uno de revisión por su nombre (que contenga "review", "revisión", "revisao", "revisão" o "QA"). Si hay uno solo, usalo. Si no hay ninguno o hay más de uno, no muevas el ticket ni preguntes: decilo en el cierre y sugerí agregar el estado al flujo del proyecto.
 
 1. Si el ticket ya está en ese estado o en uno posterior (según el orden de estados del proyecto), no lo toques.
 2. Mirá a qué estados puede pasar ahora con `listJiraIssueTransitions`. Si el estado de revisión está entre ellos, usá `transitionJiraIssue`.
@@ -106,8 +106,6 @@ Fijate si el flujo de trabajo del proyecto (`CLAUDE.md` o `.claude/rules/`) dice
 4. Si no podés llegar, no fuerces nada: decile al CEO en qué estado quedó el ticket y por qué no avanzó.
 5. Si es el PR de una épica completa, no la muevas sola: preguntale al CEO.
 6. En un hotfix, se mueve una sola vez, con el primer PR.
-
-**Si el proyecto no lo dice**, no cambies el ticket por tu cuenta: preguntale al CEO si lo mueve al siguiente estado y, si dice que sí, usá `transitionJiraIssue`.
 
 En ningún caso saltees estados ni muevas un ticket hacia atrás.
 

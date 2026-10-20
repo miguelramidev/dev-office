@@ -77,15 +77,25 @@ Si la épica no tiene rama, preguntale al CEO:
 - Las ramas de trabajo no se suben ahora: se suben cuando haya trabajo para revisar y el CEO lo pida.
 - **Una rama de épica nueva tiene que estar en GitHub** para que sus features salgan de ella. Las épicas están protegidas, así que no podés subirla vos: dale al CEO el comando para que lo corra él en su terminal (`git push -u origin <rama>`).
 
-## 6. Jira
+## 6. Jira: pasá el ticket a "en curso"
 
-No cambies el ticket por tu cuenta. Preguntale al CEO si quiere pasarlo a "En curso" o asignárselo; si dice que sí, usá `transitionJiraIssue` (o `editJiraIssue` para el responsable).
+Con la rama lista, **mové el ticket al estado de trabajo en curso sin preguntar**: empezar un ticket con esta skill ya es la autorización del CEO.
+
+1. **Qué estado.** Si el flujo del proyecto (`CLAUDE.md` o `.claude/rules/`) dice a qué estado pasa un ticket al empezar (por ejemplo, "al crear la rama, el ticket pasa a En curso"), usá ese. Si no lo dice, usá el primer estado de la categoría "en curso" de Jira (`statusCategory` = `indeterminate`) entre los que el ticket puede alcanzar ahora.
+2. **Cuándo no tocarlo:**
+   - Si ya está en ese estado o en uno posterior (según el orden de estados del proyecto, o porque su categoría ya es "en curso" o "terminado"). Nunca lo muevas hacia atrás.
+   - Si es una **épica**: no se programa en su rama, el trabajo se hace en sus tickets hijos.
+   - Si el ticket está **asignado a otra persona**: no lo muevas. Avisale al CEO que lo tiene otro y preguntale si sigue igual; así nadie se pisa el trabajo.
+3. **Cómo.** Mirá los estados posibles con `listJiraIssueTransitions` y usá `transitionJiraIssue`. Si el estado no está disponible desde el actual, no fuerces nada ni saltees estados: decile al CEO en qué estado quedó y por qué.
+4. **Subtareas:** mové la subtarea con la que empezó el CEO (el trabajo es suyo, aunque la rama sea la del padre).
+
+Si el ticket no tiene responsable, mencionalo en el cierre y ofrecé asignárselo al CEO (`editJiraIssue`); eso sí se pregunta.
 
 ## 7. Cerrá
 
 En pocas líneas:
 
-- **Ticket:** clave, tipo y título (y la subtarea, si empezó por una).
+- **Ticket:** clave, tipo y título (y la subtarea, si empezó por una), y a qué estado pasó en Jira (o por qué no se movió).
 - **Épica:** clave y rama, si tiene.
 - **Rama:** en la que quedaste, y si es nueva o retomada.
 - **El PR va a:** la rama de destino del paso 4.
