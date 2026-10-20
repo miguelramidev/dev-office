@@ -60,7 +60,7 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 ## Ramas y tickets
 
 - **Ramas protegidas.** Cada proyecto define en `OFFICE_PROTECTED_BRANCHES` (en `.claude/settings.json`) las ramas donde nunca se trabaja directamente, con nombres o patrones, por ejemplo `main dev epic/*`. Si no la define, se protegen `main` y `master`. El hook `branch-guard.sh` bloquea editar archivos del proyecto, commitear o mergear sobre esas ramas, y hacer push hacia ellas desde cualquier rama.
-- **Tickets de Jira.** La skill `start-ticket` trae el ticket con el servidor MCP de Atlassian (que el proyecto configura en `.mcp.json` con el nombre `atlassian`) y decide todo a partir de él. El PM la usa cuando el CEO nombra un ticket.
+- **Tickets de Jira.** La skill `start-ticket` trae el ticket con el servidor MCP de Atlassian (que el proyecto configura en `.mcp.json` con el nombre `atlassian`) y decide todo a partir de él. Con la rama lista, pasa el ticket a "en curso" sin preguntar. El PM la usa cuando el CEO nombra un ticket.
 
   | Lo que dice el ticket | Decide |
   | --- | --- |
@@ -77,7 +77,7 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 
 ## Pull requests y revisiones
 
-- **`open-pr`** abre el PR de la rama actual con `gh`: corre las verificaciones del proyecto, elige el destino con la misma tabla de `start-ticket` (la épica, la base o producción si es hotfix), arma el título y la descripción con la clave del ticket y se los muestra al CEO. Solo con su confirmación sube la rama y abre el PR. En un hotfix ofrece el segundo PR hacia la base. Si el flujo del proyecto lo define, después mueve el ticket al estado de revisión (por ejemplo, REVIEWING) sin preguntar, para que el CEO sepa qué tiene que revisar.
+- **`open-pr`** abre el PR de la rama actual con `gh`: corre las verificaciones del proyecto, elige el destino con la misma tabla de `start-ticket` (la épica, la base o producción si es hotfix), arma el título y la descripción con la clave del ticket y se los muestra al CEO. Solo con su confirmación sube la rama y abre el PR. En un hotfix ofrece el segundo PR hacia la base. Después mueve el ticket al estado de revisión sin preguntar (el que defina el flujo del proyecto, por ejemplo REVIEWING, o uno de revisión que encuentre por su nombre), para que el CEO sepa qué tiene que revisar.
 - **`review-fixes`** junta lo que dejó la revisión: los hilos de comentarios sin resolver (con la API GraphQL de GitHub, que dice cuáles están resueltos o desactualizados), las reseñas, los checks que fallan y los commits que el CEO hizo a mano en la rama (los que no tienen la línea `Co-Authored-By: Claude`). Arma una lista, el CEO la confirma y el PM encarga cada punto al departamento que corresponde, con el ciclo de calidad de siempre. Las correcciones a mano del CEO son criterio: no se deshacen y se proponen para el resto del PR.
 - **Límites.** Commit, push, abrir PRs y comentar en GitHub piden confirmación (reglas `ask` de `office-setup`). Mergear un PR está prohibido para los agentes (regla `deny`): lo hace siempre el CEO. Los hilos de revisión los resuelve quien revisó.
 

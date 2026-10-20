@@ -60,7 +60,7 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
      ```
 
      Si `.mcp.json` ya existe, agregá solo esa entrada sin tocar las demás.
-   - Pedile la clave del proyecto de Jira (por ejemplo `PROJ`), la rama base (por ejemplo `dev`), la de producción (por ejemplo `main`), si usan ramas de épica y si los prefijos por tipo de ticket de `start-ticket` (`epic/`, `feature/`, `task/`, `fix/`, `hotfix/`) le sirven. Proponé agregar esos datos a una sección "Flujo de trabajo" del `CLAUDE.md` (o a `.claude/rules/git-workflow.md`) y mostrale el texto antes de escribirlo.
+   - Pedile la clave del proyecto de Jira (por ejemplo `PROJ`), la rama base (por ejemplo `dev`), la de producción (por ejemplo `main`), si usan ramas de épica, si los prefijos por tipo de ticket de `start-ticket` (`epic/`, `feature/`, `task/`, `fix/`, `hotfix/`) le sirven, y **los nombres exactos de los estados** a los que pasa un ticket al empezar (por ejemplo "En curso") y al abrir el PR (por ejemplo "En revisión"): `start-ticket` y `open-pr` mueven el ticket a esos estados sin preguntar. Podés listarlos con las herramientas de Atlassian para ofrecérselos. Proponé agregar esos datos a una sección "Flujo de trabajo" del `CLAUDE.md` (o a `.claude/rules/git-workflow.md`) y mostrale el texto antes de escribirlo.
    - Cada persona inicia sesión en Jira una vez con `/mcp`: servidor `atlassian`, opción de autenticar.
 
 9. **Diseños (si hay frontend).** Preguntale al CEO si los diseños de las pantallas los entrega otro (un cliente o un equipo de diseño) y si están en Figma.

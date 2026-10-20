@@ -8,6 +8,15 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.11.0] - 2026-10-20
+
+### Cambiado
+
+- `start-ticket` (`office` 0.9.0): al crear o retomar la rama, pasa el ticket a "en curso" en Jira sin preguntar (el estado que defina el flujo del proyecto, o el primero de la categoría "en curso"). No lo mueve si ya está en ese estado o en uno posterior, si es una épica o si está asignado a otra persona (en ese caso avisa).
+- `open-pr`: al abrir el PR, pasa el ticket a revisión sin preguntar aunque el proyecto no defina el estado: busca uno de revisión por su nombre. Si no lo encuentra o hay más de uno, no pregunta: lo dice en el cierre.
+- `pm`: las dos transiciones automáticas son la excepción a "en Jira solo leés".
+- `office-setup`: pregunta los nombres exactos de los estados de "en curso" y de revisión para dejarlos en el flujo del proyecto.
+
 ## [0.10.0] - 2026-10-17
 
 ### Agregado
