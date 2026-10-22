@@ -12,17 +12,21 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ### Agregado
 
-- `dept-backend` (0.2.0): skill `api-collection`. El proyecto tiene una sola colección de Postman (formato v2.1) con toda su API, REST y GraphQL, en `docs/api/` o la carpeta que diga su `CLAUDE.md`, con entornos (`environments/`), autorización a nivel colección, un script de login que guarda los tokens, variables para encadenar requests, ejemplos de respuesta y un README para importarla. Si el proyecto todavía no tiene colección, se genera completa leyendo el código; después se actualiza solo lo que cambia. WebSocket, gRPC, SSE y subscriptions quedan documentados en el README.
-- Script `check-collection.sh` (en la skill): revisa que haya una sola colección, el formato v2.1, nombres repetidos, URLs sin `{{baseUrl}}`, secretos escritos (variables, autorizaciones, headers `Authorization` y JWT pegados) y variables sin declarar en los entornos. Con `--fix` deja un formato fijo (claves ordenadas, sangría de 2, LF) para que los diffs entre ramas sean chicos. Pruebas en `tests/api-collection.test.sh` y en el CI.
+- `dept-backend` (0.2.0): skill `api-collection`. Colecciones de Postman (formato v2.1) en `docs/api/` o la carpeta que diga el `CLAUDE.md` del proyecto, con entornos compartidos (`environments/`), autorización a nivel colección, un script de login que guarda los tokens y un README para importarlas:
+  - **La del proyecto**, una sola, con toda la API (REST y GraphQL) ordenada por recurso, variables para encadenar requests y ejemplos de respuesta. Si no existe, se genera completa leyendo el código; después se actualiza solo lo que cambia.
+  - **Una por épica** (`docs/api/epics/PROJ-100-<resumen>.postman_collection.json`), con los flujos de la épica en orden, cada paso encadenado al siguiente y con su test, para correrlos con el Collection Runner. Se crea con el primer ticket de la épica que toca endpoints y, cuando la épica se integra, queda como prueba de regresión.
+  - Cuando cambia un endpoint, se actualizan la del proyecto, la de la épica del ticket y cualquier otra que lo use.
+  - WebSocket, gRPC, SSE y subscriptions quedan documentados en el README.
+- Script `check-collection.sh` (en la skill): revisa la colección del proyecto y las de épica: que haya una sola del proyecto, el formato v2.1, un `_postman_id` distinto por colección, nombres repetidos, URLs sin `{{baseUrl}}`, secretos escritos (variables, autorizaciones, headers `Authorization` y JWT pegados), que cada paso de una épica tenga su script de test y que las variables estén declaradas en todos los entornos. Con `--fix` deja un formato fijo (claves ordenadas, sangría de 2, LF) para que los diffs entre ramas sean chicos. Pruebas en `tests/api-collection.test.sh` y en el CI.
 
 ### Cambiado
 
-- `developer` (backend): si toca endpoints, operaciones de GraphQL o la autenticación, actualiza la colección en el mismo encargo y lo informa en su reporte.
-- `tester` (backend): revisa la colección con el script y la compara con el código; que falte un endpoint es una falla.
-- `architect` (backend): avisa en el diseño si cambia la autenticación o hacen falta variables nuevas, e incluye la colección en el plan.
-- `pm` (`office` 0.10.0): la colección es parte del criterio de terminado de todo encargo que toque endpoints, se la pasa al frontend con los cambios de la API, puede encargarla completa cuando el CEO la pide y la incluye en el informe.
-- `qa`: revisa que la colección no tenga secretos ni datos reales y que coincida con los contratos.
-- `office-setup`: pregunta si el proyecto quiere la colección, su carpeta, entornos y autorización, y propone la sección "Colección de API" del `CLAUDE.md`.
+- `developer` (backend): si toca endpoints, operaciones de GraphQL o la autenticación, actualiza las colecciones (la del proyecto, la de la épica y las que usen el endpoint) en el mismo encargo y lo informa en su reporte.
+- `tester` (backend): revisa las colecciones con el script, las compara con el código y lee los flujos de la épica de punta a punta; que falte un endpoint es una falla.
+- `architect` (backend): avisa en el diseño si cambia la autenticación o hacen falta variables nuevas, describe los flujos principales de la épica e incluye las colecciones en el plan.
+- `pm` (`office` 0.10.0): las colecciones son parte del criterio de terminado de todo encargo que toque endpoints; le pasa la épica del ticket al backend, le da al frontend las rutas de las colecciones, puede encargar la del proyecto completa cuando el CEO la pide y las incluye en el informe.
+- `qa`: revisa que las colecciones no tengan secretos ni datos reales, que coincidan con los contratos y que los tests de los flujos fallen cuando el flujo se rompe.
+- `office-setup`: pregunta si el proyecto quiere las colecciones, su carpeta, entornos y autorización, y propone la sección "Colección de API" del `CLAUDE.md`.
 
 ## [0.11.0] - 2026-10-20
 

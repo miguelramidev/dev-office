@@ -1,11 +1,16 @@
 ---
 name: api-collection
-description: Cómo crear y mantener la colección de Postman del proyecto (REST y GraphQL), una sola por proyecto y en una carpeta fija del repo, con autorización, scripts de login y variables de entorno, para que el frontend la use y el CEO pruebe la API a mano. Usar cada vez que se crea, cambia, depreca o borra un endpoint o una operación de GraphQL, para revisar que la colección esté al día, o para generarla desde cero si el proyecto todavía no tiene.
+description: Cómo crear y mantener las colecciones de Postman del proyecto (REST y GraphQL) en una carpeta fija del repo - una del proyecto con toda la API como referencia, y una por épica con sus flujos en orden y con tests para correrlos con el Collection Runner - con autorización, scripts de login y variables de entorno compartidas. Usar cada vez que se crea, cambia, depreca o borra un endpoint o una operación de GraphQL, para revisar que las colecciones estén al día, o para generar la del proyecto desde cero si todavía no existe.
 ---
 
-# Colección de Postman del proyecto
+# Colecciones de Postman del proyecto
 
-El proyecto tiene **una sola colección** de Postman con toda su API, guardada en el repo. Cada vez que cambia un endpoint, la colección cambia en el mismo trabajo, así el frontend y el CEO siempre tienen la API de su rama lista para importar y probar. Si las reglas del proyecto (su `CLAUDE.md`) dicen algo distinto, mandan las del proyecto.
+El proyecto guarda en el repo dos tipos de colección de Postman, que comparten los mismos entornos:
+
+- **La del proyecto**, una sola, con toda la API ordenada por recurso. Es la referencia para el frontend.
+- **Una por épica**, con los flujos de esa épica en orden y con tests en cada paso, para probarlos de punta a punta con el Collection Runner de Postman. Cuando la épica se integra, queda como prueba de regresión.
+
+Cada vez que cambia un endpoint, las colecciones cambian en el mismo trabajo, así el frontend y el CEO siempre tienen la API de su rama lista para importar y probar. Si las reglas del proyecto (su `CLAUDE.md`) dicen algo distinto, mandan las del proyecto.
 
 ## Dónde vive
 
@@ -14,16 +19,18 @@ Por defecto en `docs/api/`. Si el `CLAUDE.md` del proyecto tiene una sección "C
 ```
 docs/api/
   README.md                              cómo importarla y qué no incluye
-  <proyecto>.postman_collection.json     la colección, una sola
+  <proyecto>.postman_collection.json     la del proyecto, una sola
+  epics/
+    PROJ-100-<resumen>.postman_collection.json   una por épica
   environments/
     local.postman_environment.json       siempre
     <entorno>.postman_environment.json   los demás que defina el proyecto (por ejemplo staging)
 ```
 
-- Nunca se crea una segunda colección (ni por épica, ni por ticket, ni por módulo). Lo nuevo se agrega a la que existe.
-- El nombre del archivo es el nombre del proyecto en minúsculas con guiones. Una vez creado, no se cambia.
+- La del proyecto es una sola: nunca se crea otra por módulo o por ticket. Las de épica van siempre en `epics/`, una por épica, nunca por ticket.
+- El archivo del proyecto se llama como el proyecto, en minúsculas con guiones; el de una épica, con su clave y un resumen corto (`PROJ-100-checkout.postman_collection.json`). Una vez creados, no se renombran.
 - Formato **Postman Collection v2.1** (`info.schema` = `https://schema.getpostman.com/json/collection/v2.1.0/collection.json`).
-- `info._postman_id` se genera una sola vez (un UUID) y no se cambia nunca: con el mismo id, Postman ofrece reemplazar la colección importada en lugar de duplicarla.
+- `info._postman_id` se genera una sola vez por colección (un UUID nuevo, nunca copiado de otra) y no se cambia nunca: con el mismo id, Postman ofrece reemplazar la colección importada en lugar de duplicarla.
 
 ## Cuándo se actualiza
 
@@ -32,11 +39,19 @@ docs/api/
 - **Se agrega un webhook que el proyecto recibe:** va como request, para poder simular la llamada del proveedor en local.
 - **Cambia la autenticación:** login, refresh, cookies, API keys o headers obligatorios.
 
-Si el cambio no toca nada de eso (lógica interna, refactor sin cambios de contrato), la colección no se toca.
+Si el cambio no toca nada de eso (lógica interna, refactor sin cambios de contrato), las colecciones no se tocan.
 
-### La primera vez: generarla completa
+Qué colecciones se actualizan:
 
-Si la carpeta no existe o no tiene colección, generala **completa**, no solo con lo del encargo actual:
+- **Siempre la del proyecto.**
+- **La de la épica**, si el ticket pertenece a una (el encargo del PM trae la clave de la épica). Si no existe, se crea (ver "Colecciones de épica").
+- **Cualquier otra que use el endpoint que cambió**, incluidas las de épicas ya integradas: buscá la ruta (o el nombre de la operación de GraphQL) con Grep en toda la carpeta de colecciones y actualizá cada una.
+
+Si el ticket no tiene épica, o el proyecto no usa épicas, solo se actualiza la del proyecto (y las que usen el endpoint).
+
+### La primera vez: generar la del proyecto completa
+
+Si la carpeta no existe o no tiene la colección del proyecto, generala **completa**, no solo con lo del encargo actual:
 
 1. Hacé un inventario de toda la API leyendo el código: archivos de rutas y controladores (por ejemplo Express, Fastify, NestJS, rutas de API de Next.js, Hono), el esquema de GraphQL (`*.graphql`, `typeDefs` o los resolvers), los middlewares de autenticación y los esquemas de validación de cada entrada.
 2. Si el proyecto ya tiene una especificación OpenAPI o un esquema de GraphQL generado, usalo como base y verificalo contra el código.
@@ -45,11 +60,11 @@ Si la carpeta no existe o no tiene colección, generala **completa**, no solo co
 
 ### Las siguientes veces: cambios puntuales
 
-1. Leé la colección y los entornos actuales enteros antes de tocarlos.
+1. Leé las colecciones que vas a tocar y los entornos enteros antes de cambiarlos.
 2. Cambiá solo los requests afectados. No reescribas ni reordenes el resto: cada línea de más en el diff es un conflicto posible entre ramas.
 3. **Respetá lo que agregó una persona** (scripts, ejemplos, descripciones, requests de prueba): si alguien exportó la colección desde Postman y la subió, esos cambios son criterio. Solo corregí lo que contradiga el código.
 
-## Estructura de la colección
+## Estructura de la colección del proyecto
 
 - **`info`:** `name` con el nombre del proyecto y `description` con una línea de qué es y un link al `docs/api/README.md`.
 - **Carpetas** por recurso o módulo, siguiendo cómo está organizado el código (por ejemplo `Auth`, `Products`, `Orders`), en orden alfabético. GraphQL va en su propia carpeta, con subcarpetas `Queries` y `Mutations`.
@@ -75,6 +90,31 @@ Si la carpeta no existe o no tiene colección, generala **completa**, no solo co
 
 WebSocket, gRPC, Server-Sent Events y subscriptions de GraphQL no se exportan bien en el formato v2.1. Anotá cada uno en la sección "Fuera de la colección" del README, con su URL, cómo se autentica y qué mensajes manda y recibe.
 
+## Colecciones de épica
+
+Sirven para probar los flujos de la épica en orden, no como referencia: no repiten toda la API, solo los pasos que forman cada flujo.
+
+- **Cuándo se crea:** la primera vez que un ticket de la épica toca endpoints. Con cada ticket siguiente se agregan los pasos o flujos nuevos.
+- **`info`:** `name` = `PROJ-100 · <título de la épica>`, y en `description` qué flujos cubre y cómo correrla (ver abajo).
+- **Carpetas = flujos.** Una por flujo, con un nombre que diga qué prueba: "Flujo: compra completa", "Flujo: cancelar pedido". Si hay casos de error importantes del flujo (sin sesión, sin permiso, datos inválidos), van en su propia carpeta: "Errores: compra".
+- **Pasos en orden.** Dentro de cada flujo, los requests van en el orden en que se ejecutan, numerados: `01 Login`, `02 Crear carrito`, `03 Agregar producto`. Acá no se ordena alfabéticamente.
+- **El primer paso de cada flujo es el login** (o lo que haga falta para tener sesión), así cada flujo se puede correr solo.
+- **Cada paso es una copia del request** de la colección del proyecto (misma URL, método, body y autorización), más su script de test.
+- **Cada paso verifica su respuesta y guarda lo que usa el siguiente:**
+
+  ```javascript
+  // 02 Crear carrito: verifica la respuesta y guarda el id para los pasos siguientes.
+  pm.test("crea el carrito", () => pm.response.to.have.status(201));
+  const body = pm.response.json();
+  pm.test("devuelve el id", () => pm.expect(body.id).to.be.a("string"));
+  pm.environment.set("cartId", body.id);
+  ```
+
+  Verificá el código HTTP y los campos que el flujo necesita, no la respuesta completa. Los pasos de error verifican el código y el `code` del error.
+- **Se puede correr muchas veces.** Los datos que crea el flujo usan valores únicos con variables dinámicas de Postman (`{{$timestamp}}`, `{{$randomEmail}}`), para no chocar con una corrida anterior. Si la API permite borrar lo creado, el último paso del flujo lo borra.
+- **Cómo se corre:** en Postman, la colección de la épica → Run (Collection Runner), con el entorno elegido. Ponelo en la `description` de la colección y en el README.
+- **Después de integrar la épica**, la colección se queda y se mantiene: es la prueba de regresión de esos flujos. Si más adelante cambia un endpoint que usa, se actualiza como cualquier otra.
+
 ## Autorización y scripts
 
 La autorización se define **una vez, a nivel colección**, según lo que use el proyecto:
@@ -98,11 +138,11 @@ Usá los nombres de campo reales de la respuesta del proyecto. Del mismo modo, l
 
 Si el token vence seguido y el proyecto tiene refresh, podés agregar un script de `prerequest` a nivel colección que lo renueve cuando falte poco para que venza. Hacelo solo si el flujo de refresh existe en el código.
 
-Los scripts usan la API de Postman (`pm.*`). Mantenelos cortos y con un comentario que diga qué hacen.
+Los scripts usan la API de Postman (`pm.*`). Mantenelos cortos y con un comentario que diga qué hacen. Las colecciones de épica definen la misma autorización a nivel colección que la del proyecto.
 
 ## Variables y entornos
 
-- Cada variable `{{...}}` que usa la colección se declara en **todos** los entornos, aunque sea vacía (las que llenan los scripts, como `accessToken`, van vacías).
+- Los entornos son los mismos para todas las colecciones. Cada variable `{{...}}` que usa cualquiera de ellas se declara en **todos** los entornos, aunque sea vacía (las que llenan los scripts, como `accessToken`, van vacías).
 - `baseUrl` lleva la URL de cada entorno (en `local`, la del servidor de desarrollo según el `CLAUDE.md` o la configuración del proyecto).
 - Los ids de ejemplo (`productId`) pueden llevar un valor de prueba.
 - **Secretos siempre vacíos:** tokens, contraseñas, API keys, client secrets y el usuario de prueba van con `"value": ""` y `"type": "secret"`. Cada persona los carga en su Postman. Nunca copies un valor de un `.env` ni de ningún otro lado.
@@ -112,7 +152,8 @@ Los scripts usan la API de Postman (`pm.*`). Mantenelos cortos y con un comentar
 
 `docs/api/README.md`, en el idioma del proyecto, corto:
 
-- **Cómo importarla:** en Postman, Import → elegir el archivo de la colección y los de `environments/`. Al volver a importar, elegir "Reemplazar" para no duplicarla.
+- **Cómo importarlas:** en Postman, Import → elegir la colección del proyecto, las de `epics/` que se quieran y los entornos de `environments/`. Al volver a importar, elegir "Reemplazar" para no duplicarlas.
+- **Épicas:** una lista de las colecciones de `epics/` con los flujos que cubre cada una, y cómo correrlas con el Collection Runner.
 - **Cómo empezar:** elegir el entorno, cargar los secretos (en el valor actual de cada variable), correr el login.
 - **Variables:** cuáles hay y qué va en cada una.
 - **Fuera de la colección:** lo que no entra en el formato (ver arriba).
@@ -126,22 +167,22 @@ bash <carpeta de esta skill>/check-collection.sh --fix docs/api
 bash <carpeta de esta skill>/check-collection.sh docs/api
 ```
 
-Usá la carpeta que corresponda si el proyecto define otra. El script revisa que haya una sola colección y al menos un entorno, el formato v2.1, nombres repetidos, URLs sin `{{baseUrl}}`, secretos escritos, variables sin declarar y el formato fijo. Si reporta problemas, corregilos y volvé a correrlo hasta que pase. Si no lo podés correr (por ejemplo, falta `jq`), decilo en tu reporte.
+Usá la carpeta que corresponda si el proyecto define otra. El script revisa la colección del proyecto y todas las de `epics/`: que haya una sola del proyecto y al menos un entorno, el formato v2.1, que cada una tenga su propio `_postman_id`, nombres repetidos, URLs sin `{{baseUrl}}`, secretos escritos, que cada paso de una épica tenga su script de test, variables sin declarar y el formato fijo. Si reporta problemas, corregilos y volvé a correrlo hasta que pase. Si no lo podés correr (por ejemplo, falta `jq`), decilo en tu reporte.
 
-El script no sabe si la colección refleja el código: eso lo revisás vos comparando el inventario de rutas con los requests.
+El script no sabe si las colecciones reflejan el código ni si los tests de un flujo están bien pensados: eso lo revisás vos comparando el inventario de rutas con los requests y leyendo cada flujo de punta a punta.
 
 ## En tu reporte al PM
 
 Agregá una sección **Colección de API**:
 
-- **Archivo:** la ruta de la colección.
-- **Cambios:** requests agregados, modificados y borrados, por carpeta, y variables nuevas (para que el CEO las cargue en su Postman).
+- **Archivos:** las colecciones que tocaste (la del proyecto, la de la épica y otras que usaban el endpoint).
+- **Cambios:** requests agregados, modificados y borrados, por carpeta; flujos nuevos o modificados de la épica; y variables nuevas (para que el CEO las cargue en su Postman).
 - **Fuera de la colección:** lo que quedó solo en el README, si hay.
 - **Revisión:** resultado de `check-collection.sh`.
 
 ## Lo que nunca hacés
 
-- Crear una segunda colección o una por épica.
+- Crear una segunda colección del proyecto, o una colección por ticket.
 - Escribir un secreto real, un token o datos reales de usuarios, ni en los entornos ni en los ejemplos (en los ejemplos usá `<token>` o datos inventados).
-- Pedirle a la API real o a cualquier servidor para "probar" la colección: no hacés pedidos de red.
-- Subir la colección a Postman en la nube o a cualquier otro servicio.
+- Pedirle a la API real o a cualquier servidor para "probar" las colecciones o correr los flujos: no hacés pedidos de red. Los corre el CEO o el equipo en su Postman.
+- Subir las colecciones a Postman en la nube o a cualquier otro servicio.

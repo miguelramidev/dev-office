@@ -14,7 +14,7 @@
     {
       "name": "dept-backend",
       "source": "./plugins/dept-backend",
-      "description": "Departamento de backend: un arquitecto que diseña la API antes de programar, un developer que la implementa y mantiene la colección de Postman del proyecto, y un tester que la prueba sin servicios reales."
+      "description": "Departamento de backend: un arquitecto que diseña la API antes de programar, un developer que la implementa y mantiene las colecciones de Postman (del proyecto y por épica), y un tester que la prueba sin servicios reales."
     },
     {
       "name": "dept-frontend",

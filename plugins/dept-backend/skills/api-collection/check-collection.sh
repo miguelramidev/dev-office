@@ -1,21 +1,27 @@
 #!/usr/bin/env bash
-# Revisa la colección de Postman del proyecto y sus entornos.
+# Revisa las colecciones de Postman del proyecto y sus entornos.
 #
 # Uso: bash check-collection.sh [--fix] [carpeta]
-#   carpeta  donde está la colección (por defecto, docs/api).
+#   carpeta  donde están las colecciones (por defecto, docs/api).
 #   --fix    reescribe los archivos con el formato fijo (claves ordenadas, sangría
 #            de 2 espacios, finales de línea LF). No corrige nada más.
 #
+# Estructura esperada:
+#   <carpeta>/<proyecto>.postman_collection.json         la del proyecto, una sola
+#   <carpeta>/epics/<EPICA>-<resumen>.postman_collection.json   una por épica (opcional)
+#   <carpeta>/environments/<entorno>.postman_environment.json   al menos uno
+#
 # Revisa:
-#   - que haya una sola colección (*.postman_collection.json) y al menos un entorno
-#     (environments/*.postman_environment.json), y que sean JSON válidos;
-#   - que la colección use el formato v2.1;
+#   - que haya una sola colección del proyecto y al menos un entorno, y que todo
+#     sea JSON válido;
+#   - que cada colección use el formato v2.1 y tenga un info._postman_id distinto;
 #   - que no haya dos carpetas o requests con el mismo nombre en el mismo nivel;
 #   - que las URLs usen {{baseUrl}} y no una dirección escrita a mano;
 #   - que no haya secretos: variables con nombre de secreto con valor, autorizaciones
 #     o headers Authorization con un valor escrito, o tokens JWT pegados;
-#   - que cada variable {{...}} que usa la colección esté declarada en cada entorno
-#     (o en las variables de la colección);
+#   - que en las colecciones de épica cada request tenga un script de test;
+#   - que cada variable {{...}} que usa alguna colección esté declarada en cada
+#     entorno (o en las variables de esa colección);
 #   - que el formato sea el fijo, para que los diffs sean chicos.
 #
 # Sale con 0 si está todo bien y con 1 si encontró problemas (los lista).
@@ -27,7 +33,7 @@ for arg in "$@"; do
   case "$arg" in
     --fix) FIX=1 ;;
     -h | --help)
-      sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,33p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) DIR="$arg" ;;
@@ -48,6 +54,14 @@ problem() {
   PROBLEMS=$((PROBLEMS + 1))
 }
 
+# Reporta como problema cada línea no vacía que recibe por stdin.
+problems_from() {
+  local prefix="$1" line
+  while IFS= read -r line; do
+    [ -n "$line" ] && problem "$prefix$line"
+  done
+}
+
 # jq sin los "\r" que agrega el jq de Windows.
 jqc() { jq "$@" | tr -d '\r'; }
 
@@ -56,32 +70,34 @@ if [ ! -d "$DIR" ]; then
   exit 1
 fi
 
-COLLECTIONS=$(find "$DIR" -maxdepth 1 -type f -name '*.postman_collection.json' | sort)
-COUNT=$(printf '%s' "$COLLECTIONS" | grep -c . || true)
+MAIN=$(find "$DIR" -maxdepth 1 -type f -name '*.postman_collection.json' | sort)
+COUNT=$(printf '%s' "$MAIN" | grep -c . || true)
 if [ "$COUNT" -eq 0 ]; then
-  echo "No hay ninguna colección (*.postman_collection.json) en $DIR." >&2
+  echo "No hay colección del proyecto (*.postman_collection.json) en $DIR." >&2
   exit 1
 fi
 if [ "$COUNT" -gt 1 ]; then
-  problem "hay $COUNT colecciones en $DIR y tiene que haber una sola por proyecto:"
-  printf '%s\n' "$COLLECTIONS" | sed 's/^/         /'
+  problem "hay $COUNT colecciones en $DIR y la del proyecto tiene que ser una sola (las de épica van en $DIR/epics/):"
+  printf '%s\n' "$MAIN" | sed 's/^/         /'
 fi
-COLLECTION=$(printf '%s\n' "$COLLECTIONS" | head -n1)
 
+EPICS=$(find "$DIR/epics" -maxdepth 1 -type f -name '*.postman_collection.json' 2>/dev/null | sort)
 ENVS=$(find "$DIR/environments" -maxdepth 1 -type f -name '*.postman_environment.json' 2>/dev/null | sort)
 [ -z "$ENVS" ] && problem "no hay entornos en $DIR/environments/ (por ejemplo local.postman_environment.json)"
 
 # Archivos con JSON inválido: no se pueden revisar más.
-ALL_FILES=$(printf '%s\n%s\n' "$COLLECTION" "$ENVS" | grep .)
 VALID_FILES=""
 while IFS= read -r f; do
+  [ -z "$f" ] && continue
   if jq empty "$f" >/dev/null 2>&1; then
     VALID_FILES=$(printf '%s\n%s' "$VALID_FILES" "$f")
   else
     problem "$f no es un JSON válido"
   fi
 done <<EOF
-$ALL_FILES
+$MAIN
+$EPICS
+$ENVS
 EOF
 
 is_valid() { printf '%s\n' "$VALID_FILES" | grep -qxF "$1"; }
@@ -90,70 +106,98 @@ is_valid() { printf '%s\n' "$VALID_FILES" | grep -qxF "$1"; }
 SECRET_DEF='def secretkey: (. // "") | tostring | test("token|secret|password|passwd|apikey|api_key|api-key|private_key|privatekey|credential"; "i");
 def isvar: (. // "") | tostring | (. == "" or test("^\\{\\{[^{}]+\\}\\}$"));'
 
-# --- Colección ----------------------------------------------------------------
+# --- Colecciones --------------------------------------------------------------
 
-if is_valid "$COLLECTION"; then
-  SCHEMA=$(jqc -r '.info.schema // ""' "$COLLECTION")
-  case "$SCHEMA" in
+# Variables usadas por cada colección, como líneas "archivo<TAB>variable" que no
+# están declaradas en las variables de esa misma colección.
+USED=""
+IDS=""
+
+check_collection() {
+  local file="$1" kind="$2" schema id
+
+  schema=$(jqc -r '.info.schema // ""' "$file")
+  case "$schema" in
     *collection/v2.1*) ;;
-    *) problem "$COLLECTION no está en formato v2.1 (info.schema = \"$SCHEMA\")" ;;
+    *) problem "$file no está en formato v2.1 (info.schema = \"$schema\")" ;;
   esac
 
+  id=$(jqc -r '.info._postman_id // ""' "$file")
+  if [ -n "$id" ]; then
+    if printf '%s\n' "$IDS" | cut -f1 | grep -qxF "$id"; then
+      problem "$file tiene el mismo info._postman_id que $(printf '%s\n' "$IDS" | grep -F "$id" | head -n1 | cut -f2): Postman reemplazaría una con la otra al importarlas"
+    fi
+    IDS=$(printf '%s\n%s\t%s' "$IDS" "$id" "$file")
+  fi
+
   # Nombres repetidos en el mismo nivel.
-  jqc -r '
+  problems_from "$file: " < <(jqc -r '
     def walk_items($path):
       (.item // []) as $items
       | ($items | map(.name // "") | group_by(.) | map(select(length > 1) | .[0])[]
          | "nombre repetido en \($path): \"\(.)\"" ),
         ($items[] | select(.item) | walk_items($path + "/" + (.name // "?")));
-    walk_items("")' "$COLLECTION" | while IFS= read -r line; do echo "PROBLEMA $line"; done
-  DUP=$(jqc -r '
-    def walk_items:
-      (.item // []) as $items
-      | ($items | map(.name // "") | group_by(.) | map(select(length > 1)) | length),
-        ($items[] | select(.item) | walk_items);
-    [walk_items] | add // 0' "$COLLECTION")
-  PROBLEMS=$((PROBLEMS + DUP))
+    walk_items("")' "$file")
 
   # Requests sin nombre o con URL escrita a mano.
-  while IFS= read -r line; do
-    [ -n "$line" ] && problem "$line"
-  done <<EOF
-$(jqc -r '
-  .. | objects | select(has("request"))
-  | (.name // "") as $n
-  | (if $n == "" then "hay un request sin nombre" else empty end),
-    ((.request.url | if type == "object" then (.raw // "") else (. // "") end) as $u
-     | if ($u | test("^\\s*https?://"; "i")) then "\"\($n)\" usa una URL escrita a mano (\($u)): usá {{baseUrl}}" else empty end)
-' "$COLLECTION")
+  problems_from "$file: " < <(jqc -r '
+    .. | objects | select(has("request"))
+    | (.name // "") as $n
+    | (if $n == "" then "hay un request sin nombre" else empty end),
+      ((.request.url | if type == "object" then (.raw // "") else (. // "") end) as $u
+       | if ($u | test("^\\s*https?://"; "i")) then "\"\($n)\" usa una URL escrita a mano (\($u)): usá {{baseUrl}}" else empty end)
+  ' "$file")
+
+  # Secretos.
+  problems_from "$file: " < <(jqc -r "$SECRET_DEF"'
+    ( (.variable // [])[] | select(.key | secretkey) | select(.value | isvar | not)
+      | "la variable de colección \"\(.key)\" tiene un valor: los secretos van vacíos o como {{variable}}" ),
+    ( .. | objects | select((.type? | type) == "string" and ((.[.type]? // null) | type) == "array")
+      | .type as $t | .[$t][]
+      | select((.key | secretkey) or ($t == "apikey" and .key == "value"))
+      | select(.value | isvar | not)
+      | "una autorización \($t) tiene escrito el valor de \"\(.key)\": usá una variable, por ejemplo {{accessToken}}" ),
+    ( .. | objects | select((.key? | type) == "string" and (.key | ascii_downcase) == "authorization")
+      | select((.value // "") | tostring | test("\\{\\{") or . == "" | not)
+      | "un header Authorization tiene un valor escrito: usá una variable, por ejemplo Bearer {{accessToken}}" ),
+    ( [.. | strings | select(test("eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\."))] | length
+      | if . > 0 then "hay \(.) token(s) JWT pegados: reemplazalos por <token> o una variable" else empty end )
+  ' "$file")
+
+  # En una colección de épica, cada paso del flujo verifica su respuesta.
+  if [ "$kind" = "epic" ]; then
+    problems_from "$file: " < <(jqc -r '
+      .. | objects | select(has("request"))
+      | select([(.event // [])[] | select(.listen == "test")
+                | .script.exec // [] | if type == "array" then join("") else tostring end
+                | select(test("\\S"))] | length == 0)
+      | "\"\(.name // "?")\" no tiene un script de test: cada paso de un flujo verifica su respuesta"
+    ' "$file")
+  fi
+
+  # Variables usadas que la colección no declara.
+  local used
+  used=$(jqc -r '
+    ((.variable // []) | map(.key)) as $own
+    | [.. | strings | scan("\\{\\{([^{}]+)\\}\\}") | .[0] | gsub("^\\s+|\\s+$"; "")
+       | select(startswith("$") | not)] | unique
+    | map(select(. as $v | $own | index($v) | not)) | .[]' "$file")
+  if [ -n "$used" ]; then
+    USED=$(printf '%s\n%s' "$USED" "$(printf '%s\n' "$used" | sed "s|^|$file	|")")
+  fi
+}
+
+while IFS= read -r f; do
+  [ -n "$f" ] && is_valid "$f" && check_collection "$f" main
+done <<EOF
+$MAIN
 EOF
 
-  # Secretos en la colección.
-  while IFS= read -r line; do
-    [ -n "$line" ] && problem "$line"
-  done <<EOF
-$(jqc -r "$SECRET_DEF"'
-  ( (.variable // [])[] | select(.key | secretkey) | select(.value | isvar | not)
-    | "la variable de colección \"\(.key)\" tiene un valor: los secretos van vacíos o como {{variable}}" ),
-  ( .. | objects | select((.type? | type) == "string" and ((.[.type]? // null) | type) == "array")
-    | .type as $t | .[$t][]
-    | select((.key | secretkey) or ($t == "apikey" and .key == "value"))
-    | select(.value | isvar | not)
-    | "una autorización \($t) tiene escrito el valor de \"\(.key)\": usá una variable, por ejemplo {{accessToken}}" ),
-  ( .. | objects | select((.key? | type) == "string" and (.key | ascii_downcase) == "authorization")
-    | select((.value // "") | tostring | test("\\{\\{") or . == "" | not)
-    | "un header Authorization tiene un valor escrito: usá una variable, por ejemplo Bearer {{accessToken}}" ),
-  ( [.. | strings | select(test("eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\."))] | length
-    | if . > 0 then "hay \(.) token(s) JWT pegados en la colección: reemplazalos por <token> o una variable" else empty end )
-' "$COLLECTION")
+while IFS= read -r f; do
+  [ -n "$f" ] && is_valid "$f" && check_collection "$f" epic
+done <<EOF
+$EPICS
 EOF
-
-  # Variables usadas por la colección.
-  USED=$(jqc -r '
-    [.. | strings | scan("\\{\\{([^{}]+)\\}\\}") | .[0] | gsub("^\\s+|\\s+$"; "")
-     | select(startswith("$") | not)] | unique | .[]' "$COLLECTION")
-  COLLECTION_VARS=$(jqc -r '(.variable // [])[].key' "$COLLECTION")
-fi
 
 # --- Entornos -----------------------------------------------------------------
 
@@ -161,24 +205,19 @@ while IFS= read -r env; do
   [ -z "$env" ] && continue
   is_valid "$env" || continue
 
-  while IFS= read -r line; do
-    [ -n "$line" ] && problem "$env: $line"
-  done <<EOF
-$(jqc -r "$SECRET_DEF"'
-  (.values // [])[] | select(.key | secretkey) | select(.value | isvar | not)
-  | "la variable \"\(.key)\" tiene un valor: los secretos van vacíos y cada uno los carga en su Postman"' "$env")
-EOF
+  problems_from "$env: " < <(jqc -r "$SECRET_DEF"'
+    (.values // [])[] | select(.key | secretkey) | select(.value | isvar | not)
+    | "la variable \"\(.key)\" tiene un valor: los secretos van vacíos y cada uno los carga en su Postman"
+  ' "$env")
 
-  if [ -n "${USED:-}" ]; then
-    DEFINED=$(printf '%s\n%s\n' "$(jqc -r '(.values // [])[].key' "$env")" "$COLLECTION_VARS")
-    while IFS= read -r v; do
-      [ -z "$v" ] && continue
-      printf '%s\n' "$DEFINED" | grep -qxF "$v" \
-        || problem "$env: falta declarar la variable \"$v\" que usa la colección (puede ir vacía)"
-    done <<EOF
+  DEFINED=$(jqc -r '(.values // [])[].key' "$env")
+  while IFS='	' read -r file v; do
+    [ -z "$v" ] && continue
+    printf '%s\n' "$DEFINED" | grep -qxF "$v" \
+      || problem "$env: falta declarar la variable \"$v\" que usa $file (puede ir vacía)"
+  done <<EOF
 $USED
 EOF
-  fi
 done <<EOF
 $ENVS
 EOF
@@ -202,8 +241,9 @@ $VALID_FILES
 EOF
 
 if [ "$PROBLEMS" -gt 0 ]; then
-  echo "Colección con $PROBLEMS problema(s)."
+  echo "Colecciones con $PROBLEMS problema(s)."
   exit 1
 fi
-echo "Colección en orden: $COLLECTION"
+EPIC_COUNT=$(printf '%s' "$EPICS" | grep -c . || true)
+echo "Colecciones en orden: la del proyecto y $EPIC_COUNT de épica."
 exit 0

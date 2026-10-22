@@ -142,6 +142,67 @@ make_dir "$GOOD" "$GOOD_ENV"
 printf '%s' "$GOOD_ENV" | jq -S --indent 2 'del(.values[0])' >"$DIR/environments/staging.postman_environment.json"
 check 1 "a un segundo entorno le falta una variable" "$DIR"
 
+# Colecciones de épica: un flujo en orden, cada paso con su script de test.
+EPIC=$(jq -cn --arg s "$SCHEMA" '{
+  info: {name: "PROJ-100 · Catálogo", schema: $s, _postman_id: "22222222-2222-2222-2222-222222222222"},
+  auth: {type: "bearer", bearer: [{key: "token", value: "{{accessToken}}", type: "string"}]},
+  item: [{name: "Flujo: alta de producto", item: [
+    {name: "01 Login", request: {method: "POST", auth: {type: "noauth"},
+       url: {raw: "{{baseUrl}}/auth/login", host: ["{{baseUrl}}"], path: ["auth", "login"]}},
+     event: [{listen: "test", script: {type: "text/javascript",
+       exec: ["pm.test(\"login ok\", () => pm.response.to.have.status(200));",
+              "pm.environment.set(\"accessToken\", pm.response.json().accessToken);"]}}]},
+    {name: "02 Crear producto", request: {method: "POST",
+       url: {raw: "{{baseUrl}}/products", host: ["{{baseUrl}}"], path: ["products"]},
+       body: {mode: "raw", raw: "{\"name\": \"Producto {{$timestamp}}\"}"}},
+     event: [{listen: "test", script: {type: "text/javascript",
+       exec: ["pm.test(\"creado\", () => pm.response.to.have.status(201));",
+              "pm.environment.set(\"productId\", pm.response.json().id);"]}}]}
+  ]}]}')
+
+# Arma la carpeta del caso con la colección correcta y agrega una de épica.
+make_epic_dir() {
+  make_dir "$(printf '%s' "$GOOD" | jq -c '.info._postman_id = "11111111-1111-1111-1111-111111111111"')" "${2:-$GOOD_ENV}"
+  mkdir -p "$DIR/epics"
+  printf '%s' "$1" | jq -S --indent 2 . >"$DIR/epics/PROJ-100-catalogo.postman_collection.json"
+}
+
+make_epic_dir "$EPIC"
+check 0 "colección de épica correcta" "$DIR"
+
+make_epic_dir "$EPIC"
+cp "$DIR/epics/PROJ-100-catalogo.postman_collection.json" "$DIR/epics/PROJ-200-pedidos.postman_collection.json"
+jq -S --indent 2 '.info._postman_id = "33333333-3333-3333-3333-333333333333"' "$DIR/epics/PROJ-200-pedidos.postman_collection.json" >"$DIR/tmp.json" \
+  && mv "$DIR/tmp.json" "$DIR/epics/PROJ-200-pedidos.postman_collection.json"
+check 0 "varias colecciones de épica" "$DIR"
+
+make_epic_dir "$(printf '%s' "$EPIC" | jq -c 'del(.item[0].item[1].event)')"
+check 1 "paso de un flujo sin script de test" "$DIR"
+
+make_epic_dir "$(printf '%s' "$EPIC" | jq -c '.item[0].item[1].event[0].script.exec = ["   "]')"
+check 1 "paso de un flujo con un script de test vacío" "$DIR"
+
+make_epic_dir "$(printf '%s' "$EPIC" | jq -c '.info._postman_id = "11111111-1111-1111-1111-111111111111"')"
+check 1 "épica con el mismo _postman_id que la del proyecto" "$DIR"
+
+make_epic_dir "$(printf '%s' "$EPIC" | jq -c '.item[0].item[1].request.url.raw = "{{baseUrl}}/products?category={{categoryId}}"')"
+check 1 "variable que solo usa la épica, sin declarar en el entorno" "$DIR"
+
+make_epic_dir "$(printf '%s' "$EPIC" | jq -c '.auth.bearer[0].value = "abc123"')"
+check 1 "secreto escrito en una colección de épica" "$DIR"
+
+make_epic_dir "$EPIC"
+printf '{ roto' >"$DIR/epics/PROJ-100-catalogo.postman_collection.json"
+check 1 "colección de épica con JSON inválido" "$DIR"
+
+make_epic_dir "$EPIC"
+jq -c . "$DIR/epics/PROJ-100-catalogo.postman_collection.json" >"$DIR/tmp.json" && mv "$DIR/tmp.json" "$DIR/epics/PROJ-100-catalogo.postman_collection.json"
+check 1 "colección de épica con formato distinto del fijo" "$DIR"
+check 0 "--fix también corrige las de épica" --fix "$DIR"
+
+make_dir "$(printf '%s' "$GOOD" | jq -c 'del(.item[1].item[0].event)')" "$GOOD_ENV"
+check 0 "la colección del proyecto no exige scripts de test" "$DIR"
+
 if [ "$FAILED" -ne 0 ]; then
   echo "Hay pruebas que fallan."
   exit 1

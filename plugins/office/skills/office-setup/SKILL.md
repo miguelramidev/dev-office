@@ -73,7 +73,7 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
 
      Avisale que cada persona inicia sesión con `/mcp`, que el servidor solo lee archivos donde tiene acceso de edición (con acceso de solo lectura no sirve), y que con asientos de solo lectura o el plan Starter Figma permite muy pocas llamadas por mes: si no tiene un asiento Dev o Full, conviene trabajar con imágenes exportadas.
 
-10. **Colección de API (si hay backend).** Si el proyecto tiene backend y el plugin `dept-backend` está instalado, explicale al CEO que el departamento mantiene una sola colección de Postman con toda la API (REST y GraphQL), en el repo, para pasársela al frontend y probar a mano. Preguntale:
+10. **Colección de API (si hay backend).** Si el proyecto tiene backend y el plugin `dept-backend` está instalado, explicale al CEO que el departamento mantiene en el repo una colección de Postman con toda la API (REST y GraphQL), para pasársela al frontend, y una por épica con sus flujos y tests, para probarlos con el Collection Runner. Preguntale:
    - Si la quiere. Si dice que no, proponé agregar al `CLAUDE.md` la línea "Este proyecto no usa colección de API".
    - **Carpeta:** por defecto `docs/api/`.
    - **Entornos:** además de `local`, cuáles quiere (por ejemplo `staging`) y su URL base. No propongas uno de producción: si lo pide, avisale que cualquier request que pruebe ahí toca datos reales.
@@ -84,7 +84,7 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
    ```markdown
    ## Colección de API
 
-   - Carpeta: `docs/api/` (una sola colección de Postman para todo el proyecto).
+   - Carpeta: `docs/api/` (la colección del proyecto y una por épica en `docs/api/epics/`).
    - Entornos: `local` (http://localhost:3000) y `staging` (https://staging.example.com).
    - Autorización: bearer token; el login es `POST /auth/login`.
    ```

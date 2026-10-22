@@ -77,9 +77,11 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 
 ## Colección de API
 
-- **Una sola por proyecto.** La colección de Postman (formato v2.1) vive en el repo, en `docs/api/` o la carpeta que defina el `CLAUDE.md` del proyecto, con un archivo por entorno en `environments/` y un README. Nunca se crea una por épica o por ticket: cada rama tiene la colección de su propio código, y llega a las demás con los merges.
-- **Quién.** La mantiene el developer de backend en el mismo encargo en que cambia un endpoint (skill `dept-backend:api-collection`), la revisa su tester (script `check-collection.sh` y comparación con el código) y la ataca QA. El PM se la pasa al frontend con los cambios de la API y la incluye en el informe.
-- **Primera vez.** Si el proyecto no tiene colección, se genera completa a partir del código (rutas, controladores, esquema de GraphQL, validaciones).
+- **Dos tipos, en el repo.** Las colecciones de Postman (formato v2.1) viven en `docs/api/` o la carpeta que defina el `CLAUDE.md` del proyecto, con un archivo por entorno en `environments/` (compartidos) y un README. Cada rama tiene las colecciones de su propio código, y llegan a las demás con los merges.
+  - **La del proyecto**, una sola: toda la API ordenada por recurso, como referencia para el frontend.
+  - **Una por épica**, en `epics/`: los flujos de la épica, con los pasos en orden, encadenados y con un test cada uno, para correrlos con el Collection Runner. Cuando la épica se integra, se mantiene como prueba de regresión. Nunca hay una por ticket.
+- **Quién.** Las mantiene el developer de backend en el mismo encargo en que cambia un endpoint (skill `dept-backend:api-collection`): la del proyecto, la de la épica del ticket y cualquier otra que use ese endpoint. Las revisa su tester (script `check-collection.sh`, comparación con el código y lectura de los flujos) y las ataca QA. El PM le pasa la épica al backend en el encargo, le da al frontend las rutas de las colecciones y las incluye en el informe.
+- **Primera vez.** Si el proyecto no tiene colección, la del proyecto se genera completa a partir del código (rutas, controladores, esquema de GraphQL, validaciones). La de una épica se crea con el primer ticket de esa épica que toca endpoints.
 - **Sin secretos.** Los entornos llevan las variables con los secretos vacíos; cada persona los carga en su Postman. El script falla si encuentra un valor escrito.
 - **Diffs chicos.** Formato fijo (claves ordenadas, sangría de 2, LF), requests insertados en su lugar y cambios solo en lo afectado, para reducir los conflictos entre ramas.
 - **Fuera del formato.** WebSocket, gRPC, SSE y subscriptions de GraphQL se documentan en el README de la carpeta.
@@ -113,7 +115,7 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 | Hooks de protección y de registro de actividad       | Permisos y modo de permisos (`.claude/settings.json`) |
 | Skills genéricas (por ejemplo, scraping responsable) | Skills propias del proyecto                           |
 | Plantilla de los documentos de diseño                | Los diseños aprobados (`docs/design/`)                |
-| Reglas y revisión de la colección de API             | La colección de Postman y sus entornos (`docs/api/`)  |
+| Reglas y revisión de las colecciones de API          | Las colecciones de Postman y sus entornos (`docs/api/`) |
 | Valores por defecto y ejemplos genéricos (`PROJ-123`) | Moneda, idioma, zona horaria, clave de Jira, ramas protegidas y convenciones |
 
 Los agentes leen el `CLAUDE.md` del proyecto (y lo que este importe) antes de trabajar. Así el mismo equipo respeta las reglas de cada proyecto.
