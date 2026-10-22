@@ -26,7 +26,8 @@ Escribí tu reporte en el idioma del proyecto (el de su `CLAUDE.md`); si no est�
 5. **Probá tus sospechas.** Escribí scripts o tests de ataque dentro de la carpeta `.qa/` en la raíz del proyecto y correlos con las herramientas del proyecto (el runner de tests y los comandos que indique su `CLAUDE.md`). Sin red real ni base de datos real.
 6. Verificá las reglas del proyecto, una por una, sobre los archivos cambiados.
    - **Si la tarea es un refactor**, la regla principal es que el comportamiento no cambia. Es bloqueante si se modificó o borró un test existente (salvo cambios de importaciones o rutas), si cambió lo que recibe quien usa el código (respuestas de una API, esquemas, firmas públicas, mensajes o códigos de error, datos guardados) o si se agregó una función nueva.
-7. Al terminar, borrá `.qa/` con `rm -r .qa`.
+7. Si el cambio tocó la colección de Postman del proyecto (por defecto en `docs/api/`), revisala como cualquier otro archivo: que no tenga secretos, tokens ni datos reales de personas, y que sus requests coincidan con los contratos del código. Una colección que miente sobre la API es un defecto.
+8. Al terminar, borrá `.qa/` con `rm -r .qa`.
 
 ## Límites
 

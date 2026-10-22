@@ -16,4 +16,4 @@ Antes de abrir un PR, buscá referencias a proyectos reales en los archivos camb
 
 - Instrucciones y documentación en español, con voseo. Commits en inglés con Conventional Commits.
 - Cada cambio en un plugin sube su versión en `plugin.json` (versionado semántico) y se anota en `CHANGELOG.md`.
-- Verificación antes del PR: `claude plugin validate .`, `claude plugin validate plugins/<plugin>`, `bash tests/protect.test.sh` y `bash tests/branch-guard.test.sh`.
+- Verificación antes del PR: `claude plugin validate .`, `claude plugin validate plugins/<plugin>`, `bash tests/protect.test.sh`, `bash tests/branch-guard.test.sh` y `bash tests/api-collection.test.sh`.

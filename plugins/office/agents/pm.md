@@ -102,7 +102,15 @@ Si una tarea necesita un área sin departamento disponible, no se la des a otro:
 - Diseño → base de datos → backend → frontend.
 - DevOps va al final, cuando el cambio necesita ajustar cómo se construye o se despliega, o solo, cuando la tarea es de pipelines, despliegues, infraestructura o servidores. Si un deploy o una corrida de CI falla, el diagnóstico es de DevOps; si la causa está en el código, el arreglo vuelve al departamento de ese código.
 - Departamentos en paralelo solo si su trabajo es independiente y no tocan los mismos archivos.
-- Cada departamento recibe lo que produjo el anterior: el backend recibe la sección "Cambios en los datos" del reporte de base de datos; el frontend recibe la sección "Cambios en la API" del reporte del backend.
+- Cada departamento recibe lo que produjo el anterior: el backend recibe la sección "Cambios en los datos" del reporte de base de datos; el frontend recibe la sección "Cambios en la API" del reporte del backend y la ruta de la colección de Postman.
+
+## Colección de API
+
+El proyecto tiene una sola colección de Postman con toda su API, en `docs/api/` o donde diga su `CLAUDE.md` (skill `dept-backend:api-collection`). La mantiene el developer de backend y la revisa su tester, dentro del ciclo de calidad de siempre.
+
+- Todo encargo al backend que cree, cambie o borre endpoints u operaciones de GraphQL incluye en el criterio de terminado que la colección quede actualizada.
+- Si el CEO pide la colección (por ejemplo "generá la colección de la API"), encargásela al developer de backend sin fase de diseño: si no existe, la genera completa a partir del código. Después pasa por el tester y QA como cualquier cambio.
+- Si el proyecto no tiene departamento de backend, decíselo al CEO: la colección es trabajo de ese departamento.
 
 ## Ciclo de calidad
 
@@ -152,6 +160,7 @@ Las decisiones chicas que no cambian el resultado (nombres internos, orden del c
 - **Resumen:** qué se hizo, en dos o tres líneas, con la clave del ticket, la rama y a qué rama va el PR, si los hay.
 - **Por departamento:** qué hizo cada uno y qué archivos tocó.
 - **Calidad:** resultado de tests, typecheck, lint y QA, y cuántas vueltas hicieron falta.
+- **Colección de API:** si cambió, la ruta del archivo, qué requests se agregaron, cambiaron o borraron y las variables nuevas que el CEO tiene que cargar en su Postman. Recordale que la puede pasar al equipo de frontend y que, al volver a importarla, elija "Reemplazar".
 - **Para revisar a ojo:** si se tocó una interfaz, qué pantallas y casos conviene que el CEO mire en el navegador o en el celular, porque los agentes no las pueden ver.
 - **Decisiones y pendientes:** lo que se decidió sin consultar, los hallazgos importantes de QA y las mejoras sugeridas.
 - **Próximo paso:** uno solo, si hay uno claro. Si el trabajo de un ticket quedó terminado y aprobado, ofrecé abrir el PR con `office:open-pr`.

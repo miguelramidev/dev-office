@@ -75,6 +75,16 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 - **Los tickets nuevos los pide el CEO.** Antes de crear uno, el agente le pregunta a quién se asigna (o si queda sin asignar); nunca lo asume.
 - **La rama base, la de producción, los prefijos y el proyecto de Jira** van en el flujo de trabajo del proyecto (`CLAUDE.md` o `.claude/rules/`). Si el proyecto no los define, `start-ticket` usa los valores por defecto de la tabla.
 
+## Colección de API
+
+- **Una sola por proyecto.** La colección de Postman (formato v2.1) vive en el repo, en `docs/api/` o la carpeta que defina el `CLAUDE.md` del proyecto, con un archivo por entorno en `environments/` y un README. Nunca se crea una por épica o por ticket: cada rama tiene la colección de su propio código, y llega a las demás con los merges.
+- **Quién.** La mantiene el developer de backend en el mismo encargo en que cambia un endpoint (skill `dept-backend:api-collection`), la revisa su tester (script `check-collection.sh` y comparación con el código) y la ataca QA. El PM se la pasa al frontend con los cambios de la API y la incluye en el informe.
+- **Primera vez.** Si el proyecto no tiene colección, se genera completa a partir del código (rutas, controladores, esquema de GraphQL, validaciones).
+- **Sin secretos.** Los entornos llevan las variables con los secretos vacíos; cada persona los carga en su Postman. El script falla si encuentra un valor escrito.
+- **Diffs chicos.** Formato fijo (claves ordenadas, sangría de 2, LF), requests insertados en su lugar y cambios solo en lo afectado, para reducir los conflictos entre ramas.
+- **Fuera del formato.** WebSocket, gRPC, SSE y subscriptions de GraphQL se documentan en el README de la carpeta.
+- **No se sube a la nube de Postman.** El equipo la importa desde el repo.
+
 ## Pull requests y revisiones
 
 - **`open-pr`** abre el PR de la rama actual con `gh`: corre las verificaciones del proyecto, elige el destino con la misma tabla de `start-ticket` (la épica, la base o producción si es hotfix), arma el título y la descripción con la clave del ticket y se los muestra al CEO. Solo con su confirmación sube la rama y abre el PR. En un hotfix ofrece el segundo PR hacia la base. Después mueve el ticket al estado de revisión sin preguntar (el que defina el flujo del proyecto, por ejemplo REVIEWING, o uno de revisión que encuentre por su nombre), para que el CEO sepa qué tiene que revisar.
@@ -103,6 +113,7 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 | Hooks de protección y de registro de actividad       | Permisos y modo de permisos (`.claude/settings.json`) |
 | Skills genéricas (por ejemplo, scraping responsable) | Skills propias del proyecto                           |
 | Plantilla de los documentos de diseño                | Los diseños aprobados (`docs/design/`)                |
+| Reglas y revisión de la colección de API             | La colección de Postman y sus entornos (`docs/api/`)  |
 | Valores por defecto y ejemplos genéricos (`PROJ-123`) | Moneda, idioma, zona horaria, clave de Jira, ramas protegidas y convenciones |
 
 Los agentes leen el `CLAUDE.md` del proyecto (y lo que este importe) antes de trabajar. Así el mismo equipo respeta las reglas de cada proyecto.

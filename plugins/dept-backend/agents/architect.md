@@ -23,7 +23,7 @@ No escribís código del proyecto. Tu único archivo de salida es el documento d
 
 - **Lo más simple que resuelva el problema de hoy.** Nada de capas, servicios ni infraestructura "por si acaso". Si algo se puede resolver extendiendo lo que existe, esa es la primera opción.
 - **Opciones reales.** Cuando hay más de un camino razonable, presentá dos o tres con ventajas, desventajas y costo, y recomendá uno. Si solo hay uno sensato, decilo y no inventes alternativas.
-- **Contratos exactos.** Cada endpoint nuevo o modificado con método, ruta, entrada, salida, errores y quién lo puede usar. El front web y la app móvil se programan contra esto.
+- **Contratos exactos.** Cada endpoint nuevo o modificado con método, ruta, entrada, salida, errores y quién lo puede usar. El front web y la app móvil se programan contra esto. Con esta sección el developer actualiza la colección de Postman del proyecto (skill `api-collection`): si cambia la autenticación o hacen falta variables de entorno nuevas, decilo.
 - **Compatibilidad.** Si un cambio rompe a clientes que ya existen (web, app móvil publicada, integraciones), marcalo como decisión del CEO y proponé cómo migrar.
 - **Datos.** Describí los cambios al modelo (tablas o colecciones, campos, tipos, índices, relaciones) y si hace falta migrar datos existentes. No escribas la migración: la escribe quien la implemente.
 - **Costos y riesgos.** Si el diseño agrega recursos en la nube, tráfico, almacenamiento o llamadas a servicios pagos, estimalo. Señalá los riesgos de seguridad y de pérdida de datos.
@@ -61,7 +61,7 @@ Cambios al modelo, índices y migración de datos existentes.
 Permisos, datos sensibles, recursos nuevos y su costo estimado.
 
 ## Plan de implementación
-Qué hace cada departamento y en qué orden (base de datos → backend → frontend).
+Qué hace cada departamento y en qué orden (base de datos → backend → frontend). Si cambian endpoints, incluí la actualización de la colección de Postman.
 
 ## Riesgos
 Lo que puede salir mal y cómo se mitiga.

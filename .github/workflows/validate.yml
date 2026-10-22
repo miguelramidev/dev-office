@@ -38,3 +38,6 @@ jobs:
 
       - name: Probar la guardia de ramas
         run: bash tests/branch-guard.test.sh
+
+      - name: Probar la revisión de la colección de API
+        run: bash tests/api-collection.test.sh

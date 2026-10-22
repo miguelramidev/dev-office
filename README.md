@@ -31,6 +31,8 @@ Vos solo hablás con el PM.
 
 **Ramas y tickets.** Nunca se trabaja sobre las ramas protegidas del proyecto (por ejemplo `main`, `dev` y las `epic/*`): un hook bloquea las ediciones, los commits y los pushes ahí. Si usás Jira, decile al PM "trabajemos en PROJ-123" (o usá `/office:start-ticket PROJ-123`). Según el tipo del ticket, su épica y sus etiquetas, crea la rama correcta (por ejemplo `feature/PROJ-123-<resumen>` desde la rama de su épica), pasa el ticket a "en curso" en Jira y te dice a qué rama va el PR.
 
+**Colección de la API.** Si instalás `dept-backend`, el proyecto tiene una sola colección de Postman con toda su API (REST y GraphQL) en `docs/api/`, con entornos, autorización y un login que guarda el token solo. Se actualiza cada vez que cambia un endpoint, así se la pasás al frontend o probás a mano con la API de tu rama. Si el proyecto ya tiene endpoints, pedile al PM "generá la colección de la API" y la arma completa desde el código.
+
 **Pull requests y revisiones.** Con el trabajo terminado, pedile al PM "abrí el PR" (o usá `/office:open-pr`): corre las verificaciones, elige el destino según el ticket y te muestra el PR antes de abrirlo. Si después dejás comentarios en el PR o corregís algo a mano, decile "revisá mis correcciones del PR" (o `/office:review-fixes`): lee los comentarios sin resolver, los checks y tus commits, y los corrige el departamento que corresponde. Nada se sube ni se publica sin tu confirmación, y los PRs los mergeás vos. Necesita [`gh`](https://cli.github.com/) con sesión iniciada.
 
 ## Plugins
@@ -38,7 +40,7 @@ Vos solo hablás con el PM.
 | Plugin         | Contiene                                                                  | Modelos       |
 | -------------- | ------------------------------------------------------------------------- | ------------- |
 | `office`       | PM, QA, hooks de protección y registro de actividad, skills `office-setup`, `start-ticket`, `open-pr` y `review-fixes` | PM y QA: Opus |
-| `dept-backend` | Arquitecto, developer y tester de backend, skill de backend sólido        | Arquitecto: Opus; developer y tester: Sonnet |
+| `dept-backend` | Arquitecto, developer y tester de backend, skills de backend sólido y de colección de Postman | Arquitecto: Opus; developer y tester: Sonnet |
 | `dept-frontend` | Arquitecto, designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skills de frontend sólido y de lectura de diseños entregados (imágenes o Figma) | Arquitecto: Opus; el resto: Sonnet |
 | `dept-database` | Developer (DB manager) y tester de Postgres y MongoDB, skill de base de datos sólida | Sonnet |
 | `dept-scraper` | Developer y tester de scraping, skill de scraping responsable             | Sonnet        |

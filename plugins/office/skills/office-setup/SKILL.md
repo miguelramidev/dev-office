@@ -1,6 +1,6 @@
 ---
 name: office-setup
-description: Prepara un proyecto para trabajar con la oficina dev-office - permisos base, modo de permisos, ramas protegidas, zona horaria del registro de actividad, .gitignore, conexión con Jira y recomendación de skills de la comunidad según el stack. Usar una vez al instalar la oficina en un proyecto, o para volver a aplicar la configuración base.
+description: Prepara un proyecto para trabajar con la oficina dev-office - permisos base, modo de permisos, ramas protegidas, zona horaria del registro de actividad, .gitignore, conexión con Jira, colección de Postman de la API y recomendación de skills de la comunidad según el stack. Usar una vez al instalar la oficina en un proyecto, o para volver a aplicar la configuración base.
 disable-model-invocation: true
 ---
 
@@ -73,10 +73,29 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
 
      Avisale que cada persona inicia sesión con `/mcp`, que el servidor solo lee archivos donde tiene acceso de edición (con acceso de solo lectura no sirve), y que con asientos de solo lectura o el plan Starter Figma permite muy pocas llamadas por mes: si no tiene un asiento Dev o Full, conviene trabajar con imágenes exportadas.
 
-10. **Cerrá con los próximos pasos:**
+10. **Colección de API (si hay backend).** Si el proyecto tiene backend y el plugin `dept-backend` está instalado, explicale al CEO que el departamento mantiene una sola colección de Postman con toda la API (REST y GraphQL), en el repo, para pasársela al frontend y probar a mano. Preguntale:
+   - Si la quiere. Si dice que no, proponé agregar al `CLAUDE.md` la línea "Este proyecto no usa colección de API".
+   - **Carpeta:** por defecto `docs/api/`.
+   - **Entornos:** además de `local`, cuáles quiere (por ejemplo `staging`) y su URL base. No propongas uno de producción: si lo pide, avisale que cualquier request que pruebe ahí toca datos reales.
+   - **Autorización:** cómo se autentica la API (bearer token, API key, cookie de sesión) y cuál es el endpoint de login, si lo sabe. Si no, el developer lo deduce del código.
+
+   Con las respuestas, proponé una sección "Colección de API" para el `CLAUDE.md` y mostrale el texto antes de escribirlo, por ejemplo:
+
+   ```markdown
+   ## Colección de API
+
+   - Carpeta: `docs/api/` (una sola colección de Postman para todo el proyecto).
+   - Entornos: `local` (http://localhost:3000) y `staging` (https://staging.example.com).
+   - Autorización: bearer token; el login es `POST /auth/login`.
+   ```
+
+   Avisale que la colección se genera completa la primera vez que el backend toque un endpoint, o cuando se la pida al PM ("generá la colección de la API"), y que para revisarla el developer y el tester corren un script con `bash` que puede pedir confirmación la primera vez.
+
+11. **Cerrá con los próximos pasos:**
    - Revisar los cambios y hacer commit de `.claude/settings.json` y `.gitignore`.
    - Instalar las skills de la comunidad que haya elegido.
    - Si conectó Jira, autenticarse con `/mcp` y probar con `/office:start-ticket <TICKET>`.
    - Para abrir PRs y aplicar correcciones de revisión (`/office:open-pr` y `/office:review-fixes`), instalar `gh` e iniciar sesión con `gh auth login`.
+   - Si quiere la colección de API y el proyecto ya tiene endpoints, pedirle al PM que la genere.
    - Borrar `.claude/settings.json.bak` cuando esté conforme.
    - Reiniciar Claude Code para que tome la configuración nueva.

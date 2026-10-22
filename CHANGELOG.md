@@ -8,6 +8,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.12.0] - 2026-10-22
+
+### Agregado
+
+- `dept-backend` (0.2.0): skill `api-collection`. El proyecto tiene una sola colección de Postman (formato v2.1) con toda su API, REST y GraphQL, en `docs/api/` o la carpeta que diga su `CLAUDE.md`, con entornos (`environments/`), autorización a nivel colección, un script de login que guarda los tokens, variables para encadenar requests, ejemplos de respuesta y un README para importarla. Si el proyecto todavía no tiene colección, se genera completa leyendo el código; después se actualiza solo lo que cambia. WebSocket, gRPC, SSE y subscriptions quedan documentados en el README.
+- Script `check-collection.sh` (en la skill): revisa que haya una sola colección, el formato v2.1, nombres repetidos, URLs sin `{{baseUrl}}`, secretos escritos (variables, autorizaciones, headers `Authorization` y JWT pegados) y variables sin declarar en los entornos. Con `--fix` deja un formato fijo (claves ordenadas, sangría de 2, LF) para que los diffs entre ramas sean chicos. Pruebas en `tests/api-collection.test.sh` y en el CI.
+
+### Cambiado
+
+- `developer` (backend): si toca endpoints, operaciones de GraphQL o la autenticación, actualiza la colección en el mismo encargo y lo informa en su reporte.
+- `tester` (backend): revisa la colección con el script y la compara con el código; que falte un endpoint es una falla.
+- `architect` (backend): avisa en el diseño si cambia la autenticación o hacen falta variables nuevas, e incluye la colección en el plan.
+- `pm` (`office` 0.10.0): la colección es parte del criterio de terminado de todo encargo que toque endpoints, se la pasa al frontend con los cambios de la API, puede encargarla completa cuando el CEO la pide y la incluye en el informe.
+- `qa`: revisa que la colección no tenga secretos ni datos reales y que coincida con los contratos.
+- `office-setup`: pregunta si el proyecto quiere la colección, su carpeta, entornos y autorización, y propone la sección "Colección de API" del `CLAUDE.md`.
+
 ## [0.11.0] - 2026-10-20
 
 ### Cambiado
