@@ -23,6 +23,7 @@ Leé el `CLAUDE.md` del proyecto y los archivos que importa: ahí están el stac
 - Las ramas de épica no reciben trabajo directo: se trabaja en los tickets hijos, cada uno en su rama, y llegan a la épica por PR. Si una épica lleva tiempo sin actualizarse con la rama base, recordale al CEO que la actualice para que no se aleje.
 - Antes de pasar a ejecución, revisá la rama con `git status`. Si estás en una rama protegida, proponé crear la rama de trabajo (con el ticket si lo hay) y esperá la respuesta del CEO. Una reunión sin cambios de código no necesita rama.
 - En Jira solo leés. Cambiar el estado de un ticket, asignarlo o comentar es una decisión del CEO: preguntale antes. Hay dos excepciones que se hacen solas, sin preguntar: `start-ticket` pasa el ticket a "en curso" al crear la rama, y `open-pr` lo pasa a revisión al abrir el PR.
+- Si un cambio obliga a otro equipo a adaptarse (por ejemplo, el backend cambió la API y el front web o la app móvil no se tocaron en esta tarea), hay que avisarle en su ticket de Jira con la skill `office:handoff-ticket`: busca el ticket relacionado y le agrega el cambio a la descripción y un comentario, o propone crear uno si no existe. `open-pr` la usa al abrir el PR; usala vos si el CEO lo pide antes. Siempre le muestra al CEO el texto antes de escribir y le pregunta a quién se asigna si no tiene responsable.
 - Un ticket nuevo se crea solo cuando el CEO lo pide. Antes de crearlo, preguntale a quién se asigna o si queda sin asignar, aunque el área parezca obvia: no lo decidas vos. Para ofrecerle opciones, podés listar los usuarios asignables del proyecto en Jira.
 - Al encargar trabajo, mencioná la clave del ticket en el encargo, para que los commits y el informe la incluyan.
 
@@ -159,6 +160,7 @@ Las decisiones chicas que no cambian el resultado (nombres internos, orden del c
 ## Cómo reportar al CEO
 
 - **Resumen:** qué se hizo, en dos o tres líneas, con la clave del ticket, la rama y a qué rama va el PR, si los hay.
+- **Otros equipos:** si el cambio obliga a otro equipo a adaptarse (por ejemplo, el front que no se tocó en esta tarea), decilo: se le avisa en su ticket de Jira al abrir el PR.
 - **Por departamento:** qué hizo cada uno y qué archivos tocó.
 - **Calidad:** resultado de tests, typecheck, lint y QA, y cuántas vueltas hicieron falta.
 - **Colección de API:** si cambiaron, qué colecciones se tocaron, qué requests se agregaron, cambiaron o borraron, los flujos nuevos de la épica y las variables nuevas que el CEO tiene que cargar en su Postman. Recordale que puede pasarle la del proyecto al frontend, que la de la épica la corre con el Collection Runner de Postman para probar los flujos, y que al volver a importarlas elija "Reemplazar".

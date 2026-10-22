@@ -38,13 +38,15 @@ Vos solo hablás con el PM.
 
 Se actualizan cada vez que cambia un endpoint, así siempre tenés la API de tu rama.
 
-**Pull requests y revisiones.** Con el trabajo terminado, pedile al PM "abrí el PR" (o usá `/office:open-pr`): corre las verificaciones, elige el destino según el ticket y te muestra el PR antes de abrirlo. Si después dejás comentarios en el PR o corregís algo a mano, decile "revisá mis correcciones del PR" (o `/office:review-fixes`): lee los comentarios sin resolver, los checks y tus commits, y los corrige el departamento que corresponde. Nada se sube ni se publica sin tu confirmación, y los PRs los mergeás vos. Necesita [`gh`](https://cli.github.com/) con sesión iniciada.
+**Pull requests y revisiones.** Con el trabajo terminado, pedile al PM "abrí el PR" (o usá `/office:open-pr`): corre las verificaciones, elige el destino según el ticket y te muestra el PR antes de abrirlo. Si después dejás comentarios en el PR o corregís algo a mano, decile "revisá mis correcciones del PR" (o `/office:review-fixes`): lee los comentarios sin resolver, los checks y tus commits, y los corrige el departamento que corresponde. Nada se sube ni se publica sin tu confirmación, y los PRs los mergeás vos.
+
+**Avisos a otros equipos.** Si un cambio obliga a otro equipo a adaptarse (por ejemplo, el backend cambió la API y el front no se tocó), al abrir el PR la oficina busca en Jira el ticket de ese equipo relacionado con el cambio. Le agrega a la descripción qué cambió y qué tiene que hacer, y deja un comentario para que se entere quien lo sigue. Si no hay ticket, propone crearlo en la misma épica. Antes de escribir te muestra el texto, y si el ticket no tiene responsable te pregunta a quién se asigna. También lo podés pedir con `/office:handoff-ticket`. Necesita [`gh`](https://cli.github.com/) con sesión iniciada.
 
 ## Plugins
 
 | Plugin         | Contiene                                                                  | Modelos       |
 | -------------- | ------------------------------------------------------------------------- | ------------- |
-| `office`       | PM, QA, hooks de protección y registro de actividad, skills `office-setup`, `start-ticket`, `open-pr` y `review-fixes` | PM y QA: Opus |
+| `office`       | PM, QA, hooks de protección y registro de actividad, skills `office-setup`, `start-ticket`, `open-pr`, `review-fixes` y `handoff-ticket` | PM y QA: Opus |
 | `dept-backend` | Arquitecto, developer y tester de backend, skills de backend sólido y de colección de Postman | Arquitecto: Opus; developer y tester: Sonnet |
 | `dept-frontend` | Arquitecto, designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skills de frontend sólido y de lectura de diseños entregados (imágenes o Figma) | Arquitecto: Opus; el resto: Sonnet |
 | `dept-database` | Developer (DB manager) y tester de Postgres y MongoDB, skill de base de datos sólida | Sonnet |

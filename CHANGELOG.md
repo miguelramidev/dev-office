@@ -8,6 +8,19 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.13.0] - 2026-10-22
+
+### Agregado
+
+- Skill `handoff-ticket` en `office` (0.11.0): cuando un cambio obliga a otro equipo a adaptarse (por ejemplo, el backend cambió la API y el front web o la app móvil no se tocaron en esa rama), busca en Jira el ticket de cada equipo afectado: los vinculados al ticket de origen, los de la misma épica con el componente, etiqueta o prefijo del equipo, y por texto. Al elegido le agrega a la descripción una sección "Cambios de API desde PROJ-123" (qué cambió, endpoints, qué tiene que hacer el equipo, compatibilidad y colecciones de Postman) y un comentario corto, y lo vincula con el de origen. Si no hay ticket, propone crearlo en la misma épica. Antes de escribir le muestra el texto al CEO y, si el ticket no tiene responsable, le pregunta a quién se asigna. No cambia el estado de esos tickets. Se usa como `/office:handoff-ticket` o desde `open-pr`.
+
+### Cambiado
+
+- `open-pr`: después de abrir el PR, si la rama cambia algo que usa otro equipo, avisa con `handoff-ticket`. No lo hace en el PR de una épica completa ni en el segundo PR de un hotfix.
+- `pm`: avisar a los otros equipos es la tercera excepción a "en Jira solo leés", siempre con confirmación del CEO; el informe dice qué equipos tienen que adaptarse.
+- `office-setup`: en la parte de Jira pregunta qué clientes usan la API, cómo se reconocen sus tickets y qué tipo de ticket usan.
+- `developer` (`dept-backend` 0.2.1): la sección "Cambios en la API" de su reporte dice, por endpoint, qué cambia para quien lo usa, si rompe a los clientes actuales y qué tienen que hacer.
+
 ## [0.12.0] - 2026-10-22
 
 ### Agregado

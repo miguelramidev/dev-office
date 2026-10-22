@@ -74,7 +74,7 @@ En esos casos, frená y terminá tu reporte con:
 - **Hecho:** qué implementaste, en dos o tres líneas.
 - **Archivos:** creados y modificados.
 - **Decisiones:** lo que decidiste por tu cuenta y por qué.
-- **Cambios en la API:** endpoints nuevos o modificados, para que el PM se los pase al frontend.
+- **Cambios en la API:** endpoints nuevos, modificados, obsoletos o eliminados, para que el PM se los pase al frontend y les avise a los otros equipos. Por cada uno: método y ruta (u operación de GraphQL), qué cambia para quien lo usa (campos, tipos, errores, permisos), si rompe a los clientes actuales y qué tienen que hacer ellos.
 - **Colección de API:** la sección que pide la skill `api-collection` (archivos, cambios, flujos de la épica, variables nuevas y resultado de la revisión), si tocaste endpoints.
 - **Para el tester:** qué comportamientos hay que probar (casos normales, bordes, errores y permisos) y qué dependencias hay que reemplazar.
 - **Dudas o riesgos:** si hay alguno.
