@@ -1,6 +1,6 @@
 ---
 name: open-pr
-description: Abre el pull request de la rama actual - corre las verificaciones del proyecto, elige la rama de destino según el ticket de Jira (su épica, la rama base o producción si es hotfix), arma el título y la descripción con la clave del ticket, se los muestra al CEO y solo con su confirmación sube la rama y abre el PR con gh. Usar cuando el CEO pide abrir o preparar el PR de un trabajo terminado.
+description: Abre el pull request de la rama actual - corre las verificaciones del proyecto, elige la rama de destino según el ticket de Jira (su épica, la rama base o producción si es hotfix), arma el título y la descripción con la clave del ticket, se los muestra al CEO y solo con su confirmación sube la rama y abre el PR con gh. Después pasa el ticket a revisión y, si el cambio obliga a otro equipo a adaptarse (por ejemplo, cambió la API que usa el front), le avisa en su ticket de Jira con la skill handoff-ticket. Usar cuando el CEO pide abrir o preparar el PR de un trabajo terminado.
 argument-hint: "[rama de destino, opcional]"
 ---
 
@@ -109,6 +109,14 @@ Con el PR abierto, **mové el ticket al estado de revisión sin preguntar**: abr
 
 En ningún caso saltees estados ni muevas un ticket hacia atrás.
 
-## 10. Cerrá
+## 10. Avisá a los otros equipos
 
-En pocas líneas: el enlace al PR, origen → destino, el ticket y a qué estado pasó en Jira, y que cuando el CEO deje comentarios de revisión, la skill `office:review-fixes` los lee y los corrige.
+Si el proyecto usa Jira y esta rama cambia algo que usa otro equipo (endpoints, operaciones de GraphQL, autenticación, eventos o webhooks que consumen el front web, la app móvil u otra integración), usá la skill `office:handoff-ticket` con la clave del ticket y el enlace al PR. Ella busca el ticket de cada equipo afectado, le muestra al CEO el texto y escribe solo con su confirmación.
+
+- Si el cambio de ese cliente ya se hizo en esta misma rama, no hace falta avisar.
+- No lo hagas en el PR de una épica completa (los avisos se hicieron con cada ticket) ni en el segundo PR de un hotfix.
+- Si no cambió nada que use otro equipo, salteá este paso sin preguntar.
+
+## 11. Cerrá
+
+En pocas líneas: el enlace al PR, origen → destino, el ticket y a qué estado pasó en Jira, a qué tickets de otros equipos se les avisó, y que cuando el CEO deje comentarios de revisión, la skill `office:review-fixes` los lee y los corrige.

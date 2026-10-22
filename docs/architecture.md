@@ -73,6 +73,11 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
   Las épicas son ramas de integración: reciben los PRs de sus tickets y, cuando están completas, se integran a la rama base. Conviene actualizarlas con la rama base seguido, para que no se alejen.
 - **Jira es de solo lectura para la oficina.** Cambiar el estado de un ticket, asignarlo o comentar lo decide el CEO. La excepción es lo que el flujo del proyecto autoriza por escrito, como pasar el ticket a revisión al abrir el PR.
 - **Los tickets nuevos los pide el CEO.** Antes de crear uno, el agente le pregunta a quién se asigna (o si queda sin asignar); nunca lo asume.
+- **Avisos a otros equipos (`handoff-ticket`).** Cuando un cambio obliga a otro equipo a adaptarse (por ejemplo, el backend cambió la API y el front web o la app móvil no se tocaron en esa rama), `open-pr` usa la skill `handoff-ticket` después de abrir el PR. Por cada equipo afectado busca su ticket: primero los vinculados al ticket de origen, después los de la misma épica con el componente, etiqueta o prefijo de ese equipo (definidos en el flujo del proyecto), y por último por texto.
+  - El CEO elige el ticket, o crear uno nuevo en la misma épica, o no avisar.
+  - Al ticket se le agrega a la descripción una sección "Cambios de API desde PROJ-123" (qué cambió, endpoints, qué tiene que hacer ese equipo, compatibilidad y las colecciones de Postman), un comentario corto para que se entere quien lo sigue, y un vínculo con el ticket de origen.
+  - Antes de escribir, le muestra el texto al CEO y espera su confirmación. Si el ticket no tiene responsable, pregunta a quién se asigna.
+  - No cambia el estado de esos tickets.
 - **La rama base, la de producción, los prefijos y el proyecto de Jira** van en el flujo de trabajo del proyecto (`CLAUDE.md` o `.claude/rules/`). Si el proyecto no los define, `start-ticket` usa los valores por defecto de la tabla.
 
 ## Colección de API
