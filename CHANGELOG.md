@@ -8,6 +8,13 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.18.0] - 2026-10-26
+
+### Agregado
+
+- **Consumo de tokens en el informe del PM** (`office` 0.16.0): skill `usage` con el script `token-report.sh`. Del registro del observer arma una tabla de tokens por tarea de cada agente (proveedor, tarea, resultado y tokens; en los roles por Codex o Gemini, separa lo del proveedor y lo del puente), el total por agente con el promedio por tarea, y el total de la sesión por proveedor con el PM aparte. No llama a ningún modelo. El PM la agrega al final de cada informe al CEO, y el CEO la puede pedir con `/office:usage` (con `--prev`, la sesión anterior).
+- Pruebas del resumen en `tests/observer.test.sh`.
+
 ## [0.17.2] - 2026-10-26
 
 ### Corregido

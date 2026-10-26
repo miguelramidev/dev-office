@@ -167,6 +167,31 @@ printf '#!/usr/bin/env bash\necho "C:\\\\dev\\\\app\\\\.office\\\\observer\\\\in
 OUT=$(cd "$PROJ" && WSL_DISTRO_NAME=Ubuntu PATH="$FAKE:$PATH" bash "$OPEN" --no-open 2>&1)
 echo "$OUT" | grep -q "En Windows: file:///C:/dev/app/.office/observer/index.html" && ok "WSL: proyecto en el disco de Windows" || { fail "WSL: proyecto en el disco de Windows"; echo "$OUT"; }
 
+# --- Resumen de tokens (skill usage) ---------------------------------------------------
+REPORT="$REPO/plugins/office/skills/usage/token-report.sh"
+TP="$WORK/tokproj"; mkdir -p "$TP/.office/observer"; (cd "$TP" && git init -q)
+cat >"$TP/.office/observer/events.js" <<'EVS'
+OFFICE_EVENT({"type":"session","t":1,"source":"startup"});
+OFFICE_EVENT({"type":"delegate","t":2,"subagent_type":"office:external","description":"[backend-developer · codex] Endpoints | pedidos","role":"backend.developer","provider":"codex","xmodel":"gpt-x"});
+OFFICE_EVENT({"type":"start","t":3,"agent":"a1","agent_type":"office:external"});
+OFFICE_EVENT({"type":"external","t":4,"role":"backend.developer","provider":"codex","model":"gpt-x","tokens":120500,"code":0});
+OFFICE_EVENT({"type":"stop","t":5,"agent":"a1","agent_type":"office:external","usage":{"i":500,"o":3000,"cw":15000},"verdict":"LISTO"});
+OFFICE_EVENT({"type":"delegate","t":6,"subagent_type":"dept-backend:tester","description":"[backend-tester] Tests"});
+OFFICE_EVENT({"type":"start","t":7,"agent":"a2","agent_type":"dept-backend:tester"});
+OFFICE_EVENT({"type":"stop","t":8,"agent":"a2","agent_type":"dept-backend:tester","usage":{"i":300,"o":4000,"cw":22000,"cr":99999},"verdict":"FALLA"});
+OFFICE_EVENT({"type":"stop","t":9,"agent":"a3","agent_type":"office:qa","usage":null,"verdict":"APROBADO"});
+OFFICE_EVENT({"type":"turn_end","t":10,"usage":{"i":5000,"o":12000,"cw":180000}});
+EVS
+OUT=$(cd "$TP" && bash "$REPORT")
+RC=$?
+[ "$RC" -eq 0 ] && echo "$OUT" | grep -q '^## Consumo de tokens' && ok "resumen: sección de consumo" || { fail "resumen: sección de consumo"; echo "$OUT"; }
+echo "$OUT" | grep -q '| Developer de backend | Codex (gpt-x) | Endpoints / pedidos | LISTO | Codex 120.5k + puente 18.5k |' && ok "resumen: tarea por el puente, con el proveedor y el puente separados" || { fail "resumen: tarea por el puente"; echo "$OUT"; }
+echo "$OUT" | grep -q '| Tester de backend | Claude | Tests | FALLA | 26.3k |' && ok "resumen: tarea de Claude, sin lecturas de caché" || fail "resumen: tarea de Claude, sin lecturas de caché"
+echo "$OUT" | grep -q '| QA | Claude | — | APROBADO | sin datos |' && ok "resumen: sin transcripción dice sin datos" || fail "resumen: sin transcripción dice sin datos"
+echo "$OUT" | grep -q 'Claude 241.8k (PM 197k, agentes y puente 44.8k) · Codex 120.5k' && ok "resumen: total por proveedor con el PM aparte" || { fail "resumen: total por proveedor"; echo "$OUT" | tail -4; }
+OUT=$(mkdir -p "$WORK/sinnada" && cd "$WORK/sinnada" && CLAUDE_PROJECT_DIR="$WORK/sinnada" bash "$REPORT")
+echo "$OUT" | grep -q "No hay datos de tokens" && ok "resumen: sin registro avisa" || fail "resumen: sin registro avisa"
+
 # --- Todo el archivo es JavaScript válido para la página -------------------------------
 if command -v node >/dev/null 2>&1; then
   if node -e "const fs=require('fs');let n=0;global.OFFICE_EVENT=()=>n++;eval(fs.readFileSync(process.argv[1],'utf8'));if(!n)process.exit(1)" "$EVENTS"; then ok "events.js se puede cargar desde la página"; else fail "events.js se puede cargar desde la página"; fi
