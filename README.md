@@ -29,6 +29,7 @@ Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). 
 | `/office:handoff-ticket` | Avisarle a otro equipo, en su ticket de Jira, de un cambio que lo afecta. |
 | `/office:office-agents` | Elegir Claude, Codex o Gemini para cada rol, y el modo equipos. |
 | `/office:observer` | Abrir la oficina en pixel art en el navegador. |
+| `/office:usage` | Ver cuántos tokens gastó cada agente en cada tarea, por agente y por proveedor. El PM lo agrega al final de su informe. |
 | `/office:update` | Dejar el botón para actualizar la oficina en todos tus proyectos. |
 
 ## Cómo funciona
@@ -52,7 +53,7 @@ Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). 
 2. **Diseño.** Para funciones nuevas o cambios grandes, los roles de diseño (el arquitecto de backend y el designer de frontend) escriben una propuesta en `docs/design/` y vos la aprobás antes de que se programe. Los bugs y ajustes chicos se saltean este paso.
 3. **Ejecución.** Con tu decisión, el PM arma un plan, lo aprobás y activa solo a los departamentos que hacen falta. El resto no trabaja ni gasta tokens.
 4. **Calidad.** Todo el código pasa por el tester del departamento y después por QA. Si algo falla, vuelve al departamento, con un máximo de 3 vueltas.
-5. **Informe.** El PM te entrega un resumen por departamento: qué se hizo, qué archivos cambiaron, resultados de calidad y decisiones pendientes.
+5. **Informe.** El PM te entrega un resumen por departamento: qué se hizo, qué archivos cambiaron, resultados de calidad y decisiones pendientes. Al final, el consumo de tokens de cada agente por tarea y el total por agente y por proveedor, para que veas qué conviene mover a Codex o Gemini, o desactivar.
 
 Vos solo hablás con el PM.
 
@@ -79,7 +80,7 @@ Se actualizan cada vez que cambia un endpoint, así siempre tenés la API de tu 
 
 | Plugin         | Contiene                                                                  | Modelos       |
 | -------------- | ------------------------------------------------------------------------- | ------------- |
-| `office`       | PM, QA, puente a Codex y Gemini, hooks de protección y registro de actividad, observer en pixel art, skills `office-setup`, `start-ticket`, `open-pr`, `review-fixes`, `handoff-ticket`, `office-agents`, `observer` y `update` | PM y QA: Opus; puente: Sonnet |
+| `office`       | PM, QA, puente a Codex y Gemini, hooks de protección y registro de actividad, observer en pixel art, skills `office-setup`, `start-ticket`, `open-pr`, `review-fixes`, `handoff-ticket`, `office-agents`, `observer`, `usage` y `update` | PM y QA: Opus; puente: Sonnet |
 | `dept-backend` | Arquitecto, developer y tester de backend, skills de backend sólido y de colección de Postman | Arquitecto: Opus; developer y tester: Sonnet |
 | `dept-frontend` | Arquitecto, designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skills de frontend sólido y de lectura de diseños entregados (imágenes o Figma) | Arquitecto: Opus; el resto: Sonnet |
 | `dept-database` | Developer (DB manager) y tester de Postgres y MongoDB, skill de base de datos sólida | Sonnet |
