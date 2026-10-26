@@ -1,6 +1,6 @@
 ---
 name: office-setup
-description: Prepara un proyecto para trabajar con la oficina dev-office - permisos base, modo de permisos, ramas protegidas, zona horaria del registro de actividad, .gitignore, conexión con Jira, colección de Postman de la API y recomendación de skills de la comunidad según el stack. Usar una vez al instalar la oficina en un proyecto, o para volver a aplicar la configuración base.
+description: Prepara un proyecto para trabajar con la oficina dev-office - permisos base, modo de permisos, ramas protegidas, zona horaria del registro de actividad, .gitignore, conexión con Jira, colección de Postman de la API, proveedores por rol (Claude, Codex o Gemini) y recomendación de skills de la comunidad según el stack. Usar una vez al instalar la oficina en un proyecto, o para volver a aplicar la configuración base.
 disable-model-invocation: true
 ---
 
@@ -13,7 +13,7 @@ Los cambios los hace el script `setup.sh` que está en la misma carpeta que este
 1. **Explicá qué va a pasar**, en pocas líneas:
    - Se agregan a `.claude/settings.json` permisos base: comandos de git y de `gh` de solo lectura permitidos (incluido ver las corridas de GitHub Actions); commit, push, abrir PRs, comentar en GitHub, disparar workflows, aplicar infraestructura, SSH, instalar paquetes y AWS siempre con consulta; leer secretos, forzar push, saltear hooks, mergear PRs, cambiar secretos de GitHub y destruir infraestructura prohibidos.
    - Se define el modo de permisos y las ramas protegidas, donde los agentes no pueden editar ni commitear.
-   - Se agregan a `.gitignore` la carpeta temporal de QA, el registro de actividad y la copia de seguridad.
+   - Se agregan a `.gitignore` la carpeta temporal de QA, la de trabajo de la oficina (`.office/`), el registro de actividad, la copia de seguridad y la configuración personal de proveedores.
    - No se borra nada de lo que ya existe, y se guarda una copia del archivo anterior.
 
 2. **Revisá `CLAUDE.md`.** Si el proyecto no lo tiene, avisale al CEO que los agentes lo necesitan para conocer las reglas del proyecto, y preguntale si querés seguir igual.
@@ -91,7 +91,9 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
 
    Avisale que la colección se genera completa la primera vez que el backend toque un endpoint, o cuando se la pida al PM ("generá la colección de la API"), y que para revisarla el developer y el tester corren un script con `bash` que puede pedir confirmación la primera vez.
 
-11. **Cerrá con los próximos pasos:**
+11. **Proveedores por rol (opcional).** Contale al CEO que cada rol de la oficina lo puede hacer Claude, Codex o Gemini (por ejemplo, Codex como developer de backend y dos QA que se validan entre ellos), y que el PM siempre es Claude pero puede consultar a Codex o Gemini como asesores. Preguntale si quiere configurarlo ahora. Si dice que sí, seguí la skill `office:office-agents`. Si no, todo queda en Claude y lo puede cambiar después con `/office:office-agents`.
+
+12. **Cerrá con los próximos pasos:**
    - Revisar los cambios y hacer commit de `.claude/settings.json` y `.gitignore`.
    - Instalar las skills de la comunidad que haya elegido.
    - Si conectó Jira, autenticarse con `/mcp` y probar con `/office:start-ticket <TICKET>`.

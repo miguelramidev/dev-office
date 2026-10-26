@@ -13,6 +13,7 @@
 | Developer | `dept-<área>:developer` | Sonnet | Escribe el código de su área siguiendo las reglas del proyecto y el diseño aprobado. No escribe tests.                     |
 | Tester    | `dept-<área>:tester`    | Sonnet | Escribe y corre los tests de su área. No toca código de producción.                                                         |
 | QA        | `office:qa`             | Opus   | El enemigo de la app: busca cómo romper el trabajo de cualquier departamento y verifica las reglas. No corrige.             |
+| Puente    | `office:external`       | Sonnet | Le pasa a Codex o Gemini el encargo de un rol, revisa lo que hicieron, corre las verificaciones y devuelve el reporte del rol. No escribe código. |
 
 En base de datos, el developer cumple el rol de DB manager: esquemas, migraciones, índices y consultas pesadas. El modelo de datos lo diseña el arquitecto de backend y lo implementa este departamento.
 
@@ -28,6 +29,46 @@ Cada departamento trae su propio tester, porque un tester que conoce su área pr
 - **Designer en Sonnet:** sus decisiones son más fáciles de corregir (un texto, una pantalla) y el CEO las revisa a ojo antes de construir.
 - **Developers y testers en Sonnet:** siguen instrucciones detalladas con buena calidad y a menor costo.
 - **Haiku no se usa para código:** con código de varios archivos y muchas reglas se equivoca más, y cada error cuesta una vuelta completa developer → tester → QA. Queda para tareas mecánicas futuras.
+
+Los modelos de la tabla son los de siempre. Cada proyecto puede cambiar el proveedor o el modelo de cualquier rol (ver "Proveedores por rol").
+
+## Proveedores por rol
+
+Cada rol lo puede hacer Claude, Codex o Gemini. Se configura por proyecto con la skill `office-agents`, que instala el script `.claude/office-agents.sh` (y `.claude/office-agents.cmd` para Windows), en dos archivos:
+
+- `.claude/office-agents.json`: el del equipo, va en git.
+- `.claude/office-agents.local.json`: el personal, no va en git y manda rol por rol.
+
+```json
+{ "roles": { "backend.developer": ["codex"], "frontend.developer": ["gemini:pro"], "qa": ["claude", "codex"], "pm": ["codex"] } }
+```
+
+- **Roles:** `<área>.<agente>` (`backend.developer`, `frontend.designer`, `devops.tester`...), `qa`, `pm` y `project.<nombre>` para los agentes propios del proyecto. Un rol sin configurar es Claude con el modelo de siempre. Claude también acepta modelo: `claude:opus`, `claude:sonnet` o `claude:haiku`.
+- **El PM es siempre Claude:** es la sesión de Claude Code, la que conversa con el CEO, activa a los agentes y usa las skills y los hooks. En `pm` se configuran sus **asesores**: antes de presentar un plan que no es trivial o un diseño, el PM les pide una segunda opinión (solo leen) y le muestra al CEO en qué coinciden y en qué no.
+- **El puente.** Un rol en Codex o Gemini lo activa el PM a través de `office:external` (Sonnet), que usa la skill `external-agents`:
+  1. Arma el prompt con las reglas de la oficina para el proveedor, las instrucciones del agente del rol, las skills que ese agente usa y el encargo completo.
+  2. Corre el CLI en la carpeta del proyecto, con tope de tiempo: `codex exec` con sandbox `workspace-write` y sin pedir aprobación, o `gemini -p` con `--approval-mode auto_edit`. Los asesores corren en solo lectura.
+  3. Compara el repositorio antes y después: marca si tocó secretos, claves o lockfiles, si escribió fuera de lo que permite su rol (QA solo en `.qa/`, arquitectos y designer solo en `docs/design/`), si commiteó o si cambió de rama. No deshace nada: frena y el CEO decide.
+  4. Verifica: en un developer corre typecheck, lint y tests (con una vuelta de corrección como máximo); en un tester confirma que el resultado que informa es el real.
+  5. Devuelve el reporte con el formato del rol, así el ciclo de calidad no cambia.
+- **Si un proveedor no está disponible** (no instalado, sin sesión, sin cuota), el PM frena y le pregunta al CEO: reintentar, usar Claude en ese encargo o pausar.
+- **Carpeta de trabajo:** cada encargo deja su prompt, el reporte del proveedor y el registro del CLI en `.office/runs/` (ignorada por git), para revisar qué pasó.
+
+### QA con varios proveedores
+
+Si `qa` tiene varios proveedores, el PM los coordina en tres pasos:
+
+1. **Revisión independiente:** cada QA revisa sin ver lo de los otros, uno después del otro.
+2. **Validación cruzada:** una sola ronda. Cada QA recibe los hallazgos de los demás y los marca como confirmado (lo reprodujo), refutado (con pruebas) o sin verificar.
+3. **Consolidación:** lo confirmado queda con su clasificación; lo de uno solo queda si tiene reproducción; lo refutado con pruebas queda en disputa y va al CEO como importante, con los dos argumentos. Un hallazgo en disputa nunca es bloqueante.
+
+### Límites de Codex y Gemini
+
+- **No pasan por los hooks de la oficina** (`protect.sh` y `branch-guard.sh` solo ven las herramientas de Claude Code). La protección es la del sandbox de cada CLI más la revisión del puente después, que detecta pero no impide. Por eso el tester y QA no se saltean nunca.
+- **Gemini en modo no interactivo no corre comandos** con `auto_edit`: edita archivos y el puente corre las verificaciones. Como tester o QA rinde menos, porque no puede ejecutar sus pruebas.
+- **El sandbox de Gemini** (`--sandbox`) necesita Docker o Podman en Linux, o Seatbelt en macOS; la oficina no lo activa.
+- **Tiempo:** cada encargo se corta a los 540 segundos (`OFFICE_EXTERNAL_TIMEOUT`), porque la herramienta Bash de Claude Code espera como máximo 10 minutos. Los encargos grandes se dividen.
+- **Costo:** cada proveedor se paga con su propia cuenta, y el puente gasta un poco de Claude (Sonnet) para pasar el encargo y revisar el resultado.
 
 ## Modos del PM
 
@@ -138,3 +179,4 @@ Los agentes leen el `CLAUDE.md` del proyecto (y lo que este importe) antes de tr
 
 - **"Agent teams" de Claude Code** (agentes que se mandan mensajes entre sí): es experimental y gasta bastante más tokens. El ciclo en orden lo resuelve el PM con subagentes.
 - **Un plugin único con todos los departamentos:** no permite elegir qué departamentos tiene cada proyecto.
+- **El PM en Codex o Gemini:** el PM es la sesión de Claude Code. Un PM en otro proveedor sería Claude reenviando cada mensaje, con el costo de los dos y sin memoria entre mensajes. En su lugar, el PM puede tener asesores.

@@ -29,6 +29,8 @@ Una oficina de desarrollo para [Claude Code](https://code.claude.com): vos sos e
 
 Vos solo hablás con el PM.
 
+**Claude, Codex o Gemini en cada rol.** Cada rol de la oficina lo puede hacer el proveedor que elijas: por ejemplo, Codex como developer de backend, Gemini como developer de front y Claude en el resto. Lo configurás con `/office:office-agents` o con el script que queda en el proyecto (`bash .claude/office-agents.sh`, o `.claude\office-agents.cmd` en Windows). El PM es siempre Claude, pero puede consultar a Codex o Gemini como asesores antes de proponerte un plan. Si configurás más de un QA, cada uno revisa por separado y después validan lo que encontraron los otros: lo confirmado queda y lo que está en disputa te llega con los dos argumentos.
+
 **Ramas y tickets.** Nunca se trabaja sobre las ramas protegidas del proyecto (por ejemplo `main`, `dev` y las `epic/*`): un hook bloquea las ediciones, los commits y los pushes ahí. Si usás Jira, decile al PM "trabajemos en PROJ-123" (o usá `/office:start-ticket PROJ-123`). Según el tipo del ticket, su épica y sus etiquetas, crea la rama correcta (por ejemplo `feature/PROJ-123-<resumen>` desde la rama de su épica), pasa el ticket a "en curso" en Jira y te dice a qué rama va el PR.
 
 **Colecciones de la API.** Si instalás `dept-backend`, el proyecto tiene en `docs/api/` colecciones de Postman con entornos compartidos, autorización y un login que guarda el token solo:
@@ -46,7 +48,7 @@ Se actualizan cada vez que cambia un endpoint, así siempre tenés la API de tu 
 
 | Plugin         | Contiene                                                                  | Modelos       |
 | -------------- | ------------------------------------------------------------------------- | ------------- |
-| `office`       | PM, QA, hooks de protección y registro de actividad, skills `office-setup`, `start-ticket`, `open-pr`, `review-fixes` y `handoff-ticket` | PM y QA: Opus |
+| `office`       | PM, QA, puente a Codex y Gemini, hooks de protección y registro de actividad, skills `office-setup`, `start-ticket`, `open-pr`, `review-fixes`, `handoff-ticket` y `office-agents` | PM y QA: Opus; puente: Sonnet |
 | `dept-backend` | Arquitecto, developer y tester de backend, skills de backend sólido y de colección de Postman | Arquitecto: Opus; developer y tester: Sonnet |
 | `dept-frontend` | Arquitecto, designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skills de frontend sólido y de lectura de diseños entregados (imágenes o Figma) | Arquitecto: Opus; el resto: Sonnet |
 | `dept-database` | Developer (DB manager) y tester de Postgres y MongoDB, skill de base de datos sólida | Sonnet |
@@ -62,6 +64,7 @@ Para el detalle técnico de cada tecnología, los agentes también usan las skil
 - Claude Code actualizado.
 - `git` y `jq` (los usan los hooks).
 - `gh` con sesión iniciada, para abrir PRs y aplicar correcciones de revisión (opcional).
+- Codex CLI o Gemini CLI con sesión iniciada, si querés que hagan algún rol (opcional).
 - Linux, macOS o Windows. En Windows funciona de forma nativa (con Git for Windows) o dentro de WSL2. Ver [instalación](docs/installation.md).
 
 ## Instalación

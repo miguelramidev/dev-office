@@ -8,6 +8,27 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.14.0] - 2026-10-26
+
+### Agregado
+
+- **Proveedores por rol** (`office` 0.12.0): cada rol de la oficina lo puede hacer Claude, Codex o Gemini, con modelo opcional (`gemini:pro`, `claude:opus`). Se configura por proyecto en `.claude/office-agents.json` (el del equipo) y `.claude/office-agents.local.json` (el personal, que manda rol por rol). Un rol sin configurar sigue en Claude con el modelo de siempre.
+- Skill `office-agents`: instala en el proyecto el script de configuración `.claude/office-agents.sh` (menú interactivo y comandos `show`, `roles`, `set`, `reset`, `get` y `check`) y `.claude/office-agents.cmd` para usarlo desde CMD o PowerShell en Windows. `check` verifica que los CLIs estén instalados y con sesión.
+- Agente `external` (Sonnet), el puente a Codex y Gemini, y skill `external-agents` con el script `run-external.sh`:
+  - arma el prompt con las reglas de la oficina para el proveedor, las instrucciones del agente del rol, las skills que usa y el encargo;
+  - corre `codex exec` (sandbox `workspace-write`, sin pedir aprobación) o `gemini -p` (`--approval-mode auto_edit`), con tope de tiempo (`OFFICE_EXTERNAL_TIMEOUT`, 540 segundos);
+  - antes, no corre nada en una rama protegida; después, marca si tocó secretos, claves o lockfiles, si escribió fuera de lo que permite el rol, si commiteó (y revisa los archivos del commit) o si cambió de rama;
+  - el puente verifica: typecheck, lint y tests en un developer (con una vuelta de corrección como máximo) y el resultado real en un tester.
+- **Asesores del PM:** el PM sigue siendo Claude, pero si `pm` tiene proveedores configurados, les pide una segunda opinión (en solo lectura) antes de presentar un plan que no es trivial o un diseño, y le muestra al CEO en qué coinciden y en qué no.
+- **QA con varios proveedores:** revisión independiente, una ronda de validación cruzada (confirmado, refutado o sin verificar) y consolidación del PM. Lo refutado con pruebas queda en disputa, nunca es bloqueante y va al CEO con los dos argumentos.
+- Pruebas: `tests/office-agents.test.sh` y `tests/run-external.test.sh` (con CLIs falsos de Codex y Gemini), también en el CI.
+
+### Cambiado
+
+- `pm`: lee la configuración de proveedores antes de encargar, activa al puente para Codex y Gemini, frena y le pregunta al CEO si un proveedor no está disponible o si rompió una regla, e incluye los proveedores en el plan y en el informe.
+- `qa`: modo validación para revisar los hallazgos de otro QA.
+- `office-setup`: ofrece configurar los proveedores por rol, agrega `.office/` y la configuración personal a `.gitignore` y permite `office-agents.sh show` y `check`.
+
 ## [0.13.0] - 2026-10-22
 
 ### Agregado

@@ -102,6 +102,33 @@ alias oficina='claude --agent office:pm'
 - **Registro de actividad:** `tail -f .claude/office-activity.log` muestra en vivo cuándo empieza y termina cada agente.
 - **Dashboard visual (opcional):** [agents-observe](https://github.com/simple10/agents-observe), un proyecto de la comunidad, muestra el árbol de agentes y la línea de tiempo en el navegador. Requiere Docker. Se instala por usuario: `claude plugin marketplace add simple10/agents-observe` y `claude plugin install agents-observe`.
 
+### Codex y Gemini en algunos roles (opcional)
+
+Cada rol lo puede hacer Claude, Codex o Gemini. Instalá el CLI del proveedor que vayas a usar e iniciá sesión:
+
+| | Instalar | Iniciar sesión |
+| --- | --- | --- |
+| Codex | `npm install -g @openai/codex` (en macOS también `brew install --cask codex`) | `codex login`, con tu plan de ChatGPT o una API key |
+| Gemini | `npm install -g @google/gemini-cli` (en macOS también `brew install gemini-cli`) | Una API key en `GEMINI_API_KEY` (variable de entorno o `~/.gemini/.env`), Vertex AI o un asiento de Code Assist |
+
+En Windows, después de instalar, cerrá y abrí la terminal y Claude Code.
+
+Después, desde Claude Code, `/office:office-agents`: copia el script de configuración al proyecto y te ayuda a elegir. También lo podés correr directo desde la terminal del proyecto:
+
+```bash
+bash .claude/office-agents.sh                          # menú
+bash .claude/office-agents.sh set backend.developer codex
+bash .claude/office-agents.sh set frontend.developer gemini:pro
+bash .claude/office-agents.sh set qa claude codex      # dos QA que se validan entre ellos
+bash .claude/office-agents.sh set pm codex             # asesor del PM
+bash .claude/office-agents.sh show
+bash .claude/office-agents.sh check                    # verifica que estén instalados y con sesión
+```
+
+En Windows, desde CMD o PowerShell: `.claude\office-agents.cmd` con los mismos comandos. Con `--local`, el cambio queda solo para vos (en `.claude/office-agents.local.json`, que no va en git).
+
+La primera vez que el puente corre a Codex o Gemini, Claude Code te pide permiso para el comando: aprobalo para esa sesión.
+
 ## 6. Actualizar
 
 ```bash
@@ -138,3 +165,6 @@ Para desactivarlo solo para vos, poné lo mismo en `.claude/settings.local.json`
 | Windows: un hook falla con "bash: command not found"                                   | Falta Git for Windows o su bash no está en el PATH                     | `winget install Git.Git` y reiniciar la terminal                                 |
 | Pide permiso para un comando de tests con `\| tail` o `;`                              | Cada parte de un comando compuesto se revisa por separado              | Que corra los comandos de a uno (ya está en sus instrucciones)                   |
 | Advertencia: "Permission allow rule ... has a wildcard before the rest of the command" | Una regla con `*` en el medio aprueba cualquier opción en esa posición | Usar el valor exacto (por ejemplo, el nombre del paquete) y el `*` solo al final |
+| El PM dice "PROVEEDOR NO DISPONIBLE" | El CLI de Codex o Gemini no está instalado, no tiene sesión o se quedó sin cuota | `bash .claude/office-agents.sh check` y seguir lo que indique |
+| El PM dice "REGLAS ROTAS" | Codex o Gemini tocó un archivo prohibido, commiteó o cambió de rama | Revisá `git status` y `.office/runs/` y decidí vos qué deshacer |
+| Codex o Gemini se cortan con "tiempo agotado" | El encargo tardó más de 540 segundos | Pedile al PM que lo divida, o subí `OFFICE_EXTERNAL_TIMEOUT` (sin pasar de 590) |
