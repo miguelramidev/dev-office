@@ -8,6 +8,13 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.17.1] - 2026-10-26
+
+### Corregido
+
+- `/office:observer` en WSL (`office` 0.15.1): abre la página con el navegador de Windows y da el link que ese navegador puede abrir (`file://wsl.localhost/<distro>/...`, o `file:///C:/...` si el proyecto está en el disco de Windows). Antes daba la ruta `/home/...`, que Windows no encuentra.
+- La skill `observer` aclara que no hace falta abrirla en cada sesión: la pestaña puede quedar abierta y toma sola la sesión nueva.
+
 ## [0.17.0] - 2026-10-26
 
 ### Agregado
