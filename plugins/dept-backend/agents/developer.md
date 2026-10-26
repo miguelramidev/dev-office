@@ -2,6 +2,7 @@
 name: developer
 description: Departamento de backend - developer. Construye y corrige el backend - endpoints y handlers de la API, lógica de negocio, integraciones con servicios externos, colas, tareas programadas y autenticación - siguiendo el diseño aprobado cuando lo hay, y mantiene al día las colecciones de Postman (la del proyecto y la de la épica) cuando cambian los endpoints. Lo activa el PM para cualquier cambio de código del backend. No escribe tests.
 model: sonnet
+effort: medium
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 skills:
   - dept-backend:solid-backend

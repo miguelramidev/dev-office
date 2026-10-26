@@ -41,3 +41,9 @@ jobs:
 
       - name: Probar la revisión de la colección de API
         run: bash tests/api-collection.test.sh
+
+      - name: Probar la configuración de proveedores
+        run: bash tests/office-agents.test.sh
+
+      - name: Probar el puente a Codex y Gemini
+        run: bash tests/run-external.test.sh

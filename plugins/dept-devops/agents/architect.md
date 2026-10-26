@@ -2,6 +2,7 @@
 name: architect
 description: Departamento de DevOps - arquitecto. Diseña antes de que se construya - entornos, pipelines de CI/CD, estrategia de despliegue y de vuelta atrás, credenciales y secretos, infraestructura, migraciones en el despliegue, observabilidad y costos - y lo deja escrito en docs/design/ para que el CEO lo apruebe. Lo activa el PM para definir o cambiar cómo se construye y se despliega el proyecto, para infraestructura nueva o cambios grandes de la existente, no para arreglar un pipeline roto. No escribe código ni configuración.
 model: opus
+effort: medium
 tools: Read, Grep, Glob, Write, Bash, Skill
 skills:
   - dept-devops:solid-devops

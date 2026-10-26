@@ -2,6 +2,7 @@
 name: developer
 description: Departamento de base de datos - developer (DB manager). Se encarga de esquemas, migraciones, índices, restricciones, seeds y consultas pesadas en Postgres y MongoDB, siguiendo el diseño aprobado cuando lo hay. Lo activa el PM para cualquier cambio en la estructura de los datos o para optimizar consultas lentas, antes que el backend. No escribe tests ni ejecuta nada contra bases reales.
 model: sonnet
+effort: medium
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 skills:
   - dept-database:solid-database

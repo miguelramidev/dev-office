@@ -8,6 +8,31 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.14.0] - 2026-10-26
+
+### Agregado
+
+- **Proveedores por rol** (`office` 0.12.0): cada rol de la oficina lo puede hacer Claude, Codex o Gemini, con modelo opcional (`codex:gpt-6.1-sol`, `claude:opus`). Se configura por proyecto en `.claude/office-agents.json` (el del equipo) y `.claude/office-agents.local.json` (el personal, que manda rol por rol). Un rol sin configurar sigue en Claude con el modelo de siempre.
+- **Modelos a la par de Claude:** cada rol usa en Codex o Gemini el modelo del mismo nivel que su agente de Claude, con razonamiento medio. Nivel Opus (QA, arquitectos y asesores del PM): `gpt-6-astra` y `gemini-4-argon`. Nivel Sonnet (developers, testers y designer): `gpt-6.1-sol` y `gemini-3.8-flash`. El proyecto puede cambiar la tabla y el razonamiento con `office-agents.sh tier`; un rol con modelo propio no la usa.
+- **Gemini con Antigravity CLI** (`agy`) y la cuenta de Google, porque Gemini CLI ya no atiende cuentas personales.
+- Skill `office-agents`: instala en el proyecto el script de configuración `.claude/office-agents.sh` (menú interactivo y comandos `show`, `roles`, `set`, `reset`, `get`, `models`, `tier`, `model`, `effort` y `check`) y `.claude/office-agents.cmd` para usarlo desde CMD o PowerShell en Windows. `check` verifica que los CLIs estén instalados y con sesión, que Codex sea 0.153.0 o más nuevo si se usa GPT-6 Astra y que la cuenta de Google tenga los modelos de la tabla (`agy models`).
+- Agente `external` (Sonnet), el puente a Codex y Gemini, y skill `external-agents` con el script `run-external.sh`:
+  - arma el prompt con las reglas de la oficina para el proveedor, las instrucciones del agente del rol, las skills que usa y el encargo;
+  - corre `codex exec` (sandbox `workspace-write`, sin pedir aprobación) o `agy -p` (`--mode accept-edits`, leyendo el encargo de un archivo), con el modelo y el razonamiento del nivel del rol y tope de tiempo (`OFFICE_EXTERNAL_TIMEOUT`, 540 segundos);
+  - antes, no corre nada en una rama protegida; después, marca si tocó secretos, claves o lockfiles, si escribió fuera de lo que permite el rol, si commiteó (y revisa los archivos del commit) o si cambió de rama;
+  - el puente verifica: typecheck, lint y tests en un developer (con una vuelta de corrección como máximo) y el resultado real en un tester.
+- **Asesores del PM:** el PM sigue siendo Claude, pero si `pm` tiene proveedores configurados, les pide una segunda opinión (en solo lectura) antes de presentar un plan que no es trivial o un diseño, y le muestra al CEO en qué coinciden y en qué no.
+- **QA con varios proveedores:** revisión independiente, una ronda de validación cruzada (confirmado, refutado o sin verificar) y consolidación del PM. Lo refutado con pruebas queda en disputa, nunca es bloqueante y va al CEO con los dos argumentos.
+- Guía `docs/providers.md`: qué se puede configurar, el valor por defecto (todo en Claude), los modelos por nivel, cómo instalar y configurar cada proveedor, cómo trabajan el puente, el QA con varios proveedores y los asesores, qué hacer si algo sale mal y los límites.
+- Pruebas: `tests/office-agents.test.sh` y `tests/run-external.test.sh` (con CLIs falsos de `codex` y `agy`), también en el CI.
+
+### Cambiado
+
+- `pm`: lee la configuración de proveedores antes de encargar, activa al puente para Codex y Gemini, frena y le pregunta al CEO si un proveedor no está disponible o si rompió una regla, e incluye los proveedores en el plan y en el informe.
+- `qa`: modo validación para revisar los hallazgos de otro QA.
+- Todos los agentes de Claude declaran `effort: medium`, para que el razonamiento quede parejo con Codex y Gemini aunque la sesión use otro nivel. Claude Code lee ese campo en los agentes, pero todavía no lo documenta. Versiones: `dept-backend` 0.2.2, `dept-frontend` 0.3.1, `dept-database` 0.1.2, `dept-scraper` 0.1.3, `dept-devops` 0.2.1.
+- `office-setup`: ofrece configurar los proveedores por rol, agrega `.office/` y la configuración personal a `.gitignore` y permite `office-agents.sh show` y `check`.
+
 ## [0.13.0] - 2026-10-22
 
 ### Agregado

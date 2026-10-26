@@ -102,6 +102,10 @@ alias oficina='claude --agent office:pm'
 - **Registro de actividad:** `tail -f .claude/office-activity.log` muestra en vivo cuándo empieza y termina cada agente.
 - **Dashboard visual (opcional):** [agents-observe](https://github.com/simple10/agents-observe), un proyecto de la comunidad, muestra el árbol de agentes y la línea de tiempo en el navegador. Requiere Docker. Se instala por usuario: `claude plugin marketplace add simple10/agents-observe` y `claude plugin install agents-observe`.
 
+### Codex y Gemini en algunos roles (opcional)
+
+Por defecto todos los roles son Claude. Si querés que Codex o Gemini hagan algunos (por ejemplo, Codex como developer de backend o dos QA que se validan entre ellos), instalá su CLI, iniciá sesión y corré `/office:office-agents`. Todo el detalle está en la guía [Claude, Codex o Gemini en cada rol](providers.md).
+
 ## 6. Actualizar
 
 ```bash
@@ -138,3 +142,6 @@ Para desactivarlo solo para vos, poné lo mismo en `.claude/settings.local.json`
 | Windows: un hook falla con "bash: command not found"                                   | Falta Git for Windows o su bash no está en el PATH                     | `winget install Git.Git` y reiniciar la terminal                                 |
 | Pide permiso para un comando de tests con `\| tail` o `;`                              | Cada parte de un comando compuesto se revisa por separado              | Que corra los comandos de a uno (ya está en sus instrucciones)                   |
 | Advertencia: "Permission allow rule ... has a wildcard before the rest of the command" | Una regla con `*` en el medio aprueba cualquier opción en esa posición | Usar el valor exacto (por ejemplo, el nombre del paquete) y el `*` solo al final |
+| El PM dice "PROVEEDOR NO DISPONIBLE" | El CLI de Codex o Gemini no está instalado, no tiene sesión o se quedó sin cuota | `bash .claude/office-agents.sh check` y seguir lo que indique |
+| El PM dice "REGLAS ROTAS" | Codex o Gemini tocó un archivo prohibido, commiteó o cambió de rama | Revisá `git status` y `.office/runs/` y decidí vos qué deshacer |
+| Codex o Gemini se cortan con "tiempo agotado" | El encargo tardó más de 540 segundos | Pedile al PM que lo divida, o subí `OFFICE_EXTERNAL_TIMEOUT` (sin pasar de 590) |

@@ -75,7 +75,8 @@ ALLOW='[
   "Bash(gh pr checks)", "Bash(gh pr checks *)",
   "Bash(gh run list)", "Bash(gh run list *)", "Bash(gh run view *)",
   "Bash(gh workflow list)", "Bash(gh workflow view *)",
-  "Bash(rm -r .qa)"
+  "Bash(rm -r .qa)",
+  "Bash(bash .claude/office-agents.sh show)", "Bash(bash .claude/office-agents.sh check)"
 ]'
 
 # Acciones que siempre consulta al CEO, aunque el modo sea automático.
@@ -140,7 +141,7 @@ touch "$GITIGNORE"
 if [ -s "$GITIGNORE" ] && [ "$(tail -c1 "$GITIGNORE")" != "" ]; then
   echo >> "$GITIGNORE"
 fi
-for LINE in ".qa/" ".claude/office-activity.log" ".claude/settings.json.bak"; do
+for LINE in ".qa/" ".office/" ".claude/office-activity.log" ".claude/settings.json.bak" ".claude/office-agents.local.json"; do
   grep -qxF "$LINE" "$GITIGNORE" || echo "$LINE" >> "$GITIGNORE"
 done
 
@@ -149,7 +150,7 @@ done
 echo "Listo:"
 echo "  - $SETTINGS: permisos base, modo '$MODE'${TIMEZONE:+, zona horaria $TIMEZONE}${PROTECTED:+, ramas protegidas: $PROTECTED}."
 echo "  - Copia del archivo anterior: $SETTINGS.bak"
-echo "  - $GITIGNORE: .qa/, registro de actividad y la copia de seguridad."
+echo "  - $GITIGNORE: .qa/, .office/, registro de actividad, copia de seguridad y la configuración personal de proveedores."
 if [ ! -f "$PROJECT_DIR/CLAUDE.md" ]; then
   echo "  - AVISO: el proyecto no tiene CLAUDE.md. Los agentes lo necesitan para conocer las reglas del proyecto."
 fi

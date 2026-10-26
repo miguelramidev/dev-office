@@ -1,7 +1,7 @@
 {
   "name": "office",
-  "version": "0.11.0",
-  "description": "Oficina base de dev-office: un PM que conversa con el CEO y coordina departamentos, un QA que intenta romper todo, hooks de protección y las skills office-setup, start-ticket, open-pr, review-fixes y handoff-ticket.",
+  "version": "0.12.0",
+  "description": "Oficina base de dev-office: un PM que conversa con el CEO y coordina departamentos, un QA que intenta romper todo, hooks de protección y las skills office-setup, start-ticket, open-pr, review-fixes, handoff-ticket y office-agents, y un puente para que Codex o Gemini hagan cualquier rol.",
   "author": {
     "name": "Miguel Ramirez"
   },

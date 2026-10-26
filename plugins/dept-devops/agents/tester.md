@@ -2,6 +2,7 @@
 name: tester
 description: Departamento de DevOps - tester. Valida workflows de CI/CD, scripts de despliegue, infraestructura como código, Dockerfiles y configuración de servidores sin desplegar ni tocar la nube - sintaxis, disparadores, permisos, manejo de secretos, versiones fijadas, build local y casos que fallan - y reporta los problemas con detalle. Lo activa el PM después de cada cambio del developer de DevOps. No toca lo que hizo el developer.
 model: sonnet
+effort: medium
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 skills:
   - dept-devops:solid-devops

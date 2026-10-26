@@ -2,6 +2,7 @@
 name: architect
 description: Departamento de frontend - arquitecto. Diseña la parte técnica del front antes de que se programe - estructura de carpetas y módulos, rutas y navegación, manejo de estado, cómo se piden y se cachean los datos de la API, código compartido entre web y app móvil, rendimiento, modo sin conexión, errores y seguridad del cliente - y lo deja escrito en docs/design/ para que el CEO lo apruebe. Lo activa el PM para funciones nuevas o cambios grandes de estructura del front, después del designer cuando hay pantallas nuevas. No diseña la experiencia visual (eso es del designer) ni escribe código.
 model: opus
+effort: medium
 tools: Read, Grep, Glob, Write, Edit, Skill
 skills:
   - dept-frontend:solid-frontend
