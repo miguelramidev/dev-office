@@ -8,6 +8,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.16.0] - 2026-10-26
+
+### Agregado
+
+- Skill `update` (`office` 0.14.0): `/office:update` deja en `.claude/` del proyecto, y si el CEO quiere en el Escritorio, el script `update-office.sh` con sus lanzadores de doble click: `update-office.cmd` (Windows) y `update-office.command` (macOS). Con un click actualiza el marketplace y todos los plugins de dev-office instalados en la computadora: los de usuario una vez, y los de proyecto en la carpeta de cada proyecto donde estén (los lista `claude plugin list --json`). Saltea los proyectos que ya no existen y no toca plugins de otros marketplaces. Después refresca en cada proyecto los scripts que la oficina copió en `.claude/` si hay una versión más nueva y muestra las versiones antes y después.
+- Pruebas: `tests/update-office.test.sh` (con un `claude` falso), también en el CI.
+
+### Cambiado
+
+- `office-setup`: ofrece dejar el botón de actualización al terminar.
+- `.gitattributes`: los `.command` van con finales de línea LF.
+
 ## [0.15.0] - 2026-10-26
 
 ### Agregado

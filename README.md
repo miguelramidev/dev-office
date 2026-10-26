@@ -50,7 +50,7 @@ Se actualizan cada vez que cambia un endpoint, así siempre tenés la API de tu 
 
 | Plugin         | Contiene                                                                  | Modelos       |
 | -------------- | ------------------------------------------------------------------------- | ------------- |
-| `office`       | PM, QA, puente a Codex y Gemini, hooks de protección y registro de actividad, observer en pixel art, skills `office-setup`, `start-ticket`, `open-pr`, `review-fixes`, `handoff-ticket`, `office-agents` y `observer` | PM y QA: Opus; puente: Sonnet |
+| `office`       | PM, QA, puente a Codex y Gemini, hooks de protección y registro de actividad, observer en pixel art, skills `office-setup`, `start-ticket`, `open-pr`, `review-fixes`, `handoff-ticket`, `office-agents`, `observer` y `update` | PM y QA: Opus; puente: Sonnet |
 | `dept-backend` | Arquitecto, developer y tester de backend, skills de backend sólido y de colección de Postman | Arquitecto: Opus; developer y tester: Sonnet |
 | `dept-frontend` | Arquitecto, designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skills de frontend sólido y de lectura de diseños entregados (imágenes o Figma) | Arquitecto: Opus; el resto: Sonnet |
 | `dept-database` | Developer (DB manager) y tester de Postgres y MongoDB, skill de base de datos sólida | Sonnet |
@@ -90,6 +90,8 @@ claude --agent office:pm
 ```
 
 Guía completa: [docs/installation.md](docs/installation.md).
+
+**Para actualizar**, `/office:update` te deja un script que con un doble click (`update-office.cmd` en Windows, `update-office.command` en macOS) actualiza la oficina en todos tus proyectos.
 
 ## Qué va en el plugin y qué en tu proyecto
 

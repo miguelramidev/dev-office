@@ -17,4 +17,4 @@ Antes de abrir un PR, buscá referencias a proyectos reales en los archivos camb
 - Instrucciones y documentación en español, con voseo. Commits en inglés con Conventional Commits.
 - Los `.cmd` van con finales de línea CRLF (ver `.gitattributes`); el resto, LF.
 - Cada cambio en un plugin sube su versión en `plugin.json` (versionado semántico) y se anota en `CHANGELOG.md`.
-- Verificación antes del PR: `claude plugin validate .`, `claude plugin validate plugins/<plugin>`, `bash tests/protect.test.sh`, `bash tests/branch-guard.test.sh`, `bash tests/api-collection.test.sh`, `bash tests/office-agents.test.sh`, `bash tests/run-external.test.sh` y `bash tests/observer.test.sh`.
+- Verificación antes del PR: `claude plugin validate .`, `claude plugin validate plugins/<plugin>`, `bash tests/protect.test.sh`, `bash tests/branch-guard.test.sh`, `bash tests/api-collection.test.sh`, `bash tests/office-agents.test.sh`, `bash tests/run-external.test.sh`, `bash tests/observer.test.sh` y `bash tests/update-office.test.sh`.
