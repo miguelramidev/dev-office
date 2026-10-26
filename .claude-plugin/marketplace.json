@@ -9,7 +9,7 @@
     {
       "name": "office",
       "source": "./plugins/office",
-      "description": "Oficina base: un PM que coordina departamentos, un QA que intenta romper todo, la configuración inicial de cada proyecto y la elección de proveedor por rol (Claude, Codex o Gemini)."
+      "description": "Oficina base: un PM que coordina departamentos, un QA que intenta romper todo, la configuración inicial de cada proyecto, la elección de proveedor por rol (Claude, Codex o Gemini) y un modo equipos opcional con un líder por departamento."
     },
     {
       "name": "dept-backend",

@@ -180,6 +180,26 @@ same "codex gemini" "menú: configura un rol por número" get qa
 printf 'qa\n\n\n' | run >/dev/null
 same "claude" "menú: vacío vuelve al valor por defecto" get qa
 
+# Modo equipos: líderes de departamento (agent teams).
+T() { local d="$1"; shift; if "$@"; then echo "ok    $d"; else echo "FALLA $d"; FAILED=1; fi; }
+CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS= run teams | grep -q "desactivado" && echo "ok    teams: desactivado por defecto" || { echo "FALLA teams: desactivado por defecto"; FAILED=1; }
+check 0 "teams on" teams on
+T "teams on lo anota en la configuración" [ "$(jq -r .teams "$PROJ/.claude/office-agents.json")" = "true" ]
+T "teams on activa agent teams en settings.json" [ "$(jq -r .env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS "$PROJ/.claude/settings.json")" = "1" ]
+run teams | grep -q "activado\." && echo "ok    teams: muestra activado" || { echo "FALLA teams: muestra activado"; FAILED=1; }
+run show | grep -q "Modo equipos: activado" && echo "ok    show muestra el modo equipos" || { echo "FALLA show muestra el modo equipos"; FAILED=1; }
+echo '{"permissions":{"allow":["Bash(ls)"]},"env":{"OTRA":"x"}}' >"$PROJ/.claude/settings.json"
+check 0 "teams on con settings existentes" teams on
+check 0 "teams off" teams off
+T "teams off lo desactiva en la configuración" [ "$(jq -r .teams "$PROJ/.claude/office-agents.json")" = "false" ]
+T "teams off saca el flag y deja lo demás" [ "$(jq -c '[.env, .permissions.allow[0]]' "$PROJ/.claude/settings.json")" = '[{"OTRA":"x"},"Bash(ls)"]' ]
+check 0 "teams on --local" teams on --local
+T "teams --local va a settings.local.json" [ "$(jq -r .env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS "$PROJ/.claude/settings.local.json")" = "1" ]
+T "teams --local va a office-agents.local.json" [ "$(jq -r .teams "$PROJ/.claude/office-agents.local.json")" = "true" ]
+check 0 "teams off --local" teams off --local
+check 1 "teams con acción inválida" teams quizas
+same "claude" "teams no toca los roles" get backend.developer
+
 if [ "$FAILED" -ne 0 ]; then
   echo "Hay pruebas que fallan."
   exit 1

@@ -63,6 +63,16 @@ Los archivos `office-agents.sh` y `office-agents.cmd` están en la misma carpeta
 
    Si pide más razonamiento, avisale que gasta más tokens y tarda más.
 
+   **Modo equipos** (un líder por departamento, que coordina a su developer y su tester y le entrega el reporte al PM):
+
+   ```bash
+   bash .claude/office-agents.sh teams on
+   bash .claude/office-agents.sh teams off
+   bash .claude/office-agents.sh teams
+   ```
+
+   Con `--local` queda solo para él. Activa los agent teams de Claude Code (experimentales) en el `env` de `.claude/settings.json` (o `settings.local.json`). Avisale que cada líder es una sesión más de Claude (Sonnet), así que gasta más tokens, y que tiene que reiniciar Claude Code. Los líderes son siempre Claude: no se configuran con `set`.
+
    Antes de confirmar, contale lo que cambia:
    - Codex y Gemini **no pasan por los hooks de la oficina** (protección de secretos y de ramas). La oficina los corre con su sandbox y revisa todo después, pero la protección es más débil que con Claude.
    - **Gemini (Antigravity) corre en modo `accept-edits`:** edita archivos sin preguntar, pero no corre comandos de la terminal; la oficina corre las verificaciones después. Por eso como tester o QA rinde menos que Codex o Claude.

@@ -9,6 +9,7 @@ Receta para "contratar" un departamento nuevo. Los ejemplos de referencia son `p
   - `developer`: siempre.
   - `tester`: si el área produce código testeable.
   - Un rol de diseño, si el área toma decisiones que conviene aprobar antes de programar: `architect` (estructura y contratos) o `designer` (pantallas y experiencia).
+  - `lead`: el líder del departamento para el modo equipos. Siempre, si el departamento tiene developer.
 - Dentro de Claude Code se llaman `dept-<área>:<agente>`, por ejemplo `dept-backend:architect`.
 
 ## 2. Estructura
@@ -19,6 +20,7 @@ plugins/dept-<área>/
 ├── agents/
 │   ├── architect.md     ← opcional: rol de diseño
 │   ├── developer.md
+│   ├── lead.md          ← líder, para el modo equipos
 │   └── tester.md        ← opcional
 └── skills/              ← opcional: conocimiento genérico del área
 ```
@@ -39,6 +41,7 @@ plugins/dept-<área>/
 Copiá los agentes de `dept-backend` (o de `dept-scraper` si el área no tiene rol de diseño) y adaptá lo específico del área. Reglas obligatorias:
 
 - **`description` empieza con "Departamento de <área> - <rol>."** y dice con claridad qué hace y cuándo lo activa el PM. El PM elige a quién activar leyendo esa descripción.
+- **Líder (`lead.md`):** copiá el de `dept-backend` y cambiá el área, los agentes que coordina y lo que su reporte le avisa a otros departamentos. Va en `sonnet`, con `disallowedTools: Edit, NotebookEdit`: coordina y escribe solo su reporte en `.office/reports/`.
 - **Modelo:** `sonnet` para developer y tester. Los roles de diseño que definen estructura (como `architect`) van en `opus`, porque sus errores se multiplican en todo lo que se construye encima.
 - **Roles de diseño:** solo escriben en `docs/design/`, siguen la plantilla de `dept-backend/agents/architect.md` y terminan siempre pidiendo aprobación del diseño.
 - **Sin `permissionMode`, `hooks` ni `mcpServers`:** en plugins Claude Code los ignora.

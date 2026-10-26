@@ -126,6 +126,33 @@ hook '{"hook_event_name":"Notification","message":"Claude needs your permission 
 quiet "Notification"
 expect '.type == "notify" and (.message | test("permission")) and (.message | test("\n") | not)' "aviso de Claude Code en una línea"
 
+# --- Modo equipos ------------------------------------------------------------------
+echo '{"teams": true, "roles": {"backend.developer": ["codex"], "qa": ["claude", "codex"]}}' >"$PROJ/.claude/office-agents.json"
+hook '{"hook_event_name":"SessionStart","source":"resume"}'
+expect '.type == "session" and .teams == true' "sesión: modo equipos activado"
+echo '{"teams": false}' >"$PROJ/.claude/office-agents.local.json"
+hook '{"hook_event_name":"SessionStart","source":"resume"}'
+expect '.teams == false' "sesión: el archivo personal manda en el modo equipos"
+echo '{"roles": {"backend.developer": ["claude"]}}' >"$PROJ/.claude/office-agents.local.json"
+hook "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"Agent", tool_input:{name:"backend-lead", subagent_type:"dept-backend:lead", description:"[backend-lead] Pedidos", prompt:"Objetivo: pedidos"}}')"
+expect '.type == "delegate" and .name == "backend-lead" and .subagent_type == "dept-backend:lead" and .from == null' "el PM le encarga al líder"
+hook "$(jq -cn '{hook_event_name:"PreToolUse", agent_id:"L1", agent_type:"dept-backend:lead", tool_name:"Agent", tool_input:{subagent_type:"dept-backend:developer", description:"[backend-developer] Endpoints", prompt:"Objetivo: endpoints"}}')"
+expect '.type == "delegate" and .from == "L1" and .from_type == "dept-backend:lead" and .name == null and .subagent_type == "dept-backend:developer"' "el líder le encarga a su developer"
+hook "$(jq -cn '{hook_event_name:"PreToolUse", agent_id:"L1", tool_name:"SendMessage", tool_input:{to:"team-lead", summary:"Reporte listo", message:"Reporte en .office/reports/x.md"}}')"
+quiet "SendMessage"
+expect '.type == "message" and .from == "L1" and .to == "team-lead" and .text == "Reporte listo"' "mensaje del líder al PM"
+hook "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"SendMessage", tool_input:{to:"backend-lead", message:"Aprobado\nseguí con la migración y avisame cuando termines con todo lo que falta"}}')"
+expect '.type == "message" and .from == null and .to == "backend-lead" and (.text | length) <= 60 and (.text | test("\n") | not)' "mensaje del PM al líder, en una línea"
+hook '{"hook_event_name":"TeammateIdle","teammate_name":"backend-lead","team_name":"t"}'
+quiet "TeammateIdle"
+expect '.type == "teammate_idle" and .name == "backend-lead"' "el líder queda libre"
+hook '{"hook_event_name":"TaskCreated","task_id":"7","task_subject":"Endpoints de pedidos","teammate_name":"backend-lead"}'
+expect '.type == "task" and .state == "created" and .id == "7" and .name == "backend-lead"' "tarea creada"
+hook '{"hook_event_name":"TaskCompleted","task_id":"7","task_subject":"Endpoints de pedidos"}'
+quiet "TaskCompleted"
+expect '.type == "task" and .state == "completed" and .name == null' "tarea terminada"
+jq -e '.hooks | has("TeammateIdle") and has("TaskCreated") and has("TaskCompleted")' "$REPO/plugins/office/hooks/hooks.json" >/dev/null && ok "hooks.json escucha los eventos de equipo" || fail "hooks.json escucha los eventos de equipo"
+
 # --- Todo el archivo es JavaScript válido para la página -------------------------------
 if command -v node >/dev/null 2>&1; then
   if node -e "const fs=require('fs');let n=0;global.OFFICE_EVENT=()=>n++;eval(fs.readFileSync(process.argv[1],'utf8'));if(!n)process.exit(1)" "$EVENTS"; then ok "events.js se puede cargar desde la página"; else fail "events.js se puede cargar desde la página"; fi

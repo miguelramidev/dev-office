@@ -3,7 +3,7 @@
 # .office/observer/index.html (la oficina en pixel art).
 #
 # Escucha SessionStart, UserPromptSubmit, PreToolUse, SubagentStart, SubagentStop,
-# Notification y Stop.
+# Notification y Stop, y en el modo equipos TeammateIdle, TaskCreated y TaskCompleted.
 # Cada evento es una línea "OFFICE_EVENT({...});" en .office/observer/events.js, que la
 # página lee sin servidor. Los tokens salen de las transcripciones que Claude Code ya
 # guarda en el disco.
@@ -71,11 +71,16 @@ case "$EVENT" in
     DEPTS=$(for f in "$HOME/.claude/settings.json" "$PROJECT/.claude/settings.json" "$PROJECT/.claude/settings.local.json"; do
       [ -f "$f" ] && jq -c '.enabledPlugins // {}' "$f" | tr -d '\r'
     done | jq -c -s 'add // {} | to_entries | map(select(.value == true) | .key | split("@")[0] | select(startswith("dept-")) | ltrimstr("dept-")) | unique | if length == 0 then null else . end')
+    # Modo equipos (líderes de departamento): el archivo personal manda.
+    TEAMS=$(for f in "$PROJECT/.claude/office-agents.json" "$PROJECT/.claude/office-agents.local.json"; do
+      [ -f "$f" ] && jq -c 'if has("teams") then .teams == true else empty end' "$f" | tr -d '\r'
+    done | tail -n1)
+    [ "$TEAMS" = "true" ] || TEAMS=false
     [ -z "$CONFIG" ] && CONFIG='{}'
     [ -z "$DEPTS" ] && DEPTS='null'
     emit "$(jq -c -n --argjson t "$NOW" --arg source "$SOURCE" --arg branch "$BRANCH" --arg ticket "$TICKET" \
-      --arg project "${PROJECT##*/}" --argjson config "$CONFIG" --argjson depts "$DEPTS" \
-      '{type: "session", t: $t, source: $source, branch: $branch, ticket: $ticket, project: $project, config: $config, departments: $depts}')"
+      --arg project "${PROJECT##*/}" --argjson config "$CONFIG" --argjson depts "$DEPTS" --argjson teams "$TEAMS" \
+      '{type: "session", t: $t, source: $source, branch: $branch, ticket: $ticket, project: $project, config: $config, departments: $depts, teams: $teams}')"
     ;;
 
   UserPromptSubmit)
@@ -84,19 +89,28 @@ case "$EVENT" in
 
   PreToolUse)
     TOOL=$(json_get '.tool_name // empty')
-    if [ -z "$AGENT_ID" ] && { [ "$TOOL" = "Agent" ] || [ "$TOOL" = "Task" ]; }; then
-      # El PM encarga trabajo. Con el puente, el encargo empieza con Rol, Proveedor y Modelo.
+    if [ "$TOOL" = "Agent" ] || [ "$TOOL" = "Task" ]; then
+      # Alguien encarga trabajo: el PM, o en el modo equipos un líder de departamento
+      # ("from" es quién encarga; "name" es el nombre del compañero de equipo, si lo tiene).
+      # Con el puente, el encargo empieza con Rol, Proveedor y Modelo.
       emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" '
         def field($k): ([(.tool_input.prompt // "") | capture("(^|\\n)" + $k + ":[ \\t]*(?<v>[^\\n\\r]+)")] | first | .v // null);
-        { type: "delegate", t: $t,
+        { type: "delegate", t: $t, from: (.agent_id // null), from_type: (.agent_type // null),
+          name: (.tool_input.name // null),
           subagent_type: (.tool_input.subagent_type // "general-purpose"),
           description: ((.tool_input.description // "")[0:140]),
           model: (.tool_input.model // null),
           role: field("Rol"), provider: field("Proveedor"), xmodel: field("Modelo"), mode: field("Modo") }' | tr -d '\r')"
+    elif [ "$TOOL" = "SendMessage" ]; then
+      # Mensajes entre el PM y los líderes (modo equipos).
+      emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" '
+        .tool_input as $in
+        | { type: "message", t: $t, from: (.agent_id // null), from_type: (.agent_type // null), to: (($in.to // "") | tostring),
+            text: (($in.summary // (if ($in.message | type) == "string" then $in.message else "" end) // "") | tostring | gsub("[\\r\\n]+"; " ") | .[0:60]) }' | tr -d '\r')"
     else
       emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" '
         .tool_input as $in
-        | { type: "tool", t: $t, agent: (.agent_id // null), tool: .tool_name,
+        | { type: "tool", t: $t, agent: (.agent_id // null), agent_type: (.agent_type // null), tool: .tool_name,
             target: ((if $in.file_path then ($in.file_path | split("/") | last | split("\\") | last)
                       elif $in.notebook_path then ($in.notebook_path | split("/") | last)
                       elif $in.command then $in.command
@@ -129,6 +143,16 @@ case "$EVENT" in
                     elif ($f | test("^\\W*VALIDACI")) then "VALIDACION"
                     elif ($m | test("necesito aprobaci"; "i")) then "APROBACION"
                     else "LISTO" end) }' | tr -d '\r')"
+    ;;
+
+  TeammateIdle)
+    emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" '{type: "teammate_idle", t: $t, name: (.teammate_name // "")}' | tr -d '\r')"
+    ;;
+
+  TaskCreated | TaskCompleted)
+    emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" '
+      { type: "task", t: $t, state: (if .hook_event_name == "TaskCreated" then "created" else "completed" end),
+        id: ((.task_id // "") | tostring), subject: ((.task_subject // "") | gsub("[\\r\\n]+"; " ") | .[0:80]), name: (.teammate_name // null) }' | tr -d '\r')"
     ;;
 
   Notification)
