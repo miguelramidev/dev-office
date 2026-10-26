@@ -23,6 +23,7 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
   - el puente verifica: typecheck, lint y tests en un developer (con una vuelta de corrección como máximo) y el resultado real en un tester.
 - **Asesores del PM:** el PM sigue siendo Claude, pero si `pm` tiene proveedores configurados, les pide una segunda opinión (en solo lectura) antes de presentar un plan que no es trivial o un diseño, y le muestra al CEO en qué coinciden y en qué no.
 - **QA con varios proveedores:** revisión independiente, una ronda de validación cruzada (confirmado, refutado o sin verificar) y consolidación del PM. Lo refutado con pruebas queda en disputa, nunca es bloqueante y va al CEO con los dos argumentos.
+- Guía `docs/providers.md`: qué se puede configurar, el valor por defecto (todo en Claude), los modelos por nivel, cómo instalar y configurar cada proveedor, cómo trabajan el puente, el QA con varios proveedores y los asesores, qué hacer si algo sale mal y los límites.
 - Pruebas: `tests/office-agents.test.sh` y `tests/run-external.test.sh` (con CLIs falsos de `codex` y `agy`), también en el CI.
 
 ### Cambiado

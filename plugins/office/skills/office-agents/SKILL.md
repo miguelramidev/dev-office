@@ -4,7 +4,7 @@ description: Configura qué proveedor de IA hace cada rol de la oficina dev-offi
 argument-hint: "[rol proveedor, por ejemplo backend.developer codex]"
 ---
 
-Vas a configurar qué proveedor hace cada rol de la oficina. Hablale al CEO en su idioma (si escribe en español, con voseo).
+Vas a configurar qué proveedor hace cada rol de la oficina. Si el CEO quiere leer el detalle, la guía está en `docs/providers.md` del repositorio de dev-office (https://github.com/miguelramidev/dev-office/blob/main/docs/providers.md). Hablale al CEO en su idioma (si escribe en español, con voseo).
 
 Los archivos `office-agents.sh` y `office-agents.cmd` están en la misma carpeta que este archivo. No edites los JSON de configuración a mano: usá siempre el script.
 
