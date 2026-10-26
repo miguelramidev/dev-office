@@ -43,6 +43,7 @@ case "${FAKE_MODE:-ok}" in
   auth) echo "Error: Not logged in. Run 'codex login'." >&2; exit 1 ;;
   crash) echo "panic: algo se rompió" >&2; exit 2 ;;
   sleep) sleep 10; report ;;
+  tokens) echo "// cambio" >>src/app.ts; echo "tokens used: 12,345" >&2; report ;;
 esac
 exit 0
 EOF
@@ -149,6 +150,9 @@ expect_not "$FAKE_STDIN" "model: sonnet" "prompt: sin el frontmatter del agente"
 expect "$FAKE_STDIN" "### Skill dept-backend:api-collection" "prompt: incluye las skills que el rol nombra"
 expect_not "$FAKE_STDIN" "### Skill office:" "prompt: no copia las skills del PM"
 expect "$PROJ/.office/runs/r1/output.md" "Hecho: listo." "codex: guarda el reporte"
+expect "$PROJ/.office/observer/events.js" '"type":"external_start","t":' "observer: anota el inicio"
+expect "$PROJ/.office/observer/events.js" '"role":"backend.developer","provider":"codex","model":"gpt-6.1-sol"' "observer: anota rol, proveedor y modelo"
+expect "$PROJ/.office/observer/events.js" '"type":"external"' "observer: anota el final"
 
 expect "$FAKE_ARGS" "-m gpt-6.1-sol" "codex: developer (nivel sonnet) usa gpt-6.1-sol"
 expect "$FAKE_ARGS" 'model_reasoning_effort="medium"' "codex: razonamiento medio"
@@ -229,6 +233,13 @@ expect "$FAKE_STDIN" "Sos el especialista de SEO" "prompt del agente del proyect
 # Fallas del proveedor
 new_project
 FAKE_MODE=auth check 2 "codex sin sesión" backend.developer codex
+new_project
+FAKE_MODE=tokens check 0 "codex informa tokens" backend.developer codex
+expect "$PROJ/.office/observer/events.js" '"tokens":12345' "observer: toma los tokens que informa el CLI"
+new_project
+FAKE_MODE=ok OFFICE_OBSERVER=off check 0 "observer desactivado" backend.developer codex
+if [ -f "$PROJ/.office/observer/events.js" ]; then echo "FALLA observer desactivado: escribió eventos"; FAILED=1; else echo "ok    observer desactivado: no escribe eventos"; fi
+
 new_project
 FAKE_MODE=crash check 3 "codex falla" backend.developer codex
 new_project

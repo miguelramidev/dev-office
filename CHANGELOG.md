@@ -8,6 +8,20 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.15.0] - 2026-10-26
+
+### Agregado
+
+- **Observer en pixel art** (`office` 0.13.0): una página local que muestra la oficina en vivo. Las ocho oficinas con sus empleados en pixel art de 32 bits (cara, peinado, ropa y accesorios por rol, gestos según el estado), el PM caminando hacia el departamento al que le encarga trabajo, y para cada empleado su proveedor (Claude, Codex o Gemini), modelo, tarea, la herramienta que está usando, su resultado y sus tokens. Debajo: tokens totales y por proveedor, quién trabaja, tiempo de la sesión, fallas del tester, el recorrido de la sesión, la ficha del empleado con su retrato y la actividad. Los departamentos sin instalar se ven apagados. Sin actividad, muestra una demo.
+- Hook `observer.sh`: anota los eventos de la sesión en `.office/observer/events.js` (encargos, herramientas, veredictos, avisos y tokens exactos leídos de las transcripciones). No imprime nada, no llama a ningún modelo y nunca bloquea. Se apaga con `OFFICE_OBSERVER=off`.
+- El puente (`run-external.sh`) anota el inicio y el fin de cada encargo a Codex o Gemini, con los tokens que informe el CLI.
+- Skill `observer`: `/office:observer` copia la página al proyecto y la abre en el navegador, en Windows, macOS y Linux.
+- Pruebas: `tests/observer.test.sh`, también en el CI.
+
+### Quitado
+
+- La recomendación de agents-observe en la instalación: el observer propio lo reemplaza, sin Docker.
+
 ## [0.14.0] - 2026-10-26
 
 ### Agregado

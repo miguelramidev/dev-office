@@ -47,3 +47,6 @@ jobs:
 
       - name: Probar el puente a Codex y Gemini
         run: bash tests/run-external.test.sh
+
+      - name: Probar el hook del observer
+        run: bash tests/observer.test.sh
