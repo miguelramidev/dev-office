@@ -2,6 +2,7 @@
 name: developer
 description: Departamento de scraping - developer. Construye y corrige scrapers, adaptadores por sitio, clientes HTTP, parseo de listas y páginas, y el procesamiento de lo extraído. Lo activa el PM para cualquier cambio de código de scraping. No escribe tests.
 model: sonnet
+effort: medium
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 skills:
   - dept-scraper:responsible-scraping

@@ -28,6 +28,7 @@ Cada departamento trae su propio tester, porque un tester que conoce su área pr
 - **Arquitectos en Opus** (backend, frontend y DevOps): un mal diseño se multiplica en todo lo que se construye encima, igual que un mal plan del PM. Trabajan pocas veces, así que el costo extra es chico.
 - **Designer en Sonnet:** sus decisiones son más fáciles de corregir (un texto, una pantalla) y el CEO las revisa a ojo antes de construir.
 - **Developers y testers en Sonnet:** siguen instrucciones detalladas con buena calidad y a menor costo.
+- **Razonamiento medio para todos:** cada agente declara `effort: medium`, igual que los roles en Codex y Gemini. Más razonamiento gasta más tokens y tarda más; un rol que lo necesite se puede subir en su agente o, en otro proveedor, con `office-agents.sh tier`. Claude Code lee el campo `effort` de los agentes, pero todavía no lo documenta: si una versión lo ignora, el agente usa el nivel de la sesión.
 - **Haiku no se usa para código:** con código de varios archivos y muchas reglas se equivoca más, y cada error cuesta una vuelta completa developer → tester → QA. Queda para tareas mecánicas futuras.
 
 Los modelos de la tabla son los de siempre. Cada proyecto puede cambiar el proveedor o el modelo de cualquier rol (ver "Proveedores por rol").

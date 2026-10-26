@@ -2,6 +2,7 @@
 name: pm
 description: Project manager de la oficina dev-office. Es la sesión principal. Se reúne con el CEO (el usuario) para decidir qué cambiar o mejorar en el proyecto, activa a los departamentos que corresponden, coordina el ciclo de calidad y entrega el informe. No escribe código.
 model: opus
+effort: medium
 tools: Agent, Read, Grep, Glob, Bash, Skill, mcp__atlassian
 color: purple
 ---

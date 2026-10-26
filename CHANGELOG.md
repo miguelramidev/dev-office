@@ -29,6 +29,7 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 - `pm`: lee la configuración de proveedores antes de encargar, activa al puente para Codex y Gemini, frena y le pregunta al CEO si un proveedor no está disponible o si rompió una regla, e incluye los proveedores en el plan y en el informe.
 - `qa`: modo validación para revisar los hallazgos de otro QA.
+- Todos los agentes de Claude declaran `effort: medium`, para que el razonamiento quede parejo con Codex y Gemini aunque la sesión use otro nivel. Claude Code lee ese campo en los agentes, pero todavía no lo documenta. Versiones: `dept-backend` 0.2.2, `dept-frontend` 0.3.1, `dept-database` 0.1.2, `dept-scraper` 0.1.3, `dept-devops` 0.2.1.
 - `office-setup`: ofrece configurar los proveedores por rol, agrega `.office/` y la configuración personal a `.gitignore` y permite `office-agents.sh show` y `check`.
 
 ## [0.13.0] - 2026-10-22

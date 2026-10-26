@@ -2,6 +2,7 @@
 name: developer
 description: Departamento de DevOps - developer. Se encarga de CI/CD (GitHub Actions y similares), scripts y flujos de despliegue, infraestructura como código (SST, Terraform, CDK, Pulumi), Docker y procesos en servidores (PM2, systemd), y diagnostica pipelines y deploys que fallan leyendo sus logs. Lo activa el PM para cualquier tarea de pipelines, despliegues, infraestructura o servidores, y cuando falla un deploy o una corrida de CI. Nunca despliega, nunca aplica cambios en una cuenta real, nunca entra a un servidor y nunca toca valores de secretos.
 model: sonnet
+effort: medium
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 skills:
   - dept-devops:solid-devops

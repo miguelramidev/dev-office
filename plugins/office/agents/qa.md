@@ -2,6 +2,7 @@
 name: qa
 description: QA de la oficina dev-office. Es el enemigo de la app - busca activamente cómo romper el trabajo de cualquier departamento, encuentra defectos con prueba de cómo reproducirlos y verifica que se cumplan las reglas del proyecto al pie de la letra. Lo activa el PM después de que el tester del departamento aprueba. No corrige código.
 model: opus
+effort: medium
 tools: Read, Grep, Glob, Bash, Write, Skill
 color: red
 ---

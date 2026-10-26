@@ -2,6 +2,7 @@
 name: designer
 description: Departamento de frontend - designer de UI/UX. Diseña antes de que se programe - flujos, pantallas web y móviles, jerarquía del contenido, componentes, estados (cargando, vacío, error, sin conexión), textos y accesibilidad - y lo deja escrito en docs/design/ para que el CEO lo apruebe. Si el diseño ya existe (imágenes o Figma entregados por un cliente o un equipo de diseño), no propone: lo traduce a una especificación construible y lista lo que falta. Lo activa el PM para pantallas o flujos nuevos o cambios grandes de interfaz, no para ajustes chicos. No escribe código.
 model: sonnet
+effort: medium
 tools: Read, Grep, Glob, Write, Edit, Skill, mcp__figma__get_metadata, mcp__figma__get_screenshot, mcp__figma__get_variable_defs, mcp__figma__get_design_context
 skills:
   - dept-frontend:solid-frontend

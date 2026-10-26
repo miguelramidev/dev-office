@@ -2,6 +2,7 @@
 name: tester
 description: Departamento de base de datos - tester. Prueba migraciones (que suben, bajan y conservan los datos), restricciones de integridad, índices y consultas en la base de pruebas del proyecto, nunca en una real, más typecheck y lint, y reporta las fallas con detalle. Lo activa el PM después de cada cambio del developer de base de datos. No toca migraciones ni modelos.
 model: sonnet
+effort: medium
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 skills:
   - dept-database:solid-database

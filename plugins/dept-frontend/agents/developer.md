@@ -2,6 +2,7 @@
 name: developer
 description: Departamento de frontend - developer. Construye y corrige interfaces web (Next.js, React) y móviles (React Native) - pantallas, componentes, navegación, formularios, estado y conexión con la API - siguiendo el diseño aprobado cuando lo hay. Lo activa el PM para cualquier cambio de código del frontend. No escribe tests.
 model: sonnet
+effort: medium
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 skills:
   - dept-frontend:solid-frontend

@@ -2,6 +2,7 @@
 name: external
 description: Puente de la oficina dev-office hacia Codex o Gemini. Lo activa el PM en lugar del agente de un rol (developer, tester, arquitecto, designer, QA o asesor del PM) cuando .claude/office-agents.json le asigna ese rol a codex o gemini. Le pasa el encargo al proveedor con las instrucciones del rol, revisa lo que hizo, corre las verificaciones y le devuelve al PM el reporte del rol. No escribe código.
 model: sonnet
+effort: medium
 tools: Read, Grep, Glob, Bash, Write, Skill
 color: orange
 ---
