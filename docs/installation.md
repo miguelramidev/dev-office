@@ -108,12 +108,24 @@ Por defecto todos los roles son Claude. Si querés que Codex o Gemini hagan algu
 
 ## 6. Actualizar
 
+**Con un doble click.** Corré `/office:update` una vez: deja en `.claude/` del proyecto (y, si querés, en el Escritorio) un script para actualizar la oficina:
+
+- **Windows:** doble click en `update-office.cmd`.
+- **macOS:** doble click en `update-office.command` (la primera vez, si macOS lo bloquea: click derecho → Abrir).
+- **Desde la terminal:** `bash .claude/update-office.sh`.
+
+Actualiza el marketplace y todos los plugins de dev-office **en todos los proyectos** donde estén instalados, cada uno en su scope, refresca los scripts de la oficina de cada proyecto y te muestra las versiones antes y después.
+
+**A mano**, en la carpeta de cada proyecto:
+
 ```bash
 claude plugin marketplace update dev-office
-claude plugin update office@dev-office
+claude plugin update office@dev-office --scope project
 ```
 
-Dentro de una sesión abierta, `/reload-plugins` aplica los cambios sin reiniciar. Revisá el [registro de cambios](../CHANGELOG.md) antes de actualizar una versión mayor.
+(y lo mismo con cada departamento instalado).
+
+En los dos casos, reiniciá Claude Code en los proyectos abiertos o usá `/reload-plugins`. Revisá el [registro de cambios](../CHANGELOG.md) antes de actualizar una versión mayor.
 
 ## 7. Desactivar un departamento en un proyecto
 
