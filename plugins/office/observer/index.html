@@ -240,7 +240,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   // Pasos: say (mensaje), work (trabaja d segundos), walk (el PM camina; noWait no lo espera),
   // wait (espera al CEO) y run (animaciones de la gente; waitFor espera a que terminen).
   const SCRIPT = [
-    { phase: 0, say: "El CEO abre la reunión: \"trabajemos en PROJ-123\"." },
+    { phase: 0, say: "El CEO llama al PM: \"trabajemos en PROJ-123\"." },
+    { phase: 0, walk: "ceo", tool: "entra a la reunión" },
     { phase: 0, work: "pm", d: 7, tool: "start-ticket PROJ-123", task: "Reunión con el CEO: pedidos con estado" },
     { phase: 0, say: "start-ticket: rama feature/PROJ-123-pedidos desde la épica PROJ-100. Ticket en curso." },
     { phase: 0, work: "adv", d: 5, tool: "lee el plan", task: "Segunda opinión sobre el plan", result: "pass", resultText: "OPINA" },
@@ -253,7 +254,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     // Base de datos: el PM le encarga al líder y el líder reparte.
     { phase: 2, walk: "dlead", say: "Modo equipos: el PM le encarga cada departamento a su líder." },
     { phase: 2, work: "dlead", d: 3, tool: "lee el encargo", task: "Coordinar la migración del estado" },
-    { phase: 2, walk: "ceo", noWait: true, tool: "vuelve a la reunión", run: () => talkTo("dlead", "ddev", ["Te paso la migración", "Dale, arranco"]), waitFor: ["dlead"] },
+    { phase: 2, walk: "door", noWait: true, tool: "espera afuera de Reuniones", run: () => talkTo("dlead", "ddev", ["Te paso la migración", "Dale, arranco"]), waitFor: ["dlead"] },
     { phase: 2, work: "ddev", d: 7, tool: "migración add_order_status", task: "Estado del pedido e índice" },
     { phase: 2, run: () => talkTo("dlead", "dtest", ["Probá que suba y baje", "Voy"]), waitFor: ["dlead"] },
     { phase: 2, work: "dtest", d: 5, tool: "migración sube y baja", task: "Probar la migración", result: "pass", resultText: "PASA" },
@@ -264,7 +265,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     // Backend: el ciclo developer ↔ tester queda dentro del departamento.
     { phase: 3, walk: "blead" },
     { phase: 3, work: "blead", d: 3, tool: "lee el encargo", task: "Coordinar los endpoints de pedidos" },
-    { phase: 3, walk: "ceo", noWait: true, tool: "vuelve a la reunión", run: () => talkTo("blead", "bdev", ["Te paso los endpoints", "Dale, arranco"]), waitFor: ["blead"] },
+    { phase: 3, walk: "door", noWait: true, tool: "espera afuera de Reuniones", run: () => talkTo("blead", "bdev", ["Te paso los endpoints", "Dale, arranco"]), waitFor: ["blead"] },
     { phase: 3, work: "bdev", d: 9, task: "Endpoints de pedidos", tools: ["lee docs/design", "edita src/orders/routes.ts", "edita la colección de Postman", "puente: typecheck y tests"] },
     { phase: 3, run: () => talkTo("bdev", "blead", ["Endpoints listos", "Pasáselos al tester"]), waitFor: ["bdev"] },
     { phase: 3, run: () => talkTo("blead", "btest", ["Probá los endpoints", "Voy"]), waitFor: ["blead"] },
@@ -284,7 +285,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     // Frontend.
     { phase: 5, walk: "flead" },
     { phase: 5, work: "flead", d: 3, tool: "lee el encargo", task: "Coordinar la pantalla de estado" },
-    { phase: 5, walk: "ceo", noWait: true, tool: "vuelve a la reunión", run: () => talkTo("flead", "fdev", ["Te paso la pantalla", "Dale"]), waitFor: ["flead"] },
+    { phase: 5, walk: "door", noWait: true, tool: "espera afuera de Reuniones", run: () => talkTo("flead", "fdev", ["Te paso la pantalla", "Dale"]), waitFor: ["flead"] },
     { phase: 5, work: "fdev", d: 9, task: "Pantalla de estado del pedido", tools: ["lee la colección de Postman", "edita app/orders/page.tsx", "puente: typecheck y tests"] },
     { phase: 5, work: "ftest", d: 6, tool: "tests de la pantalla", task: "Probar estados y textos", result: "pass", resultText: "PASA" },
     { phase: 5, run: () => talkTo("ftest", "flead", ["PASA: estados y textos", "¡Bien!"]), waitFor: ["ftest"] },
@@ -293,20 +294,23 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     { phase: 6, walk: "ceo" },
     { phase: 6, work: "pm", d: 6, tool: "arma el informe", task: "Informe al CEO" },
     { phase: 6, say: "Informe listo. Ofrece abrir el PR con open-pr.", kind: "good" },
-    { phase: 6, wait: 5, waiting: "ceo", say2: "Fin del ticket. La simulación vuelve a empezar.", tool: "leyendo el informe" },
+    { phase: 6, wait: 5, waiting: "ceo", say2: "El CEO lee el informe.", tool: "leyendo el informe" },
+    { phase: 6, walk: "door", tool: "sale de la reunión", say: "Fin del ticket. El PM espera afuera hasta que el CEO lo llame." },
   ];
   const PHASES = ["Reunión", "Diseño", "Base de datos", "Backend", "Calidad", "Frontend", "Informe"];
 
   // --- Estado ------------------------------------------------------------------
   let state;
   const MEET_SPOT = () => { const r = room("meet"); return { x: r.x + 96, y: r.y + 156, room: "meet" }; };
+  // Donde espera el PM: en el pasillo, al lado de la puerta de Reuniones, hasta que el CEO lo llama.
+  const DOOR_SPOT = () => ({ x: doorX(room("meet")) + 26, y: 214, room: "hall" });
   function freshState() {
-    const m = MEET_SPOT();
+    const m = DOOR_SPOT();
     return {
       t: 0, step: -1, stepT: 0, phase: 0, rounds: 0, nextIdle: 3, holds: {},
       tokens: { claude: 0, codex: 0, gemini: 0 },
       feed: [], selected: "pm",
-      pm: { id: "pm", x: m.x, y: m.y, path: [], facing: 1, walking: false, status: "idle", tool: "", task: "", tokens: 0, startedAt: 0, room: "meet", label: "PM" },
+      pm: { id: "pm", x: m.x, y: m.y, path: [], facing: 1, walking: false, status: "idle", tool: "", task: "", tokens: 0, startedAt: 0, room: "hall", label: "PM" },
       agents: AGENTS.map(a => ({ ...a, present: true, ext: 0, status: "idle", tool: "", task: "", tokens: 0, startedAt: null, bubble: null, bubbleUntil: 0, toolList: null,
         pos: null, path: [], acts: [], say: null, pose: null, prop: null, curRoom: a.room, facing: 1, idleTrip: false })),
     };
@@ -316,6 +320,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   const seatOf = a => { const r = room(a.room); return { x: r.x + a.seat[0], y: r.y + a.seat[1] }; };
   function standSpot(target) {
     if (target === "ceo") return MEET_SPOT();
+    if (target === "door") return DOOR_SPOT();
     const a = agent(target), s = seatOf(a);
     return { x: s.x + (a.seat[0] < 96 ? 44 : -44), y: s.y + 26, room: a.room };
   }
@@ -357,9 +362,9 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       state.pm.dest = to;
       state.pm.walking = true;
       state.pm.status = "working";
-      state.pm.tool = s.tool || "va a " + (s.walk === "ceo" ? "Reuniones" : room(agent(s.walk).room).name);
+      state.pm.tool = s.tool || "va a " + (s.walk === "ceo" || s.walk === "door" ? "Reuniones" : room(agent(s.walk).room).name);
       state.pm.clearOnArrive = !!s.noWait;
-      if (s.walk !== "ceo" && !s.tool) addFeed("PM encarga a " + agent(s.walk).label + " (" + providerName(agent(s.walk)) + ").");
+      if (s.walk !== "ceo" && s.walk !== "door" && !s.tool) addFeed("PM encarga a " + agent(s.walk).label + " (" + providerName(agent(s.walk)) + ").");
       else if (s.tool === "busca el reporte") addFeed("El PM va a buscar el reporte de " + room(agent(s.walk).room).name + ".");
     }
     if (s.run) s.run();
@@ -461,6 +466,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   const COFFEE = [{ x: 733, y: 224, room: "hall" }, { x: 18, y: 224, room: "hall" }];
   const DEBATE = [[100, 62], [136, 62]];
   const DEBATE_LINES = ["Este hallazgo es real", "No coincido: ya valida", "Mirá el PATCH sin estado", "Ok, ese lo confirmo", "¿Y el del índice?", "Ese queda en disputa"];
+  const CHATS_OTHER = [["¿Cómo viene tu depto?", "Bien, cerrando tests"], ["¿Me pasás la colección?", "Está en docs/api"], ["¿Ya migraron la base?", "Sí, ayer"], ["¿Viste el partido?", "¡Qué partido!"], ["¿Almorzamos juntos?", "Dale, a las 12"], ["¿Quién revisa mi PR?", "Lo miro yo"]];
   const CHATS = [["¿Un café?", "Dale, en un rato"], ["¿Viste el último PR?", "Sí, quedó bien"], ["¿Cómo vas?", "Ahí, avanzando"], ["¿Corriste los tests?", "Todos en verde"], ["¿Almorzamos?", "Termino esto y vamos"]];
   const shortText = (v, n) => { v = String(v || ""); return v.length > n ? v.slice(0, n - 1) + "…" : v; };
   const exitSpot = a => { const s = seatOf(a); return { x: s.x + (a.seat[0] < 96 ? 42 : -42), y: s.y + 28, room: a.room }; };
@@ -559,21 +565,30 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     });
     idleLife();
   }
-  // Cada tanto, alguien libre va a buscar un café, se estira o charla con un compañero.
+  // Cada tanto, alguien libre va a buscar un café, se estira o charla con alguien libre,
+  // de su departamento o de otro.
   function idleLife() {
     if (reduced || state.t < state.nextIdle) return;
     state.nextIdle = state.t + 5 + Math.random() * 6;
     const free = state.agents.filter(a => a.present && a.provider && a.room !== "meet" && a.status === "idle" && !a.pos && !a.acts.length && !a.pose);
-    if (!free.length || state.agents.filter(a => a.idleTrip).length >= 2) return;
-    const a = free[Math.floor(Math.random() * free.length)], r = Math.random();
-    const mates = free.filter(b => b !== a && b.room === a.room);
-    if (r < 0.4) {
+    if (!free.length || state.agents.filter(a => a.idleTrip).length >= 3) return;
+    // Nadie se va mientras otro viene a hablarle.
+    const visited = new Set(state.agents.flatMap(x => x.acts.map(k => k.with || (k.to && k.to.visit)).filter(Boolean)));
+    const avail = free.filter(b => !visited.has(b.id));
+    if (!avail.length) return;
+    const a = avail[Math.floor(Math.random() * avail.length)], r = Math.random();
+    const others = avail.filter(b => b !== a);
+    const same = others.filter(b => b.room === a.room), far = others.filter(b => b.room !== a.room);
+    const goFar = far.length > 0 && (!same.length || Math.random() < 0.55);
+    const mates = goFar ? far : same;
+    if (r < 0.35) {
       a.idleTrip = true;
       a.acts.push({ k: "go", to: { coffee: true } }, { k: "prop", prop: "cup" }, { k: "say", text: "café", d: 2.2 }, { k: "home" }, { k: "prop", prop: null });
-    } else if (r < 0.7 && mates.length) {
+    } else if (r < 0.8 && mates.length) {
+      const lines = goFar ? CHATS_OTHER : CHATS;
       a.idleTrip = true;
       a.acts.push({ k: "go", to: { visit: mates[Math.floor(Math.random() * mates.length)].id } });
-      a.acts.push({ k: "talk", with: a.acts[0].to.visit, lines: CHATS[Math.floor(Math.random() * CHATS.length)] }, { k: "home" });
+      a.acts.push({ k: "talk", with: a.acts[0].to.visit, lines: lines[Math.floor(Math.random() * lines.length)] }, { k: "home" });
     } else {
       a.pose = { kind: "stretch", until: state.t + 2.2 };
     }
@@ -1278,7 +1293,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   function setPMTarget(target) {
     if (state.pmTarget === target) return;
     state.pmTarget = target;
-    const to = target === "ceo" || !agent(target) ? MEET_SPOT() : standSpot(target);
+    const to = target === "door" ? DOOR_SPOT() : target === "ceo" || !agent(target) ? MEET_SPOT() : standSpot(target);
     state.pm.path = planPath(state.pm, to);
     state.pm.dest = to;
   }
@@ -1304,7 +1319,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const L = state.live = { t0, sess, teams, pmTokens: 0, claudeSub: 0, ext: { codex: 0, gemini: 0 }, route: [], fails: 0, leads: {} };
     state.feed = [];
     const pending = [], byAgent = {}, fx = [];
-    let pmTarget = "ceo", pmStatus = "idle", pmTool = "", pmTask = "";
+    let pmTarget = "door", pmStatus = "idle", pmTool = "", pmTask = "";
     const tok = u => (u ? (u.i || 0) + (u.o || 0) + (u.cw || 0) : 0);
     const feed = (e, text, kind) => state.feed.unshift({ at: e.t, t: e.t - t0, text, kind: kind || "" });
     const leadSeat = dept => seatFor(dept + ".lead");
@@ -1321,7 +1336,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     list.forEach((e, k) => {
       const fresh = base + k >= animFrom && nowS - e.t < 30;
       if (e.type === "session") { feed(e, e.source === "resume" ? "Se retoma la sesión de la oficina." : "Empieza la sesión de la oficina."); }
-      else if (e.type === "prompt") { pmTarget = "ceo"; pmStatus = "working"; pmTool = "conversa con el CEO"; pmTask = "Reunión con el CEO"; feed(e, "El CEO le escribe al PM."); }
+      else if (e.type === "prompt") { pmTarget = "ceo"; pmStatus = "working"; pmTool = "conversa con el CEO"; pmTask = "Reunión con el CEO"; feed(e, "El CEO llama al PM."); }
       else if (e.type === "delegate") {
         const role = e.role || roleFromType(e.subagent_type);
         const provider = String(e.provider || "claude").toLowerCase();
@@ -1455,8 +1470,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       }
       else if (e.type === "turn_end") {
         L.pmTokens = tok(e.usage) || L.pmTokens;
-        pmTarget = "ceo"; pmStatus = "waiting"; pmTool = "esperando al CEO";
-        feed(e, "El PM le responde al CEO y espera.");
+        pmTarget = "door"; pmStatus = "waiting"; pmTool = "espera que el CEO lo llame";
+        feed(e, "El PM le responde al CEO y espera afuera.");
       }
     });
     state.tokens = { claude: L.pmTokens + L.claudeSub, codex: L.ext.codex, gemini: L.ext.gemini };
