@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.17.2] - 2026-10-26
+
+### Corregido
+
+- Observer en el modo equipos (`office` 0.15.2): el PM ya no aparece hablando con el developer o el tester de un departamento que tiene líder. Si el encargo al developer o al tester llega de un compañero de equipo que la página no conocía (con un `agent_id` desconocido o sin él), ahora se le atribuye al líder del departamento, igual que el resultado del developer o del tester. El PM solo habla con los líderes; los líderes, con su gente.
+
 ## [0.17.1] - 2026-10-26
 
 ### Corregido

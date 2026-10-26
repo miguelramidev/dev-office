@@ -1434,6 +1434,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const leadSeat = dept => seatFor(dept + ".lead");
     const leadByName = name => { const m = /^([a-z]+)-lead\b/.exec(name || ""); return m ? leadSeat(m[1]) : null; };
     const isLeadRole = r => /\.lead$/.test(r || "");
+    // El líder que coordina a un developer o tester, si su departamento trabaja en modo equipos.
+    const managedBy = r => { const d = (r || "").split(".")[0]; return teams && /\.(developer|tester)$/.test(r || "") && L.leads[d] ? leadSeat(d) : null; };
     const goTo = seat => { pmTarget = seat; const rn = room(agent(seat).room).name; if (L.route[L.route.length - 1] !== rn) L.route.push(rn); };
     // De quién es un evento: por su agent_id o, si no se conoce, por su tipo de agente (líder).
     const seatOfEvent = (id, type) => {
@@ -1453,9 +1455,15 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         const dept = (role || "").split(".")[0];
         const what = stripRole(e.description) || "sin descripción";
         // En el modo equipos, el developer y el tester los encarga su líder, no el PM.
+        // En el modo equipos, el developer y el tester los encarga su líder, nunca el PM. El PM es la
+        // sesión principal y sus eventos no traen agent_id: si el encargo trae uno, es de un compañero
+        // de equipo (el líder). Y si el líder del departamento ya está trabajando, también es suyo.
         const fromLead = /\.(developer|tester)$/.test(role || "") && leadSeat(dept) &&
-          (isLeadRole(roleFromType(e.from_type)) || (e.from && byAgent[e.from] && isLeadRole(byAgent[e.from].role)) || (!e.from && L.leads[dept]));
+          (isLeadRole(roleFromType(e.from_type)) || (e.from && byAgent[e.from] && isLeadRole(byAgent[e.from].role)) ||
+           (teams && !!e.from && !(byAgent[e.from] && byAgent[e.from].seat)) || L.leads[dept]);
         const lead = fromLead ? leadSeat(dept) : null;
+        // Un compañero de equipo que no conocíamos: desde ahora sus herramientas y mensajes son del líder.
+        if (lead && e.from && !byAgent[e.from]) byAgent[e.from] = { seat: lead, role: dept + ".lead" };
         pending.push({ type: e.subagent_type, seat, role, provider, model: e.xmodel || null, desc: e.description || "", lead });
         if (lead) {
           const la = agent(lead);
@@ -1511,16 +1519,17 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
           a.bubbleUntil = e.t + 12;
           if (v === "FALLA") L.fails += 1;
           feed(e, a.label + " terminó: " + a.bubble + (n ? " · " + fmt(n) + " tokens" : "") + ".", bad ? "alert" : v === "APROBACION" ? "warn" : "good");
-          if (p.lead) {
+          const lead = p.lead || managedBy(p.role);
+          if (lead) {
             // Modo equipos: el resultado se queda en el departamento.
             if (fresh) fx.push(() => {
               if (v === "FALLA" && /\.tester$/.test(p.role || "")) {
                 const dev = seatFor(p.role.replace(/tester$/, "developer"));
                 if (dev) { talkTo(p.seat, dev, ["FALLA: mirá esto", "Uh, lo corrijo"]); later(dev, 4.5, "scratch"); }
-                else talkTo(p.seat, p.lead, ["FALLA", "Lo vemos"]);
+                else talkTo(p.seat, lead, ["FALLA", "Lo vemos"]);
               } else {
                 if (!bad) pose(p.seat, "celebrate", 2);
-                talkTo(p.seat, p.lead, [/\.tester$/.test(p.role || "") ? a.bubble + ": todo en verde" : "Listo, terminé", "¡Bien!"]);
+                talkTo(p.seat, lead, [/\.tester$/.test(p.role || "") ? a.bubble + ": todo en verde" : "Listo, terminé", "¡Bien!"]);
               }
             });
           } else {
