@@ -4,6 +4,33 @@ Una oficina de desarrollo para [Claude Code](https://code.claude.com): vos sos e
 
 > Estado: **v0.1 en construcción**. La API de los plugins puede cambiar entre versiones.
 
+## Empezá acá
+
+Si es la primera vez que usás la oficina, seguí estos pasos en orden:
+
+1. **Instalala en tu proyecto:** requisitos, plugins y `office-setup`. → [Instalar en un proyecto](docs/installation.md)
+2. **Trabajá con el PM:** `claude --agent office:pm` y contale qué querés hacer. → [Empezar a trabajar](docs/installation.md#4-empezar-a-trabajar)
+3. **Mirá la oficina en vivo:** `/office:observer`. → [Ver qué hace el equipo](docs/installation.md#5-ver-qué-hace-el-equipo)
+4. **Opcional, Codex o Gemini en algunos roles:** `/office:office-agents`. → [Claude, Codex o Gemini en cada rol](docs/providers.md)
+5. **Opcional, un líder por departamento:** `bash .claude/office-agents.sh teams on`. → [Modo equipos](docs/architecture.md#modo-equipos-un-líder-por-departamento)
+6. **Mantenela al día:** `/office:update` o la lista de comandos. → [Actualizar](docs/installation.md#6-actualizar)
+
+Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). Para entender cómo trabaja todo por dentro: [Arquitectura](docs/architecture.md).
+
+### Comandos de la oficina
+
+| Comando | Para qué |
+| --- | --- |
+| `claude --agent office:pm` | Abrir la oficina: hablás con el PM. |
+| `/office:office-setup` | Preparar un proyecto la primera vez (permisos, `.gitignore`, ramas, Jira). |
+| `/office:start-ticket PROJ-123` | Empezar un ticket de Jira: crea la rama correcta y lo pasa a "en curso". |
+| `/office:open-pr` | Abrir el PR del trabajo terminado. |
+| `/office:review-fixes` | Resolver los comentarios del PR y revisar lo que corregiste a mano. |
+| `/office:handoff-ticket` | Avisarle a otro equipo, en su ticket de Jira, de un cambio que lo afecta. |
+| `/office:office-agents` | Elegir Claude, Codex o Gemini para cada rol, y el modo equipos. |
+| `/office:observer` | Abrir la oficina en pixel art en el navegador. |
+| `/office:update` | Dejar el botón para actualizar la oficina en todos tus proyectos. |
+
 ## Cómo funciona
 
 ```
@@ -108,7 +135,11 @@ Los agentes leen las reglas de cada proyecto, así que el mismo equipo se adapta
 ## Documentación
 
 - [Arquitectura: cómo trabaja la oficina](docs/architecture.md)
+  - [Modo equipos: un líder por departamento](docs/architecture.md#modo-equipos-un-líder-por-departamento)
+  - [Observer: la oficina en pixel art](docs/architecture.md#observer)
 - [Instalar en un proyecto](docs/installation.md)
+  - [Actualizar](docs/installation.md#6-actualizar)
+  - [Problemas comunes](docs/installation.md#8-problemas-comunes)
 - [Claude, Codex o Gemini en cada rol](docs/providers.md)
 - [Agregar un departamento](docs/add-department.md)
 - [Skills de la comunidad](docs/community-skills.md)
