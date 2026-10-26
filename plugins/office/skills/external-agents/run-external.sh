@@ -82,6 +82,17 @@ case "$RUN_DIR" in
 esac
 [ -f "$RUN_DIR/task.md" ] || usage_error "no existe $RUN_DIR/task.md con el encargo."
 
+# Eventos para el observer (.office/observer/events.js). Nunca falla ni imprime.
+obs_emit() {
+  [ "${OFFICE_OBSERVER:-on}" = "off" ] && return 0
+  command -v jq >/dev/null 2>&1 || return 0
+  mkdir -p "$PROJECT/.office/observer" 2>/dev/null || return 0
+  local json
+  json=$(jq -cn --argjson t "$(date +%s)" "$@" 2>/dev/null | tr -d '\r') || return 0
+  [ -n "$json" ] && printf 'OFFICE_EVENT(%s);\n' "$json" >>"$PROJECT/.office/observer/events.js" 2>/dev/null
+  return 0
+}
+
 PROMPT="$RUN_DIR/prompt.md"
 OUTPUT="$RUN_DIR/output.md"
 LOG="$RUN_DIR/log.txt"
@@ -134,6 +145,12 @@ write_summary() {
 finish() {
   STATUS="$1"
   STATUS_TEXT="$2"
+  # Tokens: lo que informe el CLI en su salida, si lo informa (por ejemplo "tokens used: 12,345").
+  local tok=""
+  [ -f "$LOG" ] && tok=$(grep -oiE 'tokens used[^0-9]*[0-9][0-9,.]*' "$LOG" 2>/dev/null | tail -n1 | grep -oE '[0-9][0-9,.]*$' | tr -d ',.')
+  obs_emit --arg role "$ROLE" --arg prov "$PROVIDER" --arg model "${MODEL:-}" --arg effort "${EFFORT:-}" \
+    --argjson code "$STATUS" --arg text "$STATUS_TEXT" --argjson dur "${DURATION:-0}" --arg tok "$tok" \
+    '{type: "external", t: $t, role: $role, provider: $prov, model: $model, effort: $effort, code: $code, result: $text, duration: $dur, tokens: (if $tok == "" then null else ($tok | tonumber) end)}'
   write_summary
   exit "$STATUS"
 }
@@ -352,6 +369,8 @@ case "$PROVIDER" in
 esac
 
 echo "\$ ${CMD[*]} < ${STDIN_FILE#"$PROJECT"/}" >>"$LOG"
+obs_emit --arg role "$ROLE" --arg prov "$PROVIDER" --arg model "${MODEL:-}" --arg effort "${EFFORT:-}" \
+  '{type: "external_start", t: $t, role: $role, provider: $prov, model: $model, effort: $effort}'
 START=$(date +%s)
 "${CMD[@]}" <"$STDIN_FILE" >"$STDOUT_FILE" 2>>"$LOG" &
 PID=$!

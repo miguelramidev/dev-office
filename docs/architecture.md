@@ -80,6 +80,22 @@ Si `qa` tiene varios proveedores, el PM los coordina en tres pasos:
 - **Tiempo:** cada encargo se corta a los 540 segundos (`OFFICE_EXTERNAL_TIMEOUT`), porque la herramienta Bash de Claude Code espera como máximo 10 minutos. Los encargos grandes se dividen.
 - **Costo:** cada proveedor se paga con su propia cuenta, y el puente gasta un poco de Claude (Sonnet) para pasar el encargo y revisar el resultado.
 
+## Observer
+
+La oficina en pixel art, en vivo, para ver qué pasa sin leer registros.
+
+- **Datos.** El hook `observer.sh` escucha SessionStart, UserPromptSubmit, PreToolUse, SubagentStart, SubagentStop, Notification y Stop, y anota cada evento como una línea `OFFICE_EVENT({...});` en `.office/observer/events.js`:
+  - qué le encarga el PM a cada departamento (con el rol y el proveedor, si el encargo va por el puente);
+  - qué herramienta usa cada agente (el nombre del archivo, no su contenido);
+  - el veredicto de cada agente al terminar (PASA, FALLA, APROBADO, RECHAZADO, pide aprobación, PROVEEDOR NO DISPONIBLE...), sacado de su último mensaje;
+  - los tokens exactos, leídos de las transcripciones que Claude Code guarda en el disco: entrada, salida y caché, contando una sola vez cada mensaje.
+
+  El puente agrega el inicio y el fin de cada encargo a Codex o Gemini, con los tokens que informe el CLI. Al empezar la sesión se anotan la rama, el ticket, los proveedores por rol y los departamentos instalados.
+- **Sin costo.** El hook no imprime nada (en algunos eventos, lo que imprime un hook le llega al modelo) y no llama a ningún modelo: no gasta tokens. Nunca bloquea. Lo único que suma es el tiempo de correr un script por evento.
+- **La página.** `office/observer/index.html` se copia a `.office/observer/` al empezar cada sesión y se abre desde el disco, sin servidor: como el registro es JavaScript, la página lo vuelve a cargar cada 1,5 segundos. Muestra las ocho oficinas, con los empleados según los proveedores configurados y los departamentos sin instalar apagados. Si no hay actividad, muestra una demo.
+- **Privacidad.** No se guarda lo que escribe el CEO ni el contenido de los archivos. Todo queda en `.office/`, que no va en git.
+- **Apagarlo:** `OFFICE_OBSERVER=off` en el `env` del proyecto.
+
 ## Modos del PM
 
 1. **Reunión:** el CEO y el PM discuten qué cambiar o mejorar. El PM opina con hechos (lee el proyecto antes), señala riesgos y costos y presenta opciones con su recomendación. No activa a nadie hasta que el CEO decida.
@@ -172,6 +188,7 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 | Skills genéricas (por ejemplo, scraping responsable) | Skills propias del proyecto                           |
 | Plantilla de los documentos de diseño                | Los diseños aprobados (`docs/design/`)                |
 | Reglas y revisión de las colecciones de API          | Las colecciones de Postman y sus entornos (`docs/api/`) |
+| Hook y página del observer                            | Su registro de eventos (`.office/observer/`, fuera de git) |
 | Valores por defecto y ejemplos genéricos (`PROJ-123`) | Moneda, idioma, zona horaria, clave de Jira, ramas protegidas y convenciones |
 
 Los agentes leen el `CLAUDE.md` del proyecto (y lo que este importe) antes de trabajar. Así el mismo equipo respeta las reglas de cada proyecto.

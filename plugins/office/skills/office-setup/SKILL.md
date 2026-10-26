@@ -99,5 +99,6 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
    - Si conectó Jira, autenticarse con `/mcp` y probar con `/office:start-ticket <TICKET>`.
    - Para abrir PRs y aplicar correcciones de revisión (`/office:open-pr` y `/office:review-fixes`), instalar `gh` e iniciar sesión con `gh auth login`.
    - Si quiere la colección de API y el proyecto ya tiene endpoints, pedirle al PM que la genere.
+   - Para ver la oficina trabajando en vivo, `/office:observer`.
    - Borrar `.claude/settings.json.bak` cuando esté conforme.
    - Reiniciar Claude Code para que tome la configuración nueva.
