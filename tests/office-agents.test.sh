@@ -103,7 +103,7 @@ rm "$PROJ/.claude/office-agents.json"
 run set backend.developer codex >/dev/null
 EMPTY_PATH="$WORK/emptybin"
 mkdir -p "$EMPTY_PATH"
-for tool in git jq awk sed tr cut sort mkdir mv cat dirname; do
+for tool in git jq awk sed tr cut sort mkdir mv cat dirname grep head bash env; do
   p=$(command -v "$tool") && ln -s "$p" "$EMPTY_PATH/$tool"
 done
 BASH_BIN=$(command -v bash)
@@ -115,6 +115,64 @@ else
   sed 's/^/      /' "$WORK/out.txt"
   FAILED=1
 fi
+
+# check con CLIs falsos: codex viejo y agy con una cuenta sin Gemini 4 Argon.
+FAKE_BIN="$WORK/fakebin"
+mkdir -p "$FAKE_BIN"
+printf '#!/usr/bin/env bash\ncase "$1" in\n  --version) echo "codex-cli 0.150.2" ;;\n  login) exit 0 ;;\nesac\n' >"$FAKE_BIN/codex"
+printf '#!/usr/bin/env bash\n[ "$1" = models ] && printf "gemini-3.8-flash\\ngemini-3.5-flash-lite\\n"\n' >"$FAKE_BIN/agy"
+chmod +x "$FAKE_BIN/codex" "$FAKE_BIN/agy"
+run set frontend.developer gemini >/dev/null
+(cd "$PROJ" && PATH="$FAKE_BIN:$EMPTY_PATH" "$BASH_BIN" "$SCRIPT" check) >"$WORK/out.txt" 2>&1
+CHECK_RC=$?
+for want in "ok    codex: instalado y con sesión" "necesita Codex CLI 0.153.0" "ok    gemini: Antigravity CLI instalado" "no tiene el modelo 'gemini-4-argon'"; do
+  if grep -qF "$want" "$WORK/out.txt"; then
+    echo "ok    check: $want"
+  else
+    echo "FALLA check: falta \"$want\""
+    sed 's/^/      /' "$WORK/out.txt"
+    FAILED=1
+  fi
+done
+[ "$CHECK_RC" -ne 0 ] && echo "ok    check: con avisos sale con error" || { echo "FALLA check: con avisos tendría que salir con error"; FAILED=1; }
+if grep -qF "gemini-3.8-flash'" "$WORK/out.txt"; then
+  echo "FALLA check: avisa por un modelo que la cuenta sí tiene"
+  FAILED=1
+else
+  echo "ok    check: no avisa por los modelos que la cuenta tiene"
+fi
+run reset --all >/dev/null
+
+# Tabla de modelos por nivel
+same "gpt-6-astra" "nivel opus de codex" model codex opus
+same "gpt-6.1-sol" "nivel sonnet de codex" model codex sonnet
+same "gemini-4-argon" "nivel opus de gemini" model gemini opus
+same "gemini-3.8-flash" "nivel sonnet de gemini" model gemini sonnet
+same "medium" "razonamiento medio por defecto (codex)" effort codex
+same "medium" "razonamiento medio por defecto (gemini)" effort gemini
+check 0 "cambiar un modelo del equipo" tier codex opus gpt-7-algo
+same "gpt-7-algo" "el modelo cambiado" model codex opus
+check 0 "cambiar el razonamiento" tier gemini effort high
+same "high" "el razonamiento cambiado" effort gemini
+check 0 "cambiar un modelo solo para mí" tier codex opus gpt-mio --local
+same "gpt-mio" "el local manda en la tabla" model codex opus
+run models >"$WORK/models.txt"
+if grep -E '^codex +opus +gpt-mio +local' "$WORK/models.txt" >/dev/null && grep -E '^codex +sonnet +gpt-6\.1-sol +dev-office' "$WORK/models.txt" >/dev/null; then
+  echo "ok    models muestra el modelo y su origen"
+else
+  echo "FALLA models muestra el modelo y su origen"
+  sed 's/^/      /' "$WORK/models.txt"
+  FAILED=1
+fi
+check 0 "volver al de dev-office (local)" tier codex opus default --local
+same "gpt-7-algo" "sin el local vuelve el del equipo" model codex opus
+check 0 "volver al de dev-office (equipo)" tier codex opus default
+same "gpt-6-astra" "vuelve el de dev-office" model codex opus
+check 1 "tier con proveedor inválido" tier claude opus x
+check 1 "tier con nivel inválido" tier codex mega x
+check 1 "tier con valor raro" tier codex opus 'a b'
+check 1 "model con nivel inválido" model codex effort
+run tier gemini effort default >/dev/null
 
 # Menú interactivo: elegir el rol por número y después volverlo al valor por defecto.
 printf '2\ncodex gemini\n\n' | run >/dev/null

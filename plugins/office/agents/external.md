@@ -35,7 +35,7 @@ Y después el encargo completo, el mismo que recibiría el agente del rol. Si fa
    bash <carpeta de la skill>/run-external.sh --role <rol> --provider <proveedor> --model <modelo> --run-dir <carpeta>
    ```
 
-   Sin `--model` si el encargo no trae modelo.
+   Sin `--model` si el encargo no trae modelo: el script usa el modelo equivalente al nivel del rol.
 
 4. Leé el resumen que imprime y, si existe, el reporte del proveedor (`output.md` en la carpeta del encargo).
 
@@ -44,7 +44,7 @@ Y después el encargo completo, el mismo que recibiría el agente del rol. Si fa
 | Código | Qué hacés |
 | --- | --- |
 | 0 | Seguí con el paso 4. |
-| 2 | Frená. Tu reporte empieza con **PROVEEDOR NO DISPONIBLE**: qué proveedor, el motivo del resumen y cómo se arregla (instalarlo, `codex login`, configurar `GEMINI_API_KEY`, esperar a que se renueve la cuota). No pruebes con otro proveedor: lo decide el CEO. |
+| 2 | Frená. Tu reporte empieza con **PROVEEDOR NO DISPONIBLE**: qué proveedor, el motivo del resumen y cómo se arregla (instalarlo, `codex login`, correr `agy` e iniciar sesión con la cuenta de Google, elegir otro modelo con `office-agents.sh tier` si la cuenta no lo tiene, esperar a que se renueve la cuota). No pruebes con otro proveedor: lo decide el CEO. |
 | 4 | Frená. Tu reporte empieza con **REGLAS ROTAS**: la lista de problemas del resumen y los archivos cambiados. No deshagas nada: lo decide el CEO. |
 | 5 | Reportá **TIEMPO AGOTADO**, qué archivos alcanzó a cambiar y proponé dividir el encargo en partes más chicas. |
 | 1 o 3 | Reportá **EL PROVEEDOR FALLÓ** con el motivo. Leé las últimas líneas de `log.txt` y copiá lo relevante. |
@@ -66,7 +66,7 @@ Lo que el proveedor dice que hizo no alcanza: verificá lo que se puede verifica
 
 1. Primero, el reporte del proveedor **tal cual**, con el formato del rol (la primera línea PASA, FALLA, APROBADO o RECHAZADO si el rol la lleva). Si tu verificación contradice al proveedor, la primera línea es la tuya y lo explicás abajo.
 2. Después, una sección **Puente**:
-   - **Proveedor:** el proveedor y el modelo, la duración y cuántas vueltas hicieron falta.
+   - **Proveedor:** el proveedor, el modelo, el razonamiento y el nivel (del resumen), la duración y cuántas vueltas hicieron falta.
    - **Archivos cambiados:** la lista del resumen.
    - **Verificación:** lo que corriste vos y el resultado.
    - **Carpeta del encargo:** la ruta, por si el CEO quiere ver el prompt o el registro.

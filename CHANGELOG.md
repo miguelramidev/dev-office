@@ -12,16 +12,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ### Agregado
 
-- **Proveedores por rol** (`office` 0.12.0): cada rol de la oficina lo puede hacer Claude, Codex o Gemini, con modelo opcional (`gemini:pro`, `claude:opus`). Se configura por proyecto en `.claude/office-agents.json` (el del equipo) y `.claude/office-agents.local.json` (el personal, que manda rol por rol). Un rol sin configurar sigue en Claude con el modelo de siempre.
-- Skill `office-agents`: instala en el proyecto el script de configuración `.claude/office-agents.sh` (menú interactivo y comandos `show`, `roles`, `set`, `reset`, `get` y `check`) y `.claude/office-agents.cmd` para usarlo desde CMD o PowerShell en Windows. `check` verifica que los CLIs estén instalados y con sesión.
+- **Proveedores por rol** (`office` 0.12.0): cada rol de la oficina lo puede hacer Claude, Codex o Gemini, con modelo opcional (`codex:gpt-6.1-sol`, `claude:opus`). Se configura por proyecto en `.claude/office-agents.json` (el del equipo) y `.claude/office-agents.local.json` (el personal, que manda rol por rol). Un rol sin configurar sigue en Claude con el modelo de siempre.
+- **Modelos a la par de Claude:** cada rol usa en Codex o Gemini el modelo del mismo nivel que su agente de Claude, con razonamiento medio. Nivel Opus (QA, arquitectos y asesores del PM): `gpt-6-astra` y `gemini-4-argon`. Nivel Sonnet (developers, testers y designer): `gpt-6.1-sol` y `gemini-3.8-flash`. El proyecto puede cambiar la tabla y el razonamiento con `office-agents.sh tier`; un rol con modelo propio no la usa.
+- **Gemini con Antigravity CLI** (`agy`) y la cuenta de Google, porque Gemini CLI ya no atiende cuentas personales.
+- Skill `office-agents`: instala en el proyecto el script de configuración `.claude/office-agents.sh` (menú interactivo y comandos `show`, `roles`, `set`, `reset`, `get`, `models`, `tier`, `model`, `effort` y `check`) y `.claude/office-agents.cmd` para usarlo desde CMD o PowerShell en Windows. `check` verifica que los CLIs estén instalados y con sesión, que Codex sea 0.153.0 o más nuevo si se usa GPT-6 Astra y que la cuenta de Google tenga los modelos de la tabla (`agy models`).
 - Agente `external` (Sonnet), el puente a Codex y Gemini, y skill `external-agents` con el script `run-external.sh`:
   - arma el prompt con las reglas de la oficina para el proveedor, las instrucciones del agente del rol, las skills que usa y el encargo;
-  - corre `codex exec` (sandbox `workspace-write`, sin pedir aprobación) o `gemini -p` (`--approval-mode auto_edit`), con tope de tiempo (`OFFICE_EXTERNAL_TIMEOUT`, 540 segundos);
+  - corre `codex exec` (sandbox `workspace-write`, sin pedir aprobación) o `agy -p` (`--mode accept-edits`, leyendo el encargo de un archivo), con el modelo y el razonamiento del nivel del rol y tope de tiempo (`OFFICE_EXTERNAL_TIMEOUT`, 540 segundos);
   - antes, no corre nada en una rama protegida; después, marca si tocó secretos, claves o lockfiles, si escribió fuera de lo que permite el rol, si commiteó (y revisa los archivos del commit) o si cambió de rama;
   - el puente verifica: typecheck, lint y tests en un developer (con una vuelta de corrección como máximo) y el resultado real en un tester.
 - **Asesores del PM:** el PM sigue siendo Claude, pero si `pm` tiene proveedores configurados, les pide una segunda opinión (en solo lectura) antes de presentar un plan que no es trivial o un diseño, y le muestra al CEO en qué coinciden y en qué no.
 - **QA con varios proveedores:** revisión independiente, una ronda de validación cruzada (confirmado, refutado o sin verificar) y consolidación del PM. Lo refutado con pruebas queda en disputa, nunca es bloqueante y va al CEO con los dos argumentos.
-- Pruebas: `tests/office-agents.test.sh` y `tests/run-external.test.sh` (con CLIs falsos de Codex y Gemini), también en el CI.
+- Pruebas: `tests/office-agents.test.sh` y `tests/run-external.test.sh` (con CLIs falsos de `codex` y `agy`), también en el CI.
 
 ### Cambiado
 

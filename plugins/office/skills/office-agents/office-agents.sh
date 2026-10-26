@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-agents-version: 1
+# office-agents-version: 2
 # Configura qué proveedor (Claude, Codex o Gemini) hace cada rol de la oficina dev-office.
 #
 # Uso (desde la carpeta del proyecto):
@@ -10,14 +10,20 @@
 #   bash .claude/office-agents.sh reset <rol>|--all [--local]
 #   bash .claude/office-agents.sh get <rol>        el proveedor efectivo, uno por línea
 #   bash .claude/office-agents.sh check            verifica que los CLIs estén instalados y con sesión
+#   bash .claude/office-agents.sh models           muestra el modelo de cada proveedor por nivel
+#   bash .claude/office-agents.sh tier <proveedor> <opus|sonnet|haiku|effort> <valor>|default [--local]
+#   bash .claude/office-agents.sh model <proveedor> <nivel>    el modelo efectivo (lo usa la oficina)
+#   bash .claude/office-agents.sh effort <proveedor>           el razonamiento efectivo
 # En Windows también: .claude\office-agents.cmd <lo mismo>
 #
 # Ejemplos:
 #   set backend.developer codex
-#   set frontend.developer gemini:pro
+#   set frontend.developer gemini
 #   set qa claude codex            (dos QA que se validan entre ellos)
 #   set pm codex                   (el PM sigue en Claude y consulta a Codex como asesor)
 #   set backend.architect claude:opus
+#   tier codex opus gpt-6-astra    (cambia el modelo de nivel Opus de Codex)
+#   tier gemini effort high        (más razonamiento: más tokens y más tiempo)
 #
 # Archivos:
 #   .claude/office-agents.json        la del equipo, va en git
@@ -29,6 +35,10 @@
 #   - qa: uno o varios; con varios, revisan por separado y se validan entre ellos.
 #   - El resto de los roles: un solo proveedor.
 #   - Un rol sin configurar usa Claude con el modelo de siempre.
+#   - Niveles: cada rol tiene el nivel de su agente de Claude (opus o sonnet). Un rol en Codex o
+#     Gemini usa el modelo de ese nivel en ese proveedor (ver "models"), salvo que el rol diga
+#     otro modelo (codex:<modelo>).
+#   - Gemini se usa con Antigravity CLI (agy) y la cuenta de Google.
 #
 # Funciona en Linux, macOS (bash 3.2) y Windows con el bash de Git for Windows. Necesita jq.
 
@@ -38,6 +48,16 @@ frontend.architect frontend.designer frontend.developer frontend.tester
 database.developer database.tester
 scraper.developer scraper.tester
 devops.architect devops.developer devops.tester"
+
+# Modelos de cada proveedor por nivel, a la par de los de Claude (octubre de 2026). Se pueden
+# cambiar por proyecto con "tier". effort: razonamiento (medio para todos, para no gastar de más).
+#   codex:  gpt-6-astra (el más inteligente de OpenAI), gpt-6.1-sol (el recomendado para
+#           programar), gpt-6-luna (rápido).
+#   gemini: gemini-4-argon (el más capaz de Google), gemini-3.8-flash, gemini-3.5-flash-lite.
+DEFAULT_MODELS='{
+  "codex":  { "opus": "gpt-6-astra",    "sonnet": "gpt-6.1-sol",      "haiku": "gpt-6-luna",            "effort": "medium" },
+  "gemini": { "opus": "gemini-4-argon", "sonnet": "gemini-3.8-flash", "haiku": "gemini-3.5-flash-lite", "effort": "medium" }
+}'
 
 die() {
   echo "office-agents: $1" >&2
@@ -66,7 +86,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --local) LOCAL=1 ;;
     --project) PROJECT="$2"; shift ;;
-    -h | --help) sed -n '2,33p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h | --help) awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"; exit 0 ;;
     *) ARGS+=("$1") ;;
   esac
   shift
@@ -132,6 +152,28 @@ all_roles() {
   printf '%s\n' $KNOWN_ROLES $extra | awk 'NF && !seen[$0]++'
 }
 
+# Valor de la tabla de modelos: local, después equipo, después el de dev-office.
+model_value() {
+  local provider="$1" key="$2" f v
+  for f in "$LOCAL_FILE" "$SHARED"; do
+    [ -f "$f" ] || continue
+    v=$(jqc -r --arg p "$provider" --arg k "$key" '.models[$p][$k] // empty' "$f")
+    [ -n "$v" ] && { echo "$v"; return 0; }
+  done
+  printf '%s' "$DEFAULT_MODELS" | jqc -r --arg p "$provider" --arg k "$key" '.[$p][$k] // empty'
+}
+
+model_source() {
+  local provider="$1" key="$2"
+  if [ -f "$LOCAL_FILE" ] && [ -n "$(jqc -r --arg p "$provider" --arg k "$key" '.models[$p][$k] // empty' "$LOCAL_FILE")" ]; then
+    echo "local"
+  elif [ -f "$SHARED" ] && [ -n "$(jqc -r --arg p "$provider" --arg k "$key" '.models[$p][$k] // empty' "$SHARED")" ]; then
+    echo "equipo"
+  else
+    echo "dev-office"
+  fi
+}
+
 # --- Validación ---------------------------------------------------------------
 
 valid_role() {
@@ -193,6 +235,18 @@ remove_role() {
   fi
 }
 
+write_model() {
+  local provider="$1" key="$2" value="$3" tmp
+  mkdir -p "$PROJECT/.claude"
+  [ -f "$TARGET" ] || echo '{}' >"$TARGET"
+  tmp="$TARGET.tmp"
+  if [ "$value" = "default" ]; then
+    jqc -S --indent 2 --arg p "$provider" --arg k "$key" 'del(.models[$p][$k]) | if (.models[$p] // {}) == {} then del(.models[$p]) else . end | if (.models // {}) == {} then del(.models) else . end' "$TARGET" >"$tmp" && mv "$tmp" "$TARGET"
+  else
+    jqc -S --indent 2 --arg p "$provider" --arg k "$key" --arg v "$value" '.models[$p][$k] = $v' "$TARGET" >"$tmp" && mv "$tmp" "$TARGET"
+  fi
+}
+
 # --- Comandos -----------------------------------------------------------------
 
 cmd_set() {
@@ -249,22 +303,78 @@ cmd_roles() {
   echo "project.<nombre>   (un agente propio del proyecto, en .claude/agents/<nombre>.md)"
 }
 
-install_hint() {
+cmd_models() {
+  printf '%-8s %-8s %-26s %s\n' "PROVEED." "NIVEL" "MODELO" "ORIGEN"
+  local provider key
+  for provider in codex gemini; do
+    for key in opus sonnet haiku effort; do
+      printf '%-8s %-8s %-26s %s\n' "$provider" "$key" "$(model_value "$provider" "$key")" "$(model_source "$provider" "$key")"
+    done
+  done
+  echo
+  echo "Nivel de cada rol: el modelo de su agente de Claude (PM, QA y arquitectos: opus; el resto: sonnet)."
+  echo "effort es el razonamiento: más alto gasta más tokens y tarda más."
+}
+
+cmd_tier() {
+  local provider="$1" key="$2" value="$3"
+  [ -z "$provider" ] && { cmd_models; return 0; }
+  case "$provider" in codex | gemini) ;; *) die "proveedor inválido para la tabla: '$provider' (codex o gemini)." ;; esac
+  case "$key" in opus | sonnet | haiku | effort) ;; *) die "nivel inválido: '$key' (opus, sonnet, haiku o effort)." ;; esac
+  [ -z "$value" ] && die "falta el valor. Ejemplo: tier $provider $key <modelo>  (o 'default' para volver al de dev-office)"
+  case "$value" in *[!A-Za-z0-9._-]*) die "valor inválido: '$value' (solo letras, números, '.', '_' y '-')." ;; esac
+  write_model "$provider" "$key" "$value"
+  echo "$provider $key → $(model_value "$provider" "$key") ($( [ "$LOCAL" -eq 1 ] && echo local || echo equipo ))"
+}
+
+cmd_model() {
+  local provider="$1" tier="$2"
+  case "$provider" in codex | gemini) ;; *) die "proveedor inválido: '$provider' (codex o gemini)." ;; esac
+  case "$tier" in opus | sonnet | haiku) ;; *) die "nivel inválido: '$tier' (opus, sonnet o haiku)." ;; esac
+  model_value "$provider" "$tier"
+}
+
+cmd_effort() {
+  local provider="$1"
+  case "$provider" in codex | gemini) ;; *) die "proveedor inválido: '$provider' (codex o gemini)." ;; esac
+  model_value "$provider" effort
+}
+
+# Binario de cada proveedor: Gemini se usa con Antigravity CLI.
+provider_bin() {
   case "$1" in
-    codex) echo "instalalo con: npm install -g @openai/codex (o en macOS: brew install --cask codex). Después: codex login" ;;
-    gemini) echo "instalalo con: npm install -g @google/gemini-cli (o en macOS: brew install gemini-cli). Después configurá GEMINI_API_KEY (o Vertex AI / Code Assist)" ;;
+    gemini) echo agy ;;
+    *) echo "$1" ;;
   esac
 }
 
+install_hint() {
+  case "$1" in
+    codex) echo "instalalo con: npm install -g @openai/codex (o en macOS: brew install --cask codex). Después: codex login" ;;
+    gemini)
+      case "${OSTYPE:-}" in
+        msys* | cygwin* | win32*) echo "Gemini se usa con Antigravity CLI. Instalalo desde PowerShell con: irm https://antigravity.google/cli/install.ps1 | iex. Después corré agy una vez e iniciá sesión con tu cuenta de Google" ;;
+        *) echo "Gemini se usa con Antigravity CLI. Instalalo con: curl -fsSL https://antigravity.google/cli/install.sh | bash. Después corré agy una vez e iniciá sesión con tu cuenta de Google" ;;
+      esac
+      ;;
+  esac
+}
+
+# Versión x.y.z de un texto, como número comparable (0.153.0 → 153000).
+version_number() {
+  printf '%s' "$1" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 | awk -F. '{ print $1 * 1000000 + $2 * 1000 + $3 }'
+}
+
 cmd_check() {
-  local used role entry problems=0
+  local used role problems=0 provider bin models_out tier model version
   used=$(all_roles | while IFS= read -r role; do effective "$role"; done | cut -d: -f1 | awk '!seen[$0]++')
   for provider in $used; do
+    bin=$(provider_bin "$provider")
     case "$provider" in
       claude) echo "ok    claude: es la sesión de Claude Code" ;;
       codex | gemini)
-        if ! command -v "$provider" >/dev/null 2>&1; then
-          echo "FALTA $provider: no está instalado o no está en el PATH; $(install_hint "$provider")"
+        if ! command -v "$bin" >/dev/null 2>&1; then
+          echo "FALTA $provider: '$bin' no está instalado o no está en el PATH; $(install_hint "$provider")"
           problems=$((problems + 1))
           continue
         fi
@@ -275,13 +385,25 @@ cmd_check() {
             echo "FALTA codex: instalado pero sin sesión; corré: codex login"
             problems=$((problems + 1))
           fi
-        else
-          if [ -n "${GEMINI_API_KEY:-}" ] || [ -n "${GOOGLE_API_KEY:-}" ] || [ -n "${GOOGLE_GENAI_USE_VERTEXAI:-}" ] || [ -f "$HOME/.gemini/.env" ]; then
-            echo "ok    gemini: instalado y con credenciales"
-          else
-            echo "AVISO gemini: instalado, pero no encontré GEMINI_API_KEY ni ~/.gemini/.env. En modo no interactivo necesita una API key, Vertex AI o Code Assist."
+          version=$(version_number "$(codex --version 2>/dev/null | tr -d '\r')")
+          if [ -n "$version" ] && [ "$version" -lt 153000 ] && [ "$(model_value codex opus)" = "gpt-6-astra" ]; then
+            echo "AVISO codex: GPT-6 Astra necesita Codex CLI 0.153.0 o más nuevo. Actualizalo con: npm install -g @openai/codex"
             problems=$((problems + 1))
           fi
+        else
+          if ! models_out=$(agy models 2>&1 | tr -d '\r'); then
+            echo "FALTA gemini: agy no respondió (¿sin sesión?). Corré agy una vez e iniciá sesión con tu cuenta de Google."
+            problems=$((problems + 1))
+            continue
+          fi
+          echo "ok    gemini: Antigravity CLI instalado y con sesión"
+          for tier in opus sonnet; do
+            model=$(model_value gemini "$tier")
+            if ! printf '%s\n' "$models_out" | grep -qiF -- "$model"; then
+              echo "AVISO gemini: tu cuenta no tiene el modelo '$model' (nivel $tier). Mirá los que tenés con 'agy models' y elegí otro con: tier gemini $tier <modelo>"
+              problems=$((problems + 1))
+            fi
+          done
         fi
         ;;
     esac
@@ -319,7 +441,7 @@ EOF
     case "$role" in
       pm) echo "El PM es siempre Claude. Elegí sus asesores: codex, gemini o los dos (vacío para ninguno)." ;;
       qa) echo "Uno o varios, separados por espacio (por ejemplo: claude codex)." ;;
-      *) echo "Un proveedor: claude, codex o gemini, con modelo opcional (por ejemplo gemini:pro, claude:opus)." ;;
+      *) echo "Un proveedor: claude, codex o gemini, con modelo opcional (por ejemplo codex:gpt-6.1-sol, claude:opus)." ;;
     esac
     printf '%s → ' "$role"
     read -r entries || break
@@ -331,7 +453,7 @@ EOF
     fi
   done
   echo
-  echo "Probá que los proveedores estén listos con: check"
+  echo "Modelos por nivel: models. Probá que los proveedores estén listos con: check"
 }
 
 case "${1:-}" in
@@ -342,5 +464,9 @@ case "${1:-}" in
   reset) shift; cmd_reset "${1:-}" ;;
   get) shift; cmd_get "${1:-}" ;;
   check) cmd_check ;;
-  *) die "comando desconocido: '$1'. Usá: show, roles, set, reset, get o check (o --help)." ;;
+  models) cmd_models ;;
+  tier) shift; cmd_tier "${1:-}" "${2:-}" "${3:-}" ;;
+  model) shift; cmd_model "${1:-}" "${2:-}" ;;
+  effort) shift; cmd_effort "${1:-}" ;;
+  *) die "comando desconocido: '$1'. Usá: show, roles, set, reset, get, check, models, tier, model o effort (o --help)." ;;
 esac

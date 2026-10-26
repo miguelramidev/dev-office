@@ -109,20 +109,32 @@ Cada rol lo puede hacer Claude, Codex o Gemini. Instalá el CLI del proveedor qu
 | | Instalar | Iniciar sesión |
 | --- | --- | --- |
 | Codex | `npm install -g @openai/codex` (en macOS también `brew install --cask codex`) | `codex login`, con tu plan de ChatGPT o una API key |
-| Gemini | `npm install -g @google/gemini-cli` (en macOS también `brew install gemini-cli`) | Una API key en `GEMINI_API_KEY` (variable de entorno o `~/.gemini/.env`), Vertex AI o un asiento de Code Assist |
+| Gemini (con Antigravity CLI, `agy`) | macOS y Linux: `curl -fsSL https://antigravity.google/cli/install.sh \| bash`. Windows (PowerShell): `irm https://antigravity.google/cli/install.ps1 \| iex` | Correr `agy` una vez e iniciar sesión con tu cuenta de Google. El modelo de nivel Opus (Gemini 4 Argon) depende de tu plan: mirá los tuyos con `agy models` |
 
 En Windows, después de instalar, cerrá y abrí la terminal y Claude Code.
+
+Gemini se usa con **Antigravity CLI** y no con Gemini CLI: desde junio de 2026, Gemini CLI no atiende cuentas personales de Google, y Antigravity es su reemplazo.
+
+Cada rol usa el modelo del mismo nivel que tiene en Claude, con razonamiento medio:
+
+| Nivel | Roles | Codex | Gemini |
+| --- | --- | --- | --- |
+| Opus | PM (asesores), QA, arquitectos | `gpt-6-astra` (necesita Codex CLI 0.153.0+) | `gemini-4-argon` (según tu plan de Google) |
+| Sonnet | Developers, testers, designer | `gpt-6.1-sol` | `gemini-3.8-flash` |
+
+Si tu cuenta no tiene uno de esos modelos, o querés otro, cambialo en la tabla del proyecto: `bash .claude/office-agents.sh tier gemini opus <modelo>`. Más razonamiento (`tier codex effort high`) gasta más tokens y tarda más.
 
 Después, desde Claude Code, `/office:office-agents`: copia el script de configuración al proyecto y te ayuda a elegir. También lo podés correr directo desde la terminal del proyecto:
 
 ```bash
 bash .claude/office-agents.sh                          # menú
 bash .claude/office-agents.sh set backend.developer codex
-bash .claude/office-agents.sh set frontend.developer gemini:pro
+bash .claude/office-agents.sh set frontend.developer gemini:gemini-3.1-pro-preview
 bash .claude/office-agents.sh set qa claude codex      # dos QA que se validan entre ellos
 bash .claude/office-agents.sh set pm codex             # asesor del PM
 bash .claude/office-agents.sh show
-bash .claude/office-agents.sh check                    # verifica que estén instalados y con sesión
+bash .claude/office-agents.sh models                   # modelo de cada proveedor por nivel
+bash .claude/office-agents.sh check                    # verifica que estén instalados, con sesión y con los modelos
 ```
 
 En Windows, desde CMD o PowerShell: `.claude\office-agents.cmd` con los mismos comandos. Con `--local`, el cambio queda solo para vos (en `.claude/office-agents.local.json`, que no va en git).

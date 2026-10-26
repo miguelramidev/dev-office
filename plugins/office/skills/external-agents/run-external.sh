@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
-# Corre un encargo de la oficina dev-office con Codex o Gemini y revisa lo que hicieron.
+# Corre un encargo de la oficina dev-office con Codex o Gemini (con Antigravity CLI, agy) y
+# revisa lo que hicieron.
 # Lo usa el agente puente (office:external); no hace falta correrlo a mano.
 #
 # Uso:
 #   bash run-external.sh --role <rol> --provider codex|gemini [--model <modelo>] --run-dir <carpeta>
 #
 #   --role      el rol de la oficina: backend.developer, qa, pm (asesor), project.<nombre>...
+#   --model     opcional. Sin él, se usa el modelo del nivel del rol (el del modelo de Claude de
+#               su agente: opus o sonnet) en ese proveedor, según office-agents.sh models.
 #   --run-dir   carpeta del encargo dentro del proyecto (por ejemplo .office/runs/<id>), con
 #               el encargo en task.md. Ahí quedan prompt.md, output.md, log.txt y summary.txt.
 #
@@ -13,7 +16,8 @@
 #   1. Verifica que el proveedor esté instalado y que la rama actual no esté protegida.
 #   2. Arma el prompt: reglas para el proveedor, las instrucciones del rol y sus skills
 #      (tomadas de los plugins de dev-office instalados) y el encargo.
-#   3. Corre el CLI en la carpeta del proyecto, con tope de tiempo
+#   3. Corre el CLI en la carpeta del proyecto, con el modelo y el razonamiento de la tabla
+#      de office-agents.sh y con tope de tiempo
 #      (OFFICE_EXTERNAL_TIMEOUT, en segundos; por defecto 540).
 #   4. Revisa lo que cambió: archivos de secretos, claves o lockfiles, archivos fuera de lo
 #      que el rol puede tocar, commits y cambios de rama. No deshace nada: lo informa.
@@ -23,7 +27,7 @@
 #   sin cuota) · 3 el proveedor falló · 4 se rompió una regla (o la rama está protegida)
 #   · 5 se agotó el tiempo.
 #
-# Variables opcionales: OFFICE_CODEX_ARGS y OFFICE_GEMINI_ARGS (opciones extra para cada CLI),
+# Variables opcionales: OFFICE_CODEX_ARGS y OFFICE_GEMINI_ARGS (opciones extra para codex y agy),
 # OFFICE_PLUGINS_DIR (carpeta donde buscar los plugins de dev-office).
 #
 # Funciona en Linux, macOS (bash 3.2) y Windows con el bash de Git for Windows.
@@ -41,7 +45,7 @@ while [ $# -gt 0 ]; do
     --provider) PROVIDER="$2"; shift 2 ;;
     --model) MODEL="$2"; shift 2 ;;
     --run-dir) RUN_DIR="$2"; shift 2 ;;
-    -h | --help) sed -n '2,31p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h | --help) awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"; exit 0 ;;
     *) echo "run-external: opción desconocida: $1" >&2; exit 1 ;;
   esac
 done
@@ -59,6 +63,12 @@ case "$PROVIDER" in
 esac
 case "$MODEL" in
   *[!A-Za-z0-9._-]*) usage_error "modelo inválido: $MODEL" ;;
+esac
+
+# Binario de cada proveedor: Gemini se usa con Antigravity CLI.
+case "$PROVIDER" in
+  gemini) BIN="agy" ;;
+  *) BIN="$PROVIDER" ;;
 esac
 
 PROJECT=$(git rev-parse --show-toplevel 2>/dev/null | tr -d '\r')
@@ -102,7 +112,7 @@ add_problem() { PROBLEMS=$(printf '%s\n- %s' "$PROBLEMS" "$1"); }
 
 write_summary() {
   {
-    echo "Proveedor: $PROVIDER${MODEL:+ (modelo: $MODEL)} · Rol: $ROLE"
+    echo "Proveedor: $PROVIDER${MODEL:+ · modelo: $MODEL}${EFFORT:+ · razonamiento: $EFFORT} · Rol: $ROLE${TIER:+ (nivel $TIER)}"
     echo "Resultado: $STATUS_TEXT"
     echo "Duración: ${DURATION}s"
     echo "Archivos cambiados:"
@@ -130,10 +140,10 @@ finish() {
 
 # --- Antes de correr ----------------------------------------------------------
 
-if ! command -v "$PROVIDER" >/dev/null 2>&1; then
+if ! command -v "$BIN" >/dev/null 2>&1; then
   case "$PROVIDER" in
     codex) add_problem "codex no está instalado o no está en el PATH: npm install -g @openai/codex, y después codex login." ;;
-    gemini) add_problem "gemini no está instalado o no está en el PATH: npm install -g @google/gemini-cli, y configurá GEMINI_API_KEY." ;;
+    gemini) add_problem "Gemini se usa con Antigravity CLI (agy) y no está instalado o no está en el PATH. Mirá cómo instalarlo con: bash .claude/office-agents.sh check" ;;
   esac
   finish 2 "proveedor no disponible"
 fi
@@ -221,6 +231,26 @@ case "$ROLE" in
 esac
 [ -n "$ROLE_FILE" ] && [ -f "$ROLE_FILE" ] || usage_error "no encontré las instrucciones del rol '$ROLE' (¿está instalado su plugin?)."
 
+# Nivel del rol: el modelo de Claude de su agente (los asesores del PM, como el PM: opus).
+if [ "$ROLE" = "pm" ]; then
+  TIER="opus"
+else
+  TIER=$(awk 'NR == 1 && /^---/ { inside = 1; next } inside && /^---/ { exit }
+              inside && /^model:/ { sub(/^model:[[:space:]]*/, ""); print; exit }' "$ROLE_FILE" | tr -d '\r "')
+fi
+case "$TIER" in opus | sonnet | haiku) ;; *) TIER="sonnet" ;; esac
+
+# Modelo y razonamiento: los de la tabla de office-agents.sh (la del proyecto, si la cambió),
+# salvo que el rol traiga un modelo propio.
+AGENTS_SCRIPT="$OFFICE_ROOT/skills/office-agents/office-agents.sh"
+EFFORT=""
+if [ -f "$AGENTS_SCRIPT" ]; then
+  [ -z "$MODEL" ] && MODEL=$(bash "$AGENTS_SCRIPT" --project "$PROJECT" model "$PROVIDER" "$TIER" 2>>"$LOG" | tr -d '\r')
+  EFFORT=$(bash "$AGENTS_SCRIPT" --project "$PROJECT" effort "$PROVIDER" 2>>"$LOG" | tr -d '\r')
+fi
+case "$MODEL" in *[!A-Za-z0-9._-]*) usage_error "modelo inválido en la tabla: $MODEL" ;; esac
+case "$EFFORT" in *[!a-z]*) EFFORT="" ;; esac
+
 provider_rules() {
   cat <<'EOF'
 ## Reglas de la oficina para este encargo
@@ -230,7 +260,7 @@ Trabajás para la oficina de desarrollo dev-office, en lugar de un agente de Cla
 - **Nunca** hagas commits, push, merge, rebase, stash ni cambies de rama. No toques la carpeta `.git`.
 - **Nunca** leas ni modifiques archivos de secretos (`.env` y sus variantes; las plantillas `.env.example` sí), claves privadas (`*.pem`, `*.key`, `id_rsa`, `id_ed25519`) ni lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock`, `bun.lockb`).
 - No instales dependencias ni hagas pedidos de red.
-- No toques la carpeta `.office/`: es de la oficina.
+- No escribas en la carpeta `.office/`: es de la oficina.
 - Las instrucciones de tu rol nombran herramientas de Claude Code (Read, Grep, Glob, Edit, Write, Bash, Skill, Agent): usá las tuyas equivalentes. Las skills que esas instrucciones nombran están copiadas más abajo, con la carpeta de sus archivos.
 - Si algo del encargo necesita una de las acciones prohibidas, no la hagas: explicalo al final de tu reporte con "Necesito aprobación".
 - Tu **último mensaje** es tu reporte al PM, en el idioma del proyecto y con el formato que piden las instrucciones de tu rol. No escribas nada después del reporte.
@@ -242,7 +272,7 @@ EOF
   esac
   case "$PROVIDER" in
     gemini)
-      [ "$SCOPE" != "none" ] && echo "- En este modo no podés correr comandos de la terminal. No corras tests, typecheck ni lint: el agente de la oficina los corre después de vos. En tu reporte, en la parte de verificación, poné \"La corre la oficina\"."
+      [ "$SCOPE" != "none" ] && echo "- En este modo podés editar archivos, pero no correr comandos de la terminal. No corras tests, typecheck ni lint: el agente de la oficina los corre después de vos. En tu reporte, en la parte de verificación, poné \"La corre la oficina\"."
       ;;
     codex)
       echo "- Trabajás en un sandbox sin red. Si un comando falla por falta de red, no insistas: decilo en el reporte."
@@ -298,25 +328,32 @@ TIMEOUT="${OFFICE_EXTERNAL_TIMEOUT:-540}"
 case "$TIMEOUT" in '' | *[!0-9]*) TIMEOUT=540 ;; esac
 
 STDOUT_FILE="$RUN_DIR/.stdout"
+STDIN_FILE="$PROMPT"
 case "$PROVIDER" in
   codex)
     SANDBOX="workspace-write"
     [ "$SCOPE" = "none" ] && SANDBOX="read-only"
     # shellcheck disable=SC2206 # las opciones extra se separan por espacios a propósito
-    CMD=(codex -a never exec -s "$SANDBOX" --skip-git-repo-check -C "$PROJECT" -o "$OUTPUT" ${MODEL:+-m "$MODEL"} ${OFFICE_CODEX_ARGS:-} -)
+    CMD=(codex -a never exec -s "$SANDBOX" --skip-git-repo-check -C "$PROJECT" -o "$OUTPUT"
+      ${MODEL:+-m "$MODEL"} ${EFFORT:+-c "model_reasoning_effort=\"$EFFORT\""} ${OFFICE_CODEX_ARGS:-} -)
     ;;
   gemini)
-    APPROVAL="auto_edit"
-    [ "$SCOPE" = "none" ] && APPROVAL="default"
+    # Antigravity CLI: el encargo es largo, así que se le pide que lo lea del archivo.
+    # accept-edits edita sin preguntar; los comandos de la terminal quedan sin aprobar.
+    # El asesor del PM corre en el modo normal: lo que necesita aprobación se niega solo.
+    MODE_ARGS=(--mode accept-edits)
+    [ "$SCOPE" = "none" ] && MODE_ARGS=()
+    STDIN_FILE=/dev/null
     # shellcheck disable=SC2206
-    CMD=(gemini -p "Seguí el encargo de la oficina que llega por la entrada estándar." --approval-mode "$APPROVAL" -o text ${MODEL:+-m "$MODEL"} ${OFFICE_GEMINI_ARGS:-})
-    export GEMINI_CLI_TRUST_WORKSPACE=true
+    CMD=(agy -p "Tu encargo completo está en el archivo ${PROMPT#"$PROJECT"/}. Leelo entero antes de empezar y seguilo al pie de la letra."
+      ${MODE_ARGS[@]+"${MODE_ARGS[@]}"} ${MODEL:+--model "$MODEL"} ${EFFORT:+--effort "$EFFORT"}
+      --output-format text --print-timeout "$(( TIMEOUT / 60 + 1 ))m" ${OFFICE_GEMINI_ARGS:-})
     ;;
 esac
 
-echo "\$ ${CMD[*]} < ${PROMPT#"$PROJECT"/}" >>"$LOG"
+echo "\$ ${CMD[*]} < ${STDIN_FILE#"$PROJECT"/}" >>"$LOG"
 START=$(date +%s)
-"${CMD[@]}" <"$PROMPT" >"$STDOUT_FILE" 2>>"$LOG" &
+"${CMD[@]}" <"$STDIN_FILE" >"$STDOUT_FILE" 2>>"$LOG" &
 PID=$!
 TIMED_OUT=0
 while kill -0 "$PID" 2>/dev/null; do
@@ -334,7 +371,7 @@ RC=$?
 DURATION=$(( $(date +%s) - START ))
 echo "(código de salida: $RC)" >>"$LOG"
 
-# Gemini escribe el reporte en la salida estándar; Codex, en el archivo de -o.
+# Antigravity escribe el reporte en la salida estándar; Codex, en el archivo de -o.
 if [ ! -s "$OUTPUT" ] && [ -s "$STDOUT_FILE" ]; then
   tr -d '\r' <"$STDOUT_FILE" >"$OUTPUT"
 elif [ -s "$STDOUT_FILE" ]; then
@@ -422,10 +459,14 @@ if [ "$TIMED_OUT" -eq 1 ]; then
 fi
 
 # Mensajes típicos de sesión, credenciales o cuota (sin \b, que el grep de macOS no siempre entiende).
-UNAVAILABLE_PATTERN='not logged in|please log ?in|codex login|unauthori[sz]ed|(^|[^0-9])401([^0-9]|$)|invalid api key|api key not|missing api key|quota|rate.?limit|(^|[^0-9])429([^0-9]|$)|usage limit|resource.?exhausted|insufficient.?(credit|quota|balance)|billing'
+UNAVAILABLE_PATTERN='not logged in|please log ?in|codex login|authentication required|sign in|unauthori[sz]ed|(^|[^0-9])401([^0-9]|$)|invalid api key|api key not|missing api key|quota|rate.?limit|(^|[^0-9])429([^0-9]|$)|usage limit|resource.?exhausted|insufficient.?(credit|quota|balance)|billing'
+MODEL_PATTERN='unknown model|invalid model|model not found|model .*not (available|supported|found)|does not have access to (the )?model'
 if [ "$RC" -ne 0 ]; then
-  if { [ "$PROVIDER" = "gemini" ] && { [ "$RC" -eq 41 ] || [ "$RC" -eq 44 ] || [ "$RC" -eq 55 ]; }; } \
-    || grep -qiE "$UNAVAILABLE_PATTERN" "$LOG"; then
+  if [ -n "$MODEL" ] && grep -qiE "$MODEL_PATTERN" "$LOG"; then
+    add_problem "$PROVIDER no tiene el modelo '$MODEL' para esta cuenta. Elegí otro con: bash .claude/office-agents.sh tier $PROVIDER $TIER <modelo> (o en el rol: $PROVIDER:<modelo>)."
+    finish 2 "proveedor no disponible"
+  fi
+  if grep -qiE "$UNAVAILABLE_PATTERN" "$LOG"; then
     add_problem "$PROVIDER no está disponible (sesión, credenciales o cuota). Mirá el registro: ${LOG#"$PROJECT"/}"
     finish 2 "proveedor no disponible"
   fi

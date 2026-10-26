@@ -1,6 +1,6 @@
 ---
 name: external-agents
-description: Cómo correr un encargo de la oficina con Codex o Gemini en lugar de un agente de Claude - el script run-external.sh que arma el prompt con las instrucciones del rol, corre el CLI con tope de tiempo y revisa lo que cambió (secretos, lockfiles, alcance del rol, commits y rama). La usa el agente puente office:external. Usar solo cuando el PM encarga un rol que .claude/office-agents.json asigna a codex o gemini.
+description: Cómo correr un encargo de la oficina con Codex o Gemini (Antigravity CLI) en lugar de un agente de Claude - el script run-external.sh que arma el prompt con las instrucciones del rol, corre el CLI con tope de tiempo y revisa lo que cambió (secretos, lockfiles, alcance del rol, commits y rama). La usa el agente puente office:external. Usar solo cuando el PM encarga un rol que .claude/office-agents.json asigna a codex o gemini.
 user-invocable: false
 ---
 
@@ -17,7 +17,7 @@ El script `run-external.sh` está en la misma carpeta que este archivo. Corre un
    bash <carpeta de esta skill>/run-external.sh --role backend.developer --provider codex --run-dir .office/runs/20261026-1530-backend.developer
    ```
 
-   Con modelo: `--model <modelo>` (por ejemplo `--model pro` para Gemini).
+   Sin `--model`, el script usa el modelo del **nivel del rol** (el modelo de Claude de su agente: opus o sonnet) en ese proveedor, con el razonamiento de la tabla (`office-agents.sh models`). Con `--model <modelo>`, el que trae el rol.
 
 3. El script imprime un resumen (también queda en `summary.txt`): resultado, duración, archivos cambiados y problemas. El reporte del proveedor queda en `output.md` y el registro del CLI en `log.txt`.
 
@@ -27,7 +27,8 @@ El script `run-external.sh` está en la misma carpeta que este archivo. Corre un
 - **Prompt:** junta las reglas de la oficina para el proveedor, las instrucciones del rol (el archivo del agente en su plugin, o `.claude/agents/<nombre>.md` para `project.<nombre>`), las skills que ese agente precarga y el encargo.
 - **Corre:**
   - **Codex:** `codex -a never exec -s workspace-write` (sin red, sin pedir aprobación; `read-only` para el asesor del PM).
-  - **Gemini:** `gemini -p ... --approval-mode auto_edit` (edita archivos sin preguntar, pero no corre comandos de la terminal; `default` para el asesor, que solo lee).
+  - **Gemini, con Antigravity CLI:** `agy -p "<leé el encargo de prompt.md>" --mode accept-edits` (edita archivos sin preguntar, pero no corre comandos de la terminal; el asesor corre en el modo normal, donde todo lo que pide aprobación se niega). El encargo es largo, así que se le pide que lo lea del archivo.
+  - Las dos con el modelo del nivel y el razonamiento de la tabla (`-m` y `-c model_reasoning_effort=...` en Codex, `--model` y `--effort` en Antigravity).
   - Se corta a los `OFFICE_EXTERNAL_TIMEOUT` segundos (por defecto 540, para que entre en los 10 minutos de la herramienta Bash).
 - **Después:** compara el repositorio antes y después y marca como problema:
   - tocar secretos (`.env`), claves privadas o lockfiles;
@@ -40,7 +41,7 @@ El script `run-external.sh` está en la misma carpeta que este archivo. Corre un
 | --- | --- | --- |
 | 0 | Terminó bien | Sigue con su verificación |
 | 1 | Error de uso (falta el encargo, rol desconocido, plugin no encontrado) | Lo reporta tal cual |
-| 2 | Proveedor no disponible: no instalado, sin sesión, sin credenciales o sin cuota | Frena: **PROVEEDOR NO DISPONIBLE** |
+| 2 | Proveedor no disponible: no instalado, sin sesión, sin cuota o la cuenta no tiene el modelo | Frena: **PROVEEDOR NO DISPONIBLE** |
 | 3 | El proveedor falló o no devolvió reporte | Lo reporta con el final del registro |
 | 4 | Se rompió una regla de la oficina, o la rama está protegida | Frena: **REGLAS ROTAS** |
 | 5 | Se agotó el tiempo | Reporta lo que alcanzó a cambiar y propone dividir el encargo |
@@ -48,7 +49,7 @@ El script `run-external.sh` está en la misma carpeta que este archivo. Corre un
 ## Variables opcionales
 
 - `OFFICE_EXTERNAL_TIMEOUT`: tope en segundos.
-- `OFFICE_CODEX_ARGS` y `OFFICE_GEMINI_ARGS`: opciones extra para cada CLI, por si una versión nueva cambia algo.
+- `OFFICE_CODEX_ARGS` y `OFFICE_GEMINI_ARGS`: opciones extra para `codex` y `agy`, por si una versión nueva cambia algo.
 - `OFFICE_PLUGINS_DIR`: carpeta donde buscar los plugins de dev-office, si el script no los encuentra solo.
 
 Se configuran en `.claude/settings.json` del proyecto, en `env`.

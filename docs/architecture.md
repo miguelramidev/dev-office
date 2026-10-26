@@ -40,14 +40,23 @@ Cada rol lo puede hacer Claude, Codex o Gemini. Se configura por proyecto con la
 - `.claude/office-agents.local.json`: el personal, no va en git y manda rol por rol.
 
 ```json
-{ "roles": { "backend.developer": ["codex"], "frontend.developer": ["gemini:pro"], "qa": ["claude", "codex"], "pm": ["codex"] } }
+{ "roles": { "backend.developer": ["codex"], "frontend.developer": ["gemini:gemini-3.1-pro-preview"], "qa": ["claude", "codex"], "pm": ["codex"] } }
 ```
 
 - **Roles:** `<área>.<agente>` (`backend.developer`, `frontend.designer`, `devops.tester`...), `qa`, `pm` y `project.<nombre>` para los agentes propios del proyecto. Un rol sin configurar es Claude con el modelo de siempre. Claude también acepta modelo: `claude:opus`, `claude:sonnet` o `claude:haiku`.
+- **Niveles:** cada rol tiene el nivel del modelo de Claude de su agente, y en Codex o Gemini usa el modelo equivalente, con razonamiento medio (más razonamiento gasta más tokens y tarda más):
+
+  | Nivel | Roles | Claude | Codex | Gemini |
+  | --- | --- | --- | --- | --- |
+  | Opus | PM (asesores), QA, arquitectos | Opus | `gpt-6-astra` | `gemini-4-argon` |
+  | Sonnet | Developers, testers, designer | Sonnet | `gpt-6.1-sol` | `gemini-3.8-flash` |
+
+  Es la tabla de dev-office (octubre de 2026). Cada proyecto la puede cambiar con `office-agents.sh tier`, porque los nombres de los modelos cambian seguido y no todas las cuentas tienen todos. Un rol con modelo propio (`codex:<modelo>`) no usa la tabla.
+- **Gemini se usa con Antigravity CLI** (`agy`): desde el 18 de junio de 2026, Gemini CLI no atiende cuentas personales (gratis, Google AI Pro ni Ultra), y Antigravity es su reemplazo, con inicio de sesión con la cuenta de Google. Además, Gemini 4 Argon está en Antigravity y no en Gemini CLI.
 - **El PM es siempre Claude:** es la sesión de Claude Code, la que conversa con el CEO, activa a los agentes y usa las skills y los hooks. En `pm` se configuran sus **asesores**: antes de presentar un plan que no es trivial o un diseño, el PM les pide una segunda opinión (solo leen) y le muestra al CEO en qué coinciden y en qué no.
 - **El puente.** Un rol en Codex o Gemini lo activa el PM a través de `office:external` (Sonnet), que usa la skill `external-agents`:
   1. Arma el prompt con las reglas de la oficina para el proveedor, las instrucciones del agente del rol, las skills que ese agente usa y el encargo completo.
-  2. Corre el CLI en la carpeta del proyecto, con tope de tiempo: `codex exec` con sandbox `workspace-write` y sin pedir aprobación, o `gemini -p` con `--approval-mode auto_edit`. Los asesores corren en solo lectura.
+  2. Corre el CLI en la carpeta del proyecto, con tope de tiempo: `codex exec` con sandbox `workspace-write` y sin pedir aprobación, o `agy -p` con `--mode accept-edits`, con el modelo del nivel del rol y el razonamiento de la tabla. Los asesores corren en solo lectura.
   3. Compara el repositorio antes y después: marca si tocó secretos, claves o lockfiles, si escribió fuera de lo que permite su rol (QA solo en `.qa/`, arquitectos y designer solo en `docs/design/`), si commiteó o si cambió de rama. No deshace nada: frena y el CEO decide.
   4. Verifica: en un developer corre typecheck, lint y tests (con una vuelta de corrección como máximo); en un tester confirma que el resultado que informa es el real.
   5. Devuelve el reporte con el formato del rol, así el ciclo de calidad no cambia.
@@ -65,8 +74,8 @@ Si `qa` tiene varios proveedores, el PM los coordina en tres pasos:
 ### Límites de Codex y Gemini
 
 - **No pasan por los hooks de la oficina** (`protect.sh` y `branch-guard.sh` solo ven las herramientas de Claude Code). La protección es la del sandbox de cada CLI más la revisión del puente después, que detecta pero no impide. Por eso el tester y QA no se saltean nunca.
-- **Gemini en modo no interactivo no corre comandos** con `auto_edit`: edita archivos y el puente corre las verificaciones. Como tester o QA rinde menos, porque no puede ejecutar sus pruebas.
-- **El sandbox de Gemini** (`--sandbox`) necesita Docker o Podman en Linux, o Seatbelt en macOS; la oficina no lo activa.
+- **Gemini (Antigravity) no corre comandos** en `accept-edits`: edita archivos y el puente corre las verificaciones. Como tester o QA rinde menos, porque no puede ejecutar sus pruebas.
+- **Modelos por cuenta:** Gemini 4 Argon en Antigravity depende del plan de Google, y GPT-6 Astra necesita Codex CLI 0.153.0 o más nuevo. `office-agents.sh check` lo revisa; si la cuenta no tiene un modelo, el puente lo informa como proveedor no disponible y se elige otro con `tier`.
 - **Tiempo:** cada encargo se corta a los 540 segundos (`OFFICE_EXTERNAL_TIMEOUT`), porque la herramienta Bash de Claude Code espera como máximo 10 minutos. Los encargos grandes se dividen.
 - **Costo:** cada proveedor se paga con su propia cuenta, y el puente gasta un poco de Claude (Sonnet) para pasar el encargo y revisar el resultado.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Pruebas del script que corre encargos con Codex o Gemini
+# Pruebas del script que corre encargos con Codex o Gemini (Antigravity CLI)
 # (plugins/office/skills/external-agents/run-external.sh).
-# Usa CLIs falsos de codex y gemini que hacen lo que diga FAKE_MODE, en un proyecto de
+# Usa CLIs falsos de codex y agy que hacen lo que diga FAKE_MODE, en un proyecto de
 # prueba, y compara el código de salida y el resumen. Uso: bash tests/run-external.test.sh
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -47,25 +47,28 @@ esac
 exit 0
 EOF
 
-cat >"$FAKE_BIN/gemini" <<'EOF'
+# agy (Antigravity CLI): el encargo se lee del archivo que nombra el -p.
+cat >"$FAKE_BIN/agy" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >"$FAKE_ARGS"
-cat >"$FAKE_STDIN"
+PROMPT_FILE=$(printf '%s' "$2" | grep -oE '\.office/[^ ]+prompt\.md')
+[ -n "$PROMPT_FILE" ] && cp "$PROMPT_FILE" "$FAKE_STDIN"
 case "${FAKE_MODE:-ok}" in
   ok) echo "// cambio" >>src/app.ts; echo "Hecho: listo." ;;
   noop) echo "Hecho: nada que cambiar." ;;
   silent) ;;
-  auth) echo "Please set an Auth method" >&2; exit 41 ;;
+  auth) echo "Error: authentication required. Run agy to sign in." >&2; exit 1 ;;
+  badmodel) echo "ERROR: unknown model 'gemini-4-argon'" >&2; exit 1 ;;
 esac
 exit 0
 EOF
-chmod +x "$FAKE_BIN/codex" "$FAKE_BIN/gemini"
+chmod +x "$FAKE_BIN/codex" "$FAKE_BIN/agy"
 
-# PATH sin codex ni gemini reales, para que las pruebas no dependan de lo instalado.
+# PATH sin codex ni agy reales, para que las pruebas no dependan de lo instalado.
 CLEAN_PATH=""
 IFS=':' read -r -a PATH_DIRS <<<"$PATH"
 for d in "${PATH_DIRS[@]}"; do
-  [ -x "$d/codex" ] || [ -x "$d/gemini" ] && continue
+  [ -x "$d/codex" ] || [ -x "$d/agy" ] && continue
   CLEAN_PATH="${CLEAN_PATH:+$CLEAN_PATH:}$d"
 done
 export PATH="$FAKE_BIN:$CLEAN_PATH"
@@ -147,9 +150,27 @@ expect "$FAKE_STDIN" "### Skill dept-backend:api-collection" "prompt: incluye la
 expect_not "$FAKE_STDIN" "### Skill office:" "prompt: no copia las skills del PM"
 expect "$PROJ/.office/runs/r1/output.md" "Hecho: listo." "codex: guarda el reporte"
 
+expect "$FAKE_ARGS" "-m gpt-6.1-sol" "codex: developer (nivel sonnet) usa gpt-6.1-sol"
+expect "$FAKE_ARGS" 'model_reasoning_effort="medium"' "codex: razonamiento medio"
+expect "$WORK/out.txt" "(nivel sonnet)" "el resumen dice el nivel"
+
+new_project
+FAKE_MODE=qa-ok check 0 "codex: QA (nivel opus)" qa codex
+expect "$FAKE_ARGS" "-m gpt-6-astra" "codex: QA usa gpt-6-astra"
+
+new_project
+FAKE_MODE=design check 0 "codex: arquitecto (nivel opus)" backend.architect codex
+expect "$FAKE_ARGS" "-m gpt-6-astra" "codex: arquitecto usa gpt-6-astra"
+
 new_project
 FAKE_MODE=ok check 0 "codex: con modelo" backend.developer codex --model gpt-x
-expect "$FAKE_ARGS" "-m gpt-x" "codex: pasa el modelo"
+expect "$FAKE_ARGS" "-m gpt-x" "codex: el modelo del rol manda sobre la tabla"
+
+new_project
+printf '{"models": {"codex": {"sonnet": "gpt-otro", "effort": "low"}}}' >"$PROJ/.claude/office-agents.json"
+FAKE_MODE=ok check 0 "codex: tabla cambiada en el proyecto" backend.developer codex
+expect "$FAKE_ARGS" "-m gpt-otro" "codex: usa el modelo de la tabla del proyecto"
+expect "$FAKE_ARGS" 'model_reasoning_effort="low"' "codex: usa el razonamiento de la tabla del proyecto"
 
 new_project
 echo "// cambio del CEO" >>"$PROJ/src/util.ts"
@@ -196,6 +217,7 @@ FAKE_MODE=qa-bad check 4 "QA que corrige código" qa codex
 new_project
 FAKE_MODE=noop check 0 "asesor del PM" pm codex
 expect "$FAKE_ARGS" "-s read-only" "asesor: codex en solo lectura"
+expect "$FAKE_ARGS" "-m gpt-6-astra" "asesor: nivel opus"
 expect "$FAKE_STDIN" "Sos asesor del PM" "asesor: su prompt"
 new_project
 FAKE_MODE=ok check 4 "asesor del PM que edita" pm codex
@@ -238,23 +260,41 @@ new_project
 rm "$PROJ/.office/runs/r1/task.md"
 check 1 "sin task.md" backend.developer codex
 
-# --- Gemini ---------------------------------------------------------------------
+# --- Gemini (Antigravity CLI) -------------------------------------------------
 
 new_project
-FAKE_MODE=ok check 0 "gemini: developer" frontend.developer gemini --model pro
-expect "$FAKE_ARGS" "--approval-mode auto_edit" "gemini: edita sin preguntar"
-expect "$FAKE_ARGS" "-m pro" "gemini: pasa el modelo"
-expect "$FAKE_STDIN" "no podés correr comandos" "gemini: el prompt le avisa que no corre comandos"
+FAKE_MODE=ok check 0 "gemini: developer" frontend.developer gemini
+expect "$FAKE_ARGS" "--mode accept-edits" "gemini: edita sin preguntar"
+expect "$FAKE_ARGS" "--model gemini-3.8-flash" "gemini: developer (nivel sonnet) usa gemini-3.8-flash"
+expect "$FAKE_ARGS" "--effort medium" "gemini: razonamiento medio"
+expect "$FAKE_ARGS" "--print-timeout 10m" "gemini: el tope de agy queda por encima del de la oficina"
+expect "$FAKE_ARGS" ".office/runs/r1/prompt.md" "gemini: se le pide leer el encargo del archivo"
+expect "$FAKE_STDIN" "Sos el developer del departamento de frontend" "gemini: el archivo tiene las instrucciones del rol"
+expect "$FAKE_STDIN" "no correr comandos" "gemini: el prompt le avisa que no corre comandos"
 expect "$PROJ/.office/runs/r1/output.md" "Hecho: listo." "gemini: guarda la salida como reporte"
 
 new_project
-FAKE_MODE=noop check 0 "gemini: asesor del PM" pm gemini
-expect "$FAKE_ARGS" "--approval-mode default" "gemini: asesor sin aprobar herramientas"
+FAKE_MODE=ok check 0 "gemini: con modelo" frontend.developer gemini --model gemini-3.1-pro-preview
+expect "$FAKE_ARGS" "--model gemini-3.1-pro-preview" "gemini: el modelo del rol manda"
 
 new_project
-FAKE_MODE=auth check 2 "gemini sin credenciales (código 41)" frontend.developer gemini
+FAKE_MODE=noop check 0 "gemini: asesor del PM" pm gemini
+expect_not "$FAKE_ARGS" "--mode accept-edits" "gemini: asesor en el modo normal (sin aprobar ediciones)"
+expect "$FAKE_ARGS" "--model gemini-4-argon" "gemini: asesor (nivel opus) usa gemini-4-argon"
+
+new_project
+FAKE_MODE=auth check 2 "gemini sin sesión" frontend.developer gemini
+new_project
+FAKE_MODE=badmodel check 2 "gemini sin el modelo en la cuenta" qa gemini
+expect "$WORK/out.txt" "tier gemini opus" "dice cómo elegir otro modelo"
 new_project
 FAKE_MODE=silent check 3 "gemini sin respuesta" frontend.developer gemini
+new_project
+SAVED_PATH="$PATH"
+export PATH="$CLEAN_PATH"
+check 2 "agy no instalado" frontend.developer gemini
+expect "$WORK/out.txt" "Antigravity" "dice que Gemini se usa con Antigravity"
+export PATH="$SAVED_PATH"
 
 if [ "$FAILED" -ne 0 ]; then
   echo "Hay pruebas que fallan."

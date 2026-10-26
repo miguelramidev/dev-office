@@ -116,8 +116,10 @@ Cada rol de la oficina lo puede hacer Claude, Codex o Gemini. Lo configura el CE
 Antes de encargar trabajo, leé los dos archivos con Read (si existen). Cada rol tiene una lista de proveedores, con modelo opcional después de `:`:
 
 ```json
-{ "roles": { "backend.developer": ["codex"], "frontend.developer": ["gemini:pro"], "qa": ["claude", "codex"], "pm": ["codex"] } }
+{ "roles": { "backend.developer": ["codex"], "frontend.developer": ["gemini:gemini-3.1-pro-preview"], "qa": ["claude", "codex"], "pm": ["codex"] } }
 ```
+
+Cada rol en Codex o Gemini usa el modelo de su mismo nivel: el de nivel Opus (PM, QA, arquitectos) o el de nivel Sonnet (developers, testers, designer), según la tabla de `office-agents.sh models`. Si el rol trae un modelo propio (`codex:<modelo>`), manda ese.
 
 Los roles se llaman `<área>.<agente>`: `backend.developer` es `dept-backend:developer`, `frontend.designer` es `dept-frontend:designer`, `project.<nombre>` es el agente propio `.claude/agents/<nombre>.md`. Un rol que no aparece es Claude, como siempre.
 
@@ -127,7 +129,7 @@ Los roles se llaman `<área>.<agente>`: `backend.developer` es `dept-backend:dev
   ```
   Rol: backend.developer
   Proveedor: codex
-  Modelo: gpt-x
+  Modelo: gpt-x      (solo si el rol trae uno propio)
   Modo: normal
   ```
 
