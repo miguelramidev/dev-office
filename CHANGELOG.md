@@ -8,6 +8,21 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.17.0] - 2026-10-26
+
+### Agregado
+
+- **Modo equipos, opcional: un líder por departamento.** Agente `lead` en cada departamento (`dept-backend` 0.3.0, `dept-frontend` 0.4.0, `dept-database` 0.2.0, `dept-scraper` 0.2.0, `dept-devops` 0.3.0), en Sonnet. El PM le pasa el encargo al líder; el líder lo reparte entre su developer y su tester (por el puente si el rol va en Codex o Gemini), manda las fallas del tester de vuelta al developer (máximo 3 vueltas) y le entrega al PM un reporte en `.office/reports/` con qué se hizo, archivos, calidad, qué necesitan otros departamentos, acciones requeridas y pendientes. Usa los agent teams de Claude Code, que son experimentales y gastan más tokens. Sin activarlo, la oficina trabaja como siempre.
+- `office-agents.sh teams on|off` (`office` 0.15.0, script versión 3): activa o desactiva el modo equipos para el equipo o, con `--local`, solo para vos. Anota `"teams"` en la configuración y `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` en el `env` de `.claude/settings.json` (o `settings.local.json`). `show` muestra el modo.
+- PM: sección "Modo equipos" (crea a los líderes como compañeros de equipo, lee sus reportes, les responde las aprobaciones, les devuelve los bloqueantes de QA) y las herramientas de equipo (`SendMessage` y las de tareas).
+- Observer: anota los encargos de los líderes, los mensajes entre el PM y los líderes, y los eventos TeammateIdle, TaskCreated y TaskCompleted.
+- **Observer con más vida:** los líderes en cada departamento; la gente se levanta y camina a hablar con su líder; el tester le lleva la falla al developer, que se rasca la cabeza; quien pasa los tests festeja; el PM va a buscar el reporte a cada departamento que termina; con dos QA o más, debaten sus hallazgos frente a la pizarra; el PM espera en el pasillo, al lado de la puerta de Reuniones, y entra cuando el CEO lo llama (cuando le escribís); en los ratos libres alguien va por un café, se estira o charla con alguien libre de su departamento o de otro, con más de 100 conversaciones distintas. Las animaciones salen solo de los eventos nuevos. La demo muestra el flujo con líderes y el debate de los QA.
+
+### Cambiado
+
+- Observer: los escritorios de cada departamento suben para dejar lugar al líder.
+- Arquitectura: los agent teams pasan de "descartados" a modo opcional.
+
 ## [0.16.0] - 2026-10-26
 
 ### Agregado

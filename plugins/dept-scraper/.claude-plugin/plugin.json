@@ -1,6 +1,6 @@
 {
   "name": "dept-scraper",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Departamento de scraping de dev-office: un developer que construye scrapers responsables (pausas, reintentos con límite, robots.txt, fixtures) y un tester especializado en probarlos sin red.",
   "author": {
     "name": "Miguel Ramirez"

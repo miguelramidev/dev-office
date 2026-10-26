@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-agents-version: 2
+# office-agents-version: 3
 # Configura qué proveedor (Claude, Codex o Gemini) hace cada rol de la oficina dev-office.
 #
 # Uso (desde la carpeta del proyecto):
@@ -10,6 +10,7 @@
 #   bash .claude/office-agents.sh reset <rol>|--all [--local]
 #   bash .claude/office-agents.sh get <rol>        el proveedor efectivo, uno por línea
 #   bash .claude/office-agents.sh check            verifica que los CLIs estén instalados y con sesión
+#   bash .claude/office-agents.sh teams on|off     modo equipos: un líder por departamento (agent teams)
 #   bash .claude/office-agents.sh models           muestra el modelo de cada proveedor por nivel
 #   bash .claude/office-agents.sh tier <proveedor> <opus|sonnet|haiku|effort> <valor>|default [--local]
 #   bash .claude/office-agents.sh model <proveedor> <nivel>    el modelo efectivo (lo usa la oficina)
@@ -284,6 +285,61 @@ cmd_get() {
   effective "$role"
 }
 
+# Modo equipos: "teams" en la configuración (el archivo local manda).
+teams_value() {
+  local v=""
+  for f in "$LOCAL_FILE" "$SHARED"; do
+    [ -f "$f" ] || continue
+    v=$(jqc -r 'if has("teams") then (.teams | tostring) else empty end' "$f")
+    [ -n "$v" ] && { echo "$v"; return 0; }
+  done
+  echo "false"
+}
+
+# El flag de agent teams de Claude Code, en el settings del proyecto que corresponde.
+settings_file() { if [ "$LOCAL" -eq 1 ]; then echo "$PROJECT/.claude/settings.local.json"; else echo "$PROJECT/.claude/settings.json"; fi; }
+teams_flag_on() {
+  [ "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" = "1" ] && return 0
+  local f
+  for f in "$PROJECT/.claude/settings.json" "$PROJECT/.claude/settings.local.json" "$HOME/.claude/settings.json"; do
+    [ -f "$f" ] && [ "$(jqc -r '.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS // empty' "$f")" = "1" ] && return 0
+  done
+  return 1
+}
+
+cmd_teams() {
+  local action="${1:-status}" sf tmp
+  case "$action" in
+    on | off)
+      mkdir -p "$PROJECT/.claude"
+      [ -f "$TARGET" ] || echo '{}' >"$TARGET"
+      tmp="$TARGET.tmp"
+      jqc -S --indent 2 --argjson v "$([ "$action" = on ] && echo true || echo false)" '.teams = $v' "$TARGET" >"$tmp" && mv "$tmp" "$TARGET"
+      sf=$(settings_file)
+      [ -f "$sf" ] || echo '{}' >"$sf"
+      jq empty "$sf" >/dev/null 2>&1 || die "$sf no es un JSON válido."
+      tmp="$sf.tmp"
+      if [ "$action" = on ]; then
+        jqc --indent 2 '.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"' "$sf" >"$tmp" && mv "$tmp" "$sf"
+        echo "Modo equipos activado$( [ "$LOCAL" -eq 1 ] && echo ' (solo para vos)'): cada departamento tiene un líder que coordina a su gente."
+        echo "Usa los agent teams de Claude Code (experimentales): cada líder es una sesión más de Claude (Sonnet)."
+        echo "Reiniciá Claude Code para que tome el cambio."
+      else
+        jqc --indent 2 'del(.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS) | if (.env // {}) == {} then del(.env) else . end' "$sf" >"$tmp" && mv "$tmp" "$sf"
+        echo "Modo equipos desactivado$( [ "$LOCAL" -eq 1 ] && echo ' (solo para vos)'): el PM vuelve a coordinar a cada developer y tester. Reiniciá Claude Code."
+      fi
+      ;;
+    status)
+      if [ "$(teams_value)" = "true" ]; then
+        if teams_flag_on; then echo "Modo equipos: activado."; else echo "Modo equipos: activado en la configuración, pero falta CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1. Corré: teams on"; fi
+      else
+        echo "Modo equipos: desactivado (el PM coordina a cada developer y tester)."
+      fi
+      ;;
+    *) die "usá: teams on, teams off o teams (para ver el estado)." ;;
+  esac
+}
+
 cmd_show() {
   printf '%-22s %-28s %s\n' "ROL" "PROVEEDOR" "ORIGEN"
   local role value
@@ -296,6 +352,8 @@ cmd_show() {
   done <<EOF
 $(all_roles)
 EOF
+  echo
+  cmd_teams status
 }
 
 cmd_roles() {
@@ -464,9 +522,10 @@ case "${1:-}" in
   reset) shift; cmd_reset "${1:-}" ;;
   get) shift; cmd_get "${1:-}" ;;
   check) cmd_check ;;
+  teams) shift; cmd_teams "${1:-status}" ;;
   models) cmd_models ;;
   tier) shift; cmd_tier "${1:-}" "${2:-}" "${3:-}" ;;
   model) shift; cmd_model "${1:-}" "${2:-}" ;;
   effort) shift; cmd_effort "${1:-}" ;;
-  *) die "comando desconocido: '$1'. Usá: show, roles, set, reset, get, check, models, tier, model o effort (o --help)." ;;
+  *) die "comando desconocido: '$1'. Usá: show, roles, set, reset, get, check, teams, models, tier, model o effort (o --help)." ;;
 esac

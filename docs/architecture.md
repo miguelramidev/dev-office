@@ -12,6 +12,7 @@
 | Designer  | `dept-frontend:designer` | Sonnet | Diseña flujos, pantallas, estados y textos de la web y la app móvil antes de programar. Escribe en `docs/design/`. No escribe código. |
 | Developer | `dept-<área>:developer` | Sonnet | Escribe el código de su área siguiendo las reglas del proyecto y el diseño aprobado. No escribe tests.                     |
 | Tester    | `dept-<área>:tester`    | Sonnet | Escribe y corre los tests de su área. No toca código de producción.                                                         |
+| Líder de departamento | `dept-<área>:lead` | Sonnet | Solo en el modo equipos: recibe el encargo del PM, lo reparte entre el developer y el tester de su departamento, coordina las vueltas entre ellos y le entrega al PM el reporte del departamento con las acciones requeridas. No escribe código. |
 | QA        | `office:qa`             | Opus   | El enemigo de la app: busca cómo romper el trabajo de cualquier departamento y verifica las reglas. No corrige.             |
 | Puente    | `office:external`       | Sonnet | Le pasa a Codex o Gemini el encargo de un rol, revisa lo que hicieron, corre las verificaciones y devuelve el reporte del rol. No escribe código. |
 
@@ -28,6 +29,7 @@ Cada departamento trae su propio tester, porque un tester que conoce su área pr
 - **Arquitectos en Opus** (backend, frontend y DevOps): un mal diseño se multiplica en todo lo que se construye encima, igual que un mal plan del PM. Trabajan pocas veces, así que el costo extra es chico.
 - **Designer en Sonnet:** sus decisiones son más fáciles de corregir (un texto, una pantalla) y el CEO las revisa a ojo antes de construir.
 - **Developers y testers en Sonnet:** siguen instrucciones detalladas con buena calidad y a menor costo.
+- **Líderes en Sonnet:** coordinan con reglas claras (a quién encargar, cuántas vueltas, qué reportar) y no diseñan ni programan.
 - **Razonamiento medio para todos:** cada agente declara `effort: medium`, igual que los roles en Codex y Gemini. Más razonamiento gasta más tokens y tarda más; un rol que lo necesite se puede subir en su agente o, en otro proveedor, con `office-agents.sh tier`. Claude Code lee el campo `effort` de los agentes, pero todavía no lo documenta: si una versión lo ignora, el agente usa el nivel de la sesión.
 - **Haiku no se usa para código:** con código de varios archivos y muchas reglas se equivoca más, y cada error cuesta una vuelta completa developer → tester → QA. Queda para tareas mecánicas futuras.
 
@@ -80,12 +82,32 @@ Si `qa` tiene varios proveedores, el PM los coordina en tres pasos:
 - **Tiempo:** cada encargo se corta a los 540 segundos (`OFFICE_EXTERNAL_TIMEOUT`), porque la herramienta Bash de Claude Code espera como máximo 10 minutos. Los encargos grandes se dividen.
 - **Costo:** cada proveedor se paga con su propia cuenta, y el puente gasta un poco de Claude (Sonnet) para pasar el encargo y revisar el resultado.
 
+## Modo equipos: un líder por departamento
+
+Opcional. Por defecto el PM coordina a cada developer y tester con subagentes. En el modo equipos, cada departamento tiene un líder y el ciclo developer ↔ tester queda adentro del departamento:
+
+```
+PM ──encargo──→ líder ──→ developer ──→ tester ──falla──→ developer   (máx. 3 vueltas)
+ ↑                                        └─pasa─→ líder
+ └──── reporte con las acciones requeridas ──────────┘
+```
+
+- **Cómo se activa:** `bash .claude/office-agents.sh teams on` (o `--local`, solo para vos). Anota `"teams": true` en la configuración y `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` en el `env` de `.claude/settings.json`. `teams off` lo deshace. Hay que reiniciar Claude Code.
+- **Por qué agent teams:** un subagente no puede encargarle trabajo a otro subagente. Con agent teams, el PM crea al líder como compañero de equipo (`dept-<área>:lead`, con nombre `<área>-lead`) y el líder sí puede encargarles al developer y al tester como subagentes. El equipo es plano: los líderes no crean más líderes.
+- **El líder:** lee el `CLAUDE.md` y la configuración de proveedores, encarga a su developer y a su tester (por el puente si el rol va en Codex o Gemini), manda las fallas del tester de vuelta al developer y escribe el reporte en `.office/reports/<fecha>-<área>.md`: qué se hizo, archivos, calidad, qué necesitan otros departamentos, acciones requeridas y pendientes. Después le avisa al PM por mensaje.
+- **El PM:** sigue con la fase de diseño, QA, los asesores y el informe al CEO. Cuando un líder avisa, lee su reporte. Las aprobaciones siguen pasando por el CEO. Los bloqueantes de QA vuelven al líder del departamento.
+- **Departamentos en paralelo:** si su trabajo es independiente, el PM puede tener varios líderes trabajando a la vez.
+- **Costo:** cada líder es una sesión más de Claude (Sonnet) que lee el contexto del departamento: gasta más tokens que el modo normal. Conviene para tickets con varios departamentos o con muchas vueltas developer ↔ tester.
+- **Si no está disponible** (Claude Code sin agent teams, o el flag sin activar), el PM trabaja como siempre.
+- **Los líderes son siempre Claude**, como el PM: no se configuran con `set`.
+
 ## Observer
 
 La oficina en pixel art, en vivo, para ver qué pasa sin leer registros.
 
-- **Datos.** El hook `observer.sh` escucha SessionStart, UserPromptSubmit, PreToolUse, SubagentStart, SubagentStop, Notification y Stop, y anota cada evento como una línea `OFFICE_EVENT({...});` en `.office/observer/events.js`:
-  - qué le encarga el PM a cada departamento (con el rol y el proveedor, si el encargo va por el puente);
+- **Datos.** El hook `observer.sh` escucha SessionStart, UserPromptSubmit, PreToolUse, SubagentStart, SubagentStop, Notification y Stop (y en el modo equipos TeammateIdle, TaskCreated y TaskCompleted), y anota cada evento como una línea `OFFICE_EVENT({...});` en `.office/observer/events.js`:
+  - qué le encarga el PM a cada departamento, o cada líder a su gente (con el rol y el proveedor, si el encargo va por el puente);
+  - los mensajes entre el PM y los líderes (un resumen de una línea);
   - qué herramienta usa cada agente (el nombre del archivo, no su contenido);
   - el veredicto de cada agente al terminar (PASA, FALLA, APROBADO, RECHAZADO, pide aprobación, PROVEEDOR NO DISPONIBLE...), sacado de su último mensaje;
   - los tokens exactos, leídos de las transcripciones que Claude Code guarda en el disco: entrada, salida y caché, contando una sola vez cada mensaje.
@@ -93,6 +115,7 @@ La oficina en pixel art, en vivo, para ver qué pasa sin leer registros.
   El puente agrega el inicio y el fin de cada encargo a Codex o Gemini, con los tokens que informe el CLI. Al empezar la sesión se anotan la rama, el ticket, los proveedores por rol y los departamentos instalados.
 - **Sin costo.** El hook no imprime nada (en algunos eventos, lo que imprime un hook le llega al modelo) y no llama a ningún modelo: no gasta tokens. Nunca bloquea. Lo único que suma es el tiempo de correr un script por evento.
 - **La página.** `office/observer/index.html` se copia a `.office/observer/` al empezar cada sesión y se abre desde el disco, sin servidor: como el registro es JavaScript, la página lo vuelve a cargar cada 1,5 segundos. Muestra las ocho oficinas, con los empleados según los proveedores configurados y los departamentos sin instalar apagados. Si no hay actividad, muestra una demo.
+- **Animaciones.** El PM va a buscar el reporte a cada departamento que termina. En el modo equipos, el líder se levanta a pasarle el encargo a su developer o tester, quien termina le lleva el resultado al líder y el tester le lleva la falla al developer. Con dos QA o más, en la validación cruzada se juntan en la pizarra a debatir. El PM espera en el pasillo, al lado de la puerta de Reuniones, y entra cuando el CEO le escribe. Quien está libre a veces va por un café, se estira o charla con alguien libre, de su departamento o de otro. Las animaciones salen solo de los eventos nuevos: al abrir la página no se repite la historia.
 - **Privacidad.** No se guarda lo que escribe el CEO ni el contenido de los archivos. Todo queda en `.office/`, que no va en git.
 - **Apagarlo:** `OFFICE_OBSERVER=off` en el `env` del proyecto.
 
@@ -167,7 +190,7 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 
 ## Comunicación
 
-- **Los agentes no hablan entre ellos.** Todo pasa por el PM: cada agente le devuelve un reporte y el PM decide el siguiente paso.
+- **Los agentes no hablan entre ellos.** Todo pasa por el PM: cada agente le devuelve un reporte y el PM decide el siguiente paso. En el modo equipos, el developer y el tester le reportan a su líder, y el líder al PM.
 - **Los agentes arrancan sin contexto.** No ven la conversación entre el CEO y el PM, así que cada encargo incluye objetivo, archivos, decisiones tomadas, criterio de terminado y límites.
 - **Aprobaciones.** Si un agente necesita algo que requiere aprobación (instalar dependencias, commits, costos, decisiones de diseño importantes), frena y termina su reporte con "Necesito aprobación". El PM se lo consulta al CEO.
 
@@ -204,6 +227,6 @@ Los agentes leen el `CLAUDE.md` del proyecto (y lo que este importe) antes de tr
 
 ## Decisiones descartadas
 
-- **"Agent teams" de Claude Code** (agentes que se mandan mensajes entre sí): es experimental y gasta bastante más tokens. El ciclo en orden lo resuelve el PM con subagentes.
+- **"Agent teams" como modo por defecto:** es experimental y gasta bastante más tokens. Por defecto el ciclo en orden lo resuelve el PM con subagentes; los líderes de departamento son un modo opcional (ver "Modo equipos").
 - **Un plugin único con todos los departamentos:** no permite elegir qué departamentos tiene cada proyecto.
 - **El PM en Codex o Gemini:** el PM es la sesión de Claude Code. Un PM en otro proveedor sería Claude reenviando cada mensaje, con el costo de los dos y sin memoria entre mensajes. En su lugar, el PM puede tener asesores.

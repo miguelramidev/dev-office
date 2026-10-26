@@ -119,6 +119,10 @@ Si configurás `set qa claude codex` (o los tres), el PM los coordina en tres pa
    - lo que encontró uno solo queda si tiene una reproducción concreta;
    - lo refutado con pruebas queda **en disputa**: nunca bloquea y te llega como importante, con los dos argumentos.
 
+### Modo equipos
+
+Con `bash .claude/office-agents.sh teams on`, cada departamento tiene un líder que encarga el trabajo a su developer y a su tester. El líder respeta esta configuración: si el developer de backend va en Codex, se lo encarga por el puente. Los líderes son siempre Claude (Sonnet), como el PM. Detalle en [Arquitectura: modo equipos](architecture.md#modo-equipos-un-líder-por-departamento).
+
 ### Asesores del PM
 
 Con `set pm codex` (o `gemini`, o los dos), antes de presentarte un plan que no es trivial o un diseño, el PM les pide una segunda opinión. Los asesores solo leen. Te muestra en qué coinciden, qué cambiarían y qué riesgos vieron, y qué tomó de cada uno.

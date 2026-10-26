@@ -148,7 +148,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   <nav class="phases" id="phases" aria-label="Recorrido de la oficina"></nav>
 
   <div class="stage">
-    <canvas id="office" width="1536" height="896" aria-label="Oficina en pixel art: el PM camina entre las oficinas y cada departamento trabaja en su escritorio"></canvas>
+    <canvas id="office" width="1536" height="896" aria-label="Oficina en pixel art: el PM camina entre las oficinas, cada departamento trabaja en su escritorio y la gente se levanta a hablar con su líder"></canvas>
     <div class="hint">Tocá un empleado para ver qué está haciendo</div>
   </div>
 
@@ -189,7 +189,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     gemini: { name: "Gemini", color: "#6f9cff" },
   };
   // Colores de cada agente, los de su definición en la oficina.
-  const ROLE_COLORS = { purple: "#8b6cd6", cyan: "#36a9bb", blue: "#4a78d6", green: "#47a865", yellow: "#d4a933", orange: "#e08a3a", pink: "#d771a8", red: "#cf4b47", gold: "#b88d3a" };
+  const ROLE_COLORS = { purple: "#8b6cd6", cyan: "#36a9bb", blue: "#4a78d6", green: "#47a865", yellow: "#d4a933", orange: "#e08a3a", pink: "#d771a8", red: "#cf4b47", gold: "#b88d3a", teal: "#2f9e8f" };
 
   const ROOMS = [
     { id: "meet",   name: "Reuniones",     x: 0,   y: TOP_Y, top: true,  carpet: ["#3a3247", "#342d40"], deco: "meet" },
@@ -212,16 +212,22 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     { id: "farch", label: "Arquitecto de frontend",  short: "Arq. FE",  room: "design", seat: [140, 62], color: "cyan",   provider: "claude", model: "opus", tier: "opus", role: "frontend.architect", look: 2 },
     { id: "dsgn",  label: "Designer",                short: "Designer", room: "design", seat: [52, 132], color: "pink",   provider: "claude", model: "sonnet", tier: "sonnet", role: "frontend.designer", look: 3 },
     { id: "oarch", label: "Arquitecto de DevOps",    short: "Arq. Ops", room: "design", seat: [140, 132], color: "cyan",  provider: "claude", model: "opus", tier: "opus", role: "devops.architect", look: 4 },
-    { id: "bdev",  label: "Developer de backend",    short: "Dev BE",   room: "back",   seat: [52, 82],  color: "blue",   provider: "codex",  model: "gpt-6.1-sol", tier: "sonnet", role: "backend.developer", look: 6 },
-    { id: "btest", label: "Tester de backend",       short: "Test BE",  room: "back",   seat: [140, 82], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "backend.tester", look: 7 },
-    { id: "fdev",  label: "Developer de frontend",   short: "Dev FE",   room: "front",  seat: [52, 82],  color: "blue",   provider: "gemini", model: "gemini-3.8-flash", tier: "sonnet", role: "frontend.developer", look: 8 },
-    { id: "ftest", label: "Tester de frontend",      short: "Test FE",  room: "front",  seat: [140, 82], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "frontend.tester", look: 9 },
-    { id: "ddev",  label: "DB manager",              short: "DB",       room: "db",     seat: [52, 96],  color: "yellow", provider: "claude", model: "sonnet", tier: "sonnet", role: "database.developer", look: 10 },
-    { id: "dtest", label: "Tester de base de datos", short: "Test DB",  room: "db",     seat: [140, 96], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "database.tester", look: 11 },
-    { id: "sdev",  label: "Developer de scraping",   short: "Dev SC",   room: "scrap",  seat: [52, 96],  color: "blue",   provider: "claude", model: "sonnet", tier: "sonnet", role: "scraper.developer", look: 12 },
-    { id: "stest", label: "Tester de scraping",      short: "Test SC",  room: "scrap",  seat: [140, 96], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "scraper.tester", look: 13 },
-    { id: "odev",  label: "Developer de DevOps",     short: "Dev Ops",  room: "ops",    seat: [52, 96],  color: "orange", provider: "claude", model: "sonnet", tier: "sonnet", role: "devops.developer", look: 14 },
-    { id: "otest", label: "Tester de DevOps",        short: "Test Ops", room: "ops",    seat: [140, 96], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "devops.tester", look: 15 },
+    { id: "bdev",  label: "Developer de backend",    short: "Dev BE",   room: "back",   seat: [52, 70],  color: "blue",   provider: "codex",  model: "gpt-6.1-sol", tier: "sonnet", role: "backend.developer", look: 6 },
+    { id: "btest", label: "Tester de backend",       short: "Test BE",  room: "back",   seat: [140, 70], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "backend.tester", look: 7 },
+    { id: "fdev",  label: "Developer de frontend",   short: "Dev FE",   room: "front",  seat: [52, 70],  color: "blue",   provider: "gemini", model: "gemini-3.8-flash", tier: "sonnet", role: "frontend.developer", look: 8 },
+    { id: "ftest", label: "Tester de frontend",      short: "Test FE",  room: "front",  seat: [140, 70], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "frontend.tester", look: 9 },
+    { id: "ddev",  label: "DB manager",              short: "DB",       room: "db",     seat: [52, 70],  color: "yellow", provider: "claude", model: "sonnet", tier: "sonnet", role: "database.developer", look: 10 },
+    { id: "dtest", label: "Tester de base de datos", short: "Test DB",  room: "db",     seat: [140, 70], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "database.tester", look: 11 },
+    { id: "sdev",  label: "Developer de scraping",   short: "Dev SC",   room: "scrap",  seat: [52, 70],  color: "blue",   provider: "claude", model: "sonnet", tier: "sonnet", role: "scraper.developer", look: 12 },
+    { id: "stest", label: "Tester de scraping",      short: "Test SC",  room: "scrap",  seat: [140, 70], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "scraper.tester", look: 13 },
+    { id: "odev",  label: "Developer de DevOps",     short: "Dev Ops",  room: "ops",    seat: [52, 70],  color: "orange", provider: "claude", model: "sonnet", tier: "sonnet", role: "devops.developer", look: 14 },
+    { id: "otest", label: "Tester de DevOps",        short: "Test Ops", room: "ops",    seat: [140, 70], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "devops.tester", look: 15 },
+    // Líderes de departamento: solo en el modo equipos. Siempre Claude (Sonnet).
+    { id: "blead", label: "Líder de backend",        short: "Líder BE", room: "back",   seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "backend.lead", look: 18 },
+    { id: "flead", label: "Líder de frontend",       short: "Líder FE", room: "front",  seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "frontend.lead", look: 19 },
+    { id: "dlead", label: "Líder de base de datos",  short: "Líder DB", room: "db",     seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "database.lead", look: 20 },
+    { id: "slead", label: "Líder de scraping",       short: "Líder SC", room: "scrap",  seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "scraper.lead", look: 21 },
+    { id: "olead", label: "Líder de DevOps",         short: "Líder Ops", room: "ops",   seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "devops.lead", look: 22 },
     { id: "qa1",   label: "QA (Claude)",             short: "QA 1",     room: "qa",     seat: [52, 96],  color: "red",    provider: "claude", model: "opus", tier: "opus", role: "qa", look: 16 },
     { id: "qa2",   label: "QA (Codex)",              short: "QA 2",     room: "qa",     seat: [140, 96], color: "red",    provider: "codex",  model: "gpt-6-astra", tier: "opus", role: "qa", look: 17 },
   ];
@@ -231,8 +237,11 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   const RATE = { claude: { opus: 820, sonnet: 640 }, codex: { opus: 900, sonnet: 610 }, gemini: { opus: 860, sonnet: 700 } };
 
   // --- Guion de la simulación ----------------------------------------------------
+  // Pasos: say (mensaje), work (trabaja d segundos), walk (el PM camina; noWait no lo espera),
+  // wait (espera al CEO) y run (animaciones de la gente; waitFor espera a que terminen).
   const SCRIPT = [
-    { phase: 0, say: "El CEO abre la reunión: \"trabajemos en PROJ-123\"." },
+    { phase: 0, say: "El CEO llama al PM: \"trabajemos en PROJ-123\"." },
+    { phase: 0, walk: "ceo", tool: "entra a la reunión" },
     { phase: 0, work: "pm", d: 7, tool: "start-ticket PROJ-123", task: "Reunión con el CEO: pedidos con estado" },
     { phase: 0, say: "start-ticket: rama feature/PROJ-123-pedidos desde la épica PROJ-100. Ticket en curso." },
     { phase: 0, work: "adv", d: 5, tool: "lee el plan", task: "Segunda opinión sobre el plan", result: "pass", resultText: "OPINA" },
@@ -242,42 +251,68 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     { phase: 1, say: "Arquitecto de backend: diseño listo. Necesito aprobación.", kind: "warn" },
     { phase: 1, walk: "ceo" },
     { phase: 1, wait: 5, waiting: "ceo", say2: "El CEO aprueba el diseño.", tool: "esperando al CEO" },
-    { phase: 2, walk: "ddev" },
+    // Base de datos: el PM le encarga al líder y el líder reparte.
+    { phase: 2, walk: "dlead", say: "Modo equipos: el PM le encarga cada departamento a su líder." },
+    { phase: 2, work: "dlead", d: 3, tool: "lee el encargo", task: "Coordinar la migración del estado" },
+    { phase: 2, walk: "door", noWait: true, tool: "espera afuera de Reuniones", run: () => talkTo("dlead", "ddev", ["Te paso la migración", "Dale, arranco"]), waitFor: ["dlead"] },
     { phase: 2, work: "ddev", d: 7, tool: "migración add_order_status", task: "Estado del pedido e índice" },
-    { phase: 2, work: "dtest", d: 6, tool: "migración sube y baja", task: "Probar la migración", result: "pass", resultText: "PASA" },
-    { phase: 3, walk: "bdev" },
-    { phase: 3, work: "bdev", d: 10, task: "Endpoints de pedidos", tools: ["lee docs/design", "edita src/orders/routes.ts", "edita la colección de Postman", "puente: typecheck y tests"] },
-    { phase: 3, work: "btest", d: 7, tool: "tests de contrato", task: "Probar los endpoints", result: "fail", resultText: "FALLA" },
-    { phase: 3, say: "Tester de backend: FALLA. PATCH /orders/:id acepta un estado inválido.", kind: "alert" },
+    { phase: 2, run: () => talkTo("dlead", "dtest", ["Probá que suba y baje", "Voy"]), waitFor: ["dlead"] },
+    { phase: 2, work: "dtest", d: 5, tool: "migración sube y baja", task: "Probar la migración", result: "pass", resultText: "PASA" },
+    { phase: 2, run: () => talkTo("dtest", "dlead", ["PASA: sube y baja", "¡Bien!"]), waitFor: ["dtest"] },
+    { phase: 2, work: "dlead", d: 3, tool: "escribe el reporte", task: "Reporte del departamento" },
+    { phase: 2, say: "Líder de base de datos: reporte listo en .office/reports/.", kind: "good" },
+    { phase: 2, walk: "dlead", tool: "busca el reporte" },
+    // Backend: el ciclo developer ↔ tester queda dentro del departamento.
+    { phase: 3, walk: "blead" },
+    { phase: 3, work: "blead", d: 3, tool: "lee el encargo", task: "Coordinar los endpoints de pedidos" },
+    { phase: 3, walk: "door", noWait: true, tool: "espera afuera de Reuniones", run: () => talkTo("blead", "bdev", ["Te paso los endpoints", "Dale, arranco"]), waitFor: ["blead"] },
+    { phase: 3, work: "bdev", d: 9, task: "Endpoints de pedidos", tools: ["lee docs/design", "edita src/orders/routes.ts", "edita la colección de Postman", "puente: typecheck y tests"] },
+    { phase: 3, run: () => talkTo("bdev", "blead", ["Endpoints listos", "Pasáselos al tester"]), waitFor: ["bdev"] },
+    { phase: 3, run: () => talkTo("blead", "btest", ["Probá los endpoints", "Voy"]), waitFor: ["blead"] },
+    { phase: 3, work: "btest", d: 6, tool: "tests de contrato", task: "Probar los endpoints", result: "fail", resultText: "FALLA" },
+    { phase: 3, say: "Tester de backend: FALLA. Se lo lleva al developer, no al PM.", kind: "alert", run: () => { talkTo("btest", "bdev", ["FALLA: acepta un estado inválido", "Uh, lo corrijo"]); later("bdev", 4.5, "scratch"); }, waitFor: ["btest"] },
     { phase: 3, work: "bdev", d: 6, task: "Corregir la validación del estado", tools: ["edita src/orders/schema.ts", "puente: typecheck y tests"], round: true },
     { phase: 3, work: "btest", d: 5, tool: "tests de contrato", task: "Volver a probar", result: "pass", resultText: "PASA" },
+    { phase: 3, run: () => talkTo("btest", "blead", ["PASA: todo en verde", "¡Excelente!"]), waitFor: ["btest"] },
+    { phase: 3, work: "blead", d: 4, tool: "escribe el reporte", task: "Reporte del departamento" },
+    { phase: 3, say: "Líder de backend: reporte listo, con las acciones requeridas.", kind: "good" },
+    { phase: 3, walk: "blead", tool: "busca el reporte" },
+    // Calidad: dos QA revisan y después debaten los hallazgos.
     { phase: 4, walk: "qa1" },
-    { phase: 4, work: "qa1", d: 8, tool: "ataques en .qa/", task: "Revisión independiente" },
-    { phase: 4, work: "qa2", d: 8, tool: "ataques en .qa/", task: "Revisión independiente" },
-    { phase: 4, say: "Validación cruzada: una ronda." },
-    { phase: 4, work: ["qa1", "qa2"], d: 6, tool: "valida al otro QA", task: "Validación cruzada" },
+    { phase: 4, work: ["qa1", "qa2"], d: 8, tool: "ataques en .qa/", task: "Revisión independiente" },
+    { phase: 4, say: "Validación cruzada: los QA debaten los hallazgos.", run: () => debate("qa1", "qa2", DEBATE_LINES), waitFor: ["qa1", "qa2"] },
     { phase: 4, say: "QA: APROBADO. 2 mejoras confirmadas y 1 hallazgo en disputa, que va al CEO.", kind: "good", result: ["qa1", "qa2"], resultText: "APROBADO" },
-    { phase: 5, walk: "fdev" },
+    // Frontend.
+    { phase: 5, walk: "flead" },
+    { phase: 5, work: "flead", d: 3, tool: "lee el encargo", task: "Coordinar la pantalla de estado" },
+    { phase: 5, walk: "door", noWait: true, tool: "espera afuera de Reuniones", run: () => talkTo("flead", "fdev", ["Te paso la pantalla", "Dale"]), waitFor: ["flead"] },
     { phase: 5, work: "fdev", d: 9, task: "Pantalla de estado del pedido", tools: ["lee la colección de Postman", "edita app/orders/page.tsx", "puente: typecheck y tests"] },
     { phase: 5, work: "ftest", d: 6, tool: "tests de la pantalla", task: "Probar estados y textos", result: "pass", resultText: "PASA" },
+    { phase: 5, run: () => talkTo("ftest", "flead", ["PASA: estados y textos", "¡Bien!"]), waitFor: ["ftest"] },
+    { phase: 5, work: "flead", d: 3, tool: "escribe el reporte", task: "Reporte del departamento" },
+    { phase: 5, walk: "flead", tool: "busca el reporte" },
     { phase: 6, walk: "ceo" },
     { phase: 6, work: "pm", d: 6, tool: "arma el informe", task: "Informe al CEO" },
     { phase: 6, say: "Informe listo. Ofrece abrir el PR con open-pr.", kind: "good" },
-    { phase: 6, wait: 5, waiting: "ceo", say2: "Fin del ticket. La simulación vuelve a empezar.", tool: "leyendo el informe" },
+    { phase: 6, wait: 5, waiting: "ceo", say2: "El CEO lee el informe.", tool: "leyendo el informe" },
+    { phase: 6, walk: "door", tool: "sale de la reunión", say: "Fin del ticket. El PM espera afuera hasta que el CEO lo llame." },
   ];
   const PHASES = ["Reunión", "Diseño", "Base de datos", "Backend", "Calidad", "Frontend", "Informe"];
 
   // --- Estado ------------------------------------------------------------------
   let state;
   const MEET_SPOT = () => { const r = room("meet"); return { x: r.x + 96, y: r.y + 156, room: "meet" }; };
+  // Donde espera el PM: en el pasillo, al lado de la puerta de Reuniones, hasta que el CEO lo llama.
+  const DOOR_SPOT = () => ({ x: doorX(room("meet")) + 26, y: 214, room: "hall" });
   function freshState() {
-    const m = MEET_SPOT();
+    const m = DOOR_SPOT();
     return {
-      t: 0, step: -1, stepT: 0, phase: 0, rounds: 0,
+      t: 0, step: -1, stepT: 0, phase: 0, rounds: 0, nextIdle: 3, holds: {},
       tokens: { claude: 0, codex: 0, gemini: 0 },
       feed: [], selected: "pm",
-      pm: { id: "pm", x: m.x, y: m.y, path: [], facing: 1, walking: false, status: "idle", tool: "", task: "", tokens: 0, startedAt: 0, room: "meet", label: "PM" },
-      agents: AGENTS.map(a => ({ ...a, present: true, ext: 0, status: "idle", tool: "", task: "", tokens: 0, startedAt: null, bubble: null, bubbleUntil: 0, toolList: null })),
+      pm: { id: "pm", x: m.x, y: m.y, path: [], facing: 1, walking: false, status: "idle", tool: "", task: "", tokens: 0, startedAt: 0, room: "hall", label: "PM" },
+      agents: AGENTS.map(a => ({ ...a, present: true, ext: 0, status: "idle", tool: "", task: "", tokens: 0, startedAt: null, bubble: null, bubbleUntil: 0, toolList: null,
+        pos: null, path: [], acts: [], say: null, pose: null, prop: null, curRoom: a.room, facing: 1, idleTrip: false })),
     };
   }
   function addFeed(text, kind = "") { state.feed.unshift({ t: state.t, text, kind }); if (state.feed.length > 60) state.feed.pop(); }
@@ -285,17 +320,24 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   const seatOf = a => { const r = room(a.room); return { x: r.x + a.seat[0], y: r.y + a.seat[1] }; };
   function standSpot(target) {
     if (target === "ceo") return MEET_SPOT();
+    if (target === "door") return DOOR_SPOT();
     const a = agent(target), s = seatOf(a);
     return { x: s.x + (a.seat[0] < 96 ? 44 : -44), y: s.y + 26, room: a.room };
   }
   const insideDoor = r => ({ x: doorX(r), y: r.top ? r.y + RH - 16 : r.y + BACK + 14 });
+  // Camino entre dos puntos: por las puertas y el pasillo si cambia de oficina; dentro de
+  // una oficina, en L por el pasillo del medio, para no pasar por arriba de los escritorios.
   function planPath(from, to) {
     const pts = [];
     if (from.room !== to.room) {
       const rf = room(from.room), rt = room(to.room);
       if (rf) pts.push(insideDoor(rf), { x: doorX(rf), y: HALL_Y });
       else pts.push({ x: from.x, y: HALL_Y });
-      pts.push({ x: doorX(rt), y: HALL_Y }, insideDoor(rt));
+      if (rt) pts.push({ x: doorX(rt), y: HALL_Y }, insideDoor(rt));
+      else pts.push({ x: to.x, y: HALL_Y });
+    } else if (room(to.room) && Math.abs(from.x - to.x) > 2 && Math.abs(from.y - to.y) > 2) {
+      const cx = room(to.room).x + RW / 2;
+      pts.push(Math.abs(from.x - cx) <= Math.abs(to.x - cx) ? { x: from.x, y: to.y } : { x: to.x, y: from.y });
     }
     pts.push({ x: to.x, y: to.y });
     return pts;
@@ -306,7 +348,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   function startStep() {
     state.step = (state.step + 1) % SCRIPT.length;
     if (state.step === 0 && state.t > 1) {
-      state.agents.forEach(a => { a.status = "idle"; a.tool = ""; a.task = ""; a.bubble = null; });
+      state.agents.forEach(a => { a.status = "idle"; a.tool = ""; a.task = ""; a.bubble = null; clearAnim(a); });
       state.rounds = 0;
     }
     state.stepT = 0;
@@ -320,9 +362,12 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       state.pm.dest = to;
       state.pm.walking = true;
       state.pm.status = "working";
-      state.pm.tool = "va a " + (s.walk === "ceo" ? "Reuniones" : room(agent(s.walk).room).name);
-      if (s.walk !== "ceo") addFeed("PM encarga a " + agent(s.walk).label + " (" + providerName(agent(s.walk)) + ").");
+      state.pm.tool = s.tool || "va a " + (s.walk === "ceo" || s.walk === "door" ? "Reuniones" : room(agent(s.walk).room).name);
+      state.pm.clearOnArrive = !!s.noWait;
+      if (s.walk !== "ceo" && s.walk !== "door" && !s.tool) addFeed("PM encarga a " + agent(s.walk).label + " (" + providerName(agent(s.walk)) + ").");
+      else if (s.tool === "busca el reporte") addFeed("El PM va a buscar el reporte de " + room(agent(s.walk).room).name + ".");
     }
+    if (s.run) s.run();
     if (s.work) {
       [].concat(s.work).forEach(id => {
         const p = personById(id);
@@ -332,6 +377,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         p.task = s.task;
         p.startedAt = state.t;
         p.bubble = null;
+        if (id !== "pm") cancelIdle(p);
         if (id !== "pm" && !s.say) addFeed(p.label + ": " + s.task + ".");
       });
       if (s.round) { state.rounds += 1; addFeed("Vuelta " + (state.rounds + 1) + " del ciclo developer → tester.", "warn"); }
@@ -352,6 +398,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         if (id === "pm") { p.status = "idle"; return; }
         if (s.result) showResult(p, s.result, s.resultText);
         else { p.status = "pass"; p.bubble = "LISTO"; p.bubbleUntil = state.t + 3; }
+        if (s.result === "pass" && p.room !== "meet") pose(id, "celebrate", 2);
       });
     }
     if (s.wait) {
@@ -359,11 +406,12 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       state.pm.status = "idle"; state.pm.tool = "";
       if (s.say2) addFeed(s.say2, "good");
     }
-    if (s.walk) { state.pm.walking = false; state.pm.status = "idle"; state.pm.tool = ""; }
+    if (s.walk && !s.noWait) { state.pm.walking = false; state.pm.status = "idle"; state.pm.tool = ""; }
   }
   function stepDone() {
     const s = SCRIPT[state.step];
-    if (s.walk) return state.pm.path.length === 0;
+    if (s.run) return s.waitFor ? state.stepT > 0.3 && s.waitFor.every(id => !agent(id).acts.length) : state.stepT >= 1.2;
+    if (s.walk && !s.noWait) return state.pm.path.length === 0;
     if (s.work) return state.stepT >= s.d;
     if (s.wait) return state.stepT >= s.wait;
     return state.stepT >= 1.2;
@@ -379,6 +427,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     pm.tokens += pmRate * dt;
     state.tokens.claude += pmRate * dt;
     simAgents(dt);
+    animTick(dt);
     if (stepDone()) { finishStep(); startStep(); }
   }
 
@@ -393,6 +442,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       else { pm.x += dx / dist * step; pm.y += dy / dist * step; }
       if (!pm.path.length && pm.dest) pm.room = pm.dest.room;
       else if (pm.y > 184 && pm.y < 264) pm.room = "hall";
+      if (!pm.path.length && pm.clearOnArrive) { pm.clearOnArrive = false; pm.tool = ""; pm.status = "idle"; }
     }
   }
 
@@ -406,6 +456,251 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       }
       if (a.bubble && state.t > a.bubbleUntil) { a.bubble = null; if (a.status === "pass") a.status = "idle"; }
     });
+  }
+
+  // --- Vida en la oficina: levantarse, caminar, hablar ------------------------------
+  // Cada persona tiene una fila de acciones (acts): go (caminar a un lugar), home (volver al
+  // escritorio), talk (charla de a dos, con globos que se alternan), hold (espera que termine
+  // una charla), wait, say, pose (festeja, se estira o se rasca la cabeza) y prop (taza).
+  const SPEED = 64;
+  const COFFEE = [{ x: 733, y: 224, room: "hall" }, { x: 18, y: 224, room: "hall" }];
+  const DEBATE = [[100, 62], [136, 62]];
+  const DEBATE_LINES = ["Este hallazgo es real", "No coincido: ya valida", "Mirá el PATCH sin estado", "Ok, ese lo confirmo", "¿Y el del índice?", "Ese queda en disputa"];
+  // Charlas de los ratos libres: entre compañeros del mismo departamento y con otros.
+  const CHATS = [
+    ["¿Un café?", "Dale, en un rato"],
+    ["¿Viste el último PR?", "Sí, quedó bien"],
+    ["¿Cómo vas?", "Ahí, avanzando"],
+    ["¿Corriste los tests?", "Todos en verde"],
+    ["¿Almorzamos?", "Termino esto y vamos"],
+    ["¿Me prestás el cargador?", "Tomá, devolvémelo"],
+    ["Ese bug era un typo", "Clásico", "Tres horas por una coma", "Nos pasa a todos"],
+    ["¿Usamos tabs o espacios?", "Lo que diga el linter"],
+    ["¿Quién rompió el build?", "Yo no fui", "El historial dice otra cosa", "Ups"],
+    ["Hoy me rindió el día", "¡Bien ahí!"],
+    ["¿Probaste el modo oscuro?", "Ya no vuelvo atrás"],
+    ["¿Hiciste el refactor?", "A medias", "¿Lo terminás hoy?", "Mañana seguro"],
+    ["Me encanta este diseño", "Al CEO también"],
+    ["¿Tenés un minuto?", "Contame"],
+    ["Encontré un caso borde", "Anotalo para el tester"],
+    ["¿Ya actualizaste?", "Anoche, todo bien"],
+    ["El café está fuerte hoy", "Justo lo que necesitaba"],
+    ["¿Pair programming?", "Dale, traé tu silla"],
+    ["¿Leíste el diseño?", "Dos veces", "¿Y?", "Tiene sentido"],
+    ["¿Cuántos tests van?", "Ciento y pico"],
+    ["Necesito vacaciones", "Después del release"],
+    ["¿Merge o rebase?", "Rebase, siempre"],
+    ["¿Qué estás escuchando?", "Lo-fi para programar"],
+    ["La migración tarda", "Paciencia, ya baja"],
+    ["¿Viste el nuevo monitor?", "Envidia total"],
+    ["¿Me revisás esto?", "Pasame el link"],
+    ["Cerré tres tickets", "Máquina", "Faltan otros diez", "Bueno, de a poco"],
+    ["¿Escribiste la doc?", "Está en el README"],
+    ["Me trabé con un tipo", "Mostrame el error"],
+    ["Hoy no hay reunión, ¿no?", "Por suerte no"],
+    ["¿Pedimos pizza?", "¡Sí!", "¿Mitad y mitad?", "Obvio"],
+    ["El linter me odia", "Él te quiere, en serio"],
+    ["¿Funciona en tu máquina?", "En la mía sí", "Clásico", "Probá limpiando la caché"],
+    ["Ese nombre de variable…", "Lo cambio, lo cambio"],
+    ["¿Ya viene el viernes?", "Falta poco"],
+    ["Aprendí un atajo nuevo", "¡Enseñame!"],
+    ["¿Subiste los cambios?", "Están en mi rama"],
+    ["Gracias por la ayuda", "Para eso estamos"],
+    ["¿Te gusta la nueva silla?", "Mi espalda dice que sí"],
+    ["¿Otra vez los tests lentos?", "Los voy a paralelizar"],
+    ["Borré 200 líneas", "La mejor clase de commit"],
+    ["¿Comentarios o código claro?", "Código claro primero"],
+    ["¿Quién tiene el ticket?", "Lo tomo yo"],
+    ["Se cortó internet", "Hora del café, entonces"],
+    ["Probé la app en el celu", "¿Y qué tal?", "Vuela", "¡Bien!"],
+    ["¿Agregamos un test?", "Siempre suma uno más"],
+    ["Ya entendí el bug", "Contame qué era", "Una fecha sin zona horaria", "Lo de siempre"],
+    ["Me gusta tu fondo", "Lo hice yo"],
+    ["¿Qué tal el fin de semana?", "Corto, como siempre"],
+    ["Revisá mi comentario", "Ya lo resuelvo"],
+  ];
+  const CHATS_OTHER = [
+    ["¿Cómo viene tu depto?", "Bien, cerrando tests"],
+    ["¿Me pasás la colección?", "Está en docs/api"],
+    ["¿Ya migraron la base?", "Sí, ayer"],
+    ["¿Viste el partido?", "¡Qué partido!"],
+    ["¿Almorzamos juntos?", "Dale, a las 12"],
+    ["¿Quién revisa mi PR?", "Lo miro yo"],
+    ["¿La API ya está lista?", "Casi, falta un endpoint"],
+    ["¿Ese campo es opcional?", "Opcional, sí"],
+    ["El front necesita un filtro", "Pedíselo al PM", "Ya lo hice", "Entonces llega"],
+    ["¿Cuándo despliegan?", "Cuando el CEO diga"],
+    ["¿Tienen un índice ahí?", "Lo agregamos hoy"],
+    ["Vengo a robar café", "Servite"],
+    ["¿Me explicás el pipeline?", "Son tres pasos", "¿Nada más?", "Y muchos secretos"],
+    ["¿Cambiaron el contrato?", "Solo un nombre", "Avisá, porfa", "Va en el reporte"],
+    ["Su sala es más linda", "Tenemos plantas"],
+    ["¿Ese error es de ustedes?", "Déjame ver el log", "Es de nosotros", "Gracias por avisar"],
+    ["¿Tienen mock de esto?", "En la carpeta de tests"],
+    ["¿Qué estás haciendo?", "Un scraper educado"],
+    ["¿El QA ya pasó por acá?", "Sí, encontró dos cosas"],
+    ["¿Usan la misma versión?", "Sí, la de la rama"],
+    ["¿Nos prestan un tester?", "Pedíselo a tu líder"],
+    ["¿Ese diseño es nuevo?", "Aprobado ayer"],
+    ["¿La pantalla carga rápido?", "Ahora sí, con caché"],
+    ["¿Cuántas filas tiene?", "Millones", "¿Paginan?", "Siempre"],
+    ["Gracias por el endpoint", "De nada, ¿anda bien?"],
+    ["¿El servidor está bien?", "Verde todo"],
+    ["¿Me ayudás con un query?", "Mostrámelo"],
+    ["¿Ya leyeron el reporte?", "El PM lo está leyendo"],
+    ["Cambiaron la paleta", "¿Te gusta?", "Mucho más clara", "Idea del designer"],
+    ["¿Tienen reunión hoy?", "Por suerte no"],
+    ["¿Esto es un bug o feature?", "Depende a quién preguntes"],
+    ["¿Ese botón hace algo?", "Todavía no", "¿Para cuándo?", "Próximo ticket"],
+    ["¿Qué tal el líder nuevo?", "Organiza bien"],
+    ["¿Ustedes también usan TS?", "Todo tipado"],
+    ["Necesito un dato de prueba", "Usá el seed"],
+    ["¿Me prestás la pizarra?", "Toda tuya"],
+    ["¿Ese test es flaky?", "A veces", "Arreglémoslo", "Ahora mismo"],
+    ["¿Ya tienen el token?", "Lo guarda el login"],
+    ["Vine a saludar", "¡Hola, hola!"],
+    ["¿Corrieron la colección?", "Toda en verde"],
+    ["¿Quién pidió este cambio?", "El CEO", "Entonces va", "Sí, sí"],
+    ["¿Cuánto tarda el build?", "Tres minutos"],
+    ["¿El scraper respeta robots?", "Siempre"],
+    ["¿Vieron el debate del QA?", "Fue intenso"],
+    ["¿Me muestran el panel?", "Mirá, en vivo"],
+    ["¿Qué café toman ustedes?", "El de la máquina"],
+    ["¿Esto rompe algo?", "Nada, ya lo probé"],
+    ["¿Tienen permiso para eso?", "Lo aprobó el CEO"],
+    ["Su build está rojo", "¡Ya lo veo!", "¿Necesitás ayuda?", "Dame cinco minutos"],
+    ["¿Vamos a la terraza?", "Después del deploy"],
+    ["¿Ese endpoint pagina?", "Con cursor"],
+    ["Hoy estrené teclado", "Se escucha desde acá"],
+    ["¿Ya está el diseño?", "En docs/design"],
+    ["¿Me pasás el esquema?", "Te lo mando"],
+    ["¿Cómo está el líder?", "Contento con el reporte"],
+  ];
+  const COFFEE_LINES = ["café", "¡Recién hecho!", "Un cafecito", "Sin azúcar", "Doble, por favor", "Agua y vuelvo", "Ahora sí", "Lo necesitaba", "Último del día", "Café y a seguir"];
+  const shortText = (v, n) => { v = String(v || ""); return v.length > n ? v.slice(0, n - 1) + "…" : v; };
+  const exitSpot = a => { const s = seatOf(a); return { x: s.x + (a.seat[0] < 96 ? 42 : -42), y: s.y + 28, room: a.room }; };
+  function visitSpot(b, from) {
+    if (b.pos) { const side = from && from.x < b.pos.x ? -1 : 1; return { x: b.pos.x + side * 24, y: b.pos.y, room: b.curRoom }; }
+    return exitSpot(b);
+  }
+  function resolveSpot(a, to) {
+    if (to.visit) return visitSpot(agent(to.visit), a.pos);
+    if (to.coffee) { const x = (a.pos || seatOf(a)).x; return COFFEE.slice().sort((p, q) => Math.abs(p.x - x) - Math.abs(q.x - x))[0]; }
+    if (to.debate !== undefined) { const r = room("qa"); return { x: r.x + DEBATE[to.debate][0], y: r.y + DEBATE[to.debate][1], room: "qa" }; }
+    return to;
+  }
+  const posOf = p => p.pos || (p.id === "pm" ? { x: p.x, y: p.y } : seatOf(p));
+  function faceTo(p, q) { if (!p || !q) return; p.facing = posOf(q).x >= posOf(p).x ? 1 : -1; }
+  function clearAnim(a) { a.pos = null; a.path = []; a.acts = []; a.say = null; a.pose = null; a.prop = null; a.curRoom = a.room; a.idleTrip = false; a.facing = 1; }
+  function cancelIdle(a) { if (a && a.idleTrip) { a.acts = [{ k: "home" }, { k: "prop", prop: null }]; a.idleTrip = false; } }
+  function pose(id, kind, d) { const a = agent(id); if (a && a.present && !a.pos) a.pose = { kind, until: state.t + d }; }
+  function later(id, d, kind) { const a = agent(id); if (a && a.present) a.acts.push({ k: "wait", d }, { k: "pose", pose: kind, d: 2.5 }); }
+  // A camina hasta B, charlan (las líneas se alternan: A, B, A...) y A vuelve.
+  function talkTo(fromId, toId, lines) {
+    const a = agent(fromId), b = agent(toId);
+    if (!a || !b || !a.present || !b.present || a === b) return;
+    cancelIdle(a); cancelIdle(b);
+    a.acts.push({ k: "go", to: { visit: toId } }, { k: "talk", with: toId, lines }, { k: "home" });
+  }
+  // Dos QA se juntan frente a la pizarra y discuten los hallazgos.
+  function debate(id1, id2, lines) {
+    const a = agent(id1), b = agent(id2);
+    if (!a || !b || !a.present || !b.present) return;
+    cancelIdle(a); cancelIdle(b);
+    const key = "debate" + Math.random().toString(36).slice(2);
+    a.acts.push({ k: "go", to: { debate: 0 } }, { k: "talk", with: id2, lines, key }, { k: "home" });
+    b.acts.push({ k: "go", to: { debate: 1 } }, { k: "hold", key }, { k: "home" });
+  }
+
+  function beginAct(a, act) {
+    act.t0 = state.t;
+    if (act.k === "go" || act.k === "home") {
+      if (!a.pos) { const e = exitSpot(a); a.pos = { x: e.x, y: e.y }; a.curRoom = a.room; a.pose = null; }
+      const to = act.k === "home" ? exitSpot(a) : resolveSpot(a, act.to);
+      a.path = planPath({ x: a.pos.x, y: a.pos.y, room: a.curRoom }, to);
+      a.dest = to;
+    } else if (act.k === "talk") { act.i = -1; act.next = 0; act.waited = 0; }
+    else if (act.k === "pose") { if (!a.pos) a.pose = { kind: act.pose, until: state.t + act.d }; }
+    else if (act.k === "prop") a.prop = act.prop;
+    else if (act.k === "say") a.say = { text: act.text, until: state.t + act.d };
+  }
+  function stepAct(a, act, dt) {
+    const el = state.t - act.t0;
+    if (act.k === "go" || act.k === "home") {
+      const target = a.path[0];
+      if (target) {
+        const dx = target.x - a.pos.x, dy = target.y - a.pos.y, dist = Math.hypot(dx, dy), step = SPEED * dt;
+        if (Math.abs(dx) > 0.5) a.facing = dx > 0 ? 1 : -1;
+        if (dist <= step) { a.pos.x = target.x; a.pos.y = target.y; a.path.shift(); }
+        else { a.pos.x += dx / dist * step; a.pos.y += dy / dist * step; }
+        if (a.path.length) return false;
+      }
+      a.curRoom = a.dest.room;
+      if (act.k === "home") { a.pos = null; a.curRoom = a.room; a.facing = 1; }
+      else if (act.to.visit) faceTo(a, agent(act.to.visit));
+      else if (act.to.coffee) a.facing = a.pos.x > W / 2 ? 1 : -1;
+      return true;
+    }
+    if (act.k === "talk") {
+      const b = agent(act.with);
+      // Si el otro todavía está caminando, lo espera (hasta 20 segundos).
+      if (b && b.acts.length && b.acts[0].k === "go" && (act.waited += dt) < 20) return false;
+      if (state.t < act.next) return false;
+      act.i += 1;
+      if (act.i >= act.lines.length) { if (act.key) state.holds[act.key] = true; return true; }
+      const speaker = act.i % 2 === 0 || !b ? a : b, other = speaker === a ? b : a;
+      speaker.say = { text: act.lines[act.i], until: state.t + 1.9 };
+      faceTo(speaker, other); faceTo(other, speaker);
+      act.next = state.t + 2.1;
+      return false;
+    }
+    if (act.k === "hold") return !!state.holds[act.key] || el > 40;
+    if (act.k === "wait" || act.k === "pose" || act.k === "say") return el >= act.d;
+    return true;
+  }
+  function animTick(dt) {
+    state.agents.forEach(a => {
+      if (!a.present) { if (a.pos || a.acts.length) clearAnim(a); return; }
+      if (a.say && state.t > a.say.until) a.say = null;
+      if (a.pose && state.t > a.pose.until) a.pose = null;
+      let guard = 0;
+      while (a.acts.length && guard++ < 6) {
+        const act = a.acts[0];
+        if (act.t0 === undefined) beginAct(a, act);
+        if (!stepAct(a, act, dt)) break;
+        a.acts.shift();
+      }
+      if (!a.acts.length) a.idleTrip = false;
+    });
+    idleLife();
+  }
+  // Cada tanto, alguien libre va a buscar un café, se estira o charla con alguien libre,
+  // de su departamento o de otro.
+  function idleLife() {
+    if (reduced || state.t < state.nextIdle) return;
+    state.nextIdle = state.t + 5 + Math.random() * 6;
+    const free = state.agents.filter(a => a.present && a.provider && a.room !== "meet" && a.status === "idle" && !a.pos && !a.acts.length && !a.pose);
+    if (!free.length || state.agents.filter(a => a.idleTrip).length >= 3) return;
+    // Nadie se va mientras otro viene a hablarle.
+    const visited = new Set(state.agents.flatMap(x => x.acts.map(k => k.with || (k.to && k.to.visit)).filter(Boolean)));
+    const avail = free.filter(b => !visited.has(b.id));
+    if (!avail.length) return;
+    const a = avail[Math.floor(Math.random() * avail.length)], r = Math.random();
+    const others = avail.filter(b => b !== a);
+    const same = others.filter(b => b.room === a.room), far = others.filter(b => b.room !== a.room);
+    const goFar = far.length > 0 && (!same.length || Math.random() < 0.55);
+    const mates = goFar ? far : same;
+    if (r < 0.35) {
+      a.idleTrip = true;
+      a.acts.push({ k: "go", to: { coffee: true } }, { k: "prop", prop: "cup" }, { k: "say", text: COFFEE_LINES[Math.floor(Math.random() * COFFEE_LINES.length)], d: 2.2 }, { k: "home" }, { k: "prop", prop: null });
+    } else if (r < 0.8 && mates.length) {
+      const lines = goFar ? CHATS_OTHER : CHATS;
+      a.idleTrip = true;
+      a.acts.push({ k: "go", to: { visit: mates[Math.floor(Math.random() * mates.length)].id } });
+      a.acts.push({ k: "talk", with: a.acts[0].to.visit, lines: lines[Math.floor(Math.random() * lines.length)] }, { k: "home" });
+    } else {
+      a.pose = { kind: "stretch", until: state.t + 2.2 };
+    }
   }
 
   // --- Dibujo ------------------------------------------------------------------
@@ -557,7 +852,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 
   // Ropa por rol: buzo (developers), camisa y corbata (arquitectos), chomba (testers),
   // polera (designer), guardapolvo (QA), saco (PM y CEO), cárdigan (base de datos).
-  const OUTFIT = { developer: "hoodie", architect: "shirt", tester: "polo", designer: "turtle", qa: "coat", pm: "suit", ceo: "suit", "pm (asesor)": "suit" };
+  const OUTFIT = { developer: "hoodie", architect: "shirt", tester: "polo", designer: "turtle", qa: "coat", pm: "suit", ceo: "suit", "pm (asesor)": "suit", lead: "vest" };
   function outfitOf(a) {
     if (a.id === "ddev") return "cardigan";
     const r = (a.role || a.id || "").split(".").pop();
@@ -598,6 +893,11 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       px(x - 1, y + 2, 2, 9, colorKey === "gold" ? "#d8b04a" : "#f2c14e"); px(x - 1, y + 11, 2, 1, OUT);
       px(x - 4, y + 1, 1, 10, cD); px(x + 3, y + 1, 1, 10, cD);                 // solapas
       px(x - 6, y + 12, 1, 1, cL); px(x + 5, y + 12, 1, 1, cL);
+    } else if (kind === "vest") {
+      px(x - 4, y + 1, 8, 15, white); px(x - 4, y + 1, 2, 3, whiteD); px(x + 2, y + 1, 2, 3, whiteD); // camisa
+      px(x - 1, y + 3, 2, 9, "#2a3142"); px(x - 1, y + 12, 2, 1, OUT);                         // corbata
+      px(x - 5, y + 1, 1, 15, cD); px(x + 4, y + 1, 1, 15, cD);                                 // chaleco
+      px(x - 9, y + 5, 3, 3, "#f2c14e"); px(x - 8, y + 4, 1, 1, "#f2c14e"); px(x - 8, y + 8, 1, 1, "#f2c14e"); // estrella
     } else if (kind === "cardigan") {
       px(x - 3, y + 1, 6, 15, "#efe9dd"); px(x - 1, y + 4, 1, 1, OUT); px(x - 1, y + 8, 1, 1, OUT); px(x - 1, y + 12, 1, 1, OUT);
     }
@@ -635,6 +935,11 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       px(x - 9, headY - 3, 1, 6, "#3a3f4a"); px(x + 8, headY - 3, 1, 6, "#3a3f4a");
     } else if (r === "architect") {
       px(x + 8, headY - 1, 1, 5, "#f2c14e"); px(x + 8, headY - 2, 1, 1, "#e07a52"); // lápiz en la oreja
+    } else if (r === "lead") {
+      // Vincha con micrófono: coordina al equipo.
+      px(x - 8, headY - 5, 16, 1, "#3a3f4a");
+      px(x - 10, headY + 2, 3, 6, OUT); px(x - 9, headY + 3, 1, 4, "#2f9e8f");
+      px(x - 8, headY + 9, 5, 1, "#3a3f4a"); px(x - 4, headY + 8, 2, 2, "#2f9e8f");
     } else if (r === "designer") {
       // Boina.
       px(x - 8, headY - 6, 15, 4, OUT); px(x - 7, headY - 6, 13, 3, "#d771a8"); px(x - 7, headY - 6, 13, 1, "#e9a0c8"); px(x - 1, headY - 8, 2, 2, OUT);
@@ -651,16 +956,72 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   // Persona sentada detrás de su escritorio, mirando hacia nosotros.
   function drawSeated(a, now) {
     const s = seatOf(a), lk = look(a.look);
+    if (a.pos) { drawChair(s.x, s.y); drawDesk(s.x, s.y + 10, a, now, false); return; } // se levantó
     const working = a.status === "working";
-    const bob = working ? 0 : Math.round(Math.sin(now * 1.4 + s.x * 0.1));
+    const pz = a.pose ? a.pose.kind : null;
+    const bob = pz === "celebrate" ? -Math.abs(Math.round(Math.sin(now * 12) * 2)) : working ? 0 : Math.round(Math.sin(now * 1.4 + s.x * 0.1));
     drawChair(s.x, s.y);
     const ty = s.y - 2 + bob;
     drawTorso(s.x, ty, a, a.color);
     const hy = ty - 13;
-    drawHead(s.x - 8, hy, lk, { mood: moodOf(a), blink: Math.floor(now * 2.2 + s.x) % 17 === 0, glasses: (a.role || "").endsWith("architect") });
+    drawHead(s.x - 8, hy, lk, {
+      mood: pz === "celebrate" ? "happy" : pz === "scratch" ? "sad" : a.say ? "happy" : moodOf(a),
+      blink: pz === "stretch" || Math.floor(now * 2.2 + s.x) % 17 === 0,
+      glasses: (a.role || "").endsWith("architect"), facing: a.say ? a.facing : 0,
+    });
     drawAccessory(s.x, hy, a, now);
     drawDesk(s.x, s.y + 10, a, now, working);
-    drawArms(s.x, ty, a, lk.skin, working, now, a.color);
+    if (pz) drawPoseArms(s.x, ty, a, lk.skin, pz, now);
+    else drawArms(s.x, ty, a, lk.skin, working, now, a.color);
+  }
+
+  // Brazos arriba: festeja, se estira o se rasca la cabeza.
+  function drawPoseArms(x, y, a, sk, kind, now) {
+    const o = outfitOf(a), c = o === "coat" ? "#efe9dd" : ROLE_COLORS[a.color], cD = o === "coat" ? "#cfc7b8" : shade(c, -0.3);
+    const up = (ax, top) => { px(ax, top, 5, 15, OUT); px(ax + 1, top + 3, 3, 11, cD); px(ax + 1, top + 1, 3, 2, sk.s); };
+    if (kind === "scratch") {
+      px(x - 15, y + 2, 5, 12, OUT); px(x - 14, y + 3, 3, 10, cD);
+      px(x - 11, y + 12, 6, 4, OUT); px(x - 10, y + 13, 4, 2, sk.s);
+      up(x + 9, y - 14 + (Math.floor(now * 8) % 2));
+    } else {
+      const wide = kind === "stretch" ? 3 : 0, f = kind === "celebrate" ? Math.floor(now * 8) % 2 : 0;
+      up(x - 16 - wide, y - 12 - f);
+      up(x + 11 + wide, y - 12 - (1 - f));
+    }
+  }
+
+  // Alguien de pie: camina con cuatro cuadros, gesticula cuando habla y puede llevar algo.
+  function drawWalker(a, now) {
+    const p = a.pos, lk = look(a.look);
+    const fx = Math.round(p.x), fy = Math.round(p.y);
+    const walking = a.path.length > 0;
+    const f = walking ? Math.floor(now * 9 + a.look) % 4 : 0;
+    const legA = [0, 2, 0, -2][f], armA = [0, -2, 0, 2][f], lift = walking && f % 2 ? 1 : 0;
+    const pants = ["#2b3142", "#3a3328", "#26313a", "#3b2c3a"][a.look % 4], pantsD = shade(pants, -0.25);
+    px(fx - 11, fy - 2, 22, 4, "rgba(0,0,0,0.3)");
+    px(fx - 8, fy - 13, 7, 13 + Math.min(0, legA), OUT); px(fx - 7, fy - 13, 5, 11 + legA, pants); px(fx - 7, fy - 13, 1, 11 + legA, pantsD);
+    px(fx + 1, fy - 13, 7, 13 - Math.max(0, legA), OUT); px(fx + 2, fy - 13, 5, 11 - legA, pants); px(fx + 6, fy - 13, 1, 11 - legA, pantsD);
+    px(fx - 8, fy - 2 + legA, 7, 3, OUT); px(fx - 7, fy - 2 + legA, 5, 2, "#3a2418");
+    px(fx + 1, fy - 2 - legA, 7, 3, OUT); px(fx + 2, fy - 2 - legA, 5, 2, "#3a2418");
+    const ty = fy - 28 - lift;
+    drawTorso(fx, ty, a, a.color);
+    const o = outfitOf(a), c = o === "coat" ? "#efe9dd" : ROLE_COLORS[a.color], cD = o === "coat" ? "#cfc7b8" : shade(c, -0.3);
+    const gest = a.say && !walking && Math.floor(now * 3) % 2;
+    px(fx - 15, ty + 2 + armA, 5, 12, OUT); px(fx - 14, ty + 3 + armA, 3, 10, cD); px(fx - 14, ty + 13 + armA, 3, 2, lk.skin.s);
+    if (gest) { px(fx + 10, ty - 3, 5, 12, OUT); px(fx + 11, ty, 3, 8, cD); px(fx + 11, ty - 2, 3, 2, lk.skin.s); }
+    else { px(fx + 10, ty + 2 - armA, 5, 12, OUT); px(fx + 11, ty + 3 - armA, 3, 10, cD); px(fx + 11, ty + 13 - armA, 3, 2, lk.skin.s); }
+    const hx = fx + (a.facing > 0 ? 13 : -13);
+    if (a.prop === "cup") {
+      px(hx - 3, ty + 9, 7, 7, OUT); px(hx - 2, ty + 10, 5, 5, ["#d9534f", "#4a78d6", "#e9e4d8", "#47a865"][a.look % 4]); px(hx - 2, ty + 10, 5, 1, "#3a2418");
+      if (Math.floor(now * 2) % 2) px(hx, ty + 5, 1, 3, "rgba(255,255,255,0.4)");
+    } else if (/\.lead$/.test(a.role || "") || a.role === "qa") {
+      px(hx - 4, ty + 6, 9, 11, OUT); px(hx - 3, ty + 7, 7, 9, "#c9a777"); px(hx - 2, ty + 8, 5, 7, "#f6f2e7");
+      px(hx - 1, ty + 9, 3, 1, a.role === "qa" ? "#cf4b47" : "#2f9e8f"); px(hx - 1, ty + 11, 3, 1, "#98a1b3"); px(hx - 1, ty + 6, 3, 2, "#5e4229");
+    } else if (/\.tester$/.test(a.role || "") && a.status === "fail") {
+      px(hx - 3, ty + 7, 8, 9, OUT); px(hx - 2, ty + 8, 6, 7, "#f6f2e7"); px(hx - 1, ty + 9, 4, 1, "#cf4b47"); px(hx - 1, ty + 11, 3, 1, "#98a1b3");
+    }
+    drawHead(fx - 8, ty - 13, lk, { mood: a.status === "fail" ? "sad" : "happy", facing: walking || a.say ? a.facing : 0, blink: Math.floor(now * 2.2 + a.look) % 19 === 0, glasses: (a.role || "").endsWith("architect") });
+    drawAccessory(fx, ty - 13, a, now);
   }
 
   function drawChair(x, y) {
@@ -712,7 +1073,11 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     // Algo propio de cada puesto sobre el escritorio.
     const r = (a.role || "").split(".");
     const dept = r[0], job = r[1];
-    if (job === "tester") { // planilla con tildes
+    if (job === "lead") { // tablero con tarjetas
+      px(cx + 17, y - 9, 14, 12, OUT); px(cx + 18, y - 8, 12, 10, "#f6f2e7");
+      px(cx + 19, y - 7, 3, 3, "#f2c14e"); px(cx + 23, y - 7, 3, 3, "#6f9cff"); px(cx + 19, y - 3, 3, 3, "#5cc98a"); px(cx + 23, y - 3, 3, 3, working ? "#ef6b5b" : "#5cc98a");
+      px(cx + 27, y - 7, 2, 7, "#98a1b3"); px(cx + 23, y + 3, 2, 3, "#5e4229");
+    } else if (job === "tester") { // planilla con tildes
       px(cx + 20, y + 2, 10, 7, OUT); px(cx + 21, y + 3, 8, 5, "#f6f2e7");
       px(cx + 22, y + 4, 2, 1, "#47a865"); px(cx + 22, y + 6, 2, 1, a.status === "fail" ? "#cf4b47" : "#47a865"); px(cx + 25, y + 4, 3, 1, "#98a1b3"); px(cx + 25, y + 6, 3, 1, "#98a1b3");
     } else if (a.role === "qa") { // lupa
@@ -873,6 +1238,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const id = state.selected;
     let x, y, w, h;
     if (id === "pm") { x = state.pm.x - 15; y = state.pm.y - 48; w = 30; h = 50; }
+    else if (agent(id).pos) { const p = agent(id).pos; x = p.x - 15; y = p.y - 48; w = 30; h = 50; }
     else { const s = seatOf(agent(id)); x = s.x - 18; y = s.y - 24; w = 36; h = 38; }
     g.strokeStyle = Math.floor(now * 4) % 2 ? "#f2c14e" : "#b98d27";
     g.lineWidth = 2;
@@ -891,7 +1257,10 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     ROOMS.forEach(r => { if (r.off) px(r.x, r.y, RW, RH, "rgba(11,14,20,0.62)"); });
     drawMeetingTable();
     drawSelection(now);
-    drawPM(now);
+    // La gente de pie y el PM, de atrás hacia adelante.
+    const standing = state.agents.filter(a => a.present && a.pos).map(a => ({ y: a.pos.y, draw: () => drawWalker(a, now) }));
+    standing.push({ y: state.pm.y, draw: () => drawPM(now) });
+    standing.sort((p, q) => p.y - q.y).forEach(o => o.draw());
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(world, 0, 0, W * S, H * S);
     drawLabels();
@@ -901,6 +1270,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   function drawSeatedMeeting(a, now) {
     const s = seatOf(a), lk = look(a.look);
     drawChair(s.x, s.y);
+    if (a.pos) return;
     const ty = s.y - 2;
     drawTorso(s.x, ty, a, a.color);
     drawHead(s.x - 8, ty - 13, lk, { mood: moodOf(a), blink: Math.floor(now * 2.2 + s.x) % 17 === 0, style: a.id === "ceo" ? 0 : undefined });
@@ -937,16 +1307,19 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     ROOMS.forEach(r => { if (r.off) text("SIN INSTALAR", r.x + RW / 2, r.y + RH / 2 - 4, { size: 7, align: "center", color: "#98a1b3", bg: "rgba(11,14,20,0.9)", border: "#313b52" }); });
     state.agents.forEach(a => {
       if (!a.present) return;
-      const s = seatOf(a);
-      const ny = a.room === "meet" ? s.y - 34 : s.y + 38;
-      text(a.short, s.x, ny, { size: 6.5, align: "center", color: "#cfc8ba", bg: a.room === "meet" ? "rgba(11,14,20,0.7)" : null });
+      const st = !!a.pos, s = st ? a.pos : seatOf(a);
+      const ny = st ? s.y + 4 : a.room === "meet" ? s.y - 34 : s.y + 38;
+      text(a.short, s.x, ny, { size: 6.5, align: "center", color: "#cfc8ba", bg: a.room === "meet" || st ? "rgba(11,14,20,0.7)" : null });
       let label = null, color = "#ebe5d8", border = "#313b52", bg = "rgba(11,14,20,0.94)";
-      if (a.status === "working") { label = a.tool; color = "#f2c14e"; border = "#7a6326"; }
+      if (a.say) { label = a.say.text; color = "#1a1406"; bg = "#f6f2e7"; border = "#f6f2e7"; }
+      else if (a.status === "working") { label = a.tool; color = "#f2c14e"; border = "#7a6326"; }
       else if (a.status === "waiting") { label = "esperando"; color = "#1a1406"; bg = "#f2c14e"; border = "#f2c14e"; }
       else if (a.bubble) { label = a.bubble; color = a.status === "fail" ? "#ef6b5b" : "#5cc98a"; border = color; }
       if (label) {
         const t = label.length > 30 ? label.slice(0, 29) + "…" : label;
-        text(t, s.x, s.y - (a.room === "meet" ? 52 : 40), { size: 6.5, align: "center", color, bg, border, tail: true, font: "'Space Mono', monospace" });
+        // El líder sentado habla hacia el espacio libre a su derecha, no sobre el escritorio de arriba.
+        const side = !st && /\.lead$/.test(a.role || "") ? 74 : 0;
+        text(t, s.x + side, s.y - (st ? 60 : side ? 4 : a.room === "meet" ? 52 : 40), { size: 6.5, align: "center", color, bg, border, tail: true, font: "'Space Mono', monospace" });
       }
     });
     const pm = state.pm;
@@ -961,12 +1334,13 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   // --- En vivo: los eventos de .office/observer/events.js ------------------------
   // La página se abre desde el disco, sin servidor: el archivo de eventos es JavaScript
   // ("OFFICE_EVENT({...});" por línea) y se vuelve a cargar cada 1,5 segundos.
-  let mode = "demo", userPicked = false, liveEvents = [], liveCount = -1, liveFile = false;
+  let mode = "demo", userPicked = false, liveEvents = [], liveCount = -1, liveFile = false, liveAnimFrom = -1;
   const ROLE_SEAT = {
     "backend.architect": "barch", "frontend.architect": "farch", "frontend.designer": "dsgn", "devops.architect": "oarch",
     "backend.developer": "bdev", "backend.tester": "btest", "frontend.developer": "fdev", "frontend.tester": "ftest",
     "database.developer": "ddev", "database.tester": "dtest", "scraper.developer": "sdev", "scraper.tester": "stest",
     "devops.developer": "odev", "devops.tester": "otest",
+    "backend.lead": "blead", "frontend.lead": "flead", "database.lead": "dlead", "scraper.lead": "slead", "devops.lead": "olead",
   };
   const ROOM_DEPT = { back: "backend", front: "frontend", db: "database", scrap: "scraper", ops: "devops" };
   const DEPTS = ["backend", "frontend", "database", "scraper", "devops"];
@@ -1000,6 +1374,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       let entry = null;
       if (a.id === "qa1" || a.id === "qa2") entry = (cfg.qa || ["claude"])[a.id === "qa1" ? 0 : 1] || null;
       else if (a.id === "adv") entry = (cfg.pm || [])[0] || null;
+      else if (/\.lead$/.test(a.role || "")) entry = sess && sess.teams ? "claude" : null; // líderes: solo en el modo equipos
       else if (a.id !== "ceo") entry = (cfg[a.role] || ["claude"])[0];
       const dept = (a.role || "").split(".")[0];
       const deptOff = !!(depts && DEPTS.includes(dept) && !depts.includes(dept));
@@ -1027,43 +1402,79 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   function setPMTarget(target) {
     if (state.pmTarget === target) return;
     state.pmTarget = target;
-    const to = target === "ceo" || !agent(target) ? MEET_SPOT() : standSpot(target);
+    const to = target === "door" ? DOOR_SPOT() : target === "ceo" || !agent(target) ? MEET_SPOT() : standSpot(target);
     state.pm.path = planPath(state.pm, to);
     state.pm.dest = to;
   }
 
+  // Reconstruye la oficina con todos los eventos de la sesión. Las animaciones (levantarse,
+  // caminar, charlar) salen solo de los eventos nuevos y recientes, no de la historia.
   function liveRebuild() {
     const evs = liveEvents;
+    if (liveAnimFrom < 0) liveAnimFrom = evs.length;      // al abrir la página: nada de la historia
+    else if (liveAnimFrom > evs.length) liveAnimFrom = 0; // el archivo empezó de nuevo
+    const animFrom = liveAnimFrom, nowS = Date.now() / 1000;
+    liveAnimFrom = evs.length;
     let si = -1;
     for (let i = evs.length - 1; i >= 0; i--) if (evs[i].type === "session") { si = i; break; }
     const sess = si >= 0 ? evs[si] : null;
-    const list = si >= 0 ? evs.slice(si) : evs;
-    const t0 = sess ? sess.t : (list[0] ? list[0].t : Date.now() / 1000);
+    const base = si >= 0 ? si : 0;
+    const list = evs.slice(base);
+    const t0 = sess ? sess.t : (list[0] ? list[0].t : nowS);
+    const sessKey = sess ? sess.t + ":" + base : "none";
+    if (state.liveSession !== sessKey) { state.liveSession = sessKey; state.agents.forEach(clearAnim); state.holds = {}; state.nextIdle = 0; }
     liveReset(sess);
-    const L = state.live = { t0, sess, pmTokens: 0, claudeSub: 0, ext: { codex: 0, gemini: 0 }, route: [], fails: 0 };
+    const teams = !!(sess && sess.teams);
+    const L = state.live = { t0, sess, teams, pmTokens: 0, claudeSub: 0, ext: { codex: 0, gemini: 0 }, route: [], fails: 0, leads: {} };
     state.feed = [];
-    const pending = [], byAgent = {};
-    let pmTarget = "ceo", pmStatus = "idle", pmTool = "", pmTask = "";
+    const pending = [], byAgent = {}, fx = [];
+    let pmTarget = "door", pmStatus = "idle", pmTool = "", pmTask = "";
     const tok = u => (u ? (u.i || 0) + (u.o || 0) + (u.cw || 0) : 0);
     const feed = (e, text, kind) => state.feed.unshift({ at: e.t, t: e.t - t0, text, kind: kind || "" });
+    const leadSeat = dept => seatFor(dept + ".lead");
+    const leadByName = name => { const m = /^([a-z]+)-lead\b/.exec(name || ""); return m ? leadSeat(m[1]) : null; };
+    const isLeadRole = r => /\.lead$/.test(r || "");
+    const goTo = seat => { pmTarget = seat; const rn = room(agent(seat).room).name; if (L.route[L.route.length - 1] !== rn) L.route.push(rn); };
+    // De quién es un evento: por su agent_id o, si no se conoce, por su tipo de agente (líder).
+    const seatOfEvent = (id, type) => {
+      if (id && byAgent[id] && byAgent[id].seat) return byAgent[id].seat;
+      if (isLeadRole(roleFromType(type))) { const seat = seatFor(roleFromType(type)); if (id && seat) byAgent[id] = { seat, role: roleFromType(type) }; return seat; }
+      return null;
+    };
 
-    for (const e of list) {
+    list.forEach((e, k) => {
+      const fresh = base + k >= animFrom && nowS - e.t < 30;
       if (e.type === "session") { feed(e, e.source === "resume" ? "Se retoma la sesión de la oficina." : "Empieza la sesión de la oficina."); }
-      else if (e.type === "prompt") { pmTarget = "ceo"; pmStatus = "working"; pmTool = "conversa con el CEO"; pmTask = "Reunión con el CEO"; feed(e, "El CEO le escribe al PM."); }
+      else if (e.type === "prompt") { pmTarget = "ceo"; pmStatus = "working"; pmTool = "conversa con el CEO"; pmTask = "Reunión con el CEO"; feed(e, "El CEO llama al PM."); }
       else if (e.type === "delegate") {
         const role = e.role || roleFromType(e.subagent_type);
         const provider = String(e.provider || "claude").toLowerCase();
         const seat = role ? seatFor(role, provider) : null;
-        pending.push({ type: e.subagent_type, seat, role, provider, model: e.xmodel || null, desc: e.description || "" });
-        if (seat) {
-          pmTarget = seat;
-          const rn = room(agent(seat).room).name;
-          if (L.route[L.route.length - 1] !== rn) L.route.push(rn);
+        const dept = (role || "").split(".")[0];
+        const what = stripRole(e.description) || "sin descripción";
+        // En el modo equipos, el developer y el tester los encarga su líder, no el PM.
+        const fromLead = /\.(developer|tester)$/.test(role || "") && leadSeat(dept) &&
+          (isLeadRole(roleFromType(e.from_type)) || (e.from && byAgent[e.from] && isLeadRole(byAgent[e.from].role)) || (!e.from && L.leads[dept]));
+        const lead = fromLead ? leadSeat(dept) : null;
+        pending.push({ type: e.subagent_type, seat, role, provider, model: e.xmodel || null, desc: e.description || "", lead });
+        if (lead) {
+          const la = agent(lead);
+          Object.assign(la, { status: "working", tool: "coordina: " + what });
+          feed(e, la.label + " encarga a " + (seat ? agent(seat).label : role || e.subagent_type) + ": " + what + ".");
+          if (fresh && seat) fx.push(() => talkTo(lead, seat, [shortText("Te paso: " + what, 30), "Dale, arranco"]));
+          return;
         }
+        if (seat) goTo(seat);
         pmStatus = "working";
         pmTool = "encarga: " + (stripRole(e.description) || role || e.subagent_type);
+        if (isLeadRole(role) && seat) {
+          L.leads[dept] = true;
+          Object.assign(agent(seat), { status: "working", task: what, tool: "lee el encargo", startedAt: e.t - t0, bubble: null });
+          if (fresh) fx.push(() => agent(seat).acts.push({ k: "wait", d: 2.5 }, { k: "say", text: "Entendido, lo reparto", d: 2.2 }));
+        }
         const who = seat ? agent(seat).label : (role || e.subagent_type);
-        feed(e, "PM encarga a " + who + (PROVIDERS[provider] && provider !== "claude" ? " (" + PROVIDERS[provider].name + ")" : "") + ": " + (stripRole(e.description) || "sin descripción") + ".");
+        feed(e, "PM encarga a " + who + (PROVIDERS[provider] && provider !== "claude" ? " (" + PROVIDERS[provider].name + ")" : "") + ": " + what + ".");
+        if (fresh && role === "qa" && /valid/i.test(String(e.mode || "") + " " + String(e.description || ""))) fx.push(qaDebate);
       }
       else if (e.type === "start") {
         const i = pending.findIndex(p => p.type === e.agent_type);
@@ -1072,22 +1483,23 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         byAgent[e.agent] = p;
         if (p.seat) {
           const a = agent(p.seat);
-          Object.assign(a, { status: "working", task: stripRole(p.desc) || "Trabajando", tool: "empieza", startedAt: e.t - t0, bubble: null });
+          Object.assign(a, { status: "working", task: stripRole(p.desc) || a.task || "Trabajando", tool: "empieza", startedAt: e.t - t0, bubble: null });
           if (p.model) a.model = p.model;
+          if (isLeadRole(p.role)) L.leads[p.role.split(".")[0]] = true;
         }
       }
       else if (e.type === "tool") {
         const label = toolLabel(e.tool, e.target);
-        if (!e.agent) {
+        const seat = seatOfEvent(e.agent, e.agent_type);
+        if (seat) agent(seat).tool = label;
+        else if (!e.agent) {
           pmTool = label;
           if (e.tool === "Skill") feed(e, "PM usa la skill " + String(e.target || "").replace(/^office:/, "") + ".");
-        } else {
-          const p = byAgent[e.agent];
-          if (p && p.seat) agent(p.seat).tool = label;
         }
       }
       else if (e.type === "stop") {
-        const p = byAgent[e.agent];
+        const seat = seatOfEvent(e.agent, e.agent_type);
+        const p = byAgent[e.agent] || (seat ? { seat, role: roleFromType(e.agent_type) } : null);
         const n = tok(e.usage);
         L.claudeSub += n;
         if (p && p.seat) {
@@ -1099,7 +1511,55 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
           a.bubbleUntil = e.t + 12;
           if (v === "FALLA") L.fails += 1;
           feed(e, a.label + " terminó: " + a.bubble + (n ? " · " + fmt(n) + " tokens" : "") + ".", bad ? "alert" : v === "APROBACION" ? "warn" : "good");
+          if (p.lead) {
+            // Modo equipos: el resultado se queda en el departamento.
+            if (fresh) fx.push(() => {
+              if (v === "FALLA" && /\.tester$/.test(p.role || "")) {
+                const dev = seatFor(p.role.replace(/tester$/, "developer"));
+                if (dev) { talkTo(p.seat, dev, ["FALLA: mirá esto", "Uh, lo corrijo"]); later(dev, 4.5, "scratch"); }
+                else talkTo(p.seat, p.lead, ["FALLA", "Lo vemos"]);
+              } else {
+                if (!bad) pose(p.seat, "celebrate", 2);
+                talkTo(p.seat, p.lead, [/\.tester$/.test(p.role || "") ? a.bubble + ": todo en verde" : "Listo, terminé", "¡Bien!"]);
+              }
+            });
+          } else {
+            // El PM va a buscar el reporte al departamento que terminó.
+            goTo(p.seat);
+            pmStatus = "working";
+            pmTool = v === "APROBACION" ? "lee el pedido de aprobación" : "busca el reporte de " + room(a.room).name;
+            if (fresh && !bad && v !== "APROBACION") fx.push(() => pose(p.seat, "celebrate", 2));
+          }
         }
+      }
+      else if (e.type === "message") {
+        const text = e.text || "";
+        const toLead = leadByName(e.to);
+        let fromSeat = seatOfEvent(e.from, e.from_type);
+        if (!fromSeat && !toLead) { const act = Object.keys(L.leads); if (act.length === 1) fromSeat = leadSeat(act[0]); }
+        if (fromSeat && isLeadRole(agent(fromSeat).role)) {
+          const la = agent(fromSeat), approval = /aprobaci/i.test(text);
+          Object.assign(la, { status: approval ? "waiting" : "pass", tool: "", bubble: approval ? "pide aprobación" : /report/i.test(text) ? "REPORTE" : "MENSAJE", bubbleUntil: e.t + 12 });
+          goTo(fromSeat);
+          pmStatus = "working";
+          pmTool = approval ? "lee el pedido de aprobación" : "busca el reporte de " + room(la.room).name;
+          feed(e, la.label + " al PM: " + (text || "mensaje") + ".", approval ? "warn" : "good");
+          if (fresh) fx.push(() => la.acts.push({ k: "wait", d: 2 }, { k: "say", text: approval ? "Necesito tu OK" : "Acá está el reporte", d: 2.5 }));
+        } else if (toLead) {
+          const la = agent(toLead);
+          Object.assign(la, { status: "working", tool: "lee el mensaje del PM", bubble: null });
+          goTo(toLead);
+          pmStatus = "working"; pmTool = "habla con " + la.label;
+          feed(e, "PM a " + la.label + ": " + (text || "mensaje") + ".");
+          if (fresh) fx.push(() => la.acts.push({ k: "wait", d: 2.5 }, { k: "say", text: "Recibido", d: 2 }));
+        } else if (text) feed(e, "Mensaje: " + text + ".");
+      }
+      else if (e.type === "teammate_idle") {
+        const seat = leadByName(e.name);
+        if (seat) { const la = agent(seat); if (la.status === "working") { la.status = "idle"; la.tool = ""; } }
+      }
+      else if (e.type === "task") {
+        feed(e, (e.state === "completed" ? "Tarea terminada" : "Tarea nueva") + ": " + (e.subject || "sin título") + (e.name ? " (" + e.name + ")" : "") + ".", e.state === "completed" ? "good" : "");
       }
       else if (e.type === "external") {
         const prov = e.provider, n = e.tokens || 0;
@@ -1119,18 +1579,27 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       }
       else if (e.type === "turn_end") {
         L.pmTokens = tok(e.usage) || L.pmTokens;
-        pmTarget = "ceo"; pmStatus = "waiting"; pmTool = "esperando al CEO";
-        feed(e, "El PM le responde al CEO y espera.");
+        pmTarget = "door"; pmStatus = "waiting"; pmTool = "espera que el CEO lo llame";
+        feed(e, "El PM le responde al CEO y espera afuera.");
       }
-    }
+    });
     state.tokens = { claude: L.pmTokens + L.claudeSub, codex: L.ext.codex, gemini: L.ext.gemini };
     Object.assign(state.pm, { status: pmStatus, tool: pmTool, task: pmTask || "Coordina la oficina", tokens: L.pmTokens });
     if (!agent(state.selected) && state.selected !== "pm") state.selected = "pm";
     else if (state.selected !== "pm" && !agent(state.selected).present) state.selected = "pm";
     setPMTarget(pmTarget);
+    // Quien recibe trabajo deja el café; después, las animaciones de lo nuevo.
+    state.agents.forEach(a => { if (a.status === "working") cancelIdle(a); });
+    fx.forEach(f => f());
     $("ticket").innerHTML = sess
-      ? "<b>" + esc(sess.project || "proyecto") + "</b>" + (sess.ticket ? " · <b>" + esc(sess.ticket) + "</b>" : "") + (sess.branch ? " · " + esc(sess.branch) : "")
+      ? "<b>" + esc(sess.project || "proyecto") + "</b>" + (sess.ticket ? " · <b>" + esc(sess.ticket) + "</b>" : "") + (sess.branch ? " · " + esc(sess.branch) : "") + (teams ? " · modo equipos" : "")
       : "Sin sesión todavía";
+  }
+
+  // Los dos QA debaten cuando el PM pide la validación cruzada.
+  function qaDebate() {
+    const qs = ["qa1", "qa2"].map(agent).filter(a => a.present);
+    if (qs.length >= 2 && !qs.some(a => a.acts.length && !a.idleTrip)) debate("qa1", "qa2", DEBATE_LINES);
   }
 
   function liveTick(dt) {
@@ -1138,12 +1607,16 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     state.t = state.live ? now - state.live.t0 : 0;
     movePM(dt);
     state.agents.forEach(a => { if (a.bubble && now > a.bubbleUntil) { a.bubble = null; if (a.status === "pass") a.status = "idle"; } });
+    animTick(dt);
   }
 
   function setMode(m) {
     mode = m;
     if (m === "live") {
       state.pmTarget = null;
+      state.agents.forEach(clearAnim);
+      state.holds = {}; state.nextIdle = 0;
+      liveAnimFrom = liveEvents.length;
       liveRebuild();
     } else {
       ROOMS.forEach(r => { r.off = false; });
@@ -1311,7 +1784,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     let best = null, bestD = 28;
     const pmD = Math.hypot(state.pm.x - wx, state.pm.y - 22 - wy);
     if (pmD < bestD) { best = "pm"; bestD = pmD; }
-    state.agents.forEach(a => { if (!a.provider || !a.present) return; const s = seatOf(a); const d = Math.hypot(s.x - wx, s.y - 4 - wy); if (d < bestD) { best = a.id; bestD = d; } });
+    state.agents.forEach(a => { if (!a.provider || !a.present) return; const s = a.pos ? { x: a.pos.x, y: a.pos.y - 18 } : seatOf(a); const d = Math.hypot(s.x - wx, s.y - 4 - wy); if (d < bestD) { best = a.id; bestD = d; } });
     if (best) { state.selected = best; renderPanel(true); }
   });
   $("agents").addEventListener("click", e => { const b = e.target.closest(".agent"); if (b) { state.selected = b.dataset.id; renderPanel(true); } });

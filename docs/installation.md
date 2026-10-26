@@ -102,6 +102,10 @@ alias oficina='claude --agent office:pm'
 - **Registro de actividad:** `tail -f .claude/office-activity.log` muestra en vivo cuándo empieza y termina cada agente.
 - **Observer, la oficina en pixel art:** `/office:observer` abre en el navegador una página local donde ves la oficina en vivo. El PM camina entre los departamentos, cada empleado muestra qué está haciendo y con qué proveedor, y abajo están los tokens por agente y por proveedor, los resultados de tester y QA y la actividad. La página queda en `.office/observer/index.html`: la podés dejar abierta en una pestaña y se actualiza sola. No necesita servidor ni Docker y no gasta tokens. Para apagarlo, `"OFFICE_OBSERVER": "off"` en el `env` de `.claude/settings.json`.
 
+### Un líder por departamento (opcional)
+
+Con `bash .claude/office-agents.sh teams on`, cada departamento tiene un líder que reparte el trabajo entre su developer y su tester y le entrega al PM un reporte con las acciones requeridas. Usa los agent teams de Claude Code (experimentales) y gasta más tokens. Se desactiva con `teams off`. Detalle en [Arquitectura: modo equipos](architecture.md#modo-equipos-un-líder-por-departamento).
+
 ### Codex y Gemini en algunos roles (opcional)
 
 Por defecto todos los roles son Claude. Si querés que Codex o Gemini hagan algunos (por ejemplo, Codex como developer de backend o dos QA que se validan entre ellos), instalá su CLI, iniciá sesión y corré `/office:office-agents`. Todo el detalle está en la guía [Claude, Codex o Gemini en cada rol](providers.md).
