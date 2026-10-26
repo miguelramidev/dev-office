@@ -15,14 +15,15 @@ El observer es una página que se abre desde el disco, sin servidor ni instalaci
    bash <carpeta de esta skill>/open-observer.sh
    ```
 
-   Copia la página al proyecto (`.office/observer/index.html`) si no está o es de una versión anterior, y la abre en el navegador predeterminado.
+   Copia la página al proyecto (`.office/observer/index.html`) si no está o es de una versión anterior, y la abre en el navegador predeterminado. En WSL la abre con el navegador de Windows e imprime también el link para Windows (`En Windows: file://wsl.localhost/...`).
 
 2. Decile al CEO en pocas líneas:
-   - Dónde quedó la página (la ruta que imprime el script), por si quiere abrirla él o dejarla fija en una pestaña.
+   - Dónde quedó la página, por si quiere abrirla él o dejarla fija en una pestaña. En WSL pasale el link de la línea `En Windows:`, no la ruta `/home/...`: el navegador de Windows no puede abrir esa.
+   - Que no hace falta correr esto en cada sesión: la pestaña puede quedar abierta y sigue sola. Al empezar una sesión nueva, la oficina empieza un registro nuevo y la página lo toma. Solo después de actualizar la oficina conviene recargar la pestaña (F5) para ver la versión nueva.
    - Que se actualiza sola mientras trabaja la oficina. Si todavía no hubo actividad en esta sesión, muestra una demo.
    - Que puede tocar a cualquier empleado para ver su ficha: proveedor, modelo, tarea, qué está haciendo y tokens.
    - Que los tokens de Claude son exactos (salen de las transcripciones) y los de Codex y Gemini son los que informa cada CLI, si los informa.
 
-Si el script no puede abrir el navegador (por ejemplo, en un servidor sin escritorio), pasale la ruta para que la abra él.
+Si el script no puede abrir el navegador (por ejemplo, en un servidor sin escritorio), pasale la ruta para que la abra él (en WSL, el link de `En Windows:`).
 
 Para apagar el observer en un proyecto: `"OFFICE_OBSERVER": "off"` en el `env` de `.claude/settings.json`.

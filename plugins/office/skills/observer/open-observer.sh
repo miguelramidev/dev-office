@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Abre el observer de dev-office (.office/observer/index.html) en el navegador.
 # Si la página todavía no está en el proyecto, o es de una versión anterior, la copia
-# desde el plugin. Funciona en Windows (Git Bash), macOS y Linux.
+# desde el plugin. Funciona en Windows (Git Bash), WSL, macOS y Linux.
 #
 # Uso: bash open-observer.sh [--no-open]
 #   --no-open  solo copia la página y dice dónde quedó.
@@ -26,6 +26,29 @@ cmp -s "$SRC" "$PAGE" || cp "$SRC" "$PAGE" || exit 1
 [ -f "$DIR/events.js" ] || : >"$DIR/events.js"
 
 echo "Observer: $PAGE"
+
+# En WSL el navegador es el de Windows: no puede abrir /home/..., hay que pasarle la ruta
+# de Windows (\\wsl.localhost\<distro>\...).
+is_wsl() { [ -n "${WSL_DISTRO_NAME:-}" ] || grep -qi microsoft /proc/version 2>/dev/null; }
+if is_wsl; then
+  WIN_PAGE=$(wslpath -w "$PAGE" 2>/dev/null | tr -d '\r')
+  if [ -n "$WIN_PAGE" ]; then
+    case "$WIN_PAGE" in
+      '\\'*) URL="file:${WIN_PAGE//\\//}" ;;   # \\wsl.localhost\Ubuntu\... -> file://wsl.localhost/Ubuntu/...
+      *) URL="file:///${WIN_PAGE//\\//}" ;;     # C:\... -> file:///C:/...
+    esac
+    echo "En Windows: $URL"
+  fi
+  [ "$NO_OPEN" -eq 1 ] && exit 0
+  if command -v wslview >/dev/null 2>&1; then
+    wslview "$PAGE" >/dev/null 2>&1 &
+  elif [ -n "$WIN_PAGE" ] && command -v explorer.exe >/dev/null 2>&1; then
+    explorer.exe "$WIN_PAGE" >/dev/null 2>&1 # explorer.exe sale con 1 aunque abra bien
+  else
+    echo "Abrilo en el navegador de Windows: ${URL:-$PAGE}"
+  fi
+  exit 0
+fi
 [ "$NO_OPEN" -eq 1 ] && exit 0
 
 case "${OSTYPE:-}" in

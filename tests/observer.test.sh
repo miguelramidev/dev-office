@@ -153,6 +153,20 @@ quiet "TaskCompleted"
 expect '.type == "task" and .state == "completed" and .name == null' "tarea terminada"
 jq -e '.hooks | has("TeammateIdle") and has("TaskCreated") and has("TaskCompleted")' "$REPO/plugins/office/hooks/hooks.json" >/dev/null && ok "hooks.json escucha los eventos de equipo" || fail "hooks.json escucha los eventos de equipo"
 
+# --- open-observer.sh en WSL ---------------------------------------------------------
+OPEN="$REPO/plugins/office/skills/observer/open-observer.sh"
+FAKE="$WORK/fakebin"; mkdir -p "$FAKE"
+printf '#!/usr/bin/env bash\necho "\\\\\\\\wsl.localhost\\\\Ubuntu${2//\\//\\\\}"\n' >"$FAKE/wslpath"
+printf '#!/usr/bin/env bash\necho "$1" >"%s/explorer.txt"\nexit 1\n' "$WORK" >"$FAKE/explorer.exe"
+chmod +x "$FAKE/wslpath" "$FAKE/explorer.exe"
+OUT=$(cd "$PROJ" && WSL_DISTRO_NAME=Ubuntu PATH="$FAKE:$PATH" bash "$OPEN" 2>&1)
+RC=$?
+echo "$OUT" | grep -q "En Windows: file://wsl.localhost/Ubuntu/.*/.office/observer/index.html" && ok "WSL: da el link para el navegador de Windows" || { fail "WSL: da el link para el navegador de Windows"; echo "$OUT"; }
+[ "$RC" -eq 0 ] && grep -q '^\\\\wsl.localhost\\Ubuntu\\.*\\index.html$' "$WORK/explorer.txt" && ok "WSL: abre la página con la ruta de Windows" || fail "WSL: abre la página con la ruta de Windows"
+printf '#!/usr/bin/env bash\necho "C:\\\\dev\\\\app\\\\.office\\\\observer\\\\index.html"\n' >"$FAKE/wslpath"
+OUT=$(cd "$PROJ" && WSL_DISTRO_NAME=Ubuntu PATH="$FAKE:$PATH" bash "$OPEN" --no-open 2>&1)
+echo "$OUT" | grep -q "En Windows: file:///C:/dev/app/.office/observer/index.html" && ok "WSL: proyecto en el disco de Windows" || { fail "WSL: proyecto en el disco de Windows"; echo "$OUT"; }
+
 # --- Todo el archivo es JavaScript válido para la página -------------------------------
 if command -v node >/dev/null 2>&1; then
   if node -e "const fs=require('fs');let n=0;global.OFFICE_EVENT=()=>n++;eval(fs.readFileSync(process.argv[1],'utf8'));if(!n)process.exit(1)" "$EVENTS"; then ok "events.js se puede cargar desde la página"; else fail "events.js se puede cargar desde la página"; fi
