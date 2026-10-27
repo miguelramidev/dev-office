@@ -8,6 +8,19 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.23.0] - 2026-10-27
+
+### Agregado
+
+- **Observer: avisos al CEO** (`office` 0.21.0). Cuando el PM responde, Claude Code pide un permiso o un agente parece trabado, la pestaña en segundo plano hace parpadear su título y, con el botón "Avisos" activado, muestra una notificación del sistema.
+- **Observer: agentes trabados.** Un agente que trabaja y pasa 8 minutos sin usar herramientas aparece con un globo de "¿trabado?", con los minutos en su ficha y un aviso en la actividad con lo último que hizo.
+- **Observer: contra la sesión anterior.** Lee `events.prev.js` y muestra la diferencia de tokens, fallas del tester y tareas con la sesión anterior.
+- Pruebas de estos casos en `tests/observer.test.sh`.
+
+### Corregido
+
+- Observer: cuando Claude Code retomaba una sesión o compactaba la conversación, la oficina volvía a cero (tokens, actividad y fichas). Ahora la sesión empieza en su último inicio o `/clear`, y retomar o compactar solo actualiza sus datos.
+
 ## [0.22.0] - 2026-10-27
 
 ### Agregado
