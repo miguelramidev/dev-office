@@ -175,6 +175,17 @@ quiet "TaskCompleted"
 expect '.type == "task" and .state == "completed" and .name == null' "tarea terminada"
 jq -e '.hooks | has("TeammateIdle") and has("TaskCreated") and has("TaskCompleted")' "$REPO/plugins/office/hooks/hooks.json" >/dev/null && ok "hooks.json escucha los eventos de equipo" || fail "hooks.json escucha los eventos de equipo"
 
+# --- PostToolUse: el PR que abre gh, para el tablero del pasillo ------------------------
+hook "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_input:{command:"gh pr create --base main --title x"}, tool_response:{stdout:"https://github.com/acme/app/pull/42\n", stderr:""}}')"
+quiet "PostToolUse"
+expect '.type == "pr" and .number == 42 and .url == "https://github.com/acme/app/pull/42" and .state == "open"' "PR: gh pr create anota el link"
+hook "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_input:{command:"gh pr view 42"}, tool_response:{stdout:"state:\tMERGED\nurl:\thttps://github.com/acme/app/pull/42", stderr:""}}')"
+expect '.type == "pr" and .state == "merged"' "PR: gh pr view anota si se mergeó"
+LINES=$(grep -c '^OFFICE_EVENT' "$EVENTS")
+hook "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_input:{command:"echo https://github.com/acme/app/pull/9"}, tool_response:{stdout:"https://github.com/acme/app/pull/9"}}')"
+[ "$(grep -c '^OFFICE_EVENT' "$EVENTS")" -eq "$LINES" ] && ok "PR: otros comandos no se anotan" || fail "PR: otros comandos no se anotan"
+jq -e '.hooks.PostToolUse | any(.matcher == "Bash")' "$REPO/plugins/office/hooks/hooks.json" >/dev/null && ok "hooks.json escucha PostToolUse de Bash" || fail "hooks.json escucha PostToolUse de Bash"
+
 # --- open-observer.sh en WSL ---------------------------------------------------------
 OPEN="$REPO/plugins/office/skills/observer/open-observer.sh"
 FAKE="$WORK/fakebin"; mkdir -p "$FAKE"
@@ -284,6 +295,15 @@ say(st.tokens.claude === 25000 && st.live.fails === 1 && st.feed.some(f => /comp
 say(dev.stuck >= 8 && st.feed.some(f => f.stuckKey && /sin novedades/.test(f.text)), "en vivo: un agente que trabaja 8 minutos sin novedades se marca como trabado");
 const ss = T.sessionStats([{ type: "stop", t: 1, verdict: "FALLA", usage: u }, { type: "external", t: 2, tokens: 500 }, { type: "turn_end", t: 3, usage: u }]);
 say(ss.tokens === 50500 && ss.fails === 1 && ss.tasks === 1, "en vivo: el resumen para comparar con la sesión anterior");
+T.live([
+  { type: "session", t: now - 900, source: "startup", ticket: "PROJ-123", branch: "feature/PROJ-123-x" },
+  { type: "delegate", t: now - 800, subagent_type: "dept-backend:tester", description: "[backend-tester] Tests" },
+  { type: "start", t: now - 799, agent: "T1", agent_type: "dept-backend:tester" },
+  { type: "stop", t: now - 700, agent: "T1", agent_type: "dept-backend:tester", verdict: "PASA", usage: u },
+  { type: "pr", t: now - 100, url: "https://github.com/acme/app/pull/42", number: 42, state: "open" },
+]);
+const bd = T.state.live.board;
+say(bd.ticket === "PROJ-123" && bd.tests === "PASA" && bd.pr && bd.pr.number === 42 && T.state.feed.some(f => /Se abrió el PR #42/.test(f.text)), "tablero: ticket, rama, resultado del tester y PR");
 NODE
 )
   echo "$OUT"

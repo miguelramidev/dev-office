@@ -2,8 +2,9 @@
 # Hook del observer de dev-office: anota lo que pasa en la oficina para la página
 # .office/observer/index.html (la oficina en pixel art).
 #
-# Escucha SessionStart, UserPromptSubmit, PreToolUse, SubagentStart, SubagentStop,
-# Notification y Stop, y en el modo equipos TeammateIdle, TaskCreated y TaskCompleted.
+# Escucha SessionStart, UserPromptSubmit, PreToolUse, PostToolUse (solo el PR que abre
+# gh), SubagentStart, SubagentStop, Notification y Stop, y en el modo equipos TeammateIdle,
+# TaskCreated y TaskCompleted.
 # Cada evento es una línea "OFFICE_EVENT({...});" en .office/observer/events.js, que la
 # página lee sin servidor. Los tokens salen de las transcripciones que Claude Code ya
 # guarda en el disco. Para leerlos en grande en la página, guarda también el texto completo
@@ -127,6 +128,17 @@ case "$EVENT" in
                       elif $in.description then $in.description
                       else "" end) | tostring | gsub("[\\r\\n]+"; " ") | .[0:80]) }' | tr -d '\r')"
     fi
+    ;;
+
+  PostToolUse)
+    # El PR de la oficina (gh pr create o gh pr view): su link, para el tablero del pasillo.
+    CMD=$(json_get '.tool_input.command // empty')
+    case "$CMD" in *"gh pr create"* | *"gh pr view"*) ;; *) exit 0 ;; esac
+    emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" '
+      (.tool_response | if type == "object" then ((.stdout // "") + " " + (.stderr // "")) else tostring end) as $out
+      | ([$out | scan("https://[^\\s\"]+/pull/[0-9]+")] | last) as $url
+      | if $url then { type: "pr", t: $t, url: $url, number: ($url | capture("/pull/(?<n>[0-9]+)$").n | tonumber),
+          state: (if ($out | test("MERGED")) then "merged" elif ($out | test("CLOSED")) then "closed" else "open" end) } else empty end' | tr -d '\r')"
     ;;
 
   SubagentStart)
