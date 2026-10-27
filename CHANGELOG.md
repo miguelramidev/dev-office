@@ -8,6 +8,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.20.0] - 2026-10-27
+
+### Agregado
+
+- **Observer: leer en grande** (`office` 0.18.0). En la ficha de cada empleado están su encargo y su última respuesta, y debajo, los textos anteriores (encargos, respuestas y mensajes con el PM o el líder). Al tocarlos, o al tocar un ítem de la actividad, el texto se abre en grande en la página, con títulos, listas, tablas y código. Funciona en el teléfono, se cierra con Esc o tocando afuera, y la demo trae textos de ejemplo.
+- El hook `observer.sh` guarda el texto completo, hasta 4000 caracteres, de cada encargo (`prompt`), de la respuesta de cada agente (`text` en `stop`), de los mensajes entre el PM y los líderes (`body`) y de la respuesta del PM al CEO (`text` en `turn_end`; si el evento no la trae, la saca de la transcripción, sin los subagentes). Lo que sobra se corta y se marca con `[…]`. Sigue sin guardar lo que escribe el CEO ni el contenido de los archivos.
+- Pruebas de los textos completos en `tests/observer.test.sh`.
+
+### Cambiado
+
+- Observer: el panel solo se vuelve a pintar cuando cambia, para no reemplazar un botón mientras se lo toca.
+
 ## [0.19.0] - 2026-10-27
 
 ### Agregado

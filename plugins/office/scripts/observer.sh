@@ -6,7 +6,9 @@
 # Notification y Stop, y en el modo equipos TeammateIdle, TaskCreated y TaskCompleted.
 # Cada evento es una línea "OFFICE_EVENT({...});" en .office/observer/events.js, que la
 # página lee sin servidor. Los tokens salen de las transcripciones que Claude Code ya
-# guarda en el disco.
+# guarda en el disco. Para leerlos en grande en la página, guarda también el texto completo
+# (hasta 4000 caracteres) de cada encargo, de cada respuesta y de los mensajes entre el PM y
+# los líderes. Nunca guarda lo que escribe el CEO ni el contenido de los archivos.
 #
 # Nunca bloquea, nunca imprime nada (en algunos eventos, lo que imprime un hook le llega
 # al modelo) y no llama a ningún modelo: no gasta tokens.
@@ -31,6 +33,9 @@ NOW=$(date +%s)
 AGENT_ID=$(json_get '.agent_id // empty')
 
 emit() { [ -n "$1" ] && printf 'OFFICE_EVENT(%s);\n' "$1" >>"$EVENTS"; }
+
+# Tope del texto completo que se guarda por evento (encargos, respuestas y mensajes).
+CLIP='def clip: tostring | if length > 4000 then .[0:4000] + "\n[…]" else . end;'
 
 # Tokens de una transcripción: entrada, salida, escritura y lectura de caché.
 # Cada mensaje puede aparecer en varias líneas con el mismo id: se cuenta una vez.
@@ -93,20 +98,22 @@ case "$EVENT" in
       # Alguien encarga trabajo: el PM, o en el modo equipos un líder de departamento
       # ("from" es quién encarga; "name" es el nombre del compañero de equipo, si lo tiene).
       # Con el puente, el encargo empieza con Rol, Proveedor y Modelo.
-      emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" '
+      emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" "$CLIP"'
         def field($k): ([(.tool_input.prompt // "") | capture("(^|\\n)" + $k + ":[ \\t]*(?<v>[^\\n\\r]+)")] | first | .v // null);
         { type: "delegate", t: $t, from: (.agent_id // null), from_type: (.agent_type // null),
           name: (.tool_input.name // null),
           subagent_type: (.tool_input.subagent_type // "general-purpose"),
           description: ((.tool_input.description // "")[0:140]),
+          prompt: ((.tool_input.prompt // "") | clip),
           model: (.tool_input.model // null),
           role: field("Rol"), provider: field("Proveedor"), xmodel: field("Modelo"), mode: field("Modo") }' | tr -d '\r')"
     elif [ "$TOOL" = "SendMessage" ]; then
       # Mensajes entre el PM y los líderes (modo equipos).
-      emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" '
+      emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" "$CLIP"'
         .tool_input as $in
         | { type: "message", t: $t, from: (.agent_id // null), from_type: (.agent_type // null), to: (($in.to // "") | tostring),
-            text: (($in.summary // (if ($in.message | type) == "string" then $in.message else "" end) // "") | tostring | gsub("[\\r\\n]+"; " ") | .[0:60]) }' | tr -d '\r')"
+            text: (($in.summary // (if ($in.message | type) == "string" then $in.message else "" end) // "") | tostring | gsub("[\\r\\n]+"; " ") | .[0:60]),
+            body: ((if ($in.message | type) == "string" then $in.message elif $in.message == null then "" else ($in.message | tojson) end) | clip) }' | tr -d '\r')"
     else
       emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" '
         .tool_input as $in
@@ -128,7 +135,7 @@ case "$EVENT" in
 
   SubagentStop)
     USAGE=$(usage_of "$(json_get '.agent_transcript_path // empty')" 0)
-    emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" --argjson usage "${USAGE:-null}" '
+    emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" --argjson usage "${USAGE:-null}" "$CLIP"'
       (.last_assistant_message // "") as $m
       | ($m | split("\n") | map(select(test("\\S"))) | first // "" | ascii_upcase) as $f
       | { type: "stop", t: $t, agent: .agent_id, agent_type: (.agent_type // ""), usage: $usage,
@@ -142,7 +149,8 @@ case "$EVENT" in
                     elif ($f | test("^\\W*PASA")) then "PASA"
                     elif ($f | test("^\\W*VALIDACI")) then "VALIDACION"
                     elif ($m | test("necesito aprobaci"; "i")) then "APROBACION"
-                    else "LISTO" end) }' | tr -d '\r')"
+                    else "LISTO" end),
+          text: ($m | clip) }' | tr -d '\r')"
     ;;
 
   TeammateIdle)
@@ -161,8 +169,21 @@ case "$EVENT" in
 
   Stop)
     if [ -z "$AGENT_ID" ]; then
-      USAGE=$(usage_of "$(json_get '.transcript_path // empty')" 1)
-      emit "{\"type\":\"turn_end\",\"t\":$NOW,\"usage\":${USAGE:-null}}"
+      TRANSCRIPT=$(json_get '.transcript_path // empty')
+      USAGE=$(usage_of "$TRANSCRIPT" 1)
+      # La respuesta del PM al CEO: la trae el evento o, si no, sale de la transcripción.
+      TEXT=$(printf '%s' "$INPUT" | jq -c '.last_assistant_message // empty | strings' | tr -d '\r')
+      TF=$(norm_path "$TRANSCRIPT")
+      if [ -z "$TEXT" ] && [ -n "$TRANSCRIPT" ] && [ -f "$TF" ]; then
+        TEXT=$(jq -c -R -s '
+          split("\n") | map(fromjson? // empty)
+          | map(select(.type == "assistant" and .isSidechain != true)
+                | [(.message.content // []) | if type == "string" then . else (map(select(.type == "text") | .text) | join("\n")) end] | first
+                | select(. != null and test("\\S")))
+          | last // empty' "$TF" | tr -d '\r')
+      fi
+      emit "$(jq -cn --argjson t "$NOW" --argjson usage "${USAGE:-null}" --argjson text "${TEXT:-\"\"}" "$CLIP"'
+        {type: "turn_end", t: $t, usage: $usage, text: ($text | clip)}' | tr -d '\r')"
     fi
     ;;
 esac

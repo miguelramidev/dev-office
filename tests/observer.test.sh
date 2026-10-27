@@ -68,6 +68,10 @@ quiet "PreToolUse del PM"
 expect '.type == "delegate" and .subagent_type == "office:external" and .role == "backend.developer" and .provider == "codex" and .xmodel == "gpt-x" and .mode == "normal"' "encargo al puente: rol, proveedor, modelo y modo"
 hook "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"Agent", tool_input:{subagent_type:"dept-backend:tester", description:"[backend-tester] Tests", prompt:"Objetivo: probar"}}')"
 expect '.type == "delegate" and .subagent_type == "dept-backend:tester" and .role == null and .provider == null' "encargo a un agente de Claude"
+expect '.prompt == "Objetivo: probar"' "encargo: guarda el texto completo"
+LONG=$(printf 'x%.0s' $(seq 1 4100))
+hook "$(jq -cn --arg p "Objetivo: algo largo $LONG" '{hook_event_name:"PreToolUse", tool_name:"Agent", tool_input:{subagent_type:"dept-backend:developer", description:"[backend-developer] Largo", prompt:$p}}')"
+expect '(.prompt | length) == 4004 and (.prompt | endswith("x\n[…]"))' "encargo: recorta en 4000 caracteres y lo marca"
 hook "$(jq -cn '{hook_event_name:"PreToolUse", agent_id:"a1", tool_name:"Edit", tool_input:{file_path:"/p/src/orders/routes.ts"}}')"
 expect '.type == "tool" and .agent == "a1" and .tool == "Edit" and .target == "routes.ts"' "herramienta de un subagente: solo el nombre del archivo"
 hook "$(jq -cn '{hook_event_name:"PreToolUse", agent_id:"a1", tool_name:"Edit", tool_input:{file_path:"C:\\p\\src\\app.ts"}}')"
@@ -105,6 +109,7 @@ verdict $'**PROVEEDOR NO DISPONIBLE**\ncodex sin sesión'; expect '.verdict == "
 verdict 'REGLAS ROTAS'; expect '.verdict == "REGLAS ROTAS"' "veredicto del puente: reglas rotas"
 verdict $'Diseño listo.\n\nNecesito aprobación: el diseño completo.'; expect '.verdict == "APROBACION"' "pide aprobación"
 verdict 'Hecho: endpoints listos.'; expect '.verdict == "LISTO"' "sin veredicto: listo"
+verdict $'PASA\n\n## Resumen\n| a | b |'; expect '.text == "PASA\n\n## Resumen\n| a | b |"' "respuesta del agente: guarda el texto completo"
 hook '{"hook_event_name":"SubagentStop","agent_id":"a2","agent_type":"x","agent_transcript_path":"/no/existe"}'
 expect '.usage == null and .verdict == "LISTO"' "transcripción que no existe: sin tokens"
 
@@ -117,6 +122,17 @@ M="$WORK/main.jsonl"
 hook "$(jq -cn --arg t "$M" '{hook_event_name:"Stop", transcript_path:$t, last_assistant_message:"listo"}')"
 quiet "Stop"
 expect '.type == "turn_end" and .usage == {"i":10,"o":20,"cw":300,"cr":0}' "fin del turno: tokens del PM sin los de subagentes"
+expect '.text == "listo"' "fin del turno: guarda la respuesta del PM al CEO"
+{
+  echo '{"type":"assistant","message":{"id":"p2","content":[{"type":"text","text":"Primera parte"}]}}'
+  echo '{"type":"assistant","isSidechain":true,"message":{"id":"x2","content":[{"type":"text","text":"de un subagente"}]}}'
+  echo '{"type":"assistant","message":{"id":"p3","content":[{"type":"text","text":"## Informe\nTodo listo"}]}}'
+  echo '{"type":"assistant","message":{"id":"p4","content":[{"type":"tool_use","name":"Read"}]}}'
+} >>"$M"
+hook "$(jq -cn --arg t "$M" '{hook_event_name:"Stop", transcript_path:$t}')"
+expect '.text == "## Informe\nTodo listo"' "fin del turno sin el texto en el evento: lo saca de la transcripción, sin subagentes"
+hook '{"hook_event_name":"Stop"}'
+expect '.type == "turn_end" and .text == ""' "fin del turno sin texto ni transcripción"
 LINES=$(grep -c '^OFFICE_EVENT' "$EVENTS")
 hook "$(jq -cn --arg t "$M" '{hook_event_name:"Stop", agent_id:"a1", transcript_path:$t}')"
 [ "$(grep -c '^OFFICE_EVENT' "$EVENTS")" -eq "$LINES" ] && ok "Stop de un subagente: no lo anota como turno del PM" || fail "Stop de un subagente: no lo anota como turno del PM"
@@ -141,10 +157,14 @@ expect '.type == "delegate" and .from == "L1" and .from_type == "backend-lead" a
 hook "$(jq -cn '{hook_event_name:"PreToolUse", agent_id:"L1", agent_type:"backend-lead", tool_name:"SendMessage", tool_input:{to:"team-lead", summary:"Reporte listo", message:"Reporte en .office/reports/x.md"}}')"
 quiet "SendMessage"
 expect '.type == "message" and .from == "L1" and .from_type == "backend-lead" and .to == "team-lead" and .text == "Reporte listo"' "mensaje del líder al PM, con su tipo de agente"
+expect '.body == "Reporte en .office/reports/x.md"' "mensaje: guarda el texto completo"
 hook "$(jq -cn '{hook_event_name:"PreToolUse", agent_id:"L1", agent_type:"backend-lead", tool_name:"Read", tool_input:{file_path:"/x/src/orders.ts"}}')"
 expect '.type == "tool" and .agent_type == "backend-lead" and .target == "orders.ts"' "herramienta del líder, con su tipo de agente"
 hook "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"SendMessage", tool_input:{to:"backend-lead", message:"Aprobado\nseguí con la migración y avisame cuando termines con todo lo que falta"}}')"
 expect '.type == "message" and .from == null and .to == "backend-lead" and (.text | length) <= 60 and (.text | test("\n") | not)' "mensaje del PM al líder, en una línea"
+expect '(.body | startswith("Aprobado\nseguí"))' "mensaje del PM al líder: el texto completo, con sus líneas"
+hook "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"SendMessage", tool_input:{to:"backend-lead", message:{type:"shutdown_request"}}}')"
+expect '.body == "{\"type\":\"shutdown_request\"}"' "mensaje con estructura: lo guarda como JSON"
 hook '{"hook_event_name":"TeammateIdle","teammate_name":"backend-lead","team_name":"t"}'
 quiet "TeammateIdle"
 expect '.type == "teammate_idle" and .name == "backend-lead"' "el líder queda libre"
