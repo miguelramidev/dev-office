@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# token-report-version: 1
+# token-report-version: 2
 # Resumen de tokens de la sesión de la oficina, para el informe del PM al CEO.
 #
 # Lee el registro del observer (.office/observer/events.js), que tiene los tokens exactos
@@ -32,7 +32,9 @@ sed -n 's/^OFFICE_EVENT(\(.*\));[[:space:]]*$/\1/p' "$EVENTS" | tr -d '\r' | jq 
   def num: if . >= 1000000 then ((. / 100000 | floor) / 10 | tostring) + "M"
            elif . >= 1000 then ((. / 100 | floor) / 10 | tostring) + "k"
            else tostring end;
+  # Claude Code identifica al líder como "<área>-lead" (en agent_type y from_type), no como "dept-<área>:lead".
   def role_of(t): if t == "office:qa" then "qa" elif t == "office:pm" then "pm"
+                  elif ((t // "") | test("^[a-z]+-lead$")) then (t | sub("-lead$"; ".lead"))
                   else ((t // "") | capture("^dept-(?<d>[a-z]+):(?<r>[a-z-]+)$") | .d + "." + .r) // (t // "?") end;
   def rname(r):
     if r == "qa" then "QA" elif r == "pm" then "Asesor del PM"
@@ -54,7 +56,8 @@ sed -n 's/^OFFICE_EVENT(\(.*\));[[:space:]]*$/\1/p' "$EVENTS" | tr -d '\r' | jq 
                     provider: (($e.provider // "claude") | ascii_downcase), model: ($e.xmodel // $e.model)}]
       | if (($e.name // "") | test("-lead$")) or ((role_of($e.subagent_type) // "") | test("\\.lead$")) then .leads = true else . end
     elif $e.type == "start" then
-      (.pending | map(.type) | index($e.agent_type)) as $i
+      (role_of($e.agent_type)) as $r
+      | (.pending | map(.type == $e.agent_type or (.role | test("\\.lead$")) and .role == $r) | index(true)) as $i
       | if $i == null then .by[$e.agent] = {type: $e.agent_type, desc: "", role: role_of($e.agent_type), provider: "claude"}
         else .by[$e.agent] = .pending[$i] | .pending |= (.[:$i] + .[$i + 1:]) end
     elif $e.type == "stop" then

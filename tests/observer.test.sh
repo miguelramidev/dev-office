@@ -136,11 +136,13 @@ expect '.teams == false' "sesión: el archivo personal manda en el modo equipos"
 echo '{"roles": {"backend.developer": ["claude"]}}' >"$PROJ/.claude/office-agents.local.json"
 hook "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"Agent", tool_input:{name:"backend-lead", subagent_type:"dept-backend:lead", description:"[backend-lead] Pedidos", prompt:"Objetivo: pedidos"}}')"
 expect '.type == "delegate" and .name == "backend-lead" and .subagent_type == "dept-backend:lead" and .from == null' "el PM le encarga al líder"
-hook "$(jq -cn '{hook_event_name:"PreToolUse", agent_id:"L1", agent_type:"dept-backend:lead", tool_name:"Agent", tool_input:{subagent_type:"dept-backend:developer", description:"[backend-developer] Endpoints", prompt:"Objetivo: endpoints"}}')"
-expect '.type == "delegate" and .from == "L1" and .from_type == "dept-backend:lead" and .name == null and .subagent_type == "dept-backend:developer"' "el líder le encarga a su developer"
-hook "$(jq -cn '{hook_event_name:"PreToolUse", agent_id:"L1", tool_name:"SendMessage", tool_input:{to:"team-lead", summary:"Reporte listo", message:"Reporte en .office/reports/x.md"}}')"
+hook "$(jq -cn '{hook_event_name:"PreToolUse", agent_id:"L1", agent_type:"backend-lead", tool_name:"Agent", tool_input:{subagent_type:"dept-backend:developer", description:"[backend-developer] Endpoints", prompt:"Objetivo: endpoints"}}')"
+expect '.type == "delegate" and .from == "L1" and .from_type == "backend-lead" and .name == null and .subagent_type == "dept-backend:developer"' "el líder le encarga a su developer"
+hook "$(jq -cn '{hook_event_name:"PreToolUse", agent_id:"L1", agent_type:"backend-lead", tool_name:"SendMessage", tool_input:{to:"team-lead", summary:"Reporte listo", message:"Reporte en .office/reports/x.md"}}')"
 quiet "SendMessage"
-expect '.type == "message" and .from == "L1" and .to == "team-lead" and .text == "Reporte listo"' "mensaje del líder al PM"
+expect '.type == "message" and .from == "L1" and .from_type == "backend-lead" and .to == "team-lead" and .text == "Reporte listo"' "mensaje del líder al PM, con su tipo de agente"
+hook "$(jq -cn '{hook_event_name:"PreToolUse", agent_id:"L1", agent_type:"backend-lead", tool_name:"Read", tool_input:{file_path:"/x/src/orders.ts"}}')"
+expect '.type == "tool" and .agent_type == "backend-lead" and .target == "orders.ts"' "herramienta del líder, con su tipo de agente"
 hook "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"SendMessage", tool_input:{to:"backend-lead", message:"Aprobado\nseguí con la migración y avisame cuando termines con todo lo que falta"}}')"
 expect '.type == "message" and .from == null and .to == "backend-lead" and (.text | length) <= 60 and (.text | test("\n") | not)' "mensaje del PM al líder, en una línea"
 hook '{"hook_event_name":"TeammateIdle","teammate_name":"backend-lead","team_name":"t"}'
@@ -189,6 +191,18 @@ echo "$OUT" | grep -q '| Developer de backend | Codex (gpt-x) | Endpoints / pedi
 echo "$OUT" | grep -q '| Tester de backend | Claude | Tests | FALLA | 26.3k |' && ok "resumen: tarea de Claude, sin lecturas de caché" || fail "resumen: tarea de Claude, sin lecturas de caché"
 echo "$OUT" | grep -q '| QA | Claude | — | APROBADO | sin datos |' && ok "resumen: sin transcripción dice sin datos" || fail "resumen: sin transcripción dice sin datos"
 echo "$OUT" | grep -q 'Claude 241.8k (PM 197k, agentes y puente 44.8k) · Codex 120.5k' && ok "resumen: total por proveedor con el PM aparte" || { fail "resumen: total por proveedor"; echo "$OUT" | tail -4; }
+# Modo equipos: Claude Code identifica al líder como "<área>-lead", no como "dept-<área>:lead".
+cat >"$TP/.office/observer/events.js" <<'EVS'
+OFFICE_EVENT({"type":"delegate","t":1,"name":"backend-lead","subagent_type":"dept-backend:lead","description":"[backend-lead] Pedidos"});
+OFFICE_EVENT({"type":"delegate","t":2,"name":"frontend-lead","subagent_type":"dept-frontend:lead","description":"[frontend-lead] Pantalla"});
+OFFICE_EVENT({"type":"start","t":3,"agent":"L2","agent_type":"frontend-lead"});
+OFFICE_EVENT({"type":"start","t":4,"agent":"L1","agent_type":"backend-lead"});
+OFFICE_EVENT({"type":"stop","t":5,"agent":"L1","agent_type":"backend-lead","usage":{"i":100,"o":900,"cw":9000},"verdict":"LISTO"});
+OFFICE_EVENT({"type":"stop","t":6,"agent":"L2","agent_type":"frontend-lead","usage":{"i":100,"o":400,"cw":4500},"verdict":"LISTO"});
+EVS
+OUT=$(cd "$TP" && bash "$REPORT")
+echo "$OUT" | grep -q '| Líder de backend | Claude | Pedidos | LISTO | 10k |' && ok "resumen: reconoce al líder como <área>-lead" || { fail "resumen: reconoce al líder como <área>-lead"; echo "$OUT"; }
+echo "$OUT" | grep -q '| Líder de frontend | Claude | Pantalla | LISTO | 5k |' && ok "resumen: con varios líderes, cada tarea es de su líder" || { fail "resumen: con varios líderes"; echo "$OUT"; }
 OUT=$(mkdir -p "$WORK/sinnada" && cd "$WORK/sinnada" && CLAUDE_PROJECT_DIR="$WORK/sinnada" bash "$REPORT")
 echo "$OUT" | grep -q "No hay datos de tokens" && ok "resumen: sin registro avisa" || fail "resumen: sin registro avisa"
 
