@@ -21,7 +21,7 @@ El observer es una página que se abre desde el disco, sin servidor ni instalaci
    - Dónde quedó la página, por si quiere abrirla él o dejarla fija en una pestaña. En WSL pasale el link de la línea `En Windows:`, no la ruta `/home/...`: el navegador de Windows no puede abrir esa.
    - Que no hace falta correr esto en cada sesión: la pestaña puede quedar abierta y sigue sola. Al empezar una sesión nueva, la oficina empieza un registro nuevo y la página lo toma. Solo después de actualizar la oficina conviene recargar la pestaña (F5) para ver la versión nueva.
    - Que se actualiza sola mientras trabaja la oficina. Si todavía no hubo actividad en esta sesión, muestra una demo.
-   - Que puede tocar a cualquier empleado para ver su ficha: proveedor, modelo, tarea, qué está haciendo y tokens.
+   - Que puede tocar a cualquier empleado para ver su ficha: proveedor, modelo, tarea, qué está haciendo y tokens. En la ficha, y en la actividad, puede tocar el encargo o la respuesta de cada uno para leerlos en grande.
    - Que los tokens de Claude son exactos (salen de las transcripciones) y los de Codex y Gemini son los que informa cada CLI, si los informa.
 
 Si el script no puede abrir el navegador (por ejemplo, en un servidor sin escritorio), pasale la ruta para que la abra él (en WSL, el link de `En Windows:`).

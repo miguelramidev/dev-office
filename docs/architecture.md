@@ -107,7 +107,8 @@ La oficina en pixel art, en vivo, para ver qué pasa sin leer registros.
 
 - **Datos.** El hook `observer.sh` escucha SessionStart, UserPromptSubmit, PreToolUse, SubagentStart, SubagentStop, Notification y Stop (y en el modo equipos TeammateIdle, TaskCreated y TaskCompleted), y anota cada evento como una línea `OFFICE_EVENT({...});` en `.office/observer/events.js`:
   - qué le encarga el PM a cada departamento, o cada líder a su gente (con el rol y el proveedor, si el encargo va por el puente);
-  - los mensajes entre el PM y los líderes (un resumen de una línea);
+  - los mensajes entre el PM y los líderes (un resumen de una línea y el texto completo);
+  - el texto completo de cada encargo, de la respuesta de cada agente y de la respuesta del PM al CEO, hasta 4000 caracteres cada uno (lo que sobra se corta y se marca con `[…]`);
   - qué herramienta usa cada agente (el nombre del archivo, no su contenido);
   - el veredicto de cada agente al terminar (PASA, FALLA, APROBADO, RECHAZADO, pide aprobación, PROVEEDOR NO DISPONIBLE...), sacado de su último mensaje;
   - los tokens exactos, leídos de las transcripciones que Claude Code guarda en el disco: entrada, salida y caché, contando una sola vez cada mensaje.
@@ -115,9 +116,10 @@ La oficina en pixel art, en vivo, para ver qué pasa sin leer registros.
   El puente agrega el inicio y el fin de cada encargo a Codex o Gemini, con los tokens que informe el CLI. Al empezar la sesión se anotan la rama, el ticket, los proveedores por rol y los departamentos instalados.
 - **Sin costo.** El hook no imprime nada (en algunos eventos, lo que imprime un hook le llega al modelo) y no llama a ningún modelo: no gasta tokens. Nunca bloquea. Lo único que suma es el tiempo de correr un script por evento.
 - **La página.** `office/observer/index.html` se copia a `.office/observer/` al empezar cada sesión y se abre desde el disco, sin servidor: como el registro es JavaScript, la página lo vuelve a cargar cada 1,5 segundos. Muestra las ocho oficinas, con los empleados según los proveedores configurados y los departamentos sin instalar apagados. Si no hay actividad, muestra una demo.
+- **Leer en grande.** En la ficha de cada empleado están su encargo y su última respuesta, y debajo, los textos anteriores. Al tocarlos, o al tocar un ítem de la actividad, el texto se abre en grande en la página, con formato: títulos, listas, tablas y código. Nada de lo que escribe un agente se interpreta como HTML.
 - **Animaciones.** El PM va a buscar el reporte a cada departamento que termina. En el modo equipos, el líder se levanta a pasarle el encargo a su developer o tester, quien termina le lleva el resultado al líder y el tester le lleva la falla al developer. Con dos QA o más, en la validación cruzada se juntan en la pizarra a debatir. El PM espera en el pasillo, al lado de la puerta de Reuniones, y entra cuando el CEO le escribe. Quien está libre a veces va por un café, se estira o charla con alguien libre, de su departamento o de otro. Las animaciones salen solo de los eventos nuevos: al abrir la página no se repite la historia.
 - **Consumo de tokens.** La skill `usage` arma, con el mismo registro, una tabla de tokens por tarea de cada agente, el total por agente (separando lo que gasta el puente de lo que gasta Codex o Gemini) y por proveedor, con el PM aparte. El PM la pega al final de su informe. Tampoco llama a ningún modelo.
-- **Privacidad.** No se guarda lo que escribe el CEO ni el contenido de los archivos. Todo queda en `.office/`, que no va en git.
+- **Privacidad.** No se guarda lo que escribe el CEO ni el contenido de los archivos. Sí se guardan los encargos y las respuestas completas, que pueden citar lo que pidió el CEO o fragmentos de código. Todo queda en `.office/`, que no va en git.
 - **Apagarlo:** `OFFICE_OBSERVER=off` en el `env` del proyecto.
 
 ## Modos del PM

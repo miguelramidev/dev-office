@@ -117,6 +117,46 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 .feed .good { color: var(--ok); }
 .feed .warn { color: var(--accent); }
 
+/* Textos completos: encargos, respuestas y mensajes que se abren en grande. */
+.open { all: unset; cursor: pointer; display: block; width: 100%; box-sizing: border-box; }
+.open:hover { color: var(--accent); }
+.open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.feed .open { text-decoration: underline dotted var(--ink-dim); text-underline-offset: 3px; }
+.feed .open::after { content: " ↗"; color: var(--ink-dim); }
+.doc-btn { display: grid; gap: 2px; background: var(--panel-2); border: 1px solid var(--line); padding: 6px 8px; }
+.doc-btn:hover { border-color: var(--accent); color: var(--ink); }
+.doc-btn small { color: var(--ink-dim); font-size: 11px; }
+.doc-btn span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+.detail .quote .open { text-decoration: underline dotted var(--ink-dim); text-underline-offset: 3px; }
+.history { display: grid; gap: 4px; margin-top: 10px; }
+.history h3 { font-family: var(--font-pixel); font-weight: 400; font-size: 10px; letter-spacing: 0.1em; color: var(--ink-dim); margin: 6px 0 2px; text-transform: uppercase; }
+.history .open { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; font-size: 12px; line-height: 1.4; }
+.history .open time { color: var(--ink-dim); }
+.history .open span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.reader { width: min(920px, calc(100vw - 32px)); max-height: min(86vh, 900px); padding: 0; background: var(--panel); color: var(--ink); border: 2px solid var(--line); box-shadow: 0 8px 0 #090b10; }
+.reader[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.reader::backdrop { background: rgba(8, 10, 15, 0.78); }
+.reader header { display: flex; gap: 12px; align-items: start; justify-content: space-between; padding: 14px 16px 12px; border-bottom: 1px solid var(--line); }
+.reader header > div { min-width: 0; }
+.reader .kind { font-family: var(--font-pixel); font-size: 10px; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; }
+.reader h2 { font-family: var(--font-pixel); font-weight: 700; font-size: 15px; margin: 4px 0; overflow-wrap: anywhere; }
+.reader .meta { font-size: 11px; color: var(--ink-dim); }
+.reader-body { overflow: auto; padding: 4px 16px 18px; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.reader-body h3, .reader-body h4, .reader-body h5, .reader-body h6 { font-family: var(--font-pixel); font-weight: 400; letter-spacing: 0.04em; margin: 18px 0 6px; color: var(--accent); }
+.reader-body h3 { font-size: 15px; } .reader-body h4 { font-size: 13px; } .reader-body h5, .reader-body h6 { font-size: 12px; }
+.reader-body p { margin: 8px 0; }
+.reader-body ul, .reader-body ol { margin: 6px 0; padding-left: 22px; }
+.reader-body li { margin: 2px 0; }
+.reader-body code { background: var(--panel-2); padding: 1px 5px; font-size: 13px; }
+.reader-body pre { background: #0b0e14; border: 1px solid var(--line); padding: 10px 12px; overflow-x: auto; font-size: 12px; line-height: 1.5; }
+.reader-body pre code { background: none; padding: 0; }
+.reader-body .table { overflow-x: auto; margin: 10px 0; }
+.reader-body table { border-collapse: collapse; font-size: 13px; }
+.reader-body th, .reader-body td { border: 1px solid var(--line); padding: 5px 9px; text-align: left; vertical-align: top; }
+.reader-body th { background: var(--panel-2); }
+.reader-body .clip { color: var(--ink-dim); font-size: 12px; border-top: 1px dashed var(--line); padding-top: 8px; margin-top: 14px; }
+
 .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--ink-dim); margin-top: 10px; }
 .legend span { display: inline-flex; align-items: center; gap: 5px; }
 .legend i { width: 9px; height: 9px; display: inline-block; }
@@ -149,7 +189,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 
   <div class="stage">
     <canvas id="office" width="1536" height="896" aria-label="Oficina en pixel art: el PM camina entre las oficinas, cada departamento trabaja en su escritorio y la gente se levanta a hablar con su líder"></canvas>
-    <div class="hint">Tocá un empleado para ver qué está haciendo</div>
+    <div class="hint">Tocá un empleado para ver qué está haciendo; tocá su encargo o su respuesta para leerlos en grande</div>
   </div>
 
   <section class="stats" id="stats" aria-label="Resumen"></section>
@@ -171,6 +211,18 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     </section>
   </div>
 </div>
+
+<dialog class="reader" id="reader" aria-labelledby="reader-title">
+  <header>
+    <div>
+      <div class="kind" id="reader-kind"></div>
+      <h2 id="reader-title"></h2>
+      <div class="meta" id="reader-meta"></div>
+    </div>
+    <button type="button" id="reader-close">Cerrar</button>
+  </header>
+  <div class="reader-body" id="reader-body"></div>
+</dialog>
 
 <script>
 (() => {
@@ -236,6 +288,16 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   // Tokens por segundo mientras trabaja (simulado).
   const RATE = { claude: { opus: 820, sonnet: 640 }, codex: { opus: 900, sonnet: 610 }, gemini: { opus: 860, sonnet: 700 } };
 
+  // Textos de la demo: encargos y respuestas que se pueden abrir en grande.
+  const DEMO_TEXT = {
+    archBrief: "Ticket: PROJ-123 (épica PROJ-100)\nObjetivo: diseñar la API para que los pedidos tengan estado.\n\n## Contexto\n- Los pedidos hoy no tienen estado: el front lo calcula.\n- La app móvil y la web leen la misma API.\n\n## Criterio de terminado\n- Endpoints, contratos y errores en `docs/design/pedidos.md`.\n- Cambios en los datos para el departamento de base de datos.",
+    archReply: "NECESITO APROBACIÓN\n\n## Diseño\nDiseño en `docs/design/pedidos.md`.\n\n| Método | Ruta | Qué hace |\n| --- | --- | --- |\n| GET | `/orders/:id` | Devuelve el pedido con su `status` |\n| PATCH | `/orders/:id/status` | Cambia el estado si la transición es válida |\n\n## Decisiones para el CEO\n1. Estados: `pending`, `paid`, `shipped`, `cancelled`.\n2. Un pedido enviado **no** se puede cancelar.\n\n## Para base de datos\n- Columna `status` con índice en `orders`.",
+    devBrief: "Ticket: PROJ-123\nObjetivo: implementar los endpoints de estado según `docs/design/pedidos.md`.\n\n- Validar las transiciones de estado.\n- Actualizar la colección de Postman del proyecto y la de la épica PROJ-100.\n\nNo escribas tests: los escribe el tester.",
+    testFail: "FALLA\n\n## Fallas\n1. `PATCH /orders/:id/status` acepta `\"shipped\"` → `\"cancelled\"` y devuelve 200. El diseño dice que no se puede.\n\n```\nexpected 409, received 200\n  at orders.status.test.ts:42\n```\n\n## Para el developer\n- Revisá la tabla de transiciones en `src/orders/schema.ts`.",
+    leadReport: "LISTO\n\n## Qué se hizo\n- Endpoints de estado de pedidos, con validación de transiciones.\n- Colecciones de Postman al día.\n\n## Calidad\n- 2 vueltas developer ↔ tester: la primera falló por una transición inválida.\n- Tests, typecheck y lint en verde.\n\n## Para otros departamentos\n- **Frontend:** `GET /orders/:id` ahora trae `status`.\n\n## Acciones requeridas\n- Ninguna.",
+    pmReport: "## Informe: PROJ-123\n\nLos pedidos ya tienen estado, de punta a punta.\n\n| Departamento | Resultado |\n| --- | --- |\n| Base de datos | Migración que sube y baja |\n| Backend | Endpoints con transiciones validadas |\n| Frontend | Pantalla de estado del pedido |\n| QA | APROBADO, 1 hallazgo en disputa |\n\n## Necesito tu decisión\n- QA cree que un pedido pagado debería poder cancelarse. ¿Lo cambiamos?\n\n¿Abro el PR con `open-pr`?",
+  };
+
   // --- Guion de la simulación ----------------------------------------------------
   // Pasos: say (mensaje), work (trabaja d segundos), walk (el PM camina; noWait no lo espera),
   // wait (espera al CEO) y run (animaciones de la gente; waitFor espera a que terminen).
@@ -247,7 +309,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     { phase: 0, work: "adv", d: 5, tool: "lee el plan", task: "Segunda opinión sobre el plan", result: "pass", resultText: "OPINA" },
     { phase: 0, say: "Asesor (Codex): coincide con el plan; sugiere un índice en orders.status.", kind: "good" },
     { phase: 1, walk: "barch" },
-    { phase: 1, work: "barch", d: 9, tool: "escribe docs/design/pedidos.md", task: "Diseño de la API de pedidos" },
+    { phase: 1, work: "barch", d: 9, tool: "escribe docs/design/pedidos.md", task: "Diseño de la API de pedidos", brief: DEMO_TEXT.archBrief, reply: DEMO_TEXT.archReply, result: "waiting", resultText: "pide aprobación" },
     { phase: 1, say: "Arquitecto de backend: diseño listo. Necesito aprobación.", kind: "warn" },
     { phase: 1, walk: "ceo" },
     { phase: 1, wait: 5, waiting: "ceo", say2: "El CEO aprueba el diseño.", tool: "esperando al CEO" },
@@ -266,15 +328,15 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     { phase: 3, walk: "blead" },
     { phase: 3, work: "blead", d: 3, tool: "lee el encargo", task: "Coordinar los endpoints de pedidos" },
     { phase: 3, walk: "door", noWait: true, tool: "espera afuera de Reuniones", run: () => talkTo("blead", "bdev", ["Te paso los endpoints", "Dale, arranco"]), waitFor: ["blead"] },
-    { phase: 3, work: "bdev", d: 9, task: "Endpoints de pedidos", tools: ["lee docs/design", "edita src/orders/routes.ts", "edita la colección de Postman", "puente: typecheck y tests"] },
+    { phase: 3, work: "bdev", d: 9, task: "Endpoints de pedidos", brief: DEMO_TEXT.devBrief, from: "blead", tools: ["lee docs/design", "edita src/orders/routes.ts", "edita la colección de Postman", "puente: typecheck y tests"] },
     { phase: 3, run: () => talkTo("bdev", "blead", ["Endpoints listos", "Pasáselos al tester"]), waitFor: ["bdev"] },
     { phase: 3, run: () => talkTo("blead", "btest", ["Probá los endpoints", "Voy"]), waitFor: ["blead"] },
-    { phase: 3, work: "btest", d: 6, tool: "tests de contrato", task: "Probar los endpoints", result: "fail", resultText: "FALLA" },
+    { phase: 3, work: "btest", d: 6, tool: "tests de contrato", task: "Probar los endpoints", result: "fail", resultText: "FALLA", reply: DEMO_TEXT.testFail },
     { phase: 3, say: "Tester de backend: FALLA. Se lo lleva al developer, no al PM.", kind: "alert", run: () => { talkTo("btest", "bdev", ["FALLA: acepta un estado inválido", "Uh, lo corrijo"]); later("bdev", 4.5, "scratch"); }, waitFor: ["btest"] },
     { phase: 3, work: "bdev", d: 6, task: "Corregir la validación del estado", tools: ["edita src/orders/schema.ts", "puente: typecheck y tests"], round: true },
     { phase: 3, work: "btest", d: 5, tool: "tests de contrato", task: "Volver a probar", result: "pass", resultText: "PASA" },
     { phase: 3, run: () => talkTo("btest", "blead", ["PASA: todo en verde", "¡Excelente!"]), waitFor: ["btest"] },
-    { phase: 3, work: "blead", d: 4, tool: "escribe el reporte", task: "Reporte del departamento" },
+    { phase: 3, work: "blead", d: 4, tool: "escribe el reporte", task: "Reporte del departamento", reply: DEMO_TEXT.leadReport },
     { phase: 3, say: "Líder de backend: reporte listo, con las acciones requeridas.", kind: "good" },
     { phase: 3, walk: "blead", tool: "busca el reporte" },
     // Calidad: dos QA revisan y después debaten los hallazgos.
@@ -292,7 +354,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     { phase: 5, work: "flead", d: 3, tool: "escribe el reporte", task: "Reporte del departamento" },
     { phase: 5, walk: "flead", tool: "busca el reporte" },
     { phase: 6, walk: "ceo" },
-    { phase: 6, work: "pm", d: 6, tool: "arma el informe", task: "Informe al CEO" },
+    { phase: 6, work: "pm", d: 6, tool: "arma el informe", task: "Informe al CEO", reply: DEMO_TEXT.pmReport },
     { phase: 6, say: "Informe listo. Ofrece abrir el PR con open-pr.", kind: "good" },
     { phase: 6, wait: 5, waiting: "ceo", say2: "El CEO lee el informe.", tool: "leyendo el informe" },
     { phase: 6, walk: "door", tool: "sale de la reunión", say: "Fin del ticket. El PM espera afuera hasta que el CEO lo llame." },
@@ -309,13 +371,32 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     return {
       t: 0, step: -1, stepT: 0, phase: 0, rounds: 0, nextIdle: 3, holds: {},
       tokens: { claude: 0, codex: 0, gemini: 0 },
-      feed: [], selected: "pm",
-      pm: { id: "pm", x: m.x, y: m.y, path: [], facing: 1, walking: false, status: "idle", tool: "", task: "", tokens: 0, startedAt: 0, room: "hall", label: "PM" },
-      agents: AGENTS.map(a => ({ ...a, present: true, ext: 0, status: "idle", tool: "", task: "", tokens: 0, startedAt: null, bubble: null, bubbleUntil: 0, toolList: null,
+      feed: [], selected: "pm", docs: [],
+      pm: { id: "pm", x: m.x, y: m.y, path: [], facing: 1, walking: false, status: "idle", tool: "", task: "", tokens: 0, startedAt: 0, room: "hall", label: "PM", ...NO_DOCS() },
+      agents: AGENTS.map(a => ({ ...a, present: true, ext: 0, status: "idle", tool: "", task: "", tokens: 0, startedAt: null, bubble: null, bubbleUntil: 0, toolList: null, ...NO_DOCS(),
         pos: null, path: [], acts: [], say: null, pose: null, prop: null, curRoom: a.room, facing: 1, idleTrip: false })),
     };
   }
-  function addFeed(text, kind = "") { state.feed.unshift({ t: state.t, text, kind }); if (state.feed.length > 60) state.feed.pop(); }
+  function addFeed(text, kind = "", doc = null) { state.feed.unshift({ t: state.t, text, kind, doc }); if (state.feed.length > 60) state.feed.pop(); }
+
+  // --- Textos completos ----------------------------------------------------------
+  // Encargos, respuestas y mensajes que se pueden leer en grande. Cada persona guarda los
+  // últimos en "docs", su encargo actual en "brief" y su última respuesta en "reply".
+  // state.docs los numera para que los botones del panel los encuentren.
+  function NO_DOCS() { return { docs: [], brief: null, reply: null }; }
+  function newDoc(kind, title, text, extra) {
+    if (!text || !String(text).trim()) return null;
+    const d = Object.assign({ kind, title, text: String(text), at: null, t: state.t }, extra || {});
+    d.id = state.docs.push(d) - 1;
+    return d;
+  }
+  // as: "brief" (lo que le encargaron), "reply" (lo que respondió) o nada (solo el historial).
+  function keepDoc(p, d, as) {
+    if (!p || !d) return d;
+    if (!p.docs.includes(d)) { p.docs.unshift(d); if (p.docs.length > 12) p.docs.pop(); }
+    if (as) p[as] = d;
+    return d;
+  }
 
   const seatOf = a => { const r = room(a.room); return { x: r.x + a.seat[0], y: r.y + a.seat[1] }; };
   function standSpot(target) {
@@ -348,7 +429,9 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   function startStep() {
     state.step = (state.step + 1) % SCRIPT.length;
     if (state.step === 0 && state.t > 1) {
-      state.agents.forEach(a => { a.status = "idle"; a.tool = ""; a.task = ""; a.bubble = null; clearAnim(a); });
+      state.agents.forEach(a => { a.status = "idle"; a.tool = ""; a.task = ""; a.bubble = null; clearAnim(a); Object.assign(a, NO_DOCS()); });
+      Object.assign(state.pm, NO_DOCS());
+      state.docs = [];
       state.rounds = 0;
     }
     state.stepT = 0;
@@ -378,7 +461,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         p.startedAt = state.t;
         p.bubble = null;
         if (id !== "pm") cancelIdle(p);
-        if (id !== "pm" && !s.say) addFeed(p.label + ": " + s.task + ".");
+        const d = keepDoc(p, newDoc("Encargo", (s.from ? agent(s.from).label : id === "pm" ? "CEO" : "PM") + " → " + p.label + ": " + s.task, s.brief), "brief");
+        if (id !== "pm" && !s.say) addFeed(p.label + ": " + s.task + ".", "", d);
       });
       if (s.round) { state.rounds += 1; addFeed("Vuelta " + (state.rounds + 1) + " del ciclo developer → tester.", "warn"); }
     }
@@ -395,6 +479,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       [].concat(s.work).forEach(id => {
         const p = personById(id);
         p.tool = "";
+        const d = keepDoc(p, newDoc("Respuesta", (id === "pm" ? "PM al CEO" : p.label) + ": " + (s.resultText || s.task), s.reply, { verdict: s.resultText || null }), "reply");
+        if (d) addFeed((id === "pm" ? "PM: " + s.task : p.label + " terminó: " + (s.resultText || "LISTO")) + ".", s.result === "fail" ? "alert" : s.result === "waiting" ? "warn" : "good", d);
         if (id === "pm") { p.status = "idle"; return; }
         if (s.result) showResult(p, s.result, s.resultText);
         else { p.status = "pass"; p.bubble = "LISTO"; p.bubbleUntil = state.t + 3; }
@@ -1373,7 +1459,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     ROOMS.forEach(r => { const d = ROOM_DEPT[r.id]; r.off = !!(depts && d && !depts.includes(d)); });
     state.agents.forEach(a => {
       const base = AGENTS.find(b => b.id === a.id);
-      Object.assign(a, { status: "idle", tool: "", task: "", tokens: 0, ext: 0, startedAt: null, bubble: null, bubbleUntil: 0, toolList: null });
+      Object.assign(a, { status: "idle", tool: "", task: "", tokens: 0, ext: 0, startedAt: null, bubble: null, bubbleUntil: 0, toolList: null }, NO_DOCS());
       let entry = null;
       if (a.id === "qa1" || a.id === "qa2") entry = (cfg.qa || ["claude"])[a.id === "qa1" ? 0 : 1] || null;
       else if (a.id === "adv") entry = (cfg.pm || [])[0] || null;
@@ -1430,10 +1516,13 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const teams = !!(sess && sess.teams);
     const L = state.live = { t0, sess, teams, pmTokens: 0, claudeSub: 0, ext: { codex: 0, gemini: 0 }, route: [], fails: 0, leads: {} };
     state.feed = [];
+    state.docs = [];
+    Object.assign(state.pm, NO_DOCS());
     const pending = [], byAgent = {}, fx = [];
     let pmTarget = "door", pmStatus = "idle", pmTool = "", pmTask = "";
     const tok = u => (u ? (u.i || 0) + (u.o || 0) + (u.cw || 0) : 0);
-    const feed = (e, text, kind) => state.feed.unshift({ at: e.t, t: e.t - t0, text, kind: kind || "" });
+    const feed = (e, text, kind, doc) => state.feed.unshift({ at: e.t, t: e.t - t0, text, kind: kind || "", doc: doc || null });
+    const docOf = (e, kind, title, text, extra) => newDoc(kind, title, text, Object.assign({ at: e.t }, extra));
     const leadSeat = dept => seatFor(dept + ".lead");
     const leadByName = name => { const m = /^([a-z]+)-lead\b/.exec(name || ""); return m ? leadSeat(m[1]) : null; };
     const isLeadRole = r => /\.lead$/.test(r || "");
@@ -1468,10 +1557,14 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         // Un compañero de equipo que no conocíamos: desde ahora sus herramientas y mensajes son del líder.
         if (lead && e.from && !byAgent[e.from]) byAgent[e.from] = { seat: lead, role: dept + ".lead" };
         pending.push({ type: e.subagent_type, seat, role, provider, model: e.xmodel || null, desc: e.description || "", lead });
+        const who = seat ? agent(seat).label : (role || e.subagent_type);
+        const d = docOf(e, "Encargo", (lead ? agent(lead).label : "PM") + " → " + who + ": " + what, e.prompt);
+        keepDoc(seat ? agent(seat) : null, d, "brief");
+        keepDoc(lead ? agent(lead) : state.pm, d);
         if (lead) {
           const la = agent(lead);
           Object.assign(la, { status: "working", tool: "coordina: " + what });
-          feed(e, la.label + " encarga a " + (seat ? agent(seat).label : role || e.subagent_type) + ": " + what + ".");
+          feed(e, la.label + " encarga a " + who + ": " + what + ".", "", d);
           if (fresh && seat) fx.push(() => talkTo(lead, seat, [shortText("Te paso: " + what, 30), "Dale, arranco"]));
           return;
         }
@@ -1483,8 +1576,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
           Object.assign(agent(seat), { status: "working", task: what, tool: "lee el encargo", startedAt: e.t - t0, bubble: null });
           if (fresh) fx.push(() => agent(seat).acts.push({ k: "wait", d: 2.5 }, { k: "say", text: "Entendido, lo reparto", d: 2.2 }));
         }
-        const who = seat ? agent(seat).label : (role || e.subagent_type);
-        feed(e, "PM encarga a " + who + (PROVIDERS[provider] && provider !== "claude" ? " (" + PROVIDERS[provider].name + ")" : "") + ": " + what + ".");
+        feed(e, "PM encarga a " + who + (PROVIDERS[provider] && provider !== "claude" ? " (" + PROVIDERS[provider].name + ")" : "") + ": " + what + ".", "", d);
         if (fresh && role === "qa" && /valid/i.test(String(e.mode || "") + " " + String(e.description || ""))) fx.push(qaDebate);
       }
       else if (e.type === "start") {
@@ -1521,8 +1613,10 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
           a.bubble = v === "APROBACION" ? "pide aprobación" : v === "FALLO" ? "FALLÓ" : v === "VALIDACION" ? "VALIDÓ" : v;
           a.bubbleUntil = e.t + 12;
           if (v === "FALLA") L.fails += 1;
-          feed(e, a.label + " terminó: " + a.bubble + (n ? " · " + fmt(n) + " tokens" : "") + ".", bad ? "alert" : v === "APROBACION" ? "warn" : "good");
           const lead = p.lead || managedBy(p.role);
+          const d = keepDoc(a, docOf(e, "Respuesta", a.label + ": " + a.bubble, e.text, { verdict: a.bubble }), "reply");
+          keepDoc(lead ? agent(lead) : state.pm, d);
+          feed(e, a.label + " terminó: " + a.bubble + (n ? " · " + fmt(n) + " tokens" : "") + ".", bad ? "alert" : v === "APROBACION" ? "warn" : "good", d);
           if (lead) {
             // Modo equipos: el resultado se queda en el departamento.
             if (fresh) fx.push(() => {
@@ -1555,16 +1649,18 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
           goTo(fromSeat);
           pmStatus = "working";
           pmTool = approval ? "lee el pedido de aprobación" : "busca el reporte de " + room(la.room).name;
-          feed(e, la.label + " al PM: " + (text || "mensaje") + ".", approval ? "warn" : "good");
+          const d = keepDoc(state.pm, keepDoc(la, docOf(e, "Mensaje", la.label + " al PM" + (text ? ": " + text : ""), e.body || text)));
+          feed(e, la.label + " al PM: " + (text || "mensaje") + ".", approval ? "warn" : "good", d);
           if (fresh) fx.push(() => la.acts.push({ k: "wait", d: 2 }, { k: "say", text: approval ? "Necesito tu OK" : "Acá está el reporte", d: 2.5 }));
         } else if (toLead) {
           const la = agent(toLead);
           Object.assign(la, { status: "working", tool: "lee el mensaje del PM", bubble: null });
           goTo(toLead);
           pmStatus = "working"; pmTool = "habla con " + la.label;
-          feed(e, "PM a " + la.label + ": " + (text || "mensaje") + ".");
+          const d = keepDoc(state.pm, keepDoc(la, docOf(e, "Mensaje", "PM a " + la.label + (text ? ": " + text : ""), e.body || text)));
+          feed(e, "PM a " + la.label + ": " + (text || "mensaje") + ".", "", d);
           if (fresh) fx.push(() => la.acts.push({ k: "wait", d: 2.5 }, { k: "say", text: "Recibido", d: 2 }));
-        } else if (text) feed(e, "Mensaje: " + text + ".");
+        } else if (text || e.body) feed(e, "Mensaje: " + (text || "sin resumen") + ".", "", docOf(e, "Mensaje", "Mensaje" + (e.to ? " a " + e.to : ""), e.body || text));
       }
       else if (e.type === "teammate_idle") {
         const seat = leadByName(e.name);
@@ -1592,7 +1688,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       else if (e.type === "turn_end") {
         L.pmTokens = tok(e.usage) || L.pmTokens;
         pmTarget = "door"; pmStatus = "waiting"; pmTool = "espera que el CEO lo llame";
-        feed(e, "El PM le responde al CEO y espera afuera.");
+        const d = keepDoc(state.pm, docOf(e, "Respuesta", "PM al CEO", e.text), "reply");
+        feed(e, "El PM le responde al CEO y espera afuera.", "", d);
       }
     });
     state.tokens = { claude: L.pmTokens + L.claudeSub, codex: L.ext.codex, gemini: L.ext.gemini };
@@ -1683,7 +1780,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 
   function people() {
     const pm = state.pm;
-    return [{ id: "pm", label: "PM", provider: "claude", model: "opus", tier: "opus", role: "pm", status: pm.status, tool: pm.tool, task: pm.task || "Coordina la oficina", tokens: pm.tokens, startedAt: 0, room: pm.room }]
+    return [{ id: "pm", label: "PM", provider: "claude", model: "opus", tier: "opus", role: "pm", status: pm.status, tool: pm.tool, task: pm.task || "Coordina la oficina", tokens: pm.tokens, startedAt: 0, room: pm.room, docs: pm.docs, brief: pm.brief, reply: pm.reply }]
       .concat(state.agents.filter(a => a.provider && a.present));
   }
 
@@ -1711,14 +1808,75 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       <div class="stat"><div class="k">Tiempo</div><div class="v">${clock(state.t)}</div><div class="s">${mode === "live" ? (state.live ? state.live.fails : 0) + " " + ((state.live && state.live.fails === 1) ? "falla" : "fallas") + " del tester" : (state.rounds + 1) + " " + (state.rounds ? "vueltas" : "vuelta") + " developer → tester"}</div></div>`;
   }
 
+  // El panel se vuelve a pintar varias veces por segundo: solo se toca el HTML si cambió,
+  // para no reemplazar un botón mientras alguien lo está tocando.
+  const shown = {};
+  function setHTML(id, html) { if (shown[id] !== html) { shown[id] = html; $(id).innerHTML = html; } }
+
+  // Markdown simple (títulos, listas, tablas, código, negrita) para leer reportes y respuestas.
+  // Todo el texto pasa por esc(): nada de lo que escribe un agente se interpreta como HTML.
+  function md(src) {
+    const inline = v => esc(v).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+    const isItem = l => /^\s*([-*+]|\d+[.)])\s+/.test(l);
+    const isRow = l => /^\s*\|.*\|\s*$/.test(l);
+    const lines = String(src || "").replace(/\r/g, "").split("\n");
+    let out = "", i = 0;
+    while (i < lines.length) {
+      const l = lines[i];
+      if (/^\s*```/.test(l)) {
+        const buf = [];
+        for (i++; i < lines.length && !/^\s*```/.test(lines[i]); i++) buf.push(lines[i]);
+        i++;
+        out += "<pre><code>" + esc(buf.join("\n")) + "</code></pre>";
+      } else if (/^#{1,6}\s+/.test(l)) {
+        const n = Math.min(6, /^#+/.exec(l)[0].length + 2);
+        out += "<h" + n + ">" + inline(l.replace(/^#+\s+/, "")) + "</h" + n + ">";
+        i++;
+      } else if (isRow(l) && i + 1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
+        const cells = (r, tag) => r.trim().replace(/^\||\|$/g, "").split("|").map(c => "<" + tag + ">" + inline(c.trim()) + "</" + tag + ">").join("");
+        out += "<div class=\"table\"><table><thead><tr>" + cells(l, "th") + "</tr></thead><tbody>";
+        for (i += 2; i < lines.length && isRow(lines[i]); i++) out += "<tr>" + cells(lines[i], "td") + "</tr>";
+        out += "</tbody></table></div>";
+      } else if (isItem(l)) {
+        const tag = /^\s*\d/.test(l) ? "ol" : "ul";
+        out += "<" + tag + ">";
+        for (; i < lines.length && isItem(lines[i]) && (/^\s*\d/.test(lines[i]) ? "ol" : "ul") === tag; i++) out += "<li>" + inline(lines[i].replace(/^\s*([-*+]|\d+[.)])\s+/, "")) + "</li>";
+        out += "</" + tag + ">";
+      } else if (!l.trim()) {
+        i++;
+      } else {
+        const buf = [inline(l)];
+        for (i++; i < lines.length && lines[i].trim() && !/^\s*(```|#{1,6}\s|\|)/.test(lines[i]) && !isItem(lines[i]); i++) buf.push(inline(lines[i]));
+        out += "<p>" + buf.join("<br>") + "</p>";
+      }
+    }
+    return out;
+  }
+
+  const docTime = d => d.at ? hourOf(d.at) : clock(d.t);
+  const docLine = d => String(d.text).replace(/[#*`|>]+/g, " ").replace(/\s+/g, " ").trim();
+  function openDoc(d) {
+    if (!d) return;
+    const clipped = /\n\[…\]$/.test(d.text);
+    $("reader-kind").textContent = d.kind;
+    $("reader-title").textContent = d.title;
+    $("reader-meta").textContent = [docTime(d), d.verdict].filter(Boolean).join(" · ");
+    $("reader-body").innerHTML = md(clipped ? d.text.replace(/\n\[…\]$/, "") : d.text) +
+      (clipped ? "<p class=\"clip\">El registro guarda hasta 4000 caracteres de cada texto: el resto quedó afuera. Los reportes de los líderes están completos en <code>.office/reports/</code>.</p>" : "");
+    $("reader-body").scrollTop = 0;
+    const dlg = $("reader");
+    if (typeof dlg.showModal === "function") { if (!dlg.open) dlg.showModal(); } else dlg.setAttribute("open", "");
+  }
+  function closeDoc() { const dlg = $("reader"); if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open"); }
+
   function renderAgents() {
     const list = people().slice().sort((a, b) => (b.status === "working") - (a.status === "working") || b.tokens - a.tokens);
-    $("agents").innerHTML = list.map(a => `
+    setHTML("agents", list.map(a => `
       <button type="button" class="agent ${state.selected === a.id ? "sel" : ""}" data-id="${a.id}">
         <i class="dot" style="background:${PROVIDERS[a.provider].color}"></i>
         <span class="who"><b>${esc(a.label)}</b><span>${PROVIDERS[a.provider].name} · ${esc(a.model)} · ${fmt(a.tokens)} tokens</span></span>
         <span class="pill ${a.status}">${STATUS[a.status] || "LIBRE"}</span>
-      </button>`).join("");
+      </button>`).join(""));
   }
 
   const portrait = document.createElement("canvas");
@@ -1754,13 +1912,17 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const r = room(a.room);
     const elapsed = a.status === "working" && a.startedAt !== null ? clock(state.t - a.startedAt) : "—";
     const via = a.provider === "claude" ? "agente de Claude" : "por el puente office:external";
-    $("detail").innerHTML = `
+    const quote = a.status === "working" ? "“" + esc(a.tool || a.task) + "”" : a.status === "fail" ? "Encontré un problema." : a.status === "pass" ? "Listo." : a.status === "waiting" ? "Esperando al CEO." : "Disponible.";
+    const open = (d, html) => d ? `<button type="button" class="open" data-doc="${d.id}">${html}</button>` : html;
+    const docBtn = (d, label) => d ? `<button type="button" class="open doc-btn" data-doc="${d.id}"><small>${label} · ${docTime(d)}${d.verdict ? " · " + esc(d.verdict) : ""}</small><span>${esc(docLine(d))}</span></button>` : "—";
+    const history = (a.docs || []).filter(d => d !== a.brief && d !== a.reply).slice(0, 8);
+    setHTML("detail", `
       <h2>Empleado</h2>
       <div class="head">
         <canvas id="portrait" width="224" height="224" aria-label="Retrato de ${a.label}"></canvas>
         <div>
           <div class="name"><i style="width:12px;height:12px;display:inline-block;background:${PROVIDERS[a.provider].color}"></i>${a.label}</div>
-          <div class="quote">${a.status === "working" ? "“" + esc(a.tool || a.task) + "”" : a.status === "fail" ? "Encontré un problema." : a.status === "pass" ? "Listo." : a.status === "waiting" ? "Esperando al CEO." : "Disponible."}</div>
+          <div class="quote">${open(a.status === "working" ? a.brief : a.reply || a.brief, quote)}</div>
         </div>
       </div>
       <dl>
@@ -1773,12 +1935,17 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         <dt>Ahora</dt><dd>${esc(a.tool) || "—"}</dd>
         <dt>Tiempo</dt><dd>${elapsed}</dd>
         <dt>Tokens</dt><dd>${fmt(a.tokens)}</dd>
-      </dl>`;
+        <dt>${a.id === "pm" ? "Último encargo" : "Encargo"}</dt><dd>${docBtn(a.id === "pm" ? (a.docs || []).find(d => d.kind === "Encargo") : a.brief, "Encargo")}</dd>
+        <dt>${a.id === "pm" ? "Al CEO" : "Respuesta"}</dt><dd>${docBtn(a.reply, a.id === "pm" ? "Respuesta al CEO" : "Respuesta")}</dd>
+      </dl>
+      ${history.length ? `<div class="history"><h3>Antes</h3>${history.map(d => `<button type="button" class="open" data-doc="${d.id}"><time>${docTime(d)}</time><span>${esc(d.kind)}: ${esc(d.title)}</span></button>`).join("")}</div>` : ""}`);
     drawPortrait(a, $("portrait"));
   }
 
   function renderFeed() {
-    $("feed").innerHTML = state.feed.slice(0, 40).map(e => `<li><time>${mode === "live" ? hourOf(e.at) : clock(e.t)}</time><span class="${e.kind}">${esc(e.text)}</span></li>`).join("");
+    setHTML("feed", state.feed.slice(0, 40).map(e => `<li><time>${mode === "live" ? hourOf(e.at) : clock(e.t)}</time>${e.doc
+      ? `<button type="button" class="open ${e.kind}" data-doc="${e.doc.id}" title="Leer en grande">${esc(e.text)}</button>`
+      : `<span class="${e.kind}">${esc(e.text)}</span>`}</li>`).join(""));
   }
 
   let lastPanel = 0;
@@ -1799,6 +1966,19 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     state.agents.forEach(a => { if (!a.provider || !a.present) return; const s = a.pos ? { x: a.pos.x, y: a.pos.y - 18 } : seatOf(a); const d = Math.hypot(s.x - wx, s.y - 4 - wy); if (d < bestD) { best = a.id; bestD = d; } });
     if (best) { state.selected = best; renderPanel(true); }
   });
+  // Los textos completos se abren en grande. Si el panel se volvió a pintar entre que se apretó
+  // y se soltó el botón, el click llega al contenedor: se usa el botón que se apretó.
+  let pressedDoc = null;
+  document.addEventListener("pointerdown", e => { const b = e.target.closest("[data-doc]"); pressedDoc = b ? b.dataset.doc : null; });
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-doc]");
+    const id = b ? b.dataset.doc : e.target.closest("#detail, #feed") ? pressedDoc : null;
+    pressedDoc = null;
+    if (id != null && state.docs[Number(id)]) openDoc(state.docs[Number(id)]);
+  });
+  $("reader-close").addEventListener("click", closeDoc);
+  $("reader").addEventListener("click", e => { if (e.target === $("reader")) closeDoc(); }); // tocar afuera cierra
+
   $("agents").addEventListener("click", e => { const b = e.target.closest(".agent"); if (b) { state.selected = b.dataset.id; renderPanel(true); } });
 
   let playing = true, speed = 2;
