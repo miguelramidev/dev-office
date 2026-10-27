@@ -22,6 +22,7 @@ El observer es una página que se abre desde el disco, sin servidor ni instalaci
    - Que no hace falta correr esto en cada sesión: la pestaña puede quedar abierta y sigue sola. Al empezar una sesión nueva, la oficina empieza un registro nuevo y la página lo toma. Solo después de actualizar la oficina conviene recargar la pestaña (F5) para ver la versión nueva.
    - Que se actualiza sola mientras trabaja la oficina. Si todavía no hubo actividad en esta sesión, muestra una demo.
    - Que puede tocar a cualquier empleado para ver su ficha: proveedor, modelo, tarea, qué está haciendo y tokens. En la ficha, y en la actividad, puede tocar el encargo o la respuesta de cada uno para leerlos en grande.
+   - Que la oficina crece con los tokens: cada sesión empieza con una oficina básica y, con los tokens que va gastando, puede comprar en la tienda (debajo de la oficina) escritorios, sillas, pisos, cuadros, plantas, muebles y ropa para el equipo. El nivel sube con los tokens gastados, y cada sesión trae un catálogo distinto.
    - Que los tokens de Claude son exactos (salen de las transcripciones) y los de Codex y Gemini son los que informa cada CLI, si los informa.
 
 Si el script no puede abrir el navegador (por ejemplo, en un servidor sin escritorio), pasale la ruta para que la abra él (en WSL, el link de `En Windows:`).

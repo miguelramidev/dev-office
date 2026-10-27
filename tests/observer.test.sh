@@ -231,6 +231,45 @@ if command -v node >/dev/null 2>&1; then
   if node -e "const fs=require('fs');let n=0;global.OFFICE_EVENT=()=>n++;eval(fs.readFileSync(process.argv[1],'utf8'));if(!n)process.exit(1)" "$EVENTS"; then ok "events.js se puede cargar desde la página"; else fail "events.js se puede cargar desde la página"; fi
 fi
 
+# --- La tienda de la página (si hay node) ------------------------------------------
+# Corre el script de la página con un DOM falso: el catálogo, la vitrina de cada partida,
+# el dibujo de todos los artículos y las compras de la demo.
+if command -v node >/dev/null 2>&1; then
+  OUT=$(node - "$REPO/plugins/office/observer/index.html" 2>&1 <<'NODE'
+const fs = require("fs");
+const html = fs.readFileSync(process.argv[2], "utf8");
+let code = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</script>"));
+const end = code.lastIndexOf("})();");
+code = code.slice(0, end) + "\nglobal.T = { KINDS, VARIANTS, itemOf, buildShop, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; } };\n" + code.slice(end);
+const stub = () => new Proxy(function () {}, { get: (t, k) => k === Symbol.toPrimitive ? () => 0 : k === "length" ? 0 : stub(), apply: () => stub(), construct: () => stub(), set: () => true });
+Object.assign(global, { document: stub(), window: stub(), requestAnimationFrame: () => 0, setInterval: () => 0, matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} } });
+const store = {}; global.sessionStorage = { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = v; } };
+eval(code);
+const say = (ok, msg) => console.log((ok ? "ok    " : "FALLA ") + msg);
+say(T.CATALOG_SIZE >= 2000, "tienda: catálogo general de " + T.CATALOG_SIZE + " artículos");
+let bad = [];
+for (const k of T.KINDS) {
+  const dims = k.vars.map(d => T.VARIANTS[d].length);
+  for (let i = 0; i < Math.min(dims.reduce((a, b) => a * b, 1), 40); i++) {
+    let r = i; const it = T.itemOf(k.k + dims.map(d => { const v = r % d; r = Math.floor(r / d); return "." + v; }).join(""));
+    try { T.drawPreview(it); if (/undefined|NaN/.test(it.name) || !(it.price > 0) || it.lv < 1 || it.lv > 10) bad.push(it.id); } catch (e) { bad.push(k.k + ": " + e.message); }
+  }
+}
+say(!bad.length, "tienda: todos los tipos se dibujan y tienen nombre, precio y nivel" + (bad.length ? " (" + bad.slice(0, 3).join(", ") + ")" : ""));
+const a = T.buildShop("live:x:1").map(i => i.id).join(), b = T.buildShop("live:x:1").map(i => i.id).join(), c = T.buildShop("live:x:2").map(i => i.id).join();
+say(a === b && a !== c, "tienda: la misma partida trae la misma vitrina y otra sesión, otra");
+const lv = new Set(T.buildShop("live:x:1").map(i => i.lv));
+say([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].every(n => lv.has(n)), "tienda: la vitrina tiene artículos para cada nivel");
+for (let i = 0; i < 3000; i++) { T.update(0.1); T.shopTick(); }
+T.render(1);
+say(T.game.buys.length > 0 && Object.keys(store).length === 1, "tienda: en la demo el CEO compra solo y la partida se guarda en la pestaña");
+NODE
+)
+  echo "$OUT"
+  echo "$OUT" | grep -q '^FALLA' && FAILED=1
+  echo "$OUT" | grep -q '^ok' || { fail "tienda: el script de la página no corre"; }
+fi
+
 # --- Casos raros ---------------------------------------------------------------------
 LINES=$(grep -c '^OFFICE_EVENT' "$EVENTS")
 OFFICE_OBSERVER=off bash "$HOOK" <<<'{"hook_event_name":"UserPromptSubmit"}' >/dev/null 2>&1

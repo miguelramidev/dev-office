@@ -8,6 +8,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.21.0] - 2026-10-27
+
+### Agregado
+
+- **Observer: la oficina crece con los tokens** (`office` 0.19.0). Cada sesión de Claude Code es una partida nueva: la oficina empieza básica, con piso de cemento, mesas plegables y sillas de plástico, y se amuebla con lo que el CEO compra en la tienda, debajo de la oficina.
+  - La moneda son los tokens que gastó la sesión; lo comprado se descuenta del saldo. El nivel, del 1 al 10, sube con el total gastado y nunca baja.
+  - Catálogo general de casi 3.000 artículos, armados con unos 160 tipos y sus variantes: escritorios, sillas, pisos y pintura de cada oficina; cuadros, plantas, muebles y adornos en los lugares libres de la pared y del piso, algunos animados (acuario, arcade, reloj, neón, robot); el equipamiento de cada departamento; y ropa, gorros, anteojos y collares para cada empleado, el PM y el CEO.
+  - Cada partida trae una vitrina distinta, elegida al azar: unos 90 artículos, entre 9 y 14 por nivel. Se ven los del nivel actual y un adelanto de los dos que siguen.
+  - Las compras van a la oficina o al empleado elegidos en la tienda (o a los del empleado seleccionado) y se guardan en el almacenamiento de la pestaña, por partida, para no perderlas al recargar.
+  - En la demo, el CEO compra solo cada tanto, hasta que alguien compra a mano.
+- Pruebas de la tienda en `tests/observer.test.sh` (con node): el catálogo, la vitrina de cada partida, el dibujo de todos los tipos y las compras de la demo.
+
+### Cambiado
+
+- Observer: la decoración fija de cada departamento y las plantas del pasillo pasan a ser artículos de la tienda. Las personas sentadas muestran las piernas debajo de las mesas sin frente.
+
 ## [0.20.0] - 2026-10-27
 
 ### Agregado
