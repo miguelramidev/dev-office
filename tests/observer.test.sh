@@ -240,7 +240,7 @@ const fs = require("fs");
 const html = fs.readFileSync(process.argv[2], "utf8");
 let code = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</script>"));
 const end = code.lastIndexOf("})();");
-code = code.slice(0, end) + "\nglobal.T = { KINDS, VARIANTS, itemOf, buildShop, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; } };\n" + code.slice(end);
+code = code.slice(0, end) + "\nglobal.T = { KINDS, VARIANTS, itemOf, buildShop, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, live: evs => { liveEvents = evs; liveAnimFrom = -1; mode = 'live'; liveRebuild(); } };\n" + code.slice(end);
 const stub = () => new Proxy(function () {}, { get: (t, k) => k === Symbol.toPrimitive ? () => 0 : k === "length" ? 0 : stub(), apply: () => stub(), construct: () => stub(), set: () => true });
 Object.assign(global, { document: stub(), window: stub(), requestAnimationFrame: () => 0, setInterval: () => 0, matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} } });
 const store = {}; global.sessionStorage = { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = v; } };
@@ -267,6 +267,23 @@ say(T.game.buys.length > 0 && Object.keys(store).length === 1, "tienda: en la de
 for (let i = 0; i < 6000 && !T.state.feed.some(e => /Llega la pizza para/.test(e.text)); i++) T.update(0.1);
 const pizza = T.state.feed.find(e => /Llega la pizza para/.test(e.text)), top = T.state.agents.filter(a => a.provider).sort((p, q) => q.tokens - p.tokens)[0];
 say(pizza && Object.keys(T.state.pizza).includes(top.id) && pizza.text.includes(top.label), "pizza: al final del encargo la recibe el que más tokens gastó (" + (top && top.label) + ")");
+// En vivo: compactar no reinicia la sesión, y un agente sin novedades se marca como trabado.
+const now = Math.floor(Date.now() / 1000), u = { i: 1000, o: 4000, cw: 20000 };
+T.live([
+  { type: "session", t: now - 2000, source: "startup" },
+  { type: "delegate", t: now - 1900, subagent_type: "dept-backend:tester", description: "[backend-tester] Tests" },
+  { type: "start", t: now - 1899, agent: "T1", agent_type: "dept-backend:tester" },
+  { type: "stop", t: now - 1800, agent: "T1", agent_type: "dept-backend:tester", verdict: "FALLA", usage: u },
+  { type: "session", t: now - 1500, source: "compact" },
+  { type: "delegate", t: now - 700, subagent_type: "dept-backend:developer", description: "[backend-developer] Endpoints" },
+  { type: "start", t: now - 699, agent: "D1", agent_type: "dept-backend:developer" },
+  { type: "tool", t: now - 600, agent: "D1", tool: "Bash", target: "pnpm test" },
+]);
+const st = T.state, dev = st.agents.find(a => a.id === "bdev");
+say(st.tokens.claude === 25000 && st.live.fails === 1 && st.feed.some(f => /compacta/.test(f.text)) && st.feed.some(f => /Empieza la sesión/.test(f.text)), "en vivo: compactar la conversación no reinicia la sesión");
+say(dev.stuck >= 8 && st.feed.some(f => f.stuckKey && /sin novedades/.test(f.text)), "en vivo: un agente que trabaja 8 minutos sin novedades se marca como trabado");
+const ss = T.sessionStats([{ type: "stop", t: 1, verdict: "FALLA", usage: u }, { type: "external", t: 2, tokens: 500 }, { type: "turn_end", t: 3, usage: u }]);
+say(ss.tokens === 50500 && ss.fails === 1 && ss.tasks === 1, "en vivo: el resumen para comparar con la sesión anterior");
 NODE
 )
   echo "$OUT"

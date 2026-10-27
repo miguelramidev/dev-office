@@ -197,6 +197,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     <span class="sim-chip" id="mode-chip">DEMO</span>
     <span class="ticket" id="ticket">Sin sesión todavía</span>
     <div class="controls">
+      <button id="btn-alerts" type="button" aria-pressed="false">Avisos: no</button>
       <div class="mode" role="group" aria-label="Qué mostrar">
         <button id="btn-live" type="button" aria-pressed="false">En vivo</button>
         <button id="btn-demo" type="button" aria-pressed="true">Demo</button>
@@ -1530,6 +1531,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       text(a.short, s.x, ny, { size: 6.5, align: "center", color: "#cfc8ba", bg: a.room === "meet" || st ? "rgba(11,14,20,0.7)" : null });
       let label = null, color = "#ebe5d8", border = "#313b52", bg = "rgba(11,14,20,0.94)";
       if (a.say) { label = a.say.text; color = "#1a1406"; bg = "#f6f2e7"; border = "#f6f2e7"; }
+      else if (a.status === "working" && a.stuck) { label = "¿trabado? " + a.stuck + " min sin novedades"; color = "#1a1406"; bg = "#ef9a5b"; border = "#ef9a5b"; }
       else if (a.status === "working") { label = a.tool; color = "#f2c14e"; border = "#7a6326"; }
       else if (a.status === "waiting") { label = "esperando"; color = "#1a1406"; bg = "#f2c14e"; border = "#f2c14e"; }
       else if (a.bubble) { label = a.bubble; color = a.status === "fail" ? "#ef6b5b" : "#5cc98a"; border = color; }
@@ -2402,7 +2404,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     ROOMS.forEach(r => { const d = ROOM_DEPT[r.id]; r.off = !!(depts && d && !depts.includes(d)); });
     state.agents.forEach(a => {
       const base = AGENTS.find(b => b.id === a.id);
-      Object.assign(a, { status: "idle", tool: "", task: "", tokens: 0, ext: 0, startedAt: null, bubble: null, bubbleUntil: 0, toolList: null }, NO_DOCS());
+      Object.assign(a, { status: "idle", tool: "", task: "", tokens: 0, ext: 0, startedAt: null, bubble: null, bubbleUntil: 0, toolList: null, lastAct: 0, lastWhat: "", stuck: 0 }, NO_DOCS());
       let entry = null;
       if (a.id === "qa1" || a.id === "qa2") entry = (cfg.qa || ["claude"])[a.id === "qa1" ? 0 : 1] || null;
       else if (a.id === "adv") entry = (cfg.pm || [])[0] || null;
@@ -2447,9 +2449,13 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     else if (liveAnimFrom > evs.length) liveAnimFrom = 0; // el archivo empezó de nuevo
     const animFrom = liveAnimFrom, nowS = Date.now() / 1000;
     liveAnimFrom = evs.length;
-    let si = -1;
-    for (let i = evs.length - 1; i >= 0; i--) if (evs[i].type === "session") { si = i; break; }
-    const sess = si >= 0 ? evs[si] : null;
+    // La sesión empieza en su último inicio (o /clear). Cuando Claude Code la retoma o
+    // compacta la conversación, sigue siendo la misma: los datos del último evento de
+    // sesión (rama, proveedores, modo equipos) se actualizan, pero nada vuelve a cero.
+    let si = -1, last = -1;
+    for (let i = evs.length - 1; i >= 0; i--) if (evs[i].type === "session") { if (last < 0) last = i; if (evs[i].source !== "resume" && evs[i].source !== "compact") { si = i; break; } }
+    if (si < 0) si = evs.findIndex(e => e.type === "session");
+    const sess = last >= 0 ? Object.assign({}, evs[si], evs[last], { t: evs[si].t }) : null;
     const base = si >= 0 ? si : 0;
     const list = evs.slice(base);
     const t0 = sess ? sess.t : (list[0] ? list[0].t : nowS);
@@ -2481,7 +2487,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 
     list.forEach((e, k) => {
       const fresh = base + k >= animFrom && nowS - e.t < 30;
-      if (e.type === "session") { feed(e, e.source === "resume" ? "Se retoma la sesión de la oficina." : "Empieza la sesión de la oficina."); }
+      if (e.type === "session") { feed(e, e.source === "resume" ? "Se retoma la sesión de la oficina." : e.source === "compact" ? "Claude Code compacta la conversación; la sesión sigue." : "Empieza la sesión de la oficina."); }
       else if (e.type === "prompt") { pmTarget = "ceo"; pmStatus = "working"; pmTool = "conversa con el CEO"; pmTask = "Reunión con el CEO"; feed(e, "El CEO llama al PM."); }
       else if (e.type === "delegate") {
         const role = e.role || roleFromType(e.subagent_type);
@@ -2529,6 +2535,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         byAgent[e.agent] = p;
         if (p.seat) {
           const a = agent(p.seat);
+          a.lastAct = e.t; a.lastWhat = "empieza";
           Object.assign(a, { status: "working", task: stripRole(p.desc) || a.task || "Trabajando", tool: "empieza", startedAt: e.t - t0, bubble: null });
           if (p.model) a.model = p.model;
           if (isLeadRole(p.role)) L.leads[p.role.split(".")[0]] = true;
@@ -2537,7 +2544,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       else if (e.type === "tool") {
         const label = toolLabel(e.tool, e.target);
         const seat = seatOfEvent(e.agent, e.agent_type);
-        if (seat) agent(seat).tool = label;
+        if (seat) Object.assign(agent(seat), { tool: label, lastAct: e.t, lastWhat: label });
         else if (!e.agent) {
           pmTool = label;
           if (e.tool === "Skill") feed(e, "PM usa la skill " + String(e.target || "").replace(/^office:/, "") + ".");
@@ -2621,18 +2628,21 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       }
       else if (e.type === "external_start") {
         const seat = seatFor(e.role, e.provider);
-        if (seat) { const a = agent(seat); if (e.model) a.model = e.model; a.tool = "trabaja en " + (PROVIDERS[e.provider] ? PROVIDERS[e.provider].name : e.provider); }
+        if (seat) { const a = agent(seat); if (e.model) a.model = e.model; a.tool = "trabaja en " + (PROVIDERS[e.provider] ? PROVIDERS[e.provider].name : e.provider); a.lastAct = e.t; a.lastWhat = a.tool; }
       }
       else if (e.type === "notify") {
         pmStatus = "waiting";
-        pmTool = /permis|permission/i.test(e.message || "") ? "te pide un permiso" : "esperando al CEO";
+        const perm = /permis|permission/i.test(e.message || "");
+        pmTool = perm ? "te pide un permiso" : "esperando al CEO";
         feed(e, "Claude Code: " + (e.message || "espera al CEO") + ".", "warn");
+        if (fresh) alertCEO("permiso", perm ? "Claude Code te pide un permiso" : "El PM te está esperando", e.message || "Mirá la terminal.");
       }
       else if (e.type === "turn_end") {
         L.pmTokens = tok(e.usage) || L.pmTokens;
         pmTarget = "door"; pmStatus = "waiting"; pmTool = "espera que el CEO lo llame";
         const d = keepDoc(state.pm, docOf(e, "Respuesta", "PM al CEO", e.text), "reply");
         feed(e, "El PM le responde al CEO y espera afuera.", "", d);
+        if (fresh) alertCEO("pm", "El PM te respondió", shortText(String(e.text || "Mirá la terminal.").replace(/[#*`|>]+/g, " ").replace(/\s+/g, " ").trim(), 140));
         const w = topWorker(pizzaBase);
         if (w) {
           feed(e, pizzaText(w), "good");
@@ -2642,12 +2652,14 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       }
     });
     state.tokens = { claude: L.pmTokens + L.claudeSub, codex: L.ext.codex, gemini: L.ext.gemini };
+    stuckCheck(nowS);
     // La partida de la tienda es todo el registro de la sesión (el archivo empieza de nuevo
     // con cada sesión), aunque Claude Code la retome o la compacte en el medio.
     let pmAll = 0;
     liveEarned = evs.reduce((n, e) => { if (e.type === "turn_end" && tok(e.usage)) pmAll = tok(e.usage); return n + (e.type === "stop" ? tok(e.usage) : e.type === "external" ? e.tokens || 0 : 0); }, 0) + pmAll;
     liveGameKey = "live:" + ((sess && sess.project) || "") + ":" + (evs[0] ? evs[0].t : "none");
     if (game && game.key === liveGameKey) mergeShopLog();
+    loadPrev();
     Object.assign(state.pm, { status: pmStatus, tool: pmTool, task: pmTask || "Coordina la oficina", tokens: L.pmTokens });
     if (!agent(state.selected) && state.selected !== "pm") state.selected = "pm";
     else if (state.selected !== "pm" && !agent(state.selected).present) state.selected = "pm";
@@ -2666,9 +2678,30 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     if (qs.length >= 2 && !qs.some(a => a.acts.length && !a.idleTrip)) debate("qa1", "qa2", DEBATE_LINES);
   }
 
+  // Un agente que trabaja y pasa varios minutos sin usar ninguna herramienta puede estar
+  // trabado (o esperando un comando largo): se marca en la oficina y en la actividad.
+  const STUCK = 8 * 60;
+  let lastStuck = 0;
+  function stuckCheck(now) {
+    let changed = false;
+    state.agents.forEach(a => {
+      const quiet = a.present && a.status === "working" && a.lastAct ? now - a.lastAct : 0;
+      const mins = quiet >= STUCK ? Math.floor(quiet / 60) : 0;
+      if (mins !== a.stuck) { a.stuck = mins; changed = true; }
+      const at = a.lastAct + STUCK, key = a.id + ":" + a.lastAct;
+      if (mins && !state.feed.some(f => f.stuckKey === key)) {
+        state.feed.push({ at, t: at - (state.live ? state.live.t0 : at), stuckKey: key, kind: "warn",
+          text: a.label + " lleva " + Math.floor(STUCK / 60) + " minutos sin novedades (lo último: " + (a.lastWhat || "empezar") + "). Puede estar trabado o esperando un comando largo." });
+        state.feed.sort((p, q) => q.at - p.at);
+        if (state.live && now - at < 30) alertCEO("stuck", a.label + " puede estar trabado", "Lleva " + mins + " minutos sin novedades.");
+      }
+    });
+    return changed;
+  }
   function liveTick(dt) {
     const now = Date.now() / 1000;
     state.t = state.live ? now - state.live.t0 : 0;
+    if (now - lastStuck > 5) { lastStuck = now; stuckCheck(now); }
     movePM(dt);
     state.agents.forEach(a => { if (a.bubble && now > a.bubbleUntil) { a.bubble = null; if (a.status === "pass") a.status = "idle"; } });
     animTick(dt);
@@ -2704,10 +2737,13 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     $("notice").hidden = live || (liveFile && liveCount > 0);
   }
 
+  // Cada script del registro junta sus eventos en su propio buffer, así events.js y
+  // events.prev.js se pueden leer a la vez sin mezclarse.
+  window.OFFICE_EVENT = e => { const sc = document.currentScript; if (sc && sc.officeBuf && e && typeof e === "object") sc.officeBuf.push(e); };
   function poll() {
     const buf = [];
-    window.OFFICE_EVENT = e => { if (e && typeof e === "object") buf.push(e); };
     const sc = document.createElement("script");
+    sc.officeBuf = buf;
     sc.src = "events.js?t=" + Date.now();
     sc.onload = () => {
       sc.remove();
@@ -2724,6 +2760,53 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     };
     sc.onerror = () => { sc.remove(); liveFile = false; updateModeUI(); };
     document.head.appendChild(sc);
+  }
+
+  // La sesión anterior (events.prev.js), para comparar. Se lee una vez por sesión.
+  let prevStats = null, prevFor = "";
+  function sessionStats(evs) {
+    const tk = u => (u ? (u.i || 0) + (u.o || 0) + (u.cw || 0) : 0);
+    let tokens = 0, pm = 0, fails = 0, tasks = 0;
+    evs.forEach(e => {
+      if (e.type === "stop") { tokens += tk(e.usage); tasks += 1; if (e.verdict === "FALLA") fails += 1; }
+      else if (e.type === "external") tokens += e.tokens || 0;
+      else if (e.type === "turn_end" && tk(e.usage)) pm = tk(e.usage);
+    });
+    return { tokens: tokens + pm, fails, tasks, minutes: evs.length ? Math.round((evs[evs.length - 1].t - evs[0].t) / 60) : 0 };
+  }
+  function loadPrev() {
+    if (prevFor === liveGameKey) return;
+    prevFor = liveGameKey;
+    const buf = [], sc = document.createElement("script");
+    sc.officeBuf = buf;
+    sc.src = "events.prev.js?t=" + Date.now();
+    const done = () => { sc.remove(); prevStats = buf.length ? sessionStats(buf) : null; renderPanel(true); };
+    sc.onload = done; sc.onerror = done;
+    document.head.appendChild(sc);
+  }
+
+  // --- Avisos al CEO ---------------------------------------------------------------
+  // Cuando el PM le responde, Claude Code pide un permiso o un agente parece trabado, la
+  // pestaña avisa si está en segundo plano: el título parpadea y, si el CEO activó los
+  // avisos, sale una notificación del sistema.
+  const baseTitle = document.title;
+  let alertTimer = 0;
+  const prefs = (() => { try { return JSON.parse(localStorage.getItem("dev-office-prefs") || "{}") || {}; } catch (e) { return {}; } })();
+  const savePrefs = () => { try { localStorage.setItem("dev-office-prefs", JSON.stringify(prefs)); } catch (e) { /* sin almacenamiento: dura hasta recargar */ } };
+  const canNotify = () => typeof Notification !== "undefined" && Notification.permission === "granted";
+  function alertCEO(kind, title, body) {
+    if (!document.hidden) return;
+    let on = false;
+    clearInterval(alertTimer);
+    alertTimer = setInterval(() => { on = !on; document.title = on ? "● " + title : baseTitle; }, 1000);
+    if (prefs.notify && canNotify()) { try { new Notification(title, { body, tag: "dev-office-" + kind }); } catch (e) { /* el navegador no deja: queda el título */ } }
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && alertTimer) { clearInterval(alertTimer); alertTimer = 0; document.title = baseTitle; } });
+  function renderAlertBtn() {
+    const b = $("btn-alerts"), on = !!prefs.notify;
+    b.setAttribute("aria-pressed", String(on));
+    b.textContent = on ? "Avisos: sí" : "Avisos: no";
+    b.title = on ? (canNotify() ? "Te avisa con una notificación cuando el PM te necesita." : "El navegador no permite notificaciones: solo parpadea el título de la pestaña.") : "Activá para recibir una notificación cuando el PM te necesita.";
   }
 
   // --- Panel -------------------------------------------------------------------
@@ -2750,6 +2833,12 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     $("phases").innerHTML = PHASES.map((p, i) => `<span class="phase ${i < state.phase ? "done" : i === state.phase ? "now" : ""}">${i + 1}. ${p}</span>`).join("");
   }
 
+  function compareTile() {
+    const now = sessionStats(liveEvents), pv = prevStats;
+    const pct = pv.tokens ? Math.round((now.tokens - pv.tokens) / pv.tokens * 100) : 0;
+    return `<div class="stat"><div class="k">Contra la anterior</div><div class="v" style="color:${pct > 0 ? "var(--accent)" : "var(--ok)"}">${pct > 0 ? "+" : ""}${pct}%</div>
+      <div class="s">tokens ${fmtK(now.tokens)} (antes ${fmtK(pv.tokens)}) · fallas ${now.fails} (antes ${pv.fails}) · tareas ${now.tasks} (antes ${pv.tasks})</div></div>`;
+  }
   function renderStats() {
     const t = state.tokens, total = t.claude + t.codex + t.gemini;
     const all = people();
@@ -2760,6 +2849,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       <div class="stat"><div class="k">Tokens</div><div class="v">${fmt(total)}</div><div class="s">${mode === "live" ? "entrada, salida y caché escrita" : "en esta sesión"}</div></div>
       ${prov("claude")}${prov("codex")}${prov("gemini")}
       <div class="stat"><div class="k">Trabajando</div><div class="v">${active}</div><div class="s">de ${all.length} en la oficina</div></div>
+      ${mode === "live" && prevStats ? compareTile() : ""}
       <div class="stat"><div class="k">Tiempo</div><div class="v">${clock(state.t)}</div><div class="s">${mode === "live" ? (state.live ? state.live.fails : 0) + " " + ((state.live && state.live.fails === 1) ? "falla" : "fallas") + " del tester" : (state.rounds + 1) + " " + (state.rounds ? "vueltas" : "vuelta") + " developer → tester"}</div></div>`;
   }
 
@@ -2889,7 +2979,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         <dt>Oficina</dt><dd>${r ? r.name : "Pasillo"}</dd>
         <dt>Estado</dt><dd><span class="pill ${a.status}">${STATUS[a.status] || "LIBRE"}</span></dd>
         <dt>Tarea</dt><dd>${esc(a.task) || "—"}</dd>
-        <dt>Ahora</dt><dd>${esc(a.tool) || "—"}</dd>
+        <dt>Ahora</dt><dd>${esc(a.tool) || "—"}${a.stuck ? ` <span class="pill waiting">${a.stuck} min sin novedades</span>` : ""}</dd>
         <dt>Tiempo</dt><dd>${elapsed}</dd>
         <dt>Tokens</dt><dd>${fmt(a.tokens)}</dd>
         <dt>${a.id === "pm" ? "Último encargo" : "Encargo"}</dt><dd>${docBtn(a.id === "pm" ? (a.docs || []).find(d => d.kind === "Encargo") : a.brief, "Encargo")}</dd>
@@ -3005,6 +3095,13 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   $("btn-live").addEventListener("click", () => { userPicked = true; setMode("live"); });
   $("btn-demo").addEventListener("click", () => { userPicked = true; setMode("demo"); });
   updateModeUI();
+  $("btn-alerts").addEventListener("click", () => {
+    prefs.notify = !prefs.notify;
+    savePrefs();
+    if (prefs.notify && typeof Notification !== "undefined" && Notification.permission === "default") Notification.requestPermission().then(renderAlertBtn, renderAlertBtn);
+    renderAlertBtn();
+  });
+  renderAlertBtn();
   renderPanel(true);
   poll();
   setInterval(poll, 1500);
