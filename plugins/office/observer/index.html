@@ -399,7 +399,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     { phase: 5, walk: "flead", tool: "busca el reporte" },
     { phase: 6, walk: "ceo" },
     { phase: 6, work: "pm", d: 6, tool: "arma el informe", task: "Informe al CEO", reply: DEMO_TEXT.pmReport },
-    { phase: 6, say: "Informe listo. Ofrece abrir el PR con open-pr.", kind: "good" },
+    { phase: 6, say: "Informe listo. Ofrece abrir el PR con open-pr.", kind: "good", run: () => pizzaForTop() },
     { phase: 6, wait: 5, waiting: "ceo", say2: "El CEO lee el informe.", tool: "leyendo el informe" },
     { phase: 6, walk: "door", tool: "sale de la reunión", say: "Fin del ticket. El PM espera afuera hasta que el CEO lo llame." },
   ];
@@ -414,6 +414,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const m = DOOR_SPOT();
     return {
       t: 0, step: -1, stepT: 0, phase: 0, rounds: 0, nextIdle: 3, holds: {}, demoRun: Date.now().toString(36),
+      courier: null, pizza: {}, pizzaBase: {},
       tokens: { claude: 0, codex: 0, gemini: 0 },
       feed: [], selected: "pm", docs: [],
       pm: { id: "pm", x: m.x, y: m.y, path: [], facing: 1, walking: false, status: "idle", tool: "", task: "", tokens: 0, startedAt: 0, room: "hall", label: "PM", ...NO_DOCS() },
@@ -732,6 +733,53 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     cancelIdle(a); cancelIdle(b);
     a.acts.push({ k: "go", to: { visit: toId } }, { k: "talk", with: toId, lines }, { k: "home" });
   }
+  // Pizza de compensación: el que más tokens gastó desde la última pizza (nunca el PM
+  // ni el CEO) recibe una, como esos jefes que pagan el trabajo extra con pizza.
+  function topWorker(base) {
+    let best = null, most = 0;
+    state.agents.forEach(a => { const d = a.tokens - (base[a.id] || 0); if (a.present && a.provider && d > most) { most = d; best = a; } });
+    state.agents.forEach(a => { base[a.id] = a.tokens; });
+    return best && { a: best, n: most };
+  }
+  const pizzaText = w => "Llega la pizza para " + w.a.label + ", el que más tokens gastó en este encargo (" + fmtK(w.n) + "). El trabajo extra se paga con pizza.";
+  function pizzaForTop() {
+    const w = topWorker(state.pizzaBase);
+    if (!w) return;
+    addFeed(pizzaText(w), "good");
+    deliverPizza(w.a.id);
+  }
+  // Entra un repartidor por el pasillo, le da la pizza y se va.
+  function deliverPizza(id) {
+    const b = agent(id);
+    if (!b || !b.present) return;
+    if (reduced) { state.pizza[id] = state.t + 150; return; }
+    const sx = posOf(b).x < W / 2 ? -14 : W + 14;
+    state.courier = { id: "courier", label: "Repartidor", role: "courier", color: "red", look: 4, provider: null, status: "idle", to: id,
+      pos: { x: sx, y: HALL_Y }, curRoom: "hall", room: "hall", path: [], facing: sx < 0 ? 1 : -1, say: null, prop: "pizza",
+      acts: [{ k: "go", to: { visit: id } }, { k: "say", text: "¡Pizza para vos!", d: 2 }, { k: "give" }, { k: "say", text: "¡Buen provecho!", d: 1.8 },
+        { k: "go", to: { x: sx, y: HALL_Y, room: "hall" } }, { k: "gone" }] };
+  }
+  function courierTick(dt) {
+    const c = state.courier;
+    if (!c) return;
+    if (c.say && state.t > c.say.until) c.say = null;
+    for (let guard = 0; c.acts.length && guard < 6; guard++) {
+      const act = c.acts[0];
+      if (act.k === "gone") { state.courier = null; return; }
+      if (act.k === "give") {
+        const b = agent(c.to);
+        state.pizza[c.to] = state.t + 150;
+        c.prop = null;
+        if (b) { b.say = { text: "¡Gracias!", until: state.t + 2.2 }; pose(c.to, "celebrate", 2); }
+        c.acts.shift();
+        continue;
+      }
+      if (act.t0 === undefined) beginAct(c, act);
+      if (!stepAct(c, act, dt)) return;
+      c.acts.shift();
+    }
+  }
+
   // Dos QA se juntan frente a la pizarra y discuten los hallazgos.
   function debate(id1, id2, lines) {
     const a = agent(id1), b = agent(id2);
@@ -802,6 +850,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       }
       if (!a.acts.length) a.idleTrip = false;
     });
+    courierTick(dt);
     idleLife();
   }
   // Cada tanto, alguien libre va a buscar un café, se estira o charla con alguien libre,
@@ -982,7 +1031,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 
   // Ropa por rol: buzo (developers), camisa y corbata (arquitectos), chomba (testers),
   // polera (designer), guardapolvo (QA), saco (PM y CEO), cárdigan (base de datos).
-  const OUTFIT = { developer: "hoodie", architect: "shirt", tester: "polo", designer: "turtle", qa: "coat", pm: "suit", ceo: "suit", "pm (asesor)": "suit", lead: "vest" };
+  const OUTFIT = { courier: "polo", developer: "hoodie", architect: "shirt", tester: "polo", designer: "turtle", qa: "coat", pm: "suit", ceo: "suit", "pm (asesor)": "suit", lead: "vest" };
   function outfitOf(a) {
     if (a.id === "ddev") return "cardigan";
     const r = (a.role || a.id || "").split(".").pop();
@@ -1089,6 +1138,10 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       px(x - 8, headY - 5, 16, 1, "#3a3f4a");
       px(x - 10, headY + 2, 3, 6, OUT); px(x - 9, headY + 3, 1, 4, "#2f9e8f");
       px(x - 8, headY + 9, 5, 1, "#3a3f4a"); px(x - 4, headY + 8, 2, 2, "#2f9e8f");
+    } else if (r === "courier") {
+      // Gorra del repartidor.
+      px(x - 8, headY - 6, 16, 8, OUT); px(x - 7, headY - 5, 14, 6, "#cf4b47"); px(x - 7, headY - 5, 14, 1, "#ef6b5b"); px(x - 2, headY - 3, 4, 2, "#f2c14e");
+      px(x - 10, headY + 1, 20, 2, OUT); px(x - 9, headY + 1, 18, 1, "#a83a36");
     } else if (r === "designer") {
       // Boina.
       px(x - 8, headY - 6, 15, 4, OUT); px(x - 7, headY - 6, 13, 3, "#d771a8"); px(x - 7, headY - 6, 13, 1, "#e9a0c8"); px(x - 1, headY - 8, 2, 2, OUT);
@@ -1165,7 +1218,10 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     if (gest) { px(fx + 10, ty - 3, 5, 12, OUT); px(fx + 11, ty, 3, 8, cD); px(fx + 11, ty - 2, 3, 2, lk.skin.s); }
     else { px(fx + 10, ty + 2 - armA, 5, 12, OUT); px(fx + 11, ty + 3 - armA, 3, 10, cD); px(fx + 11, ty + 13 - armA, 3, 2, lk.skin.s); }
     const hx = fx + (a.facing > 0 ? 13 : -13);
-    if (a.prop === "cup") {
+    if (a.prop === "pizza") { // la caja de la pizza, con las dos manos
+      px(fx - 11, ty + 7, 22, 6, OUT); px(fx - 10, ty + 8, 20, 4, "#e9d29a"); px(fx - 10, ty + 8, 20, 1, "#f6e9c0");
+      px(fx - 3, ty + 9, 6, 2, "#cf4b47"); px(fx - 1, ty + 9, 2, 2, "#f2c14e");
+    } else if (a.prop === "cup") {
       px(hx - 3, ty + 9, 7, 7, OUT); px(hx - 2, ty + 10, 5, 5, ["#d9534f", "#4a78d6", "#e9e4d8", "#47a865"][a.look % 4]); px(hx - 2, ty + 10, 5, 1, "#3a2418");
       if (Math.floor(now * 2) % 2) px(hx, ty + 5, 1, 3, "rgba(255,255,255,0.4)");
     } else if (/\.lead$/.test(a.role || "") || a.role === "qa") {
@@ -1223,6 +1279,15 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     // Taza.
     px(cx + 22, y - 6, 7, 8, OUT); px(cx + 23, y - 5, 5, 6, ["#d9534f", "#4a78d6", "#e9e4d8", "#47a865"][a.look % 4]); px(cx + 23, y - 5, 5, 1, "#3a2418"); px(cx + 29, y - 4, 2, 4, OUT);
     if (working && Math.floor(now * 2) % 2) { px(cx + 24, y - 10, 1, 2, "rgba(255,255,255,0.35)"); px(cx + 26, y - 13, 1, 3, "rgba(255,255,255,0.25)"); }
+    // La pizza de compensación, abierta sobre el teclado; se va terminando de a poco.
+    const pz = state.pizza[a.id];
+    if (pz > state.t) {
+      const left = Math.max(0.15, (pz - state.t) / 150), w = Math.max(3, Math.round(12 * left));
+      px(cx - 9, y - 10, 18, 7, OUT); px(cx - 8, y - 9, 16, 6, "#d9c39a"); px(cx - 3, y - 7, 6, 2, "#cf4b47");
+      px(cx - 9, y - 3, 18, 10, OUT); px(cx - 8, y - 2, 16, 8, "#e9d29a");
+      px(cx - 7, y - 1, w, 6, "#d9a04a"); px(cx - 6, y, Math.max(1, w - 2), 4, "#f2c84b");
+      [[-5, 0], [-2, 2], [1, 0], [3, 3], [-4, 3]].forEach(([dx, dy]) => { if (cx + dx < cx - 6 + w - 2) px(cx + dx, y + dy, 2, 1, "#c0392b"); });
+    }
     // Algo propio de cada puesto sobre el escritorio.
     const r = (a.role || "").split(".");
     const dept = r[0], job = r[1];
@@ -1411,6 +1476,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     // La gente de pie y el PM, de atrás hacia adelante.
     const standing = state.agents.filter(a => a.present && a.pos).map(a => ({ y: a.pos.y, draw: () => drawWalker(a, now) }));
     standing.push({ y: state.pm.y, draw: () => drawPM(now) });
+    if (state.courier) standing.push({ y: state.courier.pos.y, draw: () => drawWalker(state.courier, now) });
     standing.sort((p, q) => p.y - q.y).forEach(o => o.draw());
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(world, 0, 0, W * S, H * S);
@@ -1474,6 +1540,11 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         text(t, s.x + side, s.y - (st ? 60 : side ? 4 : a.room === "meet" ? 52 : 40), { size: 6.5, align: "center", color, bg, border, tail: true, font: "'Space Mono', monospace" });
       }
     });
+    const c = state.courier;
+    if (c) {
+      text("Repartidor", c.pos.x, c.pos.y + 4, { size: 6.5, align: "center", color: "#ef9a8f", bg: "rgba(11,14,20,0.7)" });
+      if (c.say) text(c.say.text, c.pos.x, c.pos.y - 60, { size: 6.5, align: "center", color: "#1a1406", bg: "#f6f2e7", border: "#f6f2e7", tail: true, font: "'Space Mono', monospace" });
+    }
     const pm = state.pm;
     text("PM", pm.x, pm.y + 4, { size: 6.5, align: "center", color: "#c9b8f5" });
     if (pm.tool) {
@@ -2383,14 +2454,14 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const list = evs.slice(base);
     const t0 = sess ? sess.t : (list[0] ? list[0].t : nowS);
     const sessKey = sess ? sess.t + ":" + base : "none";
-    if (state.liveSession !== sessKey) { state.liveSession = sessKey; state.agents.forEach(clearAnim); state.holds = {}; state.nextIdle = 0; }
+    if (state.liveSession !== sessKey) { state.liveSession = sessKey; state.agents.forEach(clearAnim); state.holds = {}; state.nextIdle = 0; state.courier = null; state.pizza = {}; }
     liveReset(sess);
     const teams = !!(sess && sess.teams);
     const L = state.live = { t0, sess, teams, pmTokens: 0, claudeSub: 0, ext: { codex: 0, gemini: 0 }, route: [], fails: 0, leads: {} };
     state.feed = [];
     state.docs = [];
     Object.assign(state.pm, NO_DOCS());
-    const pending = [], byAgent = {}, fx = [];
+    const pending = [], byAgent = {}, fx = [], pizzaBase = {};
     let pmTarget = "door", pmStatus = "idle", pmTool = "", pmTask = "";
     const tok = u => (u ? (u.i || 0) + (u.o || 0) + (u.cw || 0) : 0);
     const feed = (e, text, kind, doc) => state.feed.unshift({ at: e.t, t: e.t - t0, text, kind: kind || "", doc: doc || null });
@@ -2562,6 +2633,12 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         pmTarget = "door"; pmStatus = "waiting"; pmTool = "espera que el CEO lo llame";
         const d = keepDoc(state.pm, docOf(e, "Respuesta", "PM al CEO", e.text), "reply");
         feed(e, "El PM le responde al CEO y espera afuera.", "", d);
+        const w = topWorker(pizzaBase);
+        if (w) {
+          feed(e, pizzaText(w), "good");
+          if (fresh) fx.push(() => deliverPizza(w.a.id));
+          else if (!(state.courier && state.courier.to === w.a.id)) state.pizza[w.a.id] = Math.max(state.pizza[w.a.id] || 0, e.t - t0 + 150);
+        }
       }
     });
     state.tokens = { claude: L.pmTokens + L.claudeSub, codex: L.ext.codex, gemini: L.ext.gemini };
