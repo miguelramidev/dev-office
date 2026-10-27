@@ -2,7 +2,7 @@
 
 Una oficina de desarrollo para [Claude Code](https://code.claude.com): vos sos el CEO, un **PM** conversa con vos y coordina, los **departamentos** hacen el trabajo y un **QA** intenta romper todo antes de que llegue a tu código.
 
-> Estado: **v0.1 en construcción**. La API de los plugins puede cambiar entre versiones.
+> Estado: **en desarrollo activo (versiones 0.x)**. La API de los plugins puede cambiar entre versiones; qué cambió en cada una está en el [registro de cambios](CHANGELOG.md).
 
 ## Empezá acá
 
