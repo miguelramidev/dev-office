@@ -98,7 +98,7 @@ PM ──encargo──→ líder ──→ developer ──→ tester ──fall
 - **El PM:** sigue con la fase de diseño, QA, los asesores y el informe al CEO. Cuando un líder avisa, lee su reporte. Las aprobaciones siguen pasando por el CEO. Los bloqueantes de QA vuelven al líder del departamento.
 - **Departamentos en paralelo:** si su trabajo es independiente, el PM puede tener varios líderes trabajando a la vez.
 - **Costo:** cada líder es una sesión más de Claude (Sonnet) que lee el contexto del departamento: gasta más tokens que el modo normal. Conviene para tickets con varios departamentos o con muchas vueltas developer ↔ tester.
-- **Si no está disponible** (Claude Code sin agent teams, o el flag sin activar), el PM trabaja como siempre.
+- **Si no está disponible** (Claude Code sin agent teams, o el flag sin activar), el PM trabaja como siempre. Al empezar la sesión lo confirma: si la configuración tiene `"teams": true` pero la sesión arrancó sin `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, el hook `teams-check.sh` se lo avisa (con qué falta: correr `teams on` o reiniciar Claude Code), y el PM se lo dice al CEO en su primera respuesta. Si la configuración no lo pide o todo está bien, el hook no imprime nada.
 - **Los líderes son siempre Claude**, como el PM: no se configuran con `set`.
 
 ## Observer

@@ -8,6 +8,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.19.0] - 2026-10-27
+
+### Agregado
+
+- **El PM confirma el modo equipos al empezar** (`office` 0.17.0): hook SessionStart `teams-check.sh`. Si la configuración de la oficina tiene `"teams": true` pero la sesión arrancó sin `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, le avisa al PM qué falta: correr `office-agents.sh teams on` o, si el flag ya está en los settings, reiniciar Claude Code. Si todo está bien o el modo está apagado, no imprime nada. El PM revisa además que la herramienta Agent acepte `name` y, si algo falla, se lo dice al CEO en su primera respuesta y trabaja en el modo de siempre.
+- Pruebas del hook en `tests/office-agents.test.sh`.
+
+### Cambiado
+
+- README: el estado dice "en desarrollo activo (versiones 0.x)" con un link al registro de cambios, en lugar de "v0.1 en construcción".
+
 ## [0.18.1] - 2026-10-27
 
 ### Corregido
