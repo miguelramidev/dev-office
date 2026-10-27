@@ -8,6 +8,13 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.22.0] - 2026-10-27
+
+### Agregado
+
+- **Observer: pizza de compensación** (`office` 0.20.0). Cuando el PM le entrega un informe al CEO, el empleado que más tokens gastó en ese encargo (nunca el PM ni el CEO) recibe una pizza: entra un repartidor por el pasillo, se la lleva al escritorio, el ganador festeja y la pizza queda abierta en su escritorio, terminándose de a poco. La actividad lo anota: "El trabajo extra se paga con pizza". En la demo pasa al final de cada informe.
+- Prueba de la pizza en `tests/observer.test.sh`.
+
 ## [0.21.0] - 2026-10-27
 
 ### Agregado

@@ -240,7 +240,7 @@ const fs = require("fs");
 const html = fs.readFileSync(process.argv[2], "utf8");
 let code = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</script>"));
 const end = code.lastIndexOf("})();");
-code = code.slice(0, end) + "\nglobal.T = { KINDS, VARIANTS, itemOf, buildShop, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; } };\n" + code.slice(end);
+code = code.slice(0, end) + "\nglobal.T = { KINDS, VARIANTS, itemOf, buildShop, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; } };\n" + code.slice(end);
 const stub = () => new Proxy(function () {}, { get: (t, k) => k === Symbol.toPrimitive ? () => 0 : k === "length" ? 0 : stub(), apply: () => stub(), construct: () => stub(), set: () => true });
 Object.assign(global, { document: stub(), window: stub(), requestAnimationFrame: () => 0, setInterval: () => 0, matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} } });
 const store = {}; global.sessionStorage = { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = v; } };
@@ -260,9 +260,13 @@ const a = T.buildShop("live:x:1").map(i => i.id).join(), b = T.buildShop("live:x
 say(a === b && a !== c, "tienda: la misma partida trae la misma vitrina y otra sesión, otra");
 const lv = new Set(T.buildShop("live:x:1").map(i => i.lv));
 say([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].every(n => lv.has(n)), "tienda: la vitrina tiene artículos para cada nivel");
-for (let i = 0; i < 3000; i++) { T.update(0.1); T.shopTick(); }
+for (let i = 0; i < 1500; i++) { T.update(0.1); T.shopTick(); }
 T.render(1);
 say(T.game.buys.length > 0 && Object.keys(store).length === 1, "tienda: en la demo el CEO compra solo y la partida se guarda en la pestaña");
+// Se sigue la demo hasta el informe: ahí llega la pizza.
+for (let i = 0; i < 6000 && !T.state.feed.some(e => /Llega la pizza para/.test(e.text)); i++) T.update(0.1);
+const pizza = T.state.feed.find(e => /Llega la pizza para/.test(e.text)), top = T.state.agents.filter(a => a.provider).sort((p, q) => q.tokens - p.tokens)[0];
+say(pizza && Object.keys(T.state.pizza).includes(top.id) && pizza.text.includes(top.label), "pizza: al final del encargo la recibe el que más tokens gastó (" + (top && top.label) + ")");
 NODE
 )
   echo "$OUT"
