@@ -105,7 +105,7 @@ PM ──encargo──→ líder ──→ developer ──→ tester ──fall
 
 La oficina en pixel art, en vivo, para ver qué pasa sin leer registros.
 
-- **Datos.** El hook `observer.sh` escucha SessionStart, UserPromptSubmit, PreToolUse, SubagentStart, SubagentStop, Notification y Stop (y en el modo equipos TeammateIdle, TaskCreated y TaskCompleted), y anota cada evento como una línea `OFFICE_EVENT({...});` en `.office/observer/events.js`:
+- **Datos.** El hook `observer.sh` escucha SessionStart, UserPromptSubmit, PreToolUse, PostToolUse (solo `gh pr create` y `gh pr view`, para anotar el link del PR), SubagentStart, SubagentStop, Notification y Stop (y en el modo equipos TeammateIdle, TaskCreated y TaskCompleted), y anota cada evento como una línea `OFFICE_EVENT({...});` en `.office/observer/events.js`:
   - qué le encarga el PM a cada departamento, o cada líder a su gente (con el rol y el proveedor, si el encargo va por el puente);
   - los mensajes entre el PM y los líderes (un resumen de una línea y el texto completo);
   - el texto completo de cada encargo, de la respuesta de cada agente y de la respuesta del PM al CEO, hasta 4000 caracteres cada uno (lo que sobra se corta y se marca con `[…]`);
@@ -121,6 +121,7 @@ La oficina en pixel art, en vivo, para ver qué pasa sin leer registros.
   - **Vitrina.** Cada partida elige al azar unos 90 artículos, entre 9 y 14 por nivel, siempre los mismos para esa partida. Con cada nivel se desbloquean los suyos, y la tienda muestra un adelanto de los dos niveles que siguen.
   - **Compras.** Van a la oficina y al empleado elegidos en la tienda o, si no se eligió, a los del empleado seleccionado. Se guardan en el almacenamiento de la pestaña, por partida, para no perderlas al recargar; una sesión nueva empieza de cero.
   - **Demo.** En la demo, el CEO compra solo cada tanto, hasta que alguien compra a mano.
+- **Tablero del ticket.** El pizarrón del pasillo muestra el ticket, la rama y tres luces: el último resultado del tester, el último veredicto de QA y el PR (abierto, mergeado o cerrado). Al tocarlo se abre en grande, con el link del PR.
 - **Avisos.** Cuando el PM le responde al CEO, Claude Code pide un permiso o un agente parece trabado, la pestaña avisa si está en segundo plano: el título parpadea y, con el botón "Avisos" activado, sale una notificación del sistema (si el navegador la permite).
 - **Agentes trabados.** Si un agente que trabaja pasa 8 minutos sin usar ninguna herramienta, aparece con un globo de "¿trabado?" y un aviso en la actividad con lo último que hizo. Puede ser un comando largo, como una corrida de tests.
 - **Contra la sesión anterior.** La página lee también `events.prev.js` y compara tokens, fallas del tester y tareas con la sesión anterior.

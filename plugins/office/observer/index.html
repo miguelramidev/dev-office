@@ -177,6 +177,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 .reader-body ul, .reader-body ol { margin: 6px 0; padding-left: 22px; }
 .reader-body li { margin: 2px 0; }
 .reader-body code { background: var(--panel-2); padding: 1px 5px; font-size: 13px; }
+.reader-body a { color: var(--accent); }
 .reader-body pre { background: #0b0e14; border: 1px solid var(--line); padding: 10px 12px; overflow-x: auto; font-size: 12px; line-height: 1.5; }
 .reader-body pre code { background: none; padding: 0; }
 .reader-body .table { overflow-x: auto; margin: 10px 0; }
@@ -218,7 +219,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 
   <div class="stage">
     <canvas id="office" width="1536" height="896" aria-label="Oficina en pixel art: el PM camina entre las oficinas, cada departamento trabaja en su escritorio y la gente se levanta a hablar con su líder"></canvas>
-    <div class="hint">Tocá un empleado para ver qué está haciendo; tocá su encargo o su respuesta para leerlos en grande</div>
+    <div class="hint">Tocá un empleado para ver qué está haciendo, o el tablero del pasillo para ver el ticket</div>
   </div>
 
   <section class="stats" id="stats" aria-label="Resumen"></section>
@@ -883,6 +884,32 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     }
   }
 
+  // --- Tablero del ticket, en el pasillo -------------------------------------------
+  const BOARD = { x: 146, y: 188, w: 96, h: 26 };
+  const VERDICT_COLOR = v => !v ? "#9aa3b5" : /PASA|APROBADO|LISTO|merged|open/.test(v) ? "#5cc98a" : /FALLA|RECHAZADO|closed/.test(v) ? "#ef6b5b" : "#f2c14e";
+  // Ticket, rama, últimos resultados del tester y de QA, y el PR, si se abrió.
+  function boardInfo() {
+    let b;
+    if (mode === "live") b = (state.live && state.live.board) || {};
+    else {
+      const ph = state.phase;
+      b = { ticket: "PROJ-123", branch: "feature/PROJ-123-pedidos", base: "epic/PROJ-100-checkout", tests: ph >= 3 ? (state.rounds && ph === 3 ? "FALLA" : "PASA") : null, qa: ph >= 5 ? "APROBADO" : null, pr: ph >= 6 ? { number: 42, state: "open", url: "" } : null };
+    }
+    const pr = b.pr ? "#" + b.pr.number + (b.pr.state === "merged" ? " mergeado" : b.pr.state === "closed" ? " cerrado" : "") : "sin PR";
+    return Object.assign({}, b, { prText: pr, lights: [{ label: "tests", v: b.tests, color: VERDICT_COLOR(b.tests) }, { label: "QA", v: b.qa, color: VERDICT_COLOR(b.qa) }, { label: "PR", v: b.pr && b.pr.state, color: VERDICT_COLOR(b.pr && b.pr.state) }] });
+  }
+  function drawBoardText() {
+    const b = boardInfo(), { x, y, h } = BOARD;
+    text(shortText(b.ticket || "Sin ticket", 14), x + 3, y + 1.5, { size: 4.5, color: "#f6f2e7" });
+    text(shortText(b.branch || "", 26), x + 3, y + 9, { size: 4, color: "#3a3f4a", font: "'Space Mono', monospace" });
+    b.lights.forEach((l, i) => text(l.label === "PR" ? shortText(b.prText, 10) : l.label, x + 10 + i * 30, y + h - 7.5, { size: 4, color: "#3a3f4a" }));
+  }
+  function openBoard() {
+    const b = boardInfo(), v = x => x || "todavía no";
+    openDoc({ kind: "Tablero del ticket", title: b.ticket || "Sin ticket", at: Date.now() / 1000, t: state.t,
+      text: `- **Rama:** \`${b.branch || "—"}\`${b.base ? " → \`" + b.base + "\`" : ""}\n- **Último resultado del tester:** ${v(b.tests)}\n- **Último veredicto de QA:** ${v(b.qa)}\n- **PR:** ${b.pr ? "#" + b.pr.number + " (" + ({ open: "abierto", merged: "mergeado", closed: "cerrado" }[b.pr.state] || b.pr.state) + ")" + (b.pr.url ? "\n  " + b.pr.url : "") : "todavía no se abrió"}` });
+  }
+
   // --- Dibujo ------------------------------------------------------------------
   const canvas = document.getElementById("office");
   const ctx = canvas.getContext("2d");
@@ -1362,13 +1389,11 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     px(722, 188, 22, 28, OUT); px(723, 189, 20, 26, "#3a3f4a"); px(726, 192, 14, 7, "#1d2028"); px(728, 194, 4, 2, "#ef6b5b"); px(729, 204, 8, 6, "#1d2028");
     if (Math.floor(now * 1.5) % 2) px(732, 199, 2, 3, "rgba(255,255,255,0.3)");
     drawHallItems(now);
-    const bx = 204, by = 189;
-    px(bx - 1, by - 1, 62, 24, OUT); px(bx, by, 60, 22, "#e9e4d8"); px(bx + 1, by + 1, 58, 20, "#f6f2e7");
-    for (let i = 0; i < 3; i++) px(bx + 3 + i * 19, by + 3, 16, 1, "#b9b1a1");
-    const ph = state.phase, col = ph < 1 ? 0 : ph < 6 ? 1 : 2;
-    px(bx + 4 + col * 19, by + 6, 14, 10, ["#9aa3b5", "#f2c14e", "#5cc98a"][col]);
-    px(bx + 6 + col * 19, by + 8, 9, 1, "#3a3f4a"); px(bx + 6 + col * 19, by + 11, 6, 1, "#3a3f4a");
-    px(bx + 4 + ((col + 1) % 3) * 19, by + 6, 14, 6, "#d8d0c0");
+    // Tablero del ticket: el texto lo escribe drawLabels; acá, el pizarrón y las luces de estado.
+    const { x: bx, y: by, w: bw, h: bh } = BOARD, b = boardInfo();
+    px(bx - 1, by - 1, bw + 2, bh + 2, OUT); px(bx, by, bw, bh, "#e9e4d8"); px(bx + 1, by + 1, bw - 2, bh - 2, "#f6f2e7");
+    px(bx + 1, by + 1, bw - 2, 6, "#3a3f4a");
+    b.lights.forEach((l, i) => { const lx = bx + 3 + i * 30; px(lx, by + bh - 7, 5, 5, OUT); px(lx + 1, by + bh - 6, 3, 3, l.color); });
   }
 
   // La oficina básica (piso de cemento y pared lisa) o lo que se compró para ella.
@@ -1523,6 +1548,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       const ly = r.top ? 190 : 251;
       text(r.name.toUpperCase(), doorX(r), ly, { size: 7, align: "center", color: busy ? "#f2c14e" : "#a9b1c2", bg: "rgba(11,14,20,0.85)", border: busy ? "#7a6326" : "#313b52" });
     });
+    drawBoardText();
     ROOMS.forEach(r => { if (r.off) text("SIN INSTALAR", r.x + RW / 2, r.y + RH / 2 - 4, { size: 7, align: "center", color: "#98a1b3", bg: "rgba(11,14,20,0.9)", border: "#313b52" }); });
     state.agents.forEach(a => {
       if (!a.present) return;
@@ -2161,7 +2187,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     back: { wall: TOP_WALL, ...DEPT_FLOOR }, front: { wall: TOP_WALL, ...DEPT_FLOOR },
     db: { wall: BOT_WALL, ...DEPT_FLOOR }, scrap: { wall: BOT_WALL, ...DEPT_FLOOR }, ops: { wall: BOT_WALL, ...DEPT_FLOOR },
     qa: { wall: BOT_WALL, small: [[10, 174], [183, 174]], big: [[42, 74], [150, 74]] },
-    hall: { wall: [], small: [[46, 216], [186, 216], [300, 216], [382, 216], [480, 216], [578, 216], [676, 216], [752, 262]], big: [] },
+    hall: { wall: [], small: [[46, 216], [262, 216], [314, 216], [382, 216], [480, 216], [578, 216], [676, 216], [752, 262]], big: [] },
   };
   // La pared que ocupa el equipamiento de cada departamento (lo que dibuja drawDeco).
   const KIT_RANGES = { meet: [[12, 66]], design: [[12, 98]], back: [[12, 86]], front: [[12, 76]], db: [[10, 74]], scrap: [[14, 36], [124, 160]], ops: [[10, 76], [130, 144]], qa: [[12, 36], [124, 164]] };
@@ -2463,7 +2489,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     if (state.liveSession !== sessKey) { state.liveSession = sessKey; state.agents.forEach(clearAnim); state.holds = {}; state.nextIdle = 0; state.courier = null; state.pizza = {}; }
     liveReset(sess);
     const teams = !!(sess && sess.teams);
-    const L = state.live = { t0, sess, teams, pmTokens: 0, claudeSub: 0, ext: { codex: 0, gemini: 0 }, route: [], fails: 0, leads: {} };
+    const L = state.live = { t0, sess, teams, pmTokens: 0, claudeSub: 0, ext: { codex: 0, gemini: 0 }, route: [], fails: 0, leads: {},
+      board: { ticket: sess && sess.ticket, branch: sess && sess.branch, tests: null, qa: null, pr: null } };
     state.feed = [];
     state.docs = [];
     Object.assign(state.pm, NO_DOCS());
@@ -2563,6 +2590,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
           a.bubble = v === "APROBACION" ? "pide aprobación" : v === "FALLO" ? "FALLÓ" : v === "VALIDACION" ? "VALIDÓ" : v;
           a.bubbleUntil = e.t + 12;
           if (v === "FALLA") L.fails += 1;
+          if (/\.tester$/.test(p.role || "")) L.board.tests = v;
+          if (p.role === "qa") L.board.qa = v;
           const lead = p.lead || managedBy(p.role);
           const d = keepDoc(a, docOf(e, "Respuesta", a.label + ": " + a.bubble, e.text, { verdict: a.bubble }), "reply");
           keepDoc(lead ? agent(lead) : state.pm, d);
@@ -2615,6 +2644,12 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       else if (e.type === "teammate_idle") {
         const seat = leadByName(e.name);
         if (seat) { const la = agent(seat); if (la.status === "working") { la.status = "idle"; la.tool = ""; } }
+      }
+      else if (e.type === "pr") {
+        const was = L.board.pr;
+        L.board.pr = { number: e.number, url: e.url, state: e.state };
+        if (!was || was.number !== e.number) feed(e, "Se abrió el PR #" + e.number + ".", "good");
+        else if (was.state !== e.state && e.state === "merged") feed(e, "Se mergeó el PR #" + e.number + ".", "good");
       }
       else if (e.type === "task") {
         feed(e, (e.state === "completed" ? "Tarea terminada" : "Tarea nueva") + ": " + (e.subject || "sin título") + (e.name ? " (" + e.name + ")" : "") + ".", e.state === "completed" ? "good" : "");
@@ -2861,7 +2896,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   // Markdown simple (títulos, listas, tablas, código, negrita) para leer reportes y respuestas.
   // Todo el texto pasa por esc(): nada de lo que escribe un agente se interpreta como HTML.
   function md(src) {
-    const inline = v => esc(v).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+    const inline = v => esc(v).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+      .replace(/(^|[\s(])(https:\/\/[^\s<)]+)/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
     const isItem = l => /^\s*([-*+]|\d+[.)])\s+/.test(l);
     const isRow = l => /^\s*\|.*\|\s*$/.test(l);
     const lines = String(src || "").replace(/\r/g, "").split("\n");
@@ -3035,6 +3071,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const rect = canvas.getBoundingClientRect();
     const wx = (e.clientX - rect.left) / rect.width * W;
     const wy = (e.clientY - rect.top) / rect.height * H;
+    if (wx >= BOARD.x && wx <= BOARD.x + BOARD.w && wy >= BOARD.y && wy <= BOARD.y + BOARD.h) { openBoard(); return; }
     let best = null, bestD = 28;
     const pmD = Math.hypot(state.pm.x - wx, state.pm.y - 22 - wy);
     if (pmD < bestD) { best = "pm"; bestD = pmD; }

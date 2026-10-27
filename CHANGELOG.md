@@ -8,6 +8,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.24.0] - 2026-10-27
+
+### Agregado
+
+- **Observer: tablero del ticket en el pasillo** (`office` 0.22.0). El pizarrón del pasillo muestra el ticket, la rama y tres luces: el último resultado del tester, el último veredicto de QA y el PR. Al tocarlo se abre en grande, con el link del PR. La actividad avisa cuando se abre o se mergea el PR.
+- `observer.sh` escucha PostToolUse de Bash, solo para `gh pr create` y `gh pr view`: anota el número, el link y el estado del PR.
+- Pruebas del evento del PR y del tablero en `tests/observer.test.sh`.
+
 ## [0.23.0] - 2026-10-27
 
 ### Agregado
