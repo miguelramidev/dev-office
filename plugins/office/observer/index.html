@@ -1347,6 +1347,9 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   const FAILS = ["FALLA", "RECHAZADO", "PROVEEDOR NO DISPONIBLE", "REGLAS ROTAS", "TIEMPO AGOTADO", "FALLO"];
   const roleFromType = t => {
     if (t === "office:qa") return "qa";
+    // Claude Code identifica al líder como "<área>-lead" (en agent_type y from_type), no como "dept-<área>:lead".
+    const lead = /^([a-z]+)-lead$/.exec(t || "");
+    if (lead) return DEPTS.includes(lead[1]) ? lead[1] + ".lead" : null;
     const m = /^dept-([a-z]+):([a-z-]+)$/.exec(t || "");
     return m ? m[1] + "." + m[2] : null;
   };
@@ -1485,8 +1488,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         if (fresh && role === "qa" && /valid/i.test(String(e.mode || "") + " " + String(e.description || ""))) fx.push(qaDebate);
       }
       else if (e.type === "start") {
-        const i = pending.findIndex(p => p.type === e.agent_type);
         const role = roleFromType(e.agent_type);
+        const i = pending.findIndex(p => p.type === e.agent_type || (isLeadRole(role) && p.role === role));
         const p = i >= 0 ? pending.splice(i, 1)[0] : { type: e.agent_type, seat: role ? seatFor(role, "claude") : null, role, provider: "claude", desc: "" };
         byAgent[e.agent] = p;
         if (p.seat) {

@@ -8,6 +8,15 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.18.1] - 2026-10-27
+
+### Corregido
+
+- Modo equipos: el developer y el tester de cada departamento (`dept-backend` 0.3.1, `dept-frontend` 0.4.1, `dept-database` 0.2.1, `dept-scraper` 0.2.1, `dept-devops` 0.3.1) ya no dicen que solo los activa el PM: reciben encargos del PM o del líder de su departamento y le reportan a quien les encargó el trabajo.
+- Observer en el modo equipos (`office` 0.16.1): Claude Code identifica al líder como `<área>-lead` (por ejemplo `backend-lead`) en `agent_type` y `from_type`, no como `dept-<área>:lead`. La página ahora reconoce ese formato: con varios líderes activos, el aviso de "reporte listo" se le atribuye a su líder y el PM va a buscarlo, y las herramientas del líder aparecen en su escritorio.
+- Resumen de tokens (`token-report.sh` versión 2): reconoce al líder como `<área>-lead`, y cada tarea queda con su líder y su encargo aunque haya varios líderes.
+- Pruebas del formato `<área>-lead` en `tests/observer.test.sh`.
+
 ## [0.18.0] - 2026-10-26
 
 ### Agregado
