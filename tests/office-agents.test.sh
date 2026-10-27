@@ -200,6 +200,22 @@ check 0 "teams off --local" teams off --local
 check 1 "teams con acción inválida" teams quizas
 same "claude" "teams no toca los roles" get backend.developer
 
+# Hook SessionStart que confirma que el modo equipos quedó activo de verdad.
+CHECK="$(cd "$(dirname "$0")/.." && pwd)/plugins/office/scripts/teams-check.sh"
+TP="$WORK/teamsproj"; mkdir -p "$TP/.claude" "$WORK/home"
+tcheck() { echo '{"hook_event_name":"SessionStart","source":"startup"}' | HOME="$WORK/home" CLAUDE_PROJECT_DIR="$TP" bash "$CHECK" "$@" 2>&1; }
+T "teams-check: sin configuración no dice nada" [ -z "$(CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS= tcheck)" ]
+echo '{"teams": true}' >"$TP/.claude/office-agents.json"
+OUT=$(CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS= tcheck)
+T "teams-check: activado sin flag avisa que corra teams on" eval 'echo "$OUT" | grep -q "no quedó activo" && echo "$OUT" | grep -q "teams on"'
+echo '{"env": {"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"}}' >"$TP/.claude/settings.json"
+OUT=$(CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS= tcheck)
+T "teams-check: flag en los settings sin reiniciar avisa que reinicie" eval 'echo "$OUT" | grep -q "reiniciar Claude Code" && ! echo "$OUT" | grep -q "teams on"'
+T "teams-check: activo de verdad no dice nada" [ -z "$(CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 tcheck)" ]
+echo '{"teams": false}' >"$TP/.claude/office-agents.local.json"
+T "teams-check: el archivo personal manda" [ -z "$(CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS= tcheck)" ]
+T "hooks.json corre teams-check al empezar la sesión" eval 'jq -e "[.hooks.SessionStart[].hooks[].command] | any(test(\"teams-check.sh\"))" "$(dirname "$CHECK")/../hooks/hooks.json" >/dev/null'
+
 if [ "$FAILED" -ne 0 ]; then
   echo "Hay pruebas que fallan."
   exit 1

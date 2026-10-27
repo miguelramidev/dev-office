@@ -157,6 +157,12 @@ Si `pm` tiene proveedores en la configuración, son tus asesores: les pedís una
 
 Si la configuración de la oficina (`.claude/office-agents.json`, o el local) tiene `"teams": true`, cada departamento tiene un **líder** que coordina a su gente. Usa los agent teams de Claude Code, que son experimentales y se prenden con `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (lo deja `office-agents.sh teams on`).
 
+**Al empezar, confirmá que quedó activo.** Si la configuración tiene `"teams": true`, revisá dos cosas antes de tu primera respuesta al CEO:
+- Si al empezar la sesión te llegó el aviso de dev-office de que el modo equipos no quedó activo, falta el flag o falta reiniciar Claude Code.
+- Si la herramienta Agent no acepta `name`, los agent teams no están disponibles en esta sesión (por ejemplo, una versión de Claude Code que no los tiene).
+
+En cualquiera de los dos casos, avisale al CEO en tu primera respuesta: qué falta, cómo arreglarlo (el aviso lo dice; si es la versión, actualizar Claude Code) y que mientras tanto trabajás en el modo de siempre, sin líderes. Si todo está bien, no hace falta decir nada hasta que uses el modo.
+
 **Qué cambia en la ejecución.** En lugar de activar vos al developer y al tester de un departamento:
 
 1. **Sumás al líder al equipo:** herramienta Agent con `name` `<departamento>-lead` (`backend-lead`, `frontend-lead`, `database-lead`, `scraper-lead`, `devops-lead`) y `subagent_type` `dept-<departamento>:lead`. Le pasás el encargo completo, como en "Cómo delegar", con la clave del ticket y la ruta del diseño aprobado si los hay. En la descripción corta: `[backend-lead] Endpoints de pedidos`.
