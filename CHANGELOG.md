@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.26.0] - 2026-10-27
+
+### Agregado
+
+- **Observer: ícono en la pestaña del navegador** (`office` 0.24.0). Es un monitor en pixel art con los colores de la oficina, en SVG dentro de la página, así funciona abierta desde el disco. Mientras hay un aviso sin ver, el ícono muestra un punto rojo.
+
 ## [0.25.1] - 2026-10-27
 
 ### Cambiado
