@@ -3,6 +3,9 @@
   // pestaña avisa si está en segundo plano: el título parpadea y, si el CEO activó los
   // avisos, sale una notificación del sistema.
   const baseTitle = document.title;
+  // El ícono de la pestaña, con un punto rojo mientras hay un aviso sin ver.
+  const ICON = "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 shape-rendering=%22crispEdges%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%223%22 fill=%22%2312151d%22/%3E%3Crect x=%222%22 y=%223%22 width=%2212%22 height=%229%22 fill=%22%23f2c14e%22/%3E%3Crect x=%223%22 y=%224%22 width=%2210%22 height=%227%22 fill=%22%230e2a20%22/%3E%3Crect x=%224%22 y=%225%22 width=%225%22 height=%221%22 fill=%22%237fd6a4%22/%3E%3Crect x=%225%22 y=%227%22 width=%226%22 height=%221%22 fill=%22%23f2c14e%22/%3E%3Crect x=%224%22 y=%229%22 width=%224%22 height=%221%22 fill=%22%239ab8ff%22/%3E%3Crect x=%227%22 y=%2212%22 width=%222%22 height=%221%22 fill=%22%23f2c14e%22/%3E%3Crect x=%225%22 y=%2213%22 width=%226%22 height=%221%22 fill=%22%23f2c14e%22/%3E%3C/svg%3E", ICON_ALERT = "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 shape-rendering=%22crispEdges%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%223%22 fill=%22%2312151d%22/%3E%3Crect x=%222%22 y=%223%22 width=%2212%22 height=%229%22 fill=%22%23f2c14e%22/%3E%3Crect x=%223%22 y=%224%22 width=%2210%22 height=%227%22 fill=%22%230e2a20%22/%3E%3Crect x=%224%22 y=%225%22 width=%225%22 height=%221%22 fill=%22%237fd6a4%22/%3E%3Crect x=%225%22 y=%227%22 width=%226%22 height=%221%22 fill=%22%23f2c14e%22/%3E%3Crect x=%224%22 y=%229%22 width=%224%22 height=%221%22 fill=%22%239ab8ff%22/%3E%3Crect x=%227%22 y=%2212%22 width=%222%22 height=%221%22 fill=%22%23f2c14e%22/%3E%3Crect x=%225%22 y=%2213%22 width=%226%22 height=%221%22 fill=%22%23f2c14e%22/%3E%3Ccircle cx=%2212.5%22 cy=%223.5%22 r=%223%22 fill=%22%23ef6b5b%22 stroke=%22%2312151d%22/%3E%3C/svg%3E";
+  const setIcon = on => { const l = document.getElementById("favicon"); if (l) l.href = on ? ICON_ALERT : ICON; };
   let alertTimer = 0;
   const prefs = (() => { try { return JSON.parse(localStorage.getItem("dev-office-prefs") || "{}") || {}; } catch (e) { return {}; } })();
   const savePrefs = () => { try { localStorage.setItem("dev-office-prefs", JSON.stringify(prefs)); } catch (e) { /* sin almacenamiento: dura hasta recargar */ } };
@@ -11,10 +14,11 @@
     if (!document.hidden) return;
     let on = false;
     clearInterval(alertTimer);
+    setIcon(true);
     alertTimer = setInterval(() => { on = !on; document.title = on ? "● " + title : baseTitle; }, 1000);
     if (prefs.notify && canNotify()) { try { new Notification(title, { body, tag: "dev-office-" + kind }); } catch (e) { /* el navegador no deja: queda el título */ } }
   }
-  document.addEventListener("visibilitychange", () => { if (!document.hidden && alertTimer) { clearInterval(alertTimer); alertTimer = 0; document.title = baseTitle; } });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && alertTimer) { clearInterval(alertTimer); alertTimer = 0; document.title = baseTitle; setIcon(false); } });
   function renderAlertBtn() {
     const b = $("btn-alerts"), on = !!prefs.notify;
     b.setAttribute("aria-pressed", String(on));

@@ -244,6 +244,7 @@ fi
 
 # --- La página se arma desde src/ ---------------------------------------------------
 bash "$REPO/plugins/office/observer/build.sh" --check && ok "index.html está al día con src/ (build.sh)" || fail "index.html está al día con src/ (build.sh)"
+grep -q '<link rel="icon" id="favicon" type="image/svg+xml" href="data:image/svg+xml,' "$REPO/plugins/office/observer/index.html" && ok "la página tiene ícono para la pestaña" || fail "la página tiene ícono para la pestaña"
 STALE="$WORK/stale"; mkdir -p "$STALE" && cp -R "$REPO/plugins/office/observer/." "$STALE/" && echo "// cambio" >>"$STALE/src/js/08-panel.js"
 bash "$STALE/build.sh" --check 2>/dev/null && fail "build.sh --check detecta un index.html viejo" || ok "build.sh --check detecta un index.html viejo"
 
