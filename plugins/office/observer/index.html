@@ -130,6 +130,10 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 .shop-targets label { display: grid; gap: 4px; font-family: var(--font-pixel); font-size: 10px; letter-spacing: 0.08em; color: var(--ink-dim); text-transform: uppercase; }
 .shop-targets select { font-family: var(--font-data); font-size: 12px; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); padding: 6px 8px; max-width: 220px; }
 .shop-targets select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.shop-level .ach { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.shop-level .badge { font-size: 10px; padding: 2px 6px; border: 1px dashed var(--line); color: var(--ink-dim); }
+.shop-level .badge.on { border: 1px solid var(--accent); color: var(--accent); }
+.reader-body .photo { width: 100%; height: auto; image-rendering: pixelated; border: 1px solid var(--line); margin-top: 12px; }
 .shop-cats { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 4px; }
 .shop-cats button { font-size: 10px; padding: 5px 8px; }
 .shop-grid .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
@@ -198,6 +202,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     <span class="sim-chip" id="mode-chip">DEMO</span>
     <span class="ticket" id="ticket">Sin sesión todavía</span>
     <div class="controls">
+      <button id="btn-summary" type="button">Cierre del día</button>
+      <button id="btn-sound" type="button" aria-pressed="false">Sonido: no</button>
       <button id="btn-alerts" type="button" aria-pressed="false">Avisos: no</button>
       <div class="mode" role="group" aria-label="Qué mostrar">
         <button id="btn-live" type="button" aria-pressed="false">En vivo</button>
@@ -416,7 +422,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const m = DOOR_SPOT();
     return {
       t: 0, step: -1, stepT: 0, phase: 0, rounds: 0, nextIdle: 3, holds: {}, demoRun: Date.now().toString(36),
-      courier: null, pizza: {}, pizzaBase: {},
+      courier: null, pizza: {}, pizzaBase: {}, pizzaWins: {}, facts: freshFacts(), blackout: 0, cake: null, petWalk: null, nextPet: 30,
       tokens: { claude: 0, codex: 0, gemini: 0 },
       feed: [], selected: "pm", docs: [],
       pm: { id: "pm", x: m.x, y: m.y, path: [], facing: 1, walking: false, status: "idle", tool: "", task: "", tokens: 0, startedAt: 0, room: "hall", label: "PM", ...NO_DOCS() },
@@ -485,7 +491,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const s = SCRIPT[state.step];
     state.phase = s.phase;
     if (s.say) addFeed(s.say, s.kind || "");
-    if (s.result && !s.work) [].concat(s.result).forEach(id => showResult(agent(id), "pass", s.resultText));
+    if (s.result && !s.work) [].concat(s.result).forEach(id => { showResult(agent(id), "pass", s.resultText); if (agent(id).role === "qa") factQa(state.facts, s.resultText); });
     if (s.walk) {
       const to = standSpot(s.walk);
       state.pm.path = planPath(state.pm, to);
@@ -528,7 +534,13 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         p.tool = "";
         const d = keepDoc(p, newDoc("Respuesta", (id === "pm" ? "PM al CEO" : p.label) + ": " + (s.resultText || s.task), s.reply, { verdict: s.resultText || null }), "reply");
         if (d) addFeed((id === "pm" ? "PM: " + s.task : p.label + " terminó: " + (s.resultText || "LISTO")) + ".", s.result === "fail" ? "alert" : s.result === "waiting" ? "warn" : "good", d);
-        if (id === "pm") { p.status = "idle"; return; }
+        if (id === "pm") { if (s.phase === 6) state.facts.pr = true; p.status = "idle"; return; }
+        state.facts.workers.add(id); if (p.provider) state.facts.providers.add(p.provider);
+        if (/\.tester$/.test(p.role || "") && s.resultText) {
+          factTest(state.facts, s.resultText);
+          if (s.resultText === "FALLA" && Math.random() < 0.5) { powerCut(); state.facts.blackout = true; addFeed("Se cortó la luz de tanto test en rojo. A los pocos segundos volvió.", "alert"); }
+        }
+        if (s.result === "waiting") state.facts.approvals += 1;
         if (s.result) showResult(p, s.result, s.resultText);
         else { p.status = "pass"; p.bubble = "LISTO"; p.bubbleUntil = state.t + 3; }
         if (s.result === "pass" && p.room !== "meet") pose(id, "celebrate", 2);
@@ -747,6 +759,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   function pizzaForTop() {
     const w = topWorker(state.pizzaBase);
     if (!w) return;
+    state.facts.pizzas += 1;
+    state.pizzaWins[w.a.id] = (state.pizzaWins[w.a.id] || 0) + 1;
     addFeed(pizzaText(w), "good");
     deliverPizza(w.a.id);
   }
@@ -756,6 +770,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     if (!b || !b.present) return;
     if (reduced) { state.pizza[id] = state.t + 150; return; }
     const sx = posOf(b).x < W / 2 ? -14 : W + 14;
+    sfx("bell");
     state.courier = { id: "courier", label: "Repartidor", role: "courier", color: "red", look: 4, provider: null, status: "idle", to: id,
       pos: { x: sx, y: HALL_Y }, curRoom: "hall", room: "hall", path: [], facing: sx < 0 ? 1 : -1, say: null, prop: "pizza",
       acts: [{ k: "go", to: { visit: id } }, { k: "say", text: "¡Pizza para vos!", d: 2 }, { k: "give" }, { k: "say", text: "¡Buen provecho!", d: 1.8 },
@@ -873,6 +888,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const mates = goFar ? far : same;
     if (r < 0.35) {
       a.idleTrip = true;
+      if (Math.random() < 0.5) setTimeout(() => sfx("coffee"), 2500);
       a.acts.push({ k: "go", to: { coffee: true } }, { k: "prop", prop: "cup" }, { k: "say", text: COFFEE_LINES[Math.floor(Math.random() * COFFEE_LINES.length)], d: 2.2 }, { k: "home" }, { k: "prop", prop: null });
     } else if (r < 0.8 && mates.length) {
       const lines = goFar ? CHATS_OTHER : CHATS;
@@ -1316,10 +1332,17 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       px(cx - 7, y - 1, w, 6, "#d9a04a"); px(cx - 6, y, Math.max(1, w - 2), 4, "#f2c84b");
       [[-5, 0], [-2, 2], [1, 0], [3, 3], [-4, 3]].forEach(([dx, dy]) => { if (cx + dx < cx - 6 + w - 2) px(cx + dx, y + dy, 2, 1, "#c0392b"); });
     }
-    // Algo propio de cada puesto sobre el escritorio.
+    // La torta del cumpleaños, con la vela encendida.
+    const cake = state.cake && state.cake.id === a.id;
+    if (cake) {
+      px(cx + 15, y - 9, 16, 10, OUT); px(cx + 16, y - 8, 14, 8, "#f6e9d8"); px(cx + 16, y - 8, 14, 2, "#ef8fbf"); px(cx + 18, y - 4, 2, 1, "#cf4b47"); px(cx + 25, y - 3, 2, 1, "#4a78d6");
+      px(cx + 22, y - 14, 2, 5, "#9ad3ef"); px(cx + 22, y - 17 + (Math.floor(now * 6) % 2), 2, 3, "#f2c14e");
+    }
+    // Algo propio de cada puesto sobre el escritorio (la torta ocupa ese lugar).
     const r = (a.role || "").split(".");
     const dept = r[0], job = r[1];
-    if (job === "lead") { // tablero con tarjetas
+    if (cake) { /* nada más */ }
+    else if (job === "lead") { // tablero con tarjetas
       px(cx + 17, y - 9, 14, 12, OUT); px(cx + 18, y - 8, 12, 10, "#f6f2e7");
       px(cx + 19, y - 7, 3, 3, "#f2c14e"); px(cx + 23, y - 7, 3, 3, "#6f9cff"); px(cx + 19, y - 3, 3, 3, "#5cc98a"); px(cx + 23, y - 3, 3, 3, working ? "#ef6b5b" : "#5cc98a");
       px(cx + 27, y - 7, 2, 7, "#98a1b3"); px(cx + 23, y + 3, 2, 3, "#5e4229");
@@ -1424,6 +1447,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     }
     if (st.kit) drawDeco(r, now);
     drawRoomItems(r, now);
+    if (r.id === "meet") drawEmployeeOfMonth(r, now);
   }
 
   // Decoración propia de cada departamento.
@@ -1503,7 +1527,14 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const standing = state.agents.filter(a => a.present && a.pos).map(a => ({ y: a.pos.y, draw: () => drawWalker(a, now) }));
     standing.push({ y: state.pm.y, draw: () => drawPM(now) });
     if (state.courier) standing.push({ y: state.courier.pos.y, draw: () => drawWalker(state.courier, now) });
+    if (state.petWalk) standing.push({ y: state.petWalk.pos.y, draw: () => drawPetWalking(state.petWalk, now) });
     standing.sort((p, q) => p.y - q.y).forEach(o => o.draw());
+    // Apagón: todo a oscuras, con un par de parpadeos antes de que vuelva la luz.
+    const dark = state.blackout - state.t;
+    if (dark > 0 && !(dark < 1.2 && Math.floor(now * 10) % 2)) {
+      px(0, 0, W, H, "rgba(4,6,10,0.84)");
+      state.agents.forEach(a => { if (a.present && !a.pos && a.room !== "meet") { const s = seatOf(a); px(s.x - 29, s.y - 10, 22, 13, "rgba(120,200,255,0.18)"); } });
+    }
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(world, 0, 0, W * S, H * S);
     drawLabels();
@@ -1549,6 +1580,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       text(r.name.toUpperCase(), doorX(r), ly, { size: 7, align: "center", color: busy ? "#f2c14e" : "#a9b1c2", bg: "rgba(11,14,20,0.85)", border: busy ? "#7a6326" : "#313b52" });
     });
     drawBoardText();
+    text("EMPLEADO DEL MES", room("meet").x + 85, room("meet").y + 27.5, { size: 3.5, align: "center", color: "#1a1406", bg: "#d4a933" });
     ROOMS.forEach(r => { if (r.off) text("SIN INSTALAR", r.x + RW / 2, r.y + RH / 2 - 4, { size: 7, align: "center", color: "#98a1b3", bg: "rgba(11,14,20,0.9)", border: "#313b52" }); });
     state.agents.forEach(a => {
       if (!a.present) return;
@@ -2182,7 +2214,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   const TOP_WALL = [10, 50], BOT_WALL = [4, 40, 118, 154];
   const DEPT_FLOOR = { small: [[10, 106], [183, 112]], big: [[148, 172]] };
   const SLOTS = {
-    meet: { wall: [8, 60], small: [[10, 172], [183, 172]], big: [[48, 172], [144, 172]] },
+    meet: { wall: [8], small: [[10, 172], [183, 172]], big: [[48, 172], [144, 172]] },
     design: { wall: TOP_WALL, small: [[10, 104], [183, 106], [10, 172], [183, 172]], big: [] },
     back: { wall: TOP_WALL, ...DEPT_FLOOR }, front: { wall: TOP_WALL, ...DEPT_FLOOR },
     db: { wall: BOT_WALL, ...DEPT_FLOOR }, scrap: { wall: BOT_WALL, ...DEPT_FLOOR }, ops: { wall: BOT_WALL, ...DEPT_FLOOR },
@@ -2208,13 +2240,14 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     try { data = JSON.parse(sessionStorage.getItem("dev-office-shop:" + key) || "null"); } catch (e) { data = null; }
     const ok = data && Array.isArray(data.buys);
     game = { key, buys: ok ? data.buys.filter(b => b && itemOf(b.item)) : [], lastLevel: ok ? data.lastLevel || 0 : 0, manual: ok && !!data.manual,
-      log: ok && Array.isArray(data.log) ? data.log.slice(-40) : [], shop: buildShop(key), nextAuto: 8 };
+      log: ok && Array.isArray(data.log) ? data.log.slice(-40) : [], shop: buildShop(key), nextAuto: 8,
+      ach: ok && data.ach && typeof data.ach === "object" ? data.ach : {}, bday: ok ? data.bday || null : null };
     placed = { rooms: {}, wear: {} };
     game.buys.forEach(place);
     if (mode === "live") mergeShopLog();
   }
   function gameSave() {
-    try { sessionStorage.setItem("dev-office-shop:" + game.key, JSON.stringify({ buys: game.buys, lastLevel: game.lastLevel, manual: game.manual, log: game.log.slice(-40) })); } catch (e) { /* sin almacenamiento: la partida dura hasta recargar */ }
+    try { sessionStorage.setItem("dev-office-shop:" + game.key, JSON.stringify({ buys: game.buys, lastLevel: game.lastLevel, manual: game.manual, log: game.log.slice(-40), ach: game.ach, bday: game.bday })); } catch (e) { /* sin almacenamiento: la partida dura hasta recargar */ }
   }
   function place(b) {
     const it = itemOf(b.item), s = it.kind.slot;
@@ -2265,7 +2298,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 
   // ¿Se puede comprar? Devuelve { ok, label, why, to, slot }.
   function canBuy(it, to) {
-    const s = it.kind.slot, lv = levelOf(earned()), bal = earned() - spent();
+    const s = it.kind.slot, lv = levelOf(earned()), bal = earned() + bonus() - spent();
     to = to || targetOf(it);
     if (it.lv > lv) return { ok: false, label: "Nivel " + it.lv, why: "Se desbloquea en el nivel " + it.lv + "." };
     let slot = 0;
@@ -2307,7 +2340,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     if (!game || game.key !== key) gameLoad(key);
     const lv = levelOf(earned());
     if (lv > game.lastLevel) {
-      if (game.lastLevel > 0) shopLog("¡La oficina sube al nivel " + lv + "! Hay artículos nuevos en la tienda.", "warn");
+      if (game.lastLevel > 0) { shopLog("¡La oficina sube al nivel " + lv + "! Hay artículos nuevos en la tienda.", "warn"); sfx("level"); }
       game.lastLevel = lv;
       gameSave();
     }
@@ -2334,11 +2367,11 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const S = SLOTS[r.id], R = roomOf(r.id);
     S.wall.forEach((x, i) => { const it = R.wall[i]; if (it) it.kind.draw(r.x + x, r.y + 3, it.v, now); });
     S.big.forEach(([x, y], i) => { const it = R.big[i]; if (it) it.kind.draw(r.x + x, r.y + y, it.v, now); });
-    S.small.forEach(([x, y], i) => { const it = R.small[i]; if (it) it.kind.draw(r.x + x, r.y + y, it.v, now); });
+    S.small.forEach(([x, y], i) => { const it = R.small[i]; if (it && !walkingPet(r.id, i)) it.kind.draw(r.x + x, r.y + y, it.v, now); });
   }
   function drawHallItems(now) {
     const R = roomOf("hall");
-    SLOTS.hall.small.forEach(([x, y], i) => { const it = R.small[i]; if (it) it.kind.draw(x, y, it.v, now); });
+    SLOTS.hall.small.forEach(([x, y], i) => { const it = R.small[i]; if (it && !walkingPet("hall", i)) it.kind.draw(x, y, it.v, now); });
   }
   // Ropa comprada: la prenda y su color, o la de su rol.
   function dress(a, colorKey) {
@@ -2386,6 +2419,195 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       drawWear(fake, 36, 34, 0);
       delete placed.wear.__preview;
     }
+  }
+
+  // --- Sonidos (opcionales) ----------------------------------------------------------
+  // Sintetizados en el navegador, sin archivos. Apagados por defecto; se prenden con el
+  // botón "Sonido", que también le da permiso al navegador para sonar.
+  let audio = null;
+  function sfx(kind) {
+    if (!audio || !prefs.sound || document.hidden) return;
+    const t = audio.currentTime;
+    const tone = (f, d, at = 0, type = "square", vol = 0.05) => {
+      const o = audio.createOscillator(), gn = audio.createGain();
+      o.type = type; o.frequency.value = f;
+      gn.gain.setValueAtTime(vol, t + at); gn.gain.exponentialRampToValueAtTime(0.0001, t + at + d);
+      o.connect(gn).connect(audio.destination); o.start(t + at); o.stop(t + at + d + 0.02);
+    };
+    const noise = (d, at = 0, vol = 0.03) => {
+      const buf = audio.createBuffer(1, Math.max(1, Math.floor(audio.sampleRate * d)), audio.sampleRate), ch = buf.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / ch.length);
+      const src = audio.createBufferSource(), gn = audio.createGain();
+      gn.gain.value = vol; src.buffer = buf; src.connect(gn).connect(audio.destination); src.start(t + at);
+    };
+    if (kind === "type") noise(0.025, 0, 0.015);
+    else if (kind === "coffee") { noise(0.7, 0, 0.012); tone(170, 0.6, 0, "sawtooth", 0.008); }
+    else if (kind === "bell") { tone(880, 0.35, 0, "sine", 0.08); tone(660, 0.6, 0.3, "sine", 0.08); }
+    else if (kind === "level") [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, i * 0.1, "square", 0.04));
+    else if (kind === "achievement") [784, 988, 1175].forEach((f, i) => tone(f, 0.16, i * 0.08, "triangle", 0.06));
+    else if (kind === "birthday") [392, 392, 440, 392, 523, 494].forEach((f, i) => tone(f, 0.25, i * 0.28, "triangle", 0.05));
+    else if (kind === "power") { tone(110, 0.7, 0, "sawtooth", 0.05); noise(0.35, 0.1, 0.04); }
+  }
+
+  // --- Logros ------------------------------------------------------------------------
+  // Hechos de la sesión, que se anotan desde el registro (en vivo) o desde el guion (en la
+  // demo). Cada logro suma tokens al saldo de la tienda, pero no al nivel.
+  const freshFacts = () => ({ firstTest: null, testFails: 0, streak: 0, passAfterFails: false, qaRejected: false, qaFixed: false,
+    pr: false, merged: false, workers: new Set(), providers: new Set(), pizzas: 0, approvals: 0, blackout: false });
+  const ACHIEVEMENTS = [
+    { id: "verde", name: "Todo en verde a la primera", desc: "El primer resultado del tester de la sesión fue PASA.", bonus: 40000, ok: f => f.firstTest === "PASA" },
+    { id: "tercera", name: "A la tercera va la vencida", desc: "El tester falló dos veces seguidas o más y después pasó.", bonus: 60000, ok: f => f.passAfterFails },
+    { id: "qa", name: "QA rechazó y se corrigió", desc: "QA rechazó el trabajo y después lo aprobó.", bonus: 60000, ok: f => f.qaFixed },
+    { id: "pr", name: "Primer PR", desc: "Se abrió el PR de la sesión.", bonus: 50000, ok: f => f.pr },
+    { id: "merge", name: "PR mergeado", desc: "Se mergeó el PR.", bonus: 100000, ok: f => f.merged },
+    { id: "equipo", name: "Trabajo en equipo", desc: "Trabajaron cuatro empleados o más.", bonus: 40000, ok: f => f.workers.size >= 4 },
+    { id: "multi", name: "Multiproveedor", desc: "Trabajaron Claude y también Codex o Gemini.", bonus: 50000, ok: f => f.providers.has("claude") && (f.providers.has("codex") || f.providers.has("gemini")) },
+    { id: "permiso", name: "Con permiso del CEO", desc: "Alguien pidió aprobación antes de seguir.", bonus: 20000, ok: f => f.approvals > 0 },
+    { id: "pizza", name: "Pizza party", desc: "Llegaron tres pizzas.", bonus: 50000, ok: f => f.pizzas >= 3 },
+    { id: "millon", name: "Millonario", desc: "La sesión gastó un millón de tokens.", bonus: 80000, ok: () => earned() >= 1e6 },
+    { id: "decorador", name: "Decorador", desc: "Compraste diez artículos.", bonus: 50000, ok: () => !!game && game.buys.length >= 10 },
+    { id: "cumple", name: "¡Feliz cumple!", desc: "Festejaron un cumpleaños en la oficina.", bonus: 30000, ok: () => !!(game && game.bday) },
+    { id: "apagon", name: "Sobreviviste al apagón", desc: "Se cortó la luz de tanto test en rojo.", bonus: 30000, ok: f => f.blackout },
+  ];
+  const bonus = () => game && game.ach ? ACHIEVEMENTS.reduce((n, a) => n + (game.ach[a.id] ? a.bonus : 0), 0) : 0;
+  function factTest(f, v) {
+    if (f.firstTest === null) f.firstTest = v;
+    if (v === "FALLA") { f.testFails += 1; f.streak += 1; }
+    else if (v === "PASA") { if (f.streak >= 2) f.passAfterFails = true; f.streak = 0; }
+  }
+  function factQa(f, v) { if (v === "RECHAZADO") f.qaRejected = true; else if (v === "APROBADO" && f.qaRejected) f.qaFixed = true; }
+  function achievementsTick() {
+    if (!game || !state.facts) return;
+    game.ach = game.ach || {};
+    ACHIEVEMENTS.forEach(a => {
+      if (game.ach[a.id] || !a.ok(state.facts)) return;
+      game.ach[a.id] = Math.round(Date.now() / 1000);
+      shopLog("Logro: " + a.name + ". " + a.desc + " (+" + fmtK(a.bonus) + " tokens para la tienda)", "good");
+      sfx("achievement");
+      gameSave();
+    });
+  }
+
+  // --- Empleado del mes ---------------------------------------------------------------
+  // Un cuadro en Reuniones con el que más pizzas ganó en la sesión (con empate, el que más
+  // tokens gastó).
+  function employeeOfMonth() {
+    const wins = state.pizzaWins || {};
+    return state.agents.filter(a => wins[a.id]).sort((p, q) => wins[q.id] - wins[p.id] || q.tokens - p.tokens)[0] || null;
+  }
+  function drawEmployeeOfMonth(r, now) {
+    const top = employeeOfMonth(), fr = framed(r.x + 70, r.y + 2, 30, 24, "#d4a933");
+    px(fr.x, fr.y, fr.w, fr.h, top ? "#4a3f5a" : "#3a3f4a");
+    if (top) clipped(fr.x, fr.y, fr.w, fr.h, () => { px(fr.x + 3, fr.y + 13, 20, 8, ROLE_COLORS[top.color] || "#8b6cd6"); drawHead(fr.x + 5, fr.y + 3, look(top.look), { mood: "happy" }); });
+    else { px(fr.x + 11, fr.y + 4, 4, 2, "#98a1b3"); px(fr.x + 14, fr.y + 6, 2, 3, "#98a1b3"); px(fr.x + 12, fr.y + 9, 2, 2, "#98a1b3"); px(fr.x + 12, fr.y + 13, 2, 2, "#98a1b3"); }
+    if (top && Math.floor(now * 2) % 6 === 0) px(fr.x + 2, fr.y + 2, 1, 1, "#ffffff");
+  }
+
+  // --- Eventos al azar ----------------------------------------------------------------
+  // Corte de luz: el tester falla tres veces seguidas (en la demo, a veces con una falla).
+  function powerCut() { state.blackout = state.t + 6; sfx("power"); }
+  // Cumpleaños: una vez por partida, en un momento al azar. Hay torta y vienen a saludar.
+  function bdayTick() {
+    if (!game || game.bday) return;
+    const R = rng(hashStr("cumple:" + game.key));
+    const live = mode === "live", at = live ? (state.live ? state.live.t0 : Infinity) + (15 + R() * 90) * 60 : 80 + R() * 60;
+    if ((live ? Date.now() / 1000 : state.t) < at) return;
+    const cands = state.agents.filter(a => a.present && a.provider);
+    if (!cands.length) return;
+    const b = cands[Math.floor(R() * cands.length)];
+    game.bday = { id: b.id, at: Math.round(Date.now() / 1000) };
+    gameSave();
+    state.cake = { id: b.id, until: state.t + 180 };
+    shopLog("Hoy cumple años " + b.label + ": hay torta en " + room(b.room).name + ".", "good");
+    sfx("birthday");
+    cands.filter(x => x !== b && x.status !== "working" && !x.pos).sort(() => R() - 0.5).slice(0, 2)
+      .forEach(x => talkTo(x.id, b.id, ["¡Feliz cumple!", "¡Gracias! Hay torta"]));
+  }
+  // Mascotas: las que se compraron (gato, perro, robot) salen cada tanto a pasear.
+  const PETS = ["gato", "perro", "robot"];
+  function petTick(dt) {
+    const w = state.petWalk;
+    if (w) {
+      for (let guard = 0; w.acts.length && guard < 4; guard++) {
+        const act = w.acts[0];
+        if (act.t0 === undefined) beginAct(w, act);
+        if (!stepAct(w, act, dt * 0.6)) return;
+        w.acts.shift();
+      }
+      if (!w.acts.length) state.petWalk = null;
+      return;
+    }
+    if (reduced || state.t < (state.nextPet || 0)) return;
+    state.nextPet = state.t + 40 + Math.random() * 50;
+    const pets = [];
+    Object.entries(placed.rooms).forEach(([rid, R]) => (R.small || []).forEach((it, i) => { if (it && PETS.includes(it.kind.k)) pets.push({ rid, i, it }); }));
+    if (!pets.length) return;
+    const p = pets[Math.floor(Math.random() * pets.length)], [sx, sy] = SLOTS[p.rid].small[p.i], r = room(p.rid);
+    const home = r ? { x: r.x + sx, y: r.y + sy, room: p.rid } : { x: sx, y: sy, room: "hall" };
+    const far = { x: 30 + Math.random() * (W - 60), y: HALL_Y + 8, room: "hall" };
+    state.petWalk = { rid: p.rid, i: p.i, it: p.it, pos: { x: home.x, y: home.y }, curRoom: home.room, room: home.room, path: [], facing: 1, acts: [{ k: "go", to: far }, { k: "wait", d: 2.5 }, { k: "go", to: home }] };
+  }
+  const walkingPet = (rid, i) => state.petWalk && state.petWalk.rid === rid && state.petWalk.i === i;
+  function drawPetWalking(w, now) {
+    const { x, y } = w.pos, step = Math.floor(now * 8) % 2;
+    if (w.it.kind.k !== "gato") { w.it.kind.draw(x, y + (step ? -1 : 0), w.it.v, now); return; }
+    const [a, b] = w.it.v[0].c, d = w.facing;
+    px(x - 6, y - 8, 12, 5, OUT); px(x - 5, y - 7, 10, 3, a);
+    px(x - 5 + (step ? 1 : 0), y - 4, 2, 4, a); px(x + 3 - (step ? 1 : 0), y - 4, 2, 4, a);
+    const hx = x + d * 6; px(hx - 3, y - 12, 6, 5, OUT); px(hx - 2, y - 11, 4, 3, a); px(hx - 2, y - 13, 1, 2, a); px(hx + 1, y - 13, 1, 2, a); px(hx + d, y - 10, 1, 1, b);
+    px(x - d * 7, y - 13 + step, 1, 6, a);
+  }
+  // Una vez por cuadro: los eventos que no salen del registro.
+  function lifeTick(dt) {
+    bdayTick();
+    achievementsTick();
+    petTick(dt);
+    if (state.cake && state.t > state.cake.until) state.cake = null;
+    if (audio && prefs.sound && Math.random() < dt * 2.5 && state.agents.some(a => a.present && a.status === "working" && !a.pos)) sfx("type");
+  }
+
+  // --- Cierre del día -----------------------------------------------------------------
+  // Un resumen de la sesión con la foto de la oficina, para mirar o descargar.
+  function summaryLines() {
+    const f = state.facts || freshFacts(), top = employeeOfMonth(), wins = Object.entries(state.pizzaWins || {}).filter(([id]) => agent(id)).sort((p, q) => q[1] - p[1]);
+    const got = ACHIEVEMENTS.filter(a => game && game.ach && game.ach[a.id]);
+    return [
+      "## La sesión",
+      "| Dato | Valor |", "| --- | --- |",
+      "| Duración | " + clock(state.t) + " |",
+      "| Tokens | " + fmtK(earned()) + " |",
+      "| Nivel de la oficina | " + levelOf(earned()) + " |",
+      "| Compras | " + (game ? game.buys.length : 0) + " (" + fmtK(spent()) + " tokens) |",
+      "| Fallas del tester | " + f.testFails + " |",
+      "| PR | " + (f.merged ? "mergeado" : f.pr ? "abierto" : "sin PR") + " |",
+      "", "## Empleado del mes", top ? top.label + ", con " + state.pizzaWins[top.id] + (state.pizzaWins[top.id] === 1 ? " pizza" : " pizzas") + "." : "Todavía no llegó ninguna pizza.",
+      "", "## Pizzas", ...(wins.length ? wins.map(([id, n]) => "- " + agent(id).label + ": " + n) : ["- Ninguna todavía."]),
+      "", "## Logros (" + got.length + " de " + ACHIEVEMENTS.length + ")", ...(got.length ? got.map(a => "- **" + a.name + "** (+" + fmtK(a.bonus) + ")") : ["- Ninguno todavía."]),
+    ];
+  }
+  function openSummary() {
+    const lines = summaryLines(), photo = canvas.toDataURL("image/png");
+    openDoc({ kind: "Cierre del día", title: mode === "live" ? "Así quedó la oficina hoy" : "Así quedó la oficina de la demo", at: Date.now() / 1000, t: state.t, text: lines.join("\n") });
+    $("reader-body").insertAdjacentHTML("afterbegin", `<img class="photo" src="${photo}" alt="Foto de la oficina"><p><button type="button" id="dl-summary">Descargar imagen</button></p>`);
+    $("dl-summary").addEventListener("click", () => downloadSummary(photo, lines));
+  }
+  function downloadSummary(photo, lines) {
+    const img = new Image();
+    img.onload = () => {
+      const text = lines.filter(l => !/^\| ---/.test(l)).map(l => l.replace(/^## /, "").replace(/\*\*/g, "").replace(/^\| (.*) \| (.*) \|$/, "$1: $2")).filter(l => l !== "Dato: Valor");
+      const pad = 24, lh = 26, c = document.createElement("canvas");
+      c.width = img.width; c.height = img.height + pad * 2 + lh * text.length;
+      const x = c.getContext("2d");
+      x.fillStyle = "#12151d"; x.fillRect(0, 0, c.width, c.height);
+      x.drawImage(img, 0, 0);
+      x.font = "18px 'Space Mono', monospace"; x.textBaseline = "top";
+      text.forEach((l, i) => { x.fillStyle = /^(La sesión|Empleado del mes|Pizzas|Logros)/.test(l) ? "#f2c14e" : "#ebe5d8"; x.fillText(l, pad, img.height + pad + i * lh); });
+      const a = document.createElement("a");
+      a.download = "oficina-" + new Date().toISOString().slice(0, 10) + ".png";
+      a.href = c.toDataURL("image/png");
+      a.click();
+    };
+    img.src = photo;
   }
 
   // --- En vivo: los eventos de .office/observer/events.js ------------------------
@@ -2495,6 +2717,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     state.docs = [];
     Object.assign(state.pm, NO_DOCS());
     const pending = [], byAgent = {}, fx = [], pizzaBase = {};
+    state.facts = freshFacts();
+    state.pizzaWins = {};
     let pmTarget = "door", pmStatus = "idle", pmTool = "", pmTask = "";
     const tok = u => (u ? (u.i || 0) + (u.o || 0) + (u.cw || 0) : 0);
     const feed = (e, text, kind, doc) => state.feed.unshift({ at: e.t, t: e.t - t0, text, kind: kind || "", doc: doc || null });
@@ -2590,8 +2814,18 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
           a.bubble = v === "APROBACION" ? "pide aprobación" : v === "FALLO" ? "FALLÓ" : v === "VALIDACION" ? "VALIDÓ" : v;
           a.bubbleUntil = e.t + 12;
           if (v === "FALLA") L.fails += 1;
-          if (/\.tester$/.test(p.role || "")) L.board.tests = v;
-          if (p.role === "qa") L.board.qa = v;
+          if (/\.tester$/.test(p.role || "")) {
+            L.board.tests = v;
+            factTest(state.facts, v);
+            if (v === "FALLA" && state.facts.streak === 3) {
+              state.facts.blackout = true;
+              feed(e, "Se cortó la luz: tres tests en rojo seguidos. A los pocos segundos volvió.", "alert");
+              if (fresh) fx.push(powerCut);
+            }
+          }
+          if (p.role === "qa") { L.board.qa = v; factQa(state.facts, v); }
+          state.facts.workers.add(a.id); state.facts.providers.add(p.provider || a.provider);
+          if (v === "APROBACION") state.facts.approvals += 1;
           const lead = p.lead || managedBy(p.role);
           const d = keepDoc(a, docOf(e, "Respuesta", a.label + ": " + a.bubble, e.text, { verdict: a.bubble }), "reply");
           keepDoc(lead ? agent(lead) : state.pm, d);
@@ -2648,6 +2882,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       else if (e.type === "pr") {
         const was = L.board.pr;
         L.board.pr = { number: e.number, url: e.url, state: e.state };
+        state.facts.pr = true; if (e.state === "merged") state.facts.merged = true;
         if (!was || was.number !== e.number) feed(e, "Se abrió el PR #" + e.number + ".", "good");
         else if (was.state !== e.state && e.state === "merged") feed(e, "Se mergeó el PR #" + e.number + ".", "good");
       }
@@ -2680,6 +2915,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
         if (fresh) alertCEO("pm", "El PM te respondió", shortText(String(e.text || "Mirá la terminal.").replace(/[#*`|>]+/g, " ").replace(/\s+/g, " ").trim(), 140));
         const w = topWorker(pizzaBase);
         if (w) {
+          state.facts.pizzas += 1;
+          state.pizzaWins[w.a.id] = (state.pizzaWins[w.a.id] || 0) + 1;
           feed(e, pizzaText(w), "good");
           if (fresh) fx.push(() => deliverPizza(w.a.id));
           else if (!(state.courier && state.courier.to === w.a.id)) state.pizza[w.a.id] = Math.max(state.pizza[w.a.id] || 0, e.t - t0 + 150);
@@ -3032,7 +3269,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const pct = next ? Math.min(100, (e - prev) / (next - prev) * 100) : 100;
     setHTML("shop-level", `<div class="lv"><b>Nivel ${lv}</b><span>${next ? "faltan " + fmtK(next - e) + " tokens para el nivel " + (lv + 1) : "nivel máximo"}</span></div>
       <div class="bar" role="progressbar" aria-label="Avance al próximo nivel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><i style="width:${pct.toFixed(1)}%"></i></div>
-      <div class="bal">Saldo <b>${fmtK(Math.max(0, e - spent()))}</b> tokens · la sesión gastó ${fmtK(e)} · en compras ${fmtK(spent())}</div>`);
+      <div class="bal">Saldo <b>${fmtK(Math.max(0, e + bonus() - spent()))}</b> tokens · la sesión gastó ${fmtK(e)} · logros +${fmtK(bonus())} · en compras ${fmtK(spent())}</div>
+      <div class="ach" aria-label="Logros">${ACHIEVEMENTS.map(a => `<span class="badge${game.ach && game.ach[a.id] ? " on" : ""}" title="${esc(a.desc)} (+${fmtK(a.bonus)} tokens)">${esc(a.name)}</span>`).join("")}</div>`);
     const rooms = shopRooms(), who = shopPeople();
     setHTML("shop-room", rooms.map(id => `<option value="${id}">${esc(id === "hall" ? "Pasillo" : room(id).name)}</option>`).join(""));
     setHTML("shop-who", who.map(p => `<option value="${p.id}">${esc(p.label)}</option>`).join(""));
@@ -3139,6 +3377,15 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     renderAlertBtn();
   });
   renderAlertBtn();
+  function renderSoundBtn() { $("btn-sound").setAttribute("aria-pressed", String(!!prefs.sound)); $("btn-sound").textContent = prefs.sound ? "Sonido: sí" : "Sonido: no"; }
+  $("btn-sound").addEventListener("click", () => {
+    prefs.sound = !prefs.sound;
+    savePrefs();
+    if (prefs.sound) { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); sfx("bell"); } catch (e) { audio = null; } }
+    renderSoundBtn();
+  });
+  renderSoundBtn();
+  $("btn-summary").addEventListener("click", openSummary);
   renderPanel(true);
   poll();
   setInterval(poll, 1500);
@@ -3150,6 +3397,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     if (mode === "live") update(dt);
     else if (playing) update(dt * speed);
     shopTick();
+    lifeTick(mode === "live" ? dt : playing ? dt * speed : 0);
     render(reduced ? Math.floor(ts / 600) : ts / 1000);
     renderPanel(false);
     requestAnimationFrame(frame);

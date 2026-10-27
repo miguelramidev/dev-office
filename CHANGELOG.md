@@ -8,6 +8,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.25.0] - 2026-10-27
+
+### Agregado
+
+- **Observer: la vida en la oficina** (`office` 0.23.0).
+  - **Cierre del día:** un botón abre el resumen de la sesión con la foto de la oficina, la duración, los tokens, el nivel, las compras, las fallas, el PR, el empleado del mes, las pizzas y los logros. Se puede descargar como imagen.
+  - **Empleado del mes:** un cuadro en Reuniones con el retrato del que más pizzas ganó en la sesión.
+  - **Logros:** trece logros que suman tokens al saldo de la tienda (no al nivel). Se ven como insignias en la tienda y se anotan en la actividad.
+  - **Eventos al azar:** un cumpleaños por sesión, con torta en el escritorio y compañeros que van a saludar; un corte de luz cuando el tester falla tres veces seguidas; y las mascotas compradas salen a pasear por el pasillo.
+  - **Sonidos opcionales,** apagados por defecto y sintetizados en el navegador, sin archivos: teclado, cafetera, timbre del repartidor, nivel, logro, cumpleaños y apagón.
+- Pruebas de todo esto en `tests/observer.test.sh`. Las pruebas de la página ahora corren sin "reducir movimiento", así que también se prueban las animaciones.
+
+### Cambiado
+
+- Observer: Reuniones tiene un lugar menos en la pared para cuadros, porque ahí va el empleado del mes.
+
 ## [0.24.0] - 2026-10-27
 
 ### Agregado

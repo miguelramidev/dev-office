@@ -251,11 +251,11 @@ const fs = require("fs");
 const html = fs.readFileSync(process.argv[2], "utf8");
 let code = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</script>"));
 const end = code.lastIndexOf("})();");
-code = code.slice(0, end) + "\nglobal.T = { KINDS, VARIANTS, itemOf, buildShop, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, live: evs => { liveEvents = evs; liveAnimFrom = -1; mode = 'live'; liveRebuild(); } };\n" + code.slice(end);
+code = code.slice(0, end) + "\nglobal.T = { KINDS, VARIANTS, itemOf, buildShop, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, live: evs => { liveEvents = evs; liveAnimFrom = -1; mode = 'live'; liveRebuild(); } };\n" + code.slice(end);
 const stub = () => new Proxy(function () {}, { get: (t, k) => k === Symbol.toPrimitive ? () => 0 : k === "length" ? 0 : stub(), apply: () => stub(), construct: () => stub(), set: () => true });
 Object.assign(global, { document: stub(), window: stub(), requestAnimationFrame: () => 0, setInterval: () => 0, matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} } });
 const store = {}; global.sessionStorage = { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = v; } };
-eval(code);
+eval(code.replace("window.matchMedia(", "matchMedia(")); // sin "reducir movimiento": las animaciones corren
 const say = (ok, msg) => console.log((ok ? "ok    " : "FALLA ") + msg);
 say(T.CATALOG_SIZE >= 2000, "tienda: catálogo general de " + T.CATALOG_SIZE + " artículos");
 let bad = [];
@@ -276,8 +276,18 @@ T.render(1);
 say(T.game.buys.length > 0 && Object.keys(store).length === 1, "tienda: en la demo el CEO compra solo y la partida se guarda en la pestaña");
 // Se sigue la demo hasta el informe: ahí llega la pizza.
 for (let i = 0; i < 6000 && !T.state.feed.some(e => /Llega la pizza para/.test(e.text)); i++) T.update(0.1);
+for (let i = 0; i < 400 && T.state.courier; i++) T.update(0.1); // el repartidor la entrega
 const pizza = T.state.feed.find(e => /Llega la pizza para/.test(e.text)), top = T.state.agents.filter(a => a.provider).sort((p, q) => q.tokens - p.tokens)[0];
 say(pizza && Object.keys(T.state.pizza).includes(top.id) && pizza.text.includes(top.label), "pizza: al final del encargo la recibe el que más tokens gastó (" + (top && top.label) + ")");
+say(T.employeeOfMonth() === top && T.summaryLines().some(l => l.includes(top.label + ", con 1 pizza")), "empleado del mes: el que más pizzas ganó, también en el cierre del día");
+for (let i = 0; i < 40; i++) T.lifeTick(0.1);
+say(!!T.game.bday && !!T.state.cake && T.state.feed.some(f => /cumple años/.test(f.text)), "cumpleaños: una vez por partida, con torta y aviso");
+say(T.bonus() > 0 && T.state.feed.some(f => /^Logro: /.test(f.text)), "logros: se desbloquean y suman tokens al saldo de la tienda");
+T.place({ item: "perro.0", to: "back", slot: 0, price: 0 });
+let walked = false;
+for (let i = 0; i < 2000 && !walked; i++) { T.update(0.1); T.lifeTick(0.1); walked = !!T.petWalk; }
+for (let i = 0; i < 3000 && T.petWalk; i++) { T.update(0.1); T.lifeTick(0.1); }
+say(walked && !T.petWalk, "mascotas: la comprada sale a pasear y vuelve a su lugar");
 // En vivo: compactar no reinicia la sesión, y un agente sin novedades se marca como trabado.
 const now = Math.floor(Date.now() / 1000), u = { i: 1000, o: 4000, cw: 20000 };
 T.live([
@@ -304,6 +314,11 @@ T.live([
 ]);
 const bd = T.state.live.board;
 say(bd.ticket === "PROJ-123" && bd.tests === "PASA" && bd.pr && bd.pr.number === 42 && T.state.feed.some(f => /Se abrió el PR #42/.test(f.text)), "tablero: ticket, rama, resultado del tester y PR");
+const fail = (n, t) => [{ type: "delegate", t, subagent_type: "dept-backend:tester", description: "[backend-tester] Tests" }, { type: "start", t: t + 1, agent: "F" + n, agent_type: "dept-backend:tester" }, { type: "stop", t: t + 2, agent: "F" + n, agent_type: "dept-backend:tester", verdict: n < 3 ? "FALLA" : "PASA", usage: u }];
+T.live([{ type: "session", t: now - 900, source: "startup" }, ...fail(0, now - 800), ...fail(1, now - 700), ...fail(2, now - 600), ...fail(3, now - 500), { type: "pr", t: now - 100, url: "https://github.com/acme/app/pull/7", number: 7, state: "merged" }]);
+say(T.state.facts.blackout && T.state.feed.some(f => /Se cortó la luz/.test(f.text)), "corte de luz: tres tests en rojo seguidos");
+T.achievementsTick();
+say(T.state.facts.passAfterFails && T.state.facts.merged && T.state.feed.some(f => /Logro: A la tercera va la vencida/.test(f.text)) && T.state.feed.some(f => /Logro: PR mergeado/.test(f.text)), "logros en vivo: a la tercera va la vencida y PR mergeado");
 NODE
 )
   echo "$OUT"
