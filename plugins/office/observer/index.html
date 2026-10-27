@@ -2613,7 +2613,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   // --- En vivo: los eventos de .office/observer/events.js ------------------------
   // La página se abre desde el disco, sin servidor: el archivo de eventos es JavaScript
   // ("OFFICE_EVENT({...});" por línea) y se vuelve a cargar cada 1,5 segundos.
-  let mode = "demo", userPicked = false, liveEvents = [], liveCount = -1, liveFile = false, liveAnimFrom = -1;
+  let mode = "demo", userPicked = false, liveEvents = [], liveCount = -1, liveFile = false, liveAnimFrom = -1, liveProc = null;
   const ROLE_SEAT = {
     "backend.architect": "barch", "frontend.architect": "farch", "frontend.designer": "dsgn", "devops.architect": "oarch",
     "backend.developer": "bdev", "backend.tester": "btest", "frontend.developer": "fdev", "frontend.tester": "ftest",
@@ -2708,18 +2708,25 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const list = evs.slice(base);
     const t0 = sess ? sess.t : (list[0] ? list[0].t : nowS);
     const sessKey = sess ? sess.t + ":" + base : "none";
-    if (state.liveSession !== sessKey) { state.liveSession = sessKey; state.agents.forEach(clearAnim); state.holds = {}; state.nextIdle = 0; state.courier = null; state.pizza = {}; }
-    liveReset(sess);
-    const teams = !!(sess && sess.teams);
-    const L = state.live = { t0, sess, teams, pmTokens: 0, claudeSub: 0, ext: { codex: 0, gemini: 0 }, route: [], fails: 0, leads: {},
-      board: { ticket: sess && sess.ticket, branch: sess && sess.branch, tests: null, qa: null, pr: null } };
-    state.feed = [];
-    state.docs = [];
-    Object.assign(state.pm, NO_DOCS());
-    const pending = [], byAgent = {}, fx = [], pizzaBase = {};
-    state.facts = freshFacts();
-    state.pizzaWins = {};
-    let pmTarget = "door", pmStatus = "idle", pmTool = "", pmTask = "";
+    // Solo se procesan los eventos nuevos. Se empieza de cero si cambió la sesión, si el
+    // archivo empezó de nuevo o si llegó otro evento de sesión (puede cambiar la configuración).
+    let P = liveProc;
+    const restart = !P || P.key !== sessKey || P.first !== (evs[0] && evs[0].t) || P.n > evs.length || evs.slice(P.n).some(e => e.type === "session");
+    if (restart) {
+      if (state.liveSession !== sessKey) { state.liveSession = sessKey; state.agents.forEach(clearAnim); state.holds = {}; state.nextIdle = 0; state.courier = null; state.pizza = {}; }
+      liveReset(sess);
+      state.live = { t0, sess, teams: !!(sess && sess.teams), pmTokens: 0, claudeSub: 0, ext: { codex: 0, gemini: 0 }, route: [], fails: 0, leads: {},
+        board: { ticket: sess && sess.ticket, branch: sess && sess.branch, tests: null, qa: null, pr: null } };
+      state.feed = [];
+      state.docs = [];
+      Object.assign(state.pm, NO_DOCS());
+      state.facts = freshFacts();
+      state.pizzaWins = {};
+      P = liveProc = { key: sessKey, first: evs[0] && evs[0].t, n: base, pending: [], byAgent: {}, pizzaBase: {}, pmTarget: "door", pmStatus: "idle", pmTool: "", pmTask: "" };
+    }
+    const L = state.live, teams = L.teams, fx = [];
+    const { pending, byAgent, pizzaBase } = P;
+    let { pmTarget, pmStatus, pmTool, pmTask } = P;
     const tok = u => (u ? (u.i || 0) + (u.o || 0) + (u.cw || 0) : 0);
     const feed = (e, text, kind, doc) => state.feed.unshift({ at: e.t, t: e.t - t0, text, kind: kind || "", doc: doc || null });
     const docOf = (e, kind, title, text, extra) => newDoc(kind, title, text, Object.assign({ at: e.t }, extra));
@@ -2736,8 +2743,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       return null;
     };
 
-    list.forEach((e, k) => {
-      const fresh = base + k >= animFrom && nowS - e.t < 30;
+    const step = (e, fresh) => {
       if (e.type === "session") { feed(e, e.source === "resume" ? "Se retoma la sesión de la oficina." : e.source === "compact" ? "Claude Code compacta la conversación; la sesión sigue." : "Empieza la sesión de la oficina."); }
       else if (e.type === "prompt") { pmTarget = "ceo"; pmStatus = "working"; pmTool = "conversa con el CEO"; pmTask = "Reunión con el CEO"; feed(e, "El CEO llama al PM."); }
       else if (e.type === "delegate") {
@@ -2922,7 +2928,10 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
           else if (!(state.courier && state.courier.to === w.a.id)) state.pizza[w.a.id] = Math.max(state.pizza[w.a.id] || 0, e.t - t0 + 150);
         }
       }
-    });
+    };
+    for (let j = P.n; j < evs.length; j++) step(evs[j], j >= animFrom && nowS - evs[j].t < 30);
+    P.n = evs.length;
+    Object.assign(P, { pmTarget, pmStatus, pmTool, pmTask });
     state.tokens = { claude: L.pmTokens + L.claudeSub, codex: L.ext.codex, gemini: L.ext.gemini };
     stuckCheck(nowS);
     // La partida de la tienda es todo el registro de la sesión (el archivo empieza de nuevo
@@ -2981,6 +2990,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 
   function setMode(m) {
     mode = m;
+    liveProc = null;
     if (m === "live") {
       state.pmTarget = null;
       state.agents.forEach(clearAnim);
@@ -3106,7 +3116,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   }
 
   function compareTile() {
-    const now = sessionStats(liveEvents), pv = prevStats;
+    if (!compareTile.at || compareTile.n !== liveEvents.length) { compareTile.at = sessionStats(liveEvents); compareTile.n = liveEvents.length; }
+    const now = compareTile.at, pv = prevStats;
     const pct = pv.tokens ? Math.round((now.tokens - pv.tokens) / pv.tokens * 100) : 0;
     return `<div class="stat"><div class="k">Contra la anterior</div><div class="v" style="color:${pct > 0 ? "var(--accent)" : "var(--ok)"}">${pct > 0 ? "+" : ""}${pct}%</div>
       <div class="s">tokens ${fmtK(now.tokens)} (antes ${fmtK(pv.tokens)}) · fallas ${now.fails} (antes ${pv.fails}) · tareas ${now.tasks} (antes ${pv.tasks})</div></div>`;
