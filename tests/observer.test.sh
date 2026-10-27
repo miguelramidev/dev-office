@@ -251,7 +251,7 @@ const fs = require("fs");
 const html = fs.readFileSync(process.argv[2], "utf8");
 let code = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</script>"));
 const end = code.lastIndexOf("})();");
-code = code.slice(0, end) + "\nglobal.T = { KINDS, VARIANTS, itemOf, buildShop, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, live: evs => { liveEvents = evs; liveAnimFrom = -1; mode = 'live'; liveRebuild(); } };\n" + code.slice(end);
+code = code.slice(0, end) + "\nglobal.T = { KINDS, VARIANTS, itemOf, buildShop, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, live: evs => { liveEvents = evs; liveAnimFrom = -1; liveProc = null; mode = 'live'; liveRebuild(); }, more: evs => { liveEvents = evs; liveRebuild(); } };\n" + code.slice(end);
 const stub = () => new Proxy(function () {}, { get: (t, k) => k === Symbol.toPrimitive ? () => 0 : k === "length" ? 0 : stub(), apply: () => stub(), construct: () => stub(), set: () => true });
 Object.assign(global, { document: stub(), window: stub(), requestAnimationFrame: () => 0, setInterval: () => 0, matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} } });
 const store = {}; global.sessionStorage = { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = v; } };
@@ -319,6 +319,19 @@ T.live([{ type: "session", t: now - 900, source: "startup" }, ...fail(0, now - 8
 say(T.state.facts.blackout && T.state.feed.some(f => /Se cortó la luz/.test(f.text)), "corte de luz: tres tests en rojo seguidos");
 T.achievementsTick();
 say(T.state.facts.passAfterFails && T.state.facts.merged && T.state.feed.some(f => /Logro: A la tercera va la vencida/.test(f.text)) && T.state.feed.some(f => /Logro: PR mergeado/.test(f.text)), "logros en vivo: a la tercera va la vencida y PR mergeado");
+// Procesar el registro de a partes da lo mismo que procesarlo entero, y es rápido. (Los avisos
+// de trabado se dejan afuera: miran la hora real y acá se reproduce historia vieja.)
+const big = [{ type: "session", t: now - 5000, source: "startup" }];
+for (let i = 0; i < 1000; i++) big.push(...fail(i % 4 === 0 ? 0 : 3, now - 4900 + i * 4).map((e, k) => Object.assign({}, e, { agent: e.agent && "B" + i, t: e.t + k })));
+T.live(big);
+const whole = JSON.stringify([T.state.tokens, T.state.feed.filter(f => !f.stuckKey).map(f => f.text), T.state.agents.map(a => [a.id, a.tokens, a.status])]);
+T.live(big.slice(0, 1));
+const t1 = Date.now();
+for (let n = 11; n <= big.length + 9; n += 10) T.more(big.slice(0, Math.min(n, big.length)));
+const ms = Date.now() - t1;
+const parts = JSON.stringify([T.state.tokens, T.state.feed.filter(f => !f.stuckKey).map(f => f.text), T.state.agents.map(a => [a.id, a.tokens, a.status])]);
+say(whole === parts, "en vivo: procesar solo lo nuevo da lo mismo que procesar todo");
+say(ms < 3000, "en vivo: 3000 eventos llegando de a diez se procesan en " + ms + " ms");
 NODE
 )
   echo "$OUT"
