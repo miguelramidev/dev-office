@@ -15,6 +15,7 @@ Antes de abrir un PR, buscá referencias a proyectos reales en los archivos camb
 ## Convenciones
 
 - Instrucciones y documentación en español, con voseo. Commits en inglés con Conventional Commits.
+- La página del observer se edita en `plugins/office/observer/src/` (la página, los estilos y el script en partes) y se arma con `bash plugins/office/observer/build.sh`, que deja todo en un solo `index.html`. `tests/observer.test.sh` falla si `index.html` no está al día.
 - Los `.cmd` van con finales de línea CRLF (ver `.gitattributes`); el resto, LF.
 - Cada cambio en un plugin sube su versión en `plugin.json` (versionado semántico) y se anota en `CHANGELOG.md`.
 - Verificación antes del PR: `claude plugin validate .`, `claude plugin validate plugins/<plugin>`, `bash tests/protect.test.sh`, `bash tests/branch-guard.test.sh`, `bash tests/api-collection.test.sh`, `bash tests/office-agents.test.sh`, `bash tests/run-external.test.sh`, `bash tests/observer.test.sh` y `bash tests/update-office.test.sh`.

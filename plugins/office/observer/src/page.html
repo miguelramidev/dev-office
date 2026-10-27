@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oficina dev-office</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+<!-- @style -->
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <h1>Oficina dev-office</h1>
+    <span class="sim-chip" id="mode-chip">DEMO</span>
+    <span class="ticket" id="ticket">Sin sesión todavía</span>
+    <div class="controls">
+      <button id="btn-summary" type="button">Cierre del día</button>
+      <button id="btn-sound" type="button" aria-pressed="false">Sonido: no</button>
+      <button id="btn-alerts" type="button" aria-pressed="false">Avisos: no</button>
+      <div class="mode" role="group" aria-label="Qué mostrar">
+        <button id="btn-live" type="button" aria-pressed="false">En vivo</button>
+        <button id="btn-demo" type="button" aria-pressed="true">Demo</button>
+      </div>
+      <div class="mode" id="demo-controls" role="group" aria-label="Controles de la demo">
+      <button id="btn-play" type="button" aria-pressed="false">Pausa</button>
+      <button type="button" aria-pressed="false" data-speed="1">1x</button>
+      <button type="button" aria-pressed="true" data-speed="2">2x</button>
+      <button type="button" aria-pressed="false" data-speed="4">4x</button>
+      <button id="btn-restart" type="button">Reiniciar</button>
+      </div>
+    </div>
+  </header>
+
+  <p class="notice" id="notice" hidden>Todavía no hay actividad de la oficina en este proyecto. Abrí una sesión con <code>claude --agent office:pm</code> y esta página se actualiza sola. Mientras tanto, mirá la demo.</p>
+
+  <nav class="phases" id="phases" aria-label="Recorrido de la oficina"></nav>
+
+  <div class="stage">
+    <canvas id="office" width="1536" height="896" aria-label="Oficina en pixel art: el PM camina entre las oficinas, cada departamento trabaja en su escritorio y la gente se levanta a hablar con su líder"></canvas>
+    <div class="hint">Tocá un empleado para ver qué está haciendo, o el tablero del pasillo para ver el ticket</div>
+  </div>
+
+  <section class="stats" id="stats" aria-label="Resumen"></section>
+
+  <div class="cols">
+    <section class="card detail" id="detail" aria-live="polite"></section>
+    <section class="card">
+      <h2>Equipo</h2>
+      <div class="agents" id="agents"></div>
+      <div class="legend">
+        <span><i style="background:var(--claude)"></i>Claude</span>
+        <span><i style="background:var(--codex)"></i>Codex</span>
+        <span><i style="background:var(--gemini)"></i>Gemini</span>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Actividad</h2>
+      <ol class="feed" id="feed"></ol>
+    </section>
+  </div>
+
+  <section class="card shop" id="shop" aria-labelledby="shop-title">
+    <div class="shop-top">
+      <div class="shop-head">
+        <h2 id="shop-title">Tienda de la oficina</h2>
+        <div class="shop-level" id="shop-level"></div>
+      </div>
+      <div class="shop-targets">
+        <label>Oficina <select id="shop-room"></select></label>
+        <label>Empleado <select id="shop-who"></select></label>
+      </div>
+    </div>
+    <div class="shop-cats" id="shop-cats" role="group" aria-label="Categorías"></div>
+    <div class="shop-grid" id="shop-grid"></div>
+    <p class="shop-note" id="shop-note"></p>
+  </section>
+</div>
+
+<dialog class="reader" id="reader" aria-labelledby="reader-title">
+  <header>
+    <div>
+      <div class="kind" id="reader-kind"></div>
+      <h2 id="reader-title"></h2>
+      <div class="meta" id="reader-meta"></div>
+    </div>
+    <button type="button" id="reader-close">Cerrar</button>
+  </header>
+  <div class="reader-body" id="reader-body"></div>
+</dialog>
+
+<!-- @script -->
+</body>
+</html>

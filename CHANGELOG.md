@@ -8,6 +8,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.25.1] - 2026-10-27
+
+### Cambiado
+
+- **Observer más rápido en sesiones largas** (`office` 0.23.1): con cada evento nuevo, la página procesa solo lo que llegó en lugar de rehacer el registro entero. Con 3000 eventos llegando de a diez, pasa de unos 535 ms a 14 ms. Rehace todo solo si cambia la sesión, si el archivo empieza de nuevo o si llega otro evento de sesión.
+- **La página del observer se arma desde partes:** `plugins/office/observer/src/` tiene la página, los estilos y el script en ocho partes (mundo, estado, dibujo, catálogo, tienda, vida, en vivo y panel). `build.sh` las junta en el mismo `index.html` de siempre: con `file://` el navegador no deja cargar módulos de otros archivos. `tests/observer.test.sh` falla si `index.html` no está al día. El resultado es idéntico byte a byte al archivo anterior.
+- Pruebas: procesar solo lo nuevo da lo mismo que procesar todo, y `build.sh --check`.
+
 ## [0.25.0] - 2026-10-27
 
 ### Agregado

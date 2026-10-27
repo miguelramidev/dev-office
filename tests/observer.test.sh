@@ -242,6 +242,11 @@ if command -v node >/dev/null 2>&1; then
   if node -e "const fs=require('fs');let n=0;global.OFFICE_EVENT=()=>n++;eval(fs.readFileSync(process.argv[1],'utf8'));if(!n)process.exit(1)" "$EVENTS"; then ok "events.js se puede cargar desde la página"; else fail "events.js se puede cargar desde la página"; fi
 fi
 
+# --- La página se arma desde src/ ---------------------------------------------------
+bash "$REPO/plugins/office/observer/build.sh" --check && ok "index.html está al día con src/ (build.sh)" || fail "index.html está al día con src/ (build.sh)"
+STALE="$WORK/stale"; mkdir -p "$STALE" && cp -R "$REPO/plugins/office/observer/." "$STALE/" && echo "// cambio" >>"$STALE/src/js/08-panel.js"
+bash "$STALE/build.sh" --check 2>/dev/null && fail "build.sh --check detecta un index.html viejo" || ok "build.sh --check detecta un index.html viejo"
+
 # --- La tienda de la página (si hay node) ------------------------------------------
 # Corre el script de la página con un DOM falso: el catálogo, la vitrina de cada partida,
 # el dibujo de todos los artículos y las compras de la demo.
