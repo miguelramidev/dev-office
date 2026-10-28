@@ -8583,7 +8583,29 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       if (k === "pm") Object.assign(L, { style: "slick", hair: "#2b1d14", skin: "#f1c27d", pants: "#3a2a5a", beard: false, shoes: "#2b2d36" });
       if (k === "ceo") Object.assign(L, { style: "bald", hair: "#8a8f99", pants: "#2b2d36", beard: true, shoes: "#2b2d36" });
       if (k === "courier") Object.assign(L, { style: "short", pants: "#2b2d36", beard: false, cap: "#cf4b47" });
+      // Lo que le compraron: la prenda (y su color), y gorro, anteojos y collar.
+      const w = (placed && placed.wear && placed.wear[p.id]) || {};
+      if (w.top) {
+        const t = w.top.kind.top, c = colorOf(w.top.v, 0, L.shirt);
+        L.topKind = t; L.badge = null; L.print = t === "heart" ? "#e0443a" : L.print || "#f2c14e";
+        L.outfit = { hoodie: "hoodie", shirt: "shirt", suit: "suit", coat: "coat" }[t] || t;
+        L.shirt = c; L.tie = t === "shirt" ? tint(c, -0.45) : L.tie || "#7a1f2b";
+      }
+      L.hat = w.hat || null; L.face = w.face || null; L.neck = w.neck || null;
       return L;
+    }
+    const wearSig = id => { const w = (placed && placed.wear && placed.wear[id]) || {}; return ["top", "hat", "face", "neck"].map(k => w[k] ? w[k].id : "-").join("|"); };
+    const SHORT = ["tee", "polo", "stripes", "heart", "hawaii"];
+    // El color de la tela del torso según la prenda.
+    function bodyColor(L) { const t = L.outfit; return t === "coat" || t === "astro" ? "#eef0f2" : t === "denim" ? "#4a6da0" : t === "gala" ? "#1d1a26" : t === "vest" ? "#efe9dd" : L.shirt; }
+    // Telas con dibujo: rayas, flores hawaianas, suéter navideño, metal de armadura.
+    function fabricTex(L) {
+      const c = L.shirt, t = L.outfit;
+      if (t === "stripes") return canvasTex(8, 8, q => { P(q, c, 0, 0, 8, 8); P(q, "#f4f1ea", 0, 0, 8, 2); P(q, "#f4f1ea", 0, 4, 8, 2); }, [1, 2]);
+      if (t === "hawaii") return canvasTex(16, 16, q => { P(q, c, 0, 0, 16, 16); [[2, 2, "#f2c14e"], [9, 5, "#ef6b5b"], [4, 10, "#f4f1ea"], [12, 12, "#f2c14e"]].forEach(([x, y, u]) => { P(q, u, x, y + 1, 3, 1); P(q, u, x + 1, y, 1, 3); }); P(q, "#3f8a4a", 6, 6, 2, 1); P(q, "#3f8a4a", 13, 2, 2, 1); });
+      if (t === "xmas") return canvasTex(16, 16, q => { P(q, c, 0, 0, 16, 16); P(q, "#f4f1ea", 0, 6, 16, 1); P(q, "#f4f1ea", 0, 10, 16, 1); for (let x = 0; x < 16; x += 4) { P(q, "#f4f1ea", x + 1, 7, 2, 1); P(q, "#3f8a4a", x + 2, 8, 1, 1); } P(q, "#f4f1ea", 4, 2, 1, 1); P(q, "#f4f1ea", 11, 13, 1, 1); });
+      if (t === "armor") return canvasTex(16, 16, q => { P(q, c, 0, 0, 16, 16); P(q, tint(c, 0.3), 0, 0, 16, 1); P(q, tint(c, -0.3), 0, 7, 16, 1); P(q, tint(c, -0.3), 7, 0, 1, 16); [[2, 2], [12, 2], [2, 12], [12, 12]].forEach(([x, y]) => P(q, tint(c, 0.4), x, y, 1, 1)); });
+      return null;
     }
     function faceTex(L, st) {
       return canvasTex(16, 16, x => {
@@ -8604,13 +8626,32 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
         if (o === "shirt") { P(x, tint(s, 0.25), 4, 0, 3, 2); P(x, tint(s, 0.25), 9, 0, 3, 2); P(x, tint(s, -0.2), 8, 2, 1, 14); [4, 7, 10, 13].forEach(y => P(x, "#f4f1ea", 8, y, 1, 1)); P(x, tint(s, -0.18), 2, 4, 3, 3); }
         if (o === "suit") { for (let i = 0; i < 7; i++) P(x, "#f4f1ea", 5 + Math.floor(i / 2), i, 6 - 2 * Math.floor(i / 2), 1); P(x, L.tie, 7, 0, 2, 2); P(x, L.tie, 7, 2, 2, 8); P(x, tint(L.tie, -0.3), 8, 2, 1, 8); P(x, tint(s, -0.3), 4, 0, 1, 8); P(x, tint(s, -0.3), 11, 0, 1, 8); P(x, "#f4f1ea", 11, 4, 2, 1); }
         if (o === "coat") { for (let i = 0; i < 6; i++) P(x, s, 5 + Math.floor(i / 2), i, 6 - 2 * Math.floor(i / 2), 1); P(x, "#cfd4da", 4, 0, 1, 14); P(x, "#cfd4da", 11, 0, 1, 14); P(x, "#dfe3e8", 11, 8, 3, 3); P(x, "#4a78d6", 12, 6, 1, 3); P(x, "#cf4b47", 13, 6, 1, 3); }
+        if (o === "polo") { P(x, tint(s, 0.25), 4, 0, 3, 2); P(x, tint(s, 0.25), 9, 0, 3, 2); P(x, tint(s, -0.2), 7, 1, 2, 4); P(x, "#f4f1ea", 7, 2, 1, 1); P(x, "#f4f1ea", 7, 4, 1, 1); }
+        if (o === "vest") { P(x, "#f4f1ea", 6, 0, 4, 16); P(x, s, 0, 2, 6, 14); P(x, s, 10, 2, 6, 14); P(x, tint(s, -0.3), 5, 4, 1, 12); P(x, tint(s, -0.3), 10, 4, 1, 12); [6, 9, 12].forEach(y => P(x, "#c9a777", 4, y, 1, 1)); P(x, tint(s, -0.45), 7, 1, 2, 7); }
+        if (o === "cardigan") { P(x, "#f4f1ea", 6, 0, 4, 16); P(x, tint(s, -0.25), 5, 0, 1, 16); P(x, tint(s, -0.25), 10, 0, 1, 16); [4, 8, 12].forEach(y => P(x, "#e9e4d8", 4, y, 1, 1)); }
+        if (o === "denim") { P(x, L.shirt, 6, 0, 4, 16); P(x, "#3a5784", 5, 0, 1, 16); P(x, "#3a5784", 10, 0, 1, 16); P(x, "#3a5784", 2, 4, 3, 3); P(x, "#3a5784", 11, 4, 3, 3); P(x, "#c9a777", 3, 5, 1, 1); P(x, "#c9a777", 12, 5, 1, 1); }
+        if (o === "heart") { P(x, tint(s, -0.2), 5, 0, 6, 1); P(x, "#e0443a", 5, 5, 2, 2); P(x, "#e0443a", 9, 5, 2, 2); P(x, "#e0443a", 5, 6, 6, 2); P(x, "#e0443a", 6, 8, 4, 1); P(x, "#e0443a", 7, 9, 2, 1); }
+        if (o === "stripes" || o === "hawaii") { P(x, tint(s, -0.25), 5, 0, 6, 1); if (o === "hawaii") { P(x, tint(s, 0.3), 4, 0, 3, 3); P(x, tint(s, 0.3), 9, 0, 3, 3); } }
+        if (o === "xmas") { P(x, "#cf4b47", 6, 3, 4, 4); P(x, "#f4f1ea", 7, 2, 2, 1); P(x, "#3f8a4a", 7, 7, 2, 3); }
+        if (o === "gala") { for (let i = 0; i < 9; i++) P(x, "#f4f1ea", 5 + Math.floor(i / 3), i, 6 - 2 * Math.floor(i / 3), 1); P(x, "#16131f", 6, 0, 4, 2); P(x, "#3a3f4a", 7, 0, 2, 2); [9, 12].forEach(y => P(x, "#2b2238", 7, y, 2, 1)); }
+        if (o === "astro") { P(x, "#cfd4da", 0, 10, 16, 1); P(x, "#4a78d6", 3, 3, 4, 3); P(x, "#cf4b47", 10, 3, 3, 2); P(x, "#3a3f4a", 9, 7, 4, 2); P(x, "#5cc98a", 10, 7, 1, 1); }
+        if (o === "armor") { P(x, tint(s, 0.35), 6, 2, 4, 8); P(x, tint(s, -0.35), 7, 3, 2, 6); }
+        if (o === "turtle") P(x, tint(s, -0.15), 4, 0, 8, 2);
         if (L.badge && o !== "hoodie") { P(x, L.badge, 4, 1, 1, 5); P(x, "#f4f1ea", 3, 6, 4, 5); P(x, L.badge, 3, 6, 4, 2); }
       });
     }
-    function hairMeshes(L, head, mat) {
-      const s = L.style, add = (geo, x, y, z) => mesh(geo, mat, head, x, y, z), RB = (w, h, d, r) => new RoundedBoxGeometry(w, h, d, 2, r);
+    function hairMeshes(L, head, mat, covered) {
+      const s = covered && L.style !== "bald" ? (L.style === "long" || L.style === "bob" || L.style === "ponytail" ? L.style + "-cubierto" : "cubierto") : L.style, add = (geo, x, y, z) => mesh(geo, mat, head, x, y, z), RB = (w, h, d, r) => new RoundedBoxGeometry(w, h, d, 2, r);
       if (s === "bald") { add(RB(0.08, 0.14, 0.26, 0.03), -0.24, 0.2, -0.04); add(RB(0.08, 0.14, 0.26, 0.03), 0.24, 0.2, -0.04); add(RB(0.44, 0.1, 0.08, 0.03), 0, 0.17, -0.21); return; }
       if (s === "curly") { const R = rand(hash(L.hair + "rulos")); for (let i = 0; i < 16; i++) { const a = R() * Math.PI * 2, b = R() * 0.9; add(new THREE.IcosahedronGeometry(0.1, 0), Math.cos(a) * 0.2 * (1 - b * 0.3), 0.34 + b * 0.12, Math.sin(a) * 0.2 - 0.03 - (Math.sin(a) > 0.4 ? 0.06 : 0)); } add(RB(0.5, 0.26, 0.2, 0.08), 0, 0.22, -0.16); return; }
+      // Con un gorro que tapa la cabeza, quedan solo los costados y la nuca (y el pelo largo).
+      if (/cubierto/.test(s)) {
+        add(RB(0.49, 0.26, 0.12, 0.05), 0, 0.25, -0.18); add(RB(0.07, 0.14, 0.2, 0.03), -0.23, 0.27, 0.04); add(RB(0.07, 0.14, 0.2, 0.03), 0.23, 0.27, 0.04);
+        if (s === "long-cubierto") add(RB(0.48, 0.42, 0.1, 0.04), 0, 0.08, -0.2);
+        if (s === "bob-cubierto") { add(RB(0.07, 0.3, 0.3, 0.03), -0.24, 0.16, 0); add(RB(0.07, 0.3, 0.3, 0.03), 0.24, 0.16, 0); }
+        if (s === "ponytail-cubierto") { const t = add(new THREE.CapsuleGeometry(0.065, 0.22, 4, 8), 0, 0.2, -0.27); t.rotation.x = 0.35; }
+        return;
+      }
       add(RB(0.5, 0.17, 0.47, 0.08), 0, 0.4, -0.01); add(RB(0.49, 0.3, 0.14, 0.06), 0, 0.27, -0.17);
       if (s === "slick") { add(RB(0.46, 0.05, 0.08, 0.02), 0, 0.33, 0.2); return; }
       add(RB(0.46, 0.08, 0.08, 0.03), 0.03, 0.34, 0.2); add(RB(0.07, 0.16, 0.2, 0.03), -0.23, 0.29, 0.06); add(RB(0.07, 0.16, 0.2, 0.03), 0.23, 0.29, 0.06);
@@ -8620,10 +8661,56 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       if (s === "long") { add(RB(0.48, 0.42, 0.1, 0.04), 0, 0.08, -0.2); add(RB(0.07, 0.36, 0.14, 0.03), -0.235, 0.12, 0.02); add(RB(0.07, 0.36, 0.14, 0.03), 0.235, 0.12, 0.02); }
       if (s === "bob") { add(RB(0.07, 0.3, 0.3, 0.03), -0.24, 0.16, 0); add(RB(0.07, 0.3, 0.3, 0.03), 0.24, 0.16, 0); add(RB(0.48, 0.3, 0.1, 0.04), 0, 0.14, -0.2); }
     }
+    // Gorros: sobre la cabeza (su parte de arriba está en y = 0.43).
+    const HAT_COVERS = ["gorra", "lana", "galera", "cowboy", "vikingo", "chef", "cumple", "boina", "mago", "casco", "paja", "astronauta"];
+    function hatOf(it, head) {
+      const k = it.kind.k, c = colorOf(it.v, 0, "#cf4b47"), A = (geo, m, x, y, z) => mesh(geo, asMat(m), head, x, y, z);
+      if (k === "gorra") { A(new THREE.SphereGeometry(0.25, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), c, 0, 0.36, -0.01); A(RB(0.3, 0.025, 0.2, 0.01), tint(c, -0.15), 0, 0.37, 0.24); A(new THREE.SphereGeometry(0.025, 6, 4), tint(c, 0.3), 0, 0.61, 0); }
+      else if (k === "lana") { A(new THREE.SphereGeometry(0.255, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), c, 0, 0.33, 0); A(new THREE.CylinderGeometry(0.255, 0.255, 0.08, 14), tint(c, -0.15), 0, 0.36, 0); A(new THREE.SphereGeometry(0.07, 8, 6), "#f4f1ea", 0, 0.62, 0); }
+      else if (k === "galera") { A(new THREE.CylinderGeometry(0.34, 0.34, 0.03, 18), c, 0, 0.42, 0); A(new THREE.CylinderGeometry(0.2, 0.21, 0.34, 16), c, 0, 0.6, 0); A(new THREE.CylinderGeometry(0.212, 0.212, 0.05, 16), "#cf4b47", 0, 0.47, 0); }
+      else if (k === "cowboy") { A(new THREE.CylinderGeometry(0.42, 0.42, 0.03, 18), c, 0, 0.42, 0); A(RB(0.36, 0.18, 0.3, 0.08), c, 0, 0.52, 0); A(new THREE.CylinderGeometry(0.19, 0.19, 0.03, 14), tint(c, -0.35), 0, 0.46, 0); }
+      else if (k === "corona") { const gold = toon(c, { emissive: c, emissiveIntensity: 0.2 }); A(new THREE.CylinderGeometry(0.2, 0.2, 0.1, 14, 1, true), gold, 0, 0.47, 0); for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; A(new THREE.ConeGeometry(0.04, 0.1, 4), gold, Math.cos(a) * 0.19, 0.56, Math.sin(a) * 0.19); } A(new THREE.SphereGeometry(0.03, 6, 4), "#cf4b47", 0, 0.48, 0.2); }
+      else if (k === "vikingo") { A(new THREE.SphereGeometry(0.26, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), c, 0, 0.33, 0); [-1, 1].forEach(sg => { const h = A(new THREE.ConeGeometry(0.05, 0.22, 6), "#f4f1ea", sg * 0.27, 0.48, 0); h.rotation.z = -sg * 0.9; }); }
+      else if (k === "chef") { A(new THREE.CylinderGeometry(0.22, 0.2, 0.18, 14), "#f4f1ea", 0, 0.5, 0); A(new THREE.SphereGeometry(0.26, 12, 8), "#ffffff", 0, 0.68, 0).scale.y = 0.6; }
+      else if (k === "orejas") { A(new THREE.TorusGeometry(0.24, 0.02, 4, 16, Math.PI), "#2b2d36", 0, 0.3, 0).rotation.y = Math.PI / 2; [-1, 1].forEach(sg => { A(new THREE.ConeGeometry(0.07, 0.14, 4), c, sg * 0.15, 0.55, 0); A(new THREE.ConeGeometry(0.035, 0.08, 4), "#f4b6c2", sg * 0.15, 0.54, 0.02); }); }
+      else if (k === "cumple") { const h = A(new THREE.ConeGeometry(0.13, 0.32, 12), c, 0.05, 0.6, 0); h.rotation.z = -0.15; A(new THREE.SphereGeometry(0.04, 6, 4), "#f2c14e", 0.08, 0.78, 0); }
+      else if (k === "boina") { A(new THREE.CylinderGeometry(0.27, 0.24, 0.07, 16), c, -0.03, 0.45, 0).rotation.z = 0.15; A(new THREE.CylinderGeometry(0.015, 0.015, 0.04, 6), c, -0.03, 0.5, 0); }
+      else if (k === "mago") { A(new THREE.CylinderGeometry(0.34, 0.34, 0.03, 18), c, 0, 0.42, 0); const h = A(new THREE.ConeGeometry(0.2, 0.55, 14), c, 0, 0.7, 0); h.rotation.z = 0.12; [[0.08, 0.6, 0.15], [-0.07, 0.75, 0.1]].forEach(([x, y, z]) => A(new THREE.SphereGeometry(0.025, 5, 4), toon("#f2c14e", { emissive: "#f2c14e" }), x, y, z)); }
+      else if (k === "casco") { A(new THREE.SphereGeometry(0.26, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), "#f2c14e", 0, 0.36, 0); A(new THREE.CylinderGeometry(0.3, 0.3, 0.03, 16), "#f2c14e", 0, 0.37, 0.02); A(RB(0.06, 0.08, 0.5, 0.02), "#e3b341", 0, 0.58, 0); }
+      else if (k === "flor") { const f = colorOf(it.v, 0, "#ef8fbf"); for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; A(new THREE.SphereGeometry(0.04, 6, 4), f, 0.2 + Math.cos(a) * 0.04, 0.4 + Math.sin(a) * 0.04, 0.12); } A(new THREE.SphereGeometry(0.03, 6, 4), "#f2c14e", 0.2, 0.4, 0.14); }
+      else if (k === "paja") { A(new THREE.CylinderGeometry(0.4, 0.4, 0.025, 18), "#e3cf8a", 0, 0.42, 0); A(new THREE.CylinderGeometry(0.21, 0.23, 0.15, 16), "#e3cf8a", 0, 0.5, 0); A(new THREE.CylinderGeometry(0.232, 0.232, 0.04, 16), c, 0, 0.46, 0); }
+      else if (k === "auriculares") { const gl = (it.v[0] && it.v[0].c) || "#ff4fd8"; A(new THREE.TorusGeometry(0.26, 0.03, 6, 16, Math.PI), "#1d1f26", 0, 0.29, 0).rotation.y = Math.PI / 2; [-1, 1].forEach(sg => { A(new THREE.CylinderGeometry(0.09, 0.09, 0.07, 12), "#1d1f26", sg * 0.26, 0.22, 0).rotation.z = Math.PI / 2; A(new THREE.TorusGeometry(0.08, 0.012, 4, 12), toon(gl, { emissive: gl, emissiveIntensity: 1 }), sg * 0.3, 0.22, 0).rotation.y = Math.PI / 2; }); const mic = A(new THREE.CylinderGeometry(0.01, 0.01, 0.2, 4), "#1d1f26", 0.22, 0.12, 0.12); mic.rotation.x = 1.2; }
+      else if (k === "aureola") { const h = A(new THREE.TorusGeometry(0.17, 0.025, 6, 20), toon("#f2c14e", { emissive: "#f2d27a", emissiveIntensity: 1 }), 0, 0.62, 0); h.rotation.x = Math.PI / 2; h.castShadow = false; }
+      else if (k === "astronauta") { A(new THREE.SphereGeometry(0.38, 16, 12), toon("#dff2ff", { transparent: true, opacity: 0.35 }), 0, 0.22, 0).castShadow = false; A(new THREE.TorusGeometry(0.22, 0.04, 6, 16), "#e9e4d8", 0, -0.08, 0).rotation.x = Math.PI / 2; }
+      else if (k === "laureles") { const m = toon(c); for (let i = 0; i < 12; i++) { const a = Math.PI * 0.15 + i / 11 * Math.PI * 0.7, sg = i < 6 ? -1 : 1; const l = A(new THREE.SphereGeometry(0.035, 5, 4), m, Math.cos(a) * 0.25 * sg, 0.4, -Math.sin(a) * 0.1 + 0.05); l.scale.set(1.6, 0.6, 1); } }
+    }
+    // Lo que va en la cara (adelante de la cara está en z = 0.21).
+    function faceWear(it, head) {
+      const k = it.kind.k, c = colorOf(it.v, 0, "#2b2d36"), A = (geo, m, x, y, z) => mesh(geo, asMat(m), head, x, y, z);
+      const lens = (x, m, w = 0.12, h = 0.08) => A(RB(w, h, 0.02, 0.02), m, x, 0.24, 0.225);
+      if (k === "lentes_sol") { [-0.09, 0.09].forEach(x => { lens(x, c, 0.14, 0.1); lens(x, "#16131f", 0.12, 0.08).position.z = 0.236; }); A(new THREE.BoxGeometry(0.06, 0.015, 0.02), c, 0, 0.26, 0.226); }
+      else if (k === "lentes_corazon") { [-0.09, 0.09].forEach(x => { A(new THREE.SphereGeometry(0.035, 6, 4), "#e0443a", x - 0.025, 0.26, 0.226); A(new THREE.SphereGeometry(0.035, 6, 4), "#e0443a", x + 0.025, 0.26, 0.226); const t = A(new THREE.ConeGeometry(0.06, 0.06, 4), "#e0443a", x, 0.215, 0.226); t.rotation.z = Math.PI; t.rotation.y = Math.PI / 4; }); A(new THREE.BoxGeometry(0.06, 0.012, 0.02), c, 0, 0.255, 0.226); }
+      else if (k === "monoculo") { const r = A(new THREE.TorusGeometry(0.055, 0.012, 5, 14), c, 0.09, 0.24, 0.226); r.castShadow = false; A(new THREE.CircleGeometry(0.05, 12), toon("#dff2ff", { transparent: true, opacity: 0.4 }), 0.09, 0.24, 0.227); const ch = A(new THREE.CylinderGeometry(0.005, 0.005, 0.2, 4), c, 0.13, 0.13, 0.22); ch.rotation.z = 0.3; }
+      else if (k === "bigote") { const f = colorOf(it.v, 0, "#3a2a22"); [-1, 1].forEach(sg => { const m = A(new THREE.CapsuleGeometry(0.025, 0.06, 3, 6), f, sg * 0.045, 0.13, 0.22); m.rotation.z = Math.PI / 2 + sg * 0.3; }); }
+      else if (k === "antifaz") { A(RB(0.4, 0.09, 0.02, 0.03), c, 0, 0.245, 0.222); [-0.09, 0.09].forEach(x => A(new THREE.CircleGeometry(0.025, 8), "#16131f", x, 0.245, 0.234)); }
+      else if (k === "parche") { A(new THREE.CircleGeometry(0.06, 10), "#16131f", 0.09, 0.245, 0.225); const st = A(new THREE.BoxGeometry(0.48, 0.015, 0.44), "#16131f", 0, 0.29, 0); st.rotation.z = -0.25; }
+      else if (k === "visor") { const n = colorOf(it.v, 0, "#5fe8ff"); A(RB(0.44, 0.08, 0.04, 0.02), toon(n, { emissive: n, emissiveIntensity: 0.9, transparent: true, opacity: 0.85 }), 0, 0.245, 0.225); }
+    }
+    // Lo que va en el cuello (arriba del torso está en y = 0.4).
+    function neckWear(it, torso) {
+      const k = it.kind.k, c = colorOf(it.v, 0, "#cf4b47"), A = (geo, m, x, y, z) => mesh(geo, asMat(m), torso, x, y, z);
+      if (k === "bufanda") { A(new THREE.TorusGeometry(0.12, 0.05, 6, 14), c, 0, 0.4, 0).rotation.x = Math.PI / 2; A(RB(0.08, 0.22, 0.04, 0.02), c, 0.08, 0.28, 0.13); A(new THREE.BoxGeometry(0.08, 0.02, 0.045), "#f4f1ea", 0.08, 0.2, 0.13); }
+      else if (k === "mono") { [-1, 1].forEach(sg => { const b = A(new THREE.ConeGeometry(0.04, 0.07, 4), c, sg * 0.035, 0.36, 0.13); b.rotation.z = sg * Math.PI / 2; }); A(new THREE.SphereGeometry(0.02, 6, 4), c, 0, 0.36, 0.135); }
+      else if (k === "perlas" || k === "diamantes") { const m = k === "perlas" ? toon("#f4f1ea", { emissive: "#ffffff", emissiveIntensity: 0.15 }) : toon("#c8f0ff", { emissive: "#9ad3ef", emissiveIntensity: 0.8 }); for (let i = 0; i < 11; i++) { const a = Math.PI * 0.1 + i / 10 * Math.PI * 0.8; A(new THREE.SphereGeometry(k === "perlas" ? 0.018 : 0.022, 6, 4), m, Math.cos(a) * 0.12, 0.38 - Math.sin(a) * 0.08, 0.1 + Math.sin(a) * 0.035); } }
+      else if (k === "medalla") { [-1, 1].forEach(sg => { const r = A(new THREE.BoxGeometry(0.03, 0.14, 0.01), sg < 0 ? "#cf4b47" : "#4a78d6", sg * 0.03, 0.33, 0.128); r.rotation.z = sg * 0.3; }); A(new THREE.CylinderGeometry(0.045, 0.045, 0.012, 12), toon(c, { emissive: c, emissiveIntensity: 0.25 }), 0, 0.24, 0.132).rotation.x = Math.PI / 2; }
+      else if (k === "panuelo") { const t = A(new THREE.ConeGeometry(0.11, 0.16, 3), c, 0, 0.33, 0.12); t.rotation.z = Math.PI; t.scale.z = 0.3; A(new THREE.TorusGeometry(0.12, 0.02, 4, 12), c, 0, 0.41, 0).rotation.x = Math.PI / 2; }
+      else if (k === "collar_flores") { const f = colorOf(it.v, 0, "#ef8fbf"); for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; A(new THREE.SphereGeometry(0.035, 6, 4), i % 3 ? f : "#f2c14e", Math.cos(a) * 0.15, 0.4 + (Math.sin(a) > 0 ? 0 : -0.05), Math.sin(a) * 0.15); } }
+    }
     function makePerson(p) {
       const L = lookOf(p), root = new THREE.Group(); live.add(root);
       const body = new THREE.Group(); root.add(body);
-      const skin = toon(L.skin), top = toon(L.outfit === "coat" ? "#eef0f2" : L.shirt), pants = toon(L.pants), shoes = toon(L.shoes), hair = toon(L.hair);
+      const fab = fabricTex(L), body0 = bodyColor(L);
+      const skin = toon(L.skin), top = fab ? toon("#ffffff", { map: fab }) : toon(body0), pants = toon(L.pants), shoes = toon(L.shoes), hair = toon(L.hair);
       const legs = [-0.085, 0.085].map(sx => {
         const hip = new THREE.Group(); hip.position.set(sx, 0.45, 0); body.add(hip);
         mesh(new THREE.CapsuleGeometry(0.075, 0.1, 4, 8), pants, hip, 0, -0.1, 0);
@@ -8636,11 +8723,15 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       mesh(new THREE.PlaneGeometry(0.3, 0.32), toon("#ffffff", { map: shirtTex(L), transparent: true, alphaTest: 0.5 }), torso, 0, 0.2, 0.1255).castShadow = false;
       if (L.outfit === "coat") mesh(new RoundedBoxGeometry(0.39, 0.2, 0.26, 2, 0.05), top, torso, 0, -0.04, 0);
       if (L.outfit === "hoodie") mesh(new RoundedBoxGeometry(0.3, 0.08, 0.14, 2, 0.04), toon(tint(L.shirt, -0.15)), torso, 0, 0.4, -0.08);
-      const sleeve = L.outfit === "tee" ? skin : top;
+      if (L.outfit === "turtle") mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.08, 10), toon(tint(L.shirt, -0.1)), torso, 0, 0.42, 0);
+      if (L.outfit === "armor") { [-1, 1].forEach(sg => mesh(new THREE.SphereGeometry(0.11, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), toon(L.shirt), torso, sg * 0.21, 0.36, 0)); mesh(new THREE.BoxGeometry(0.3, 0.06, 0.28), toon(tint(L.shirt, -0.2)), torso, 0, 0.02, 0); }
+      if (L.outfit === "astro") { mesh(new THREE.TorusGeometry(0.13, 0.03, 6, 14), toon("#c9ced8"), torso, 0, 0.41, 0).rotation.x = Math.PI / 2; mesh(new RoundedBoxGeometry(0.3, 0.3, 0.12, 2, 0.04), toon("#e9e4d8"), torso, 0, 0.22, -0.18); }
+      if (L.outfit === "denim" || L.outfit === "cardigan" || L.outfit === "suit" || L.outfit === "gala") mesh(new RoundedBoxGeometry(0.39, 0.06, 0.26, 2, 0.03), toon(tint(body0, -0.15)), torso, 0, 0.01, 0);
+      const sleeve = SHORT.includes(L.outfit) ? skin : L.outfit === "vest" ? toon("#efe9dd") : top;
       const arms = [-1, 1].map(s => {
         const sh = new THREE.Group(); sh.position.set(s * 0.235, 0.34, 0); torso.add(sh);
         mesh(new THREE.CapsuleGeometry(0.06, 0.18, 4, 8), sleeve, sh, 0, -0.13, 0);
-        if (L.outfit === "tee") mesh(new THREE.CapsuleGeometry(0.068, 0.04, 4, 8), top, sh, 0, -0.03, 0);
+        if (SHORT.includes(L.outfit)) mesh(new THREE.CapsuleGeometry(0.068, 0.04, 4, 8), top, sh, 0, -0.03, 0);
         mesh(new THREE.SphereGeometry(0.062, 8, 6), skin, sh, 0, -0.29, 0);
         return sh;
       });
@@ -8650,7 +8741,10 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       const faces = { open: faceTex(L, "open"), blink: faceTex(L, "blink"), talk: faceTex(L, "talk") };
       const faceMat = toon("#ffffff", { map: faces.open, transparent: true, alphaTest: 0.5 });
       mesh(new THREE.PlaneGeometry(0.38, 0.38), faceMat, head, 0, 0.2, 0.2115).castShadow = false;
-      hairMeshes(L, head, hair);
+      hairMeshes(L, head, hair, L.hat && HAT_COVERS.includes(L.hat.kind.k));
+      if (L.hat) hatOf(L.hat, head);
+      if (L.face) faceWear(L.face, head);
+      if (L.neck) neckWear(L.neck, torso);
       if (L.phones) { const band = mesh(new THREE.TorusGeometry(0.255, 0.025, 6, 16, Math.PI), toon("#2b2d36"), head, 0, 0.28, 0); band.rotation.y = Math.PI / 2; [-1, 1].forEach(s => { mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.06, 12), toon(L.phones), head, s * 0.25, 0.22, 0).rotation.z = Math.PI / 2; }); }
       if (L.cap) { mesh(new RoundedBoxGeometry(0.5, 0.12, 0.48, 2, 0.05), toon(L.cap), head, 0, 0.47, 0); mesh(new THREE.BoxGeometry(0.3, 0.03, 0.18), toon(L.cap), head, 0, 0.42, 0.28); }
       const cup = new THREE.Group(); cyl(0, 0, 0, 0.05, 0.1, "#f4f1ea", cup); cyl(0, 0, 0.09, 0.042, 0.012, "#6e4a2f", cup); cup.position.set(0.02, -0.34, 0.05); arms[1].add(cup);
@@ -8738,6 +8832,9 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     function syncPerson(k, p, dt) {
       let q = people3[k];
       if (!q) { const s = SEAT[k] || SPOT.exit; q = people3[k] = { id: k, x: s.x, y: s.y, facing: s.facing || s.f || "+y", path: [], key: null, seated: !!SEAT[k], visible: true, m: makePerson(p) }; }
+      const ws = wearSig(k);
+      if (q.wear !== undefined && q.wear !== ws) { live.remove(q.m.root); dispose(q.m.root); q.m = makePerson(p); }
+      q.wear = ws;
       const present = k === "courier" ? !!state.courier : k === "pm" ? true : p.present !== false;
       if (!present) { q.visible = false; if (k === "courier") { Object.assign(q, { x: SPOT.exit.x, y: SPOT.exit.y, path: [], key: null }); } return q; }
       if (!q.visible && k !== "courier") { const s = SEAT[k]; Object.assign(q, { x: s.x, y: s.y, facing: s.facing, seated: true, key: "seat", path: [] }); }
