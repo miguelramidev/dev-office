@@ -140,7 +140,8 @@ La primera vez que el puente corre Codex o Gemini, Claude Code te pide permiso p
 ## Límites que conviene conocer
 
 - **Codex y Gemini no pasan por los hooks de la oficina** (la protección de secretos y de ramas protegidas solo ve las herramientas de Claude). El puente no corre nada en una rama protegida y revisa todo después, pero **detecta, no impide**. Por eso el tester y QA no se saltean nunca.
-- **Gemini no corre comandos de la terminal** en este modo: edita archivos y el puente corre las verificaciones. Como developer funciona bien; como tester o QA rinde menos, porque no puede ejecutar sus pruebas. Para esos roles conviene Claude o Codex.
+- **Gemini no corre comandos de la terminal** en este modo: edita archivos y el puente corre las verificaciones. Como developer funciona bien; como tester o QA rinde menos, porque no puede ejecutar sus pruebas. Para esos roles conviene Claude o Codex. El puente le pide que lea y busque en el proyecto con sus herramientas de archivos, porque en este modo cualquier comando se rechaza solo.
+- **En Windows**, el puente prende el sandbox de Codex en modo `unelevated`; sin eso, Codex no puede ni leer el proyecto ("blocked by policy"). Si usás Codex por tu cuenta en Windows y te pasa lo mismo, agregá a `%USERPROFILE%\.codex\config.toml` la sección `[windows]` con `sandbox = "unelevated"`.
 - **Costo:** cada proveedor se paga con su cuenta, y el puente gasta un poco de Claude (Sonnet) por encargo para pasarlo y revisarlo.
 - **Encargos grandes:** cada encargo se corta a los 9 minutos, porque Claude Code espera como máximo 10 por comando.
 - **Si una versión nueva de un CLI cambia sus opciones,** se pueden agregar opciones extra con `OFFICE_CODEX_ARGS` y `OFFICE_GEMINI_ARGS` en `.claude/settings.json`, sin esperar una versión nueva de la oficina.

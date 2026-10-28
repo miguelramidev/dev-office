@@ -75,6 +75,21 @@ PROJECT=$(git rev-parse --show-toplevel 2>/dev/null | tr -d '\r')
 [ -z "$PROJECT" ] && usage_error "hay que correrlo dentro del repositorio git del proyecto."
 cd "$PROJECT" || exit 1
 
+# En Windows (Git Bash), Codex y Antigravity son programas de Windows: no entienden las rutas
+# de Git Bash (/c/dev/app), así que reciben las de Windows (C:/dev/app). OFFICE_OS permite
+# probar el comportamiento de Windows desde otro sistema.
+case "${OFFICE_OS:-${OSTYPE:-}}" in
+  msys* | cygwin* | win32*) ON_WINDOWS=1 ;;
+  *) ON_WINDOWS=0 ;;
+esac
+native_path() {
+  if [ "$ON_WINDOWS" -eq 1 ] && command -v cygpath >/dev/null 2>&1; then
+    cygpath -m "$1" | tr -d '\r'
+  else
+    printf '%s' "$1"
+  fi
+}
+
 RUN_DIR="${RUN_DIR//\\//}"
 case "$RUN_DIR" in
   /* | [A-Za-z]:/*) ;;
@@ -289,6 +304,7 @@ EOF
   esac
   case "$PROVIDER" in
     gemini)
+      echo "- No corras comandos de la terminal, ni siquiera para listar o buscar archivos: acá se rechazan solos. Para leer, listar y buscar en el proyecto usá tus herramientas de archivos."
       [ "$SCOPE" != "none" ] && echo "- En este modo podés editar archivos, pero no correr comandos de la terminal. No corras tests, typecheck ni lint: el agente de la oficina los corre después de vos. En tu reporte, en la parte de verificación, poné \"La corre la oficina\"."
       ;;
     codex)
@@ -323,7 +339,7 @@ EOF
       if [ -n "$PDIR" ] && [ -f "$SKILL_FILE" ]; then
         echo "### Skill $skill"
         echo
-        echo "(Los archivos de esta skill están en \`$PDIR/skills/$name/\`.)"
+        echo "(Los archivos de esta skill están en \`$(native_path "$PDIR/skills/$name")/\`.)"
         echo
         strip_frontmatter "$SKILL_FILE"
       else
@@ -350,9 +366,14 @@ case "$PROVIDER" in
   codex)
     SANDBOX="workspace-write"
     [ "$SCOPE" = "none" ] && SANDBOX="read-only"
+    # En Windows, el sandbox propio de Codex viene apagado y entonces rechaza hasta los comandos
+    # de lectura ("blocked by policy"). El modo unelevated lo prende sin pedir permisos de
+    # administrador. OFFICE_CODEX_ARGS va después, así que lo puede cambiar.
+    WIN_ARGS=()
+    [ "$ON_WINDOWS" -eq 1 ] && WIN_ARGS=(-c 'windows.sandbox="unelevated"')
     # shellcheck disable=SC2206 # las opciones extra se separan por espacios a propósito
-    CMD=(codex -a never exec -s "$SANDBOX" --skip-git-repo-check -C "$PROJECT" -o "$OUTPUT"
-      ${MODEL:+-m "$MODEL"} ${EFFORT:+-c "model_reasoning_effort=\"$EFFORT\""} ${OFFICE_CODEX_ARGS:-} -)
+    CMD=(codex -a never exec -s "$SANDBOX" --skip-git-repo-check -C "$(native_path "$PROJECT")" -o "$(native_path "$OUTPUT")"
+      ${MODEL:+-m "$MODEL"} ${EFFORT:+-c "model_reasoning_effort=\"$EFFORT\""} ${WIN_ARGS[@]+"${WIN_ARGS[@]}"} ${OFFICE_CODEX_ARGS:-} -)
     ;;
   gemini)
     # Antigravity CLI: el encargo es largo, así que se le pide que lo lea del archivo.
@@ -361,9 +382,12 @@ case "$PROVIDER" in
     MODE_ARGS=(--mode accept-edits)
     [ "$SCOPE" = "none" ] && MODE_ARGS=()
     STDIN_FILE=/dev/null
+    # La carpeta del proyecto como espacio de trabajo, si esta versión de agy lo permite.
+    DIR_ARGS=()
+    "$BIN" --help 2>&1 | grep -q -- '--add-dir' && DIR_ARGS=(--add-dir "$(native_path "$PROJECT")")
     # shellcheck disable=SC2206
     CMD=(agy -p "Tu encargo completo está en el archivo ${PROMPT#"$PROJECT"/}. Leelo entero antes de empezar y seguilo al pie de la letra."
-      ${MODE_ARGS[@]+"${MODE_ARGS[@]}"} ${MODEL:+--model "$MODEL"} ${EFFORT:+--effort "$EFFORT"}
+      ${MODE_ARGS[@]+"${MODE_ARGS[@]}"} ${DIR_ARGS[@]+"${DIR_ARGS[@]}"} ${MODEL:+--model "$MODEL"} ${EFFORT:+--effort "$EFFORT"}
       --output-format text --print-timeout "$(( TIMEOUT / 60 + 1 ))m" ${OFFICE_GEMINI_ARGS:-})
     ;;
 esac
