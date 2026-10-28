@@ -219,3 +219,9 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--ink-dim); margin-top: 10px; }
 .legend span { display: inline-flex; align-items: center; gap: 5px; }
 .legend i { width: 9px; height: 9px; display: inline-block; }
+
+/* Vista 3D: ocupa el lugar de la oficina; los textos van en una capa encima. */
+.view3d { position: absolute; overflow: hidden; }
+.view3d > canvas { position: absolute; inset: 0; display: block; }
+.view3d > canvas:not(#view3d-ui) { cursor: grab; }
+#view3d-ui { pointer-events: none; }

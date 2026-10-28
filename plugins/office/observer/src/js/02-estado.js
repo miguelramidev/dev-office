@@ -78,7 +78,7 @@
     if (s.say) addFeed(s.say, s.kind || "");
     if (s.result && !s.work) [].concat(s.result).forEach(id => { showResult(agent(id), "pass", s.resultText); if (agent(id).role === "qa") factQa(state.facts, s.resultText); });
     if (s.walk) {
-      const to = standSpot(s.walk);
+      const to = Object.assign(standSpot(s.walk), { target: s.walk });
       state.pm.path = planPath(state.pm, to);
       state.pm.dest = to;
       state.pm.walking = true;
@@ -199,6 +199,16 @@
   // Charlas de los ratos libres: entre compañeros del mismo departamento y con otros.
   const CHATS = [
     ["¿Un café?", "Dale, en un rato"],
+    ["¿Ya pusheaste?", "Recién, mirá el PR"],
+    ["Ese test tarda una eternidad", "Hay que mockear la base"],
+    ["¿Cerraste el ticket viejo?", "Lo dejé en revisión"],
+    ["¿Me hacés pair un rato?", "Dale, traé la silla"],
+    ["Encontré un TODO de hace dos años", "Dejalo, es patrimonio histórico"],
+    ["¿Qué versión de Node usamos?", "La del .nvmrc", "¿Hay .nvmrc?", "Ahora sí"],
+    ["El linter me odia", "Te quiere enseñar"],
+    ["¿Revisaste los logs?", "Nada raro", "Raro que no haya nada raro"],
+    ["Hoy no se rompió nada", "No lo digas en voz alta"],
+    ["¿Le ponemos un test a eso?", "Mejor dos"],
     ["¿Viste el último PR?", "Sí, quedó bien"],
     ["¿Cómo vas?", "Ahí, avanzando"],
     ["¿Corriste los tests?", "Todos en verde"],
@@ -251,6 +261,15 @@
   ];
   const CHATS_OTHER = [
     ["¿Cómo viene tu depto?", "Bien, cerrando tests"],
+    ["¿Ese endpoint devuelve fechas en UTC?", "Siempre en UTC"],
+    ["¿Me mostrás el diseño nuevo?", "Está en el Figma del equipo"],
+    ["¿Cuánto tarda la migración?", "Dos minutos en dev"],
+    ["¿El scraper respeta el robots.txt?", "Siempre"],
+    ["¿Subieron el ambiente de dev?", "Recién terminó el deploy"],
+    ["¿Quién tiene la llave del rack?", "DevOps, como siempre"],
+    ["QA encontró algo en tu PR", "Voy a mirar", "Es un caso borde", "Mis favoritos"],
+    ["¿Hay reunión hoy?", "Si el CEO llama, sí"],
+    ["Felicitaciones por el release", "¡Gracias! Fue en equipo"],
     ["¿Me pasás la colección?", "Está en docs/api"],
     ["¿Ya migraron la base?", "Sí, ayer"],
     ["¿Viste el partido?", "¡Qué partido!"],
@@ -306,6 +325,21 @@
     ["¿Me pasás el esquema?", "Te lo mando"],
     ["¿Cómo está el líder?", "Contento con el reporte"],
   ];
+  // Ratos libres en otros lugares de la oficina, con sus frases.
+  const IDLE_SPOTS = {
+    cooler: ["Hay que hidratarse", "Agua fresquita", "Un vasito y vuelvo", "Agua y a seguir"],
+    window: ["Lindo día afuera", "¿Va a llover?", "Qué vista", "Cinco minutos de aire"],
+    printer: ["¿Quién imprimió 40 páginas?", "Se trabó el papel", "Ya salió", "¿Era a doble faz?"],
+    plants: ["Hay que regarla", "Creció un montón", "Está hermosa", "Le hace falta sol"],
+  };
+  // Charlas de a dos junto al dispensador de agua.
+  const COOLER_CHATS = [
+    ["¿Viste el último deploy?", "Salió perfecto", "¿Sin rollback?", "Ni uno"],
+    ["¿Qué tal el fin de semana?", "Corto, como siempre"],
+    ["¿Probaste la cafetera?", "El doble es otra cosa"],
+    ["¿Cómo va tu ticket?", "Tests en verde, esperando review"],
+    ["¿Te sumás al after?", "Si cierro el PR, sí"],
+  ];
   const COFFEE_LINES = ["café", "¡Recién hecho!", "Un cafecito", "Sin azúcar", "Doble, por favor", "Agua y vuelvo", "Ahora sí", "Lo necesitaba", "Último del día", "Café y a seguir"];
   const shortText = (v, n) => { v = String(v || ""); return v.length > n ? v.slice(0, n - 1) + "…" : v; };
   const exitSpot = a => { const s = seatOf(a); return { x: s.x + (a.seat[0] < 96 ? 42 : -42), y: s.y + 28, room: a.room }; };
@@ -317,6 +351,11 @@
     if (to.visit) return visitSpot(agent(to.visit), a.pos);
     if (to.coffee) { const x = (a.pos || seatOf(a)).x; return COFFEE.slice().sort((p, q) => Math.abs(p.x - x) - Math.abs(q.x - x))[0]; }
     if (to.debate !== undefined) { const r = room("qa"); return { x: r.x + DEBATE[to.debate][0], y: r.y + DEBATE[to.debate][1], room: "qa" }; }
+    if (to.spot) {
+      if (to.spot === "window" || to.spot === "printer") { const r = room(a.room); return { x: r.x + 96, y: r.y + 52, room: a.room }; }
+      const s = { cooler: COFFEE[1], cooler2: { x: 40, y: 230 }, plants: { x: 300, y: 222 } }[to.spot] || COFFEE[0];
+      return { x: s.x, y: s.y, room: "hall" };
+    }
     return to;
   }
   const posOf = p => p.pos || (p.id === "pm" ? { x: p.x, y: p.y } : seatOf(p));
@@ -471,17 +510,29 @@
     const same = others.filter(b => b.room === a.room), far = others.filter(b => b.room !== a.room);
     const goFar = far.length > 0 && (!same.length || Math.random() < 0.55);
     const mates = goFar ? far : same;
-    const breaks = hallBreaks();
+    const breaks = hallBreaks(), say = list => ({ k: "say", text: list[Math.floor(Math.random() * list.length)], d: 2.2 });
     if (r < 0.35 && breaks.length && Math.random() < 0.5) {
       // Lo que compraron para el pasillo también se usa: la máquina, el dispensador.
       const b = breaks[Math.floor(Math.random() * breaks.length)];
       a.idleTrip = true;
       a.acts.push({ k: "go", to: { x: b.x, y: b.y, room: "hall" } }, { k: "prop", prop: b.prop }, { k: "say", text: b.lines[Math.floor(Math.random() * b.lines.length)], d: 2.2 }, { k: "home" }, { k: "prop", prop: null });
-    } else if (r < 0.35) {
+    } else if (r < 0.2) {
       a.idleTrip = true;
       if (Math.random() < 0.5) setTimeout(() => sfx("coffee"), 2500);
-      a.acts.push({ k: "go", to: { coffee: true } }, { k: "prop", prop: "cup" }, { k: "say", text: COFFEE_LINES[Math.floor(Math.random() * COFFEE_LINES.length)], d: 2.2 }, { k: "home" }, { k: "prop", prop: null });
-    } else if (r < 0.8 && mates.length) {
+      a.acts.push({ k: "go", to: { coffee: true } }, { k: "prop", prop: "cup" }, say(COFFEE_LINES), { k: "home" }, { k: "prop", prop: null });
+    } else if (r < 0.42) {
+      // Agua, ventana, impresora o plantas (la ventana y la impresora, en las oficinas de arriba).
+      const spots = Object.keys(IDLE_SPOTS).filter(k => (k !== "window" && k !== "printer") || (room(a.room).top && a.room !== "meet"));
+      const spot = spots[Math.floor(Math.random() * spots.length)];
+      a.idleTrip = true;
+      a.acts.push({ k: "go", to: { spot } }, ...(spot === "cooler" ? [{ k: "prop", prop: "cup" }] : []), say(IDLE_SPOTS[spot]), { k: "home" }, { k: "prop", prop: null });
+    } else if (r < 0.52 && others.length) {
+      // Dos se cruzan en el dispensador y charlan un rato.
+      const b = others[Math.floor(Math.random() * others.length)], key = "agua" + Math.random().toString(36).slice(2);
+      a.idleTrip = b.idleTrip = true;
+      a.acts.push({ k: "go", to: { spot: "cooler" } }, { k: "talk", with: b.id, lines: COOLER_CHATS[Math.floor(Math.random() * COOLER_CHATS.length)], key }, { k: "home" });
+      b.acts.push({ k: "go", to: { spot: "cooler2" } }, { k: "hold", key }, { k: "home" });
+    } else if (r < 0.85 && mates.length) {
       const lines = goFar ? CHATS_OTHER : CHATS;
       a.idleTrip = true;
       a.acts.push({ k: "go", to: { visit: mates[Math.floor(Math.random() * mates.length)].id } });

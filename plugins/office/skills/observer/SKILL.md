@@ -21,6 +21,7 @@ El observer es una página que se abre desde el disco, sin servidor ni instalaci
    - Dónde quedó la página, por si quiere abrirla él o dejarla fija en una pestaña. En WSL pasale el link de la línea `En Windows:`, no la ruta `/home/...`: el navegador de Windows no puede abrir esa.
    - Que no hace falta correr esto en cada sesión: la pestaña puede quedar abierta y sigue sola. Al empezar una sesión nueva, la oficina empieza un registro nuevo y la página lo toma. Solo después de actualizar la oficina conviene recargar la pestaña (F5) para ver la versión nueva.
    - Que se actualiza sola mientras trabaja la oficina. Si todavía no hubo actividad en esta sesión, muestra una demo.
+   - Que la oficina se ve en pixel art 3D: con la rueda del mouse acerca, arrastrando se mueve y con doble click vuelve a verla entera. Cada empleado tiene un nombre y el CEO es él. En "Ajustes" puede pasar a la vista clásica, que es la que muestra lo que compra en la tienda.
    - Que puede tocar a cualquier empleado para ver su ficha: proveedor, modelo, tarea, qué está haciendo y tokens. En la ficha, y en la actividad, puede tocar el encargo o la respuesta de cada uno para leerlos en grande.
    - Que con el botón "Avisos" la pestaña le avisa (notificación del sistema y título que parpadea) cuando el PM le responde, Claude Code le pide un permiso o un agente parece trabado.
    - Que el botón "Cierre del día" arma un resumen de la sesión con la foto de la oficina, para descargar, y que "Sonido" prende los sonidos (vienen apagados).

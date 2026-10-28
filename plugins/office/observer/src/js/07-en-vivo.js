@@ -73,7 +73,7 @@
   function setPMTarget(target) {
     if (state.pmTarget === target) return;
     state.pmTarget = target;
-    const to = target === "door" ? DOOR_SPOT() : target === "ceo" || !agent(target) ? MEET_SPOT() : standSpot(target);
+    const to = Object.assign(target === "door" ? DOOR_SPOT() : target === "ceo" || !agent(target) ? MEET_SPOT() : standSpot(target), { target });
     state.pm.path = planPath(state.pm, to);
     state.pm.dest = to;
   }
