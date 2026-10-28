@@ -208,6 +208,8 @@
   // Vista previa de cada artículo, dibujada una vez.
   const previewCache = {};
   function preview(it) {
+    // Con la vista 3D, la vista previa es el modelo 3D; si todavía no está lista, la clásica.
+    if (view3d.on) { const url = view3d.preview(it); if (url) return url; }
     if (previewCache[it.id]) return previewCache[it.id];
     const c = document.createElement("canvas");
     c.width = 72; c.height = 52;
