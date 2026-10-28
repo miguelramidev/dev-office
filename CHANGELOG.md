@@ -17,6 +17,10 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
   - Los muebles se ven sobre un piso a su medida; los cuadros, colgados en una pared; los pisos y las pinturas, como un rincón de la oficina; los adornos de techo, en un tramo del pasillo; y la ropa, puesta en un maniquí que muestra el cuerpo entero, la cabeza o el cuello según la prenda.
   - Cada vista previa se arma una sola vez. Si la vista 3D todavía no cargó o algo falla, queda la vista previa clásica.
 
+### Corregido
+
+- **Las teclas 1 a 4 vuelven a cambiar la nitidez de la vista 3D** (`office` 0.33.0). El prototipo las tenía, pero no habían pasado a la página. Van de 1 (lo más nítido) a 4 (el píxel más grueso), no se activan mientras escribís en un campo y la página recuerda la elección.
+
 ## [0.34.0] - 2026-10-28
 
 ### Agregado
