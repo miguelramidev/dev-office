@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.35.1] - 2026-10-28
+
+### Corregido
+
+- **Las teclas 1 a 4 vuelven a cambiar la nitidez de la vista 3D** (`office` 0.33.1). El prototipo las tenía, pero no habían pasado a la página. Van de 1 (lo más nítido) a 4 (el píxel más grueso), no se activan mientras escribís en un campo y la página recuerda la elección.
+
 ## [0.35.0] - 2026-10-28
 
 ### Agregado
