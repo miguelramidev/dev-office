@@ -45,27 +45,32 @@
     state.feed.sort((p, q) => q.at - p.at);
   }
 
-  // Para quién es la compra: la oficina y el empleado elegidos en la tienda o, si no
-  // eligió nada, los del empleado seleccionado en la oficina.
+  // Para quién es la compra: la oficina y el empleado elegidos en la tienda o, en
+  // automático (""), lo que menos tiene, así las compras se reparten por toda la oficina.
   function shopRooms() { return ROOMS.filter(r => !r.off).map(r => r.id).concat("hall"); }
   function shopPeople() { return people().filter(p => p.id === "pm" || p.id === "ceo" || p.provider); }
-  function shopRoom() {
-    if (shopSel.room && shopRooms().includes(shopSel.room)) return shopSel.room;
-    const sel = state.selected === "pm" ? null : agent(state.selected);
-    return sel && !room(sel.room).off ? sel.room : "meet";
+  function shopRoom() { return shopSel.room && shopRooms().includes(shopSel.room) ? shopSel.room : ""; }
+  function shopWho() { return shopSel.who && shopPeople().some(p => p.id === shopSel.who) ? shopSel.who : ""; }
+  // Entre los que empatan, el orden sale del artículo: cada uno elige distinto.
+  const byLeast = (it, ids, count) => ids.map(id => ({ id, n: count(id), h: hashStr(it.id + ":" + id) })).sort((p, q) => p.n - q.n || p.h - q.h)[0].id;
+  function autoRoom(it) {
+    const s = it.kind.slot, rooms = ROOMS.filter(r => !r.off).map(r => r.id);
+    const fits = rooms.filter(id => ROOM_ONE.includes(s) ? !roomOf(id)[s] : freeSlot(id, s) >= 0);
+    const count = id => { const R = roomOf(id); return ["wall", "small", "big"].reduce((n, k) => n + R[k].filter(Boolean).length, 0) + ROOM_ONE.filter(k => R[k]).length; };
+    return byLeast(it, fits.length ? fits : rooms, count);
   }
-  function shopWho() {
-    const ids = shopPeople().map(p => p.id);
-    if (shopSel.who && ids.includes(shopSel.who)) return shopSel.who;
-    return ids.includes(state.selected) ? state.selected : "pm";
+  function autoWho(it) {
+    const s = it.kind.slot, ids = shopPeople().map(p => p.id).filter(id => !(id === "pm" && s === "top"));
+    const free = ids.filter(id => !(placed.wear[id] && placed.wear[id][s]));
+    return byLeast(it, free.length ? free : ids, id => Object.keys(placed.wear[id] || {}).length);
   }
   const whoName = id => id === "pm" ? "el PM" : (agent(id) || {}).label || id;
   function targetOf(it) {
     const s = it.kind.slot;
-    if (WEAR.includes(s)) return shopWho();
+    if (WEAR.includes(s)) return shopWho() || autoWho(it);
     if (s === "kit") return it.v[0].c;
     if (HALL_ONLY.includes(s)) return "hall";
-    return shopRoom();
+    return shopRoom() || autoRoom(it);
   }
   function destName(it, to) { return WEAR.includes(it.kind.slot) ? whoName(to) : placeName(to); }
 

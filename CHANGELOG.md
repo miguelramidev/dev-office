@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.28.1] - 2026-10-28
+
+### Corregido
+
+- **Las compras se quedaban en Reuniones y en el PM** (`office` 0.26.1). Si no se elegía oficina ni empleado en la tienda, todo iba a Reuniones y al PM. Ahora la tienda viene en "Automático" y reparte: cada artículo va a la oficina con lugar que menos cosas tiene, y la ropa, a quien menos lleva puesto. Elegir una oficina o un empleado sigue mandando todo ahí, y tocar a alguien en la oficina con la tienda abierta elige a esa persona y su oficina.
+
 ## [0.28.0] - 2026-10-28
 
 ### Agregado

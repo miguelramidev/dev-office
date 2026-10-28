@@ -218,8 +218,8 @@
       <div class="bal">Saldo <b>${fmtK(Math.max(0, e + bonus() - spent()))}</b> tokens · la sesión gastó ${fmtK(e)} · logros +${fmtK(bonus())} · en compras ${fmtK(spent())}</div>
       <div class="ach" aria-label="Logros">${ACHIEVEMENTS.map(a => `<span class="badge${game.ach && game.ach[a.id] ? " on" : ""}" title="${esc(a.desc)} (+${fmtK(a.bonus)} tokens)">${esc(a.name)}</span>`).join("")}</div>`);
     const rooms = shopRooms(), who = shopPeople();
-    setHTML("shop-room", rooms.map(id => `<option value="${id}">${esc(id === "hall" ? "Pasillo" : room(id).name)}</option>`).join(""));
-    setHTML("shop-who", who.map(p => `<option value="${p.id}">${esc(p.label)}</option>`).join(""));
+    setHTML("shop-room", '<option value="">Automático</option>' + rooms.map(id => `<option value="${id}">${esc(id === "hall" ? "Pasillo" : room(id).name)}</option>`).join(""));
+    setHTML("shop-who", '<option value="">Automático</option>' + who.map(p => `<option value="${p.id}">${esc(p.label)}</option>`).join(""));
     if (document.activeElement !== $("shop-room")) $("shop-room").value = shopRoom();
     if (document.activeElement !== $("shop-who")) $("shop-who").value = shopWho();
     const cats = ["Todo"].concat(CATS.filter(c => game.shop.some(it => it.kind.cat === c)));
@@ -262,7 +262,11 @@
     const pmD = Math.hypot(state.pm.x - wx, state.pm.y - 22 - wy);
     if (pmD < bestD) { best = "pm"; bestD = pmD; }
     state.agents.forEach(a => { if (!a.provider || !a.present) return; const s = a.pos ? { x: a.pos.x, y: a.pos.y - 18 } : seatOf(a); const d = Math.hypot(s.x - wx, s.y - 4 - wy); if (d < bestD) { best = a.id; bestD = d; } });
-    if (best) { state.selected = best; shopSel.room = shopSel.who = ""; if (drawerTab !== "tienda") openDrawer("empleado"); else renderPanel(true); }
+    if (!best) return;
+    state.selected = best;
+    // Con la tienda abierta, lo próximo que se compre es para él y para su oficina.
+    if (drawerTab === "tienda") { const a = agent(best); shopSel.who = best; shopSel.room = a && !room(a.room).off ? a.room : ""; renderPanel(true); }
+    else { shopSel.room = shopSel.who = ""; openDrawer("empleado"); }
   });
   // Los textos completos se abren en grande. Si el panel se volvió a pintar entre que se apretó
   // y se soltó el botón, el click llega al contenedor: se usa el botón que se apretó.
