@@ -639,6 +639,15 @@
   KINDS.push({ k: "top_armor", cat: "Ropa", slot: "top", name: "Armadura", g: "f", lv: 10, price: 1100000, vars: ["metal"], top: "armor" });
   KINDS.push({ k: "top_astro", cat: "Ropa", slot: "top", name: "Traje espacial", g: "m", lv: 9, price: 500000, vars: ["color"], top: "astro" });
 
+  // Muebles que la gente usa en los ratos libres, con lo que dice.
+  Object.entries({
+    arcade: ["¡Récord nuevo!", "Una partida y vuelvo", "Ese jefe es imposible"], metegol: ["¿Un metegol?", "¡Gol!", "Eso fue molinete"], pingpong: ["¿Un ping-pong?", "¡Punto!", "Saque mío"],
+    piano: ["Una de jazz", "Do, re, mi", "Toco algo tranquilo"], consola: ["Una partida rápida", "¿Quién juega?"], bateria: ["¡Un solo de batería!", "Pum, pum, plato"],
+    minibar: ["Algo fresco", "¿Hay agua con gas?"], cafetera: ["Café de especialidad", "Un espresso doble"], acuario: ["Qué lindos los peces", "¿Ya les dieron de comer?"],
+    telescopio: ["Se ve la luna", "¿Eso es Marte?"], pochoclera: ["¡Pochoclos!", "Huele bárbaro"], pool: ["Bola 8 a la esquina", "Tiro difícil"], biblioteca: ["Busco un libro", "Este lo recomiendo"],
+    sofa: ["Cinco minutos de descanso", "Qué cómodo"], puf: ["Un ratito acá", "Me hundo en el puf"], expendedora: ["Unas papitas", "¿Y mi cambio?"], holograma: ["Qué lindo el holograma", "Gira y gira"],
+  }).forEach(([k, lines]) => { KINDS.find(x => x.k === k && x.slot === "big").lines = lines; });
+
   // Nombres que no salen bien solos.
   KINDS.find(k => k.k === "tulipanes").label = ([f, p]) => `Tulipanes ${f.m} ${p.n}`;
   KINDS.find(k => k.k === "orquidea").label = ([f, p]) => `Orquídea de flores ${f.n} ${p.n}`;

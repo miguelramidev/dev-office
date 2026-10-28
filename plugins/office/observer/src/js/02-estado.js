@@ -532,12 +532,12 @@
     const same = others.filter(b => b.room === a.room), far = others.filter(b => b.room !== a.room);
     const goFar = far.length > 0 && (!same.length || Math.random() < 0.55);
     const mates = goFar ? far : same;
-    const breaks = hallBreaks(), say = list => ({ k: "say", text: list[Math.floor(Math.random() * list.length)], d: 2.2 });
+    const breaks = hallBreaks().concat(roomBreaks()), say = list => ({ k: "say", text: list[Math.floor(Math.random() * list.length)], d: 2.2 });
     if (r < 0.35 && breaks.length && Math.random() < 0.5) {
       // Lo que compraron para el pasillo también se usa: la máquina, el dispensador.
       const b = breaks[Math.floor(Math.random() * breaks.length)];
       a.idleTrip = true;
-      a.acts.push({ k: "go", to: { x: b.x, y: b.y, room: "hall" } }, { k: "prop", prop: b.prop }, { k: "say", text: b.lines[Math.floor(Math.random() * b.lines.length)], d: 2.2 }, { k: "home" }, { k: "prop", prop: null });
+      a.acts.push({ k: "go", to: { x: b.x, y: b.y, room: b.room } }, { k: "prop", prop: b.prop }, { k: "say", text: b.lines[Math.floor(Math.random() * b.lines.length)], d: 2.2 }, { k: "home" }, { k: "prop", prop: null });
     } else if (r < 0.2) {
       a.idleTrip = true;
       if (Math.random() < 0.5) setTimeout(() => sfx("coffee"), 2500);

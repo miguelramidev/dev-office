@@ -181,6 +181,15 @@
     return SLOTS.hall.lean.map(([x, y], i) => ({ x, y, it: R.lean[i] })).filter(o => o.it && o.it.kind.lines && o.y < 240)
       .map(o => ({ x: o.x, y: o.y + 8, room: "hall", lines: o.it.kind.lines, prop: o.it.kind.prop || null }));
   }
+  // Muebles grandes que se usan en los ratos libres: frente a ellos, en su oficina.
+  function roomBreaks() {
+    const out = [];
+    shopRooms().filter(id => id !== "hall").forEach(rid => {
+      const r = room(rid), R = roomOf(rid);
+      (SLOTS[rid].big || []).forEach(([x, y], i) => { const it = R.big[i]; if (it && it.kind.lines) out.push({ x: r.x + x, y: r.y + y + 10, room: rid, lines: it.kind.lines, prop: null }); });
+    });
+    return out;
+  }
   // Ropa comprada: la prenda y su color, o la de su rol.
   function dress(a, colorKey) {
     const w = placed.wear[a.id], top = w && w.top;
