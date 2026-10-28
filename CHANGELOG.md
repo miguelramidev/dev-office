@@ -8,6 +8,15 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.35.0] - 2026-10-28
+
+### Agregado
+
+- **Las vistas previas de la tienda, en 3D** (`office` 0.33.0), última parte de la tienda en 3D.
+  - Con la vista 3D, cada artículo de la tienda muestra el mismo modelo que va a aparecer en la oficina, con la misma luz y el mismo pixel art, en vez del dibujo de la vista clásica.
+  - Los muebles se ven sobre un piso a su medida; los cuadros, colgados en una pared; los pisos y las pinturas, como un rincón de la oficina; los adornos de techo, en un tramo del pasillo; y la ropa, puesta en un maniquí que muestra el cuerpo entero, la cabeza o el cuello según la prenda.
+  - Cada vista previa se arma una sola vez. Si la vista 3D todavía no cargó o algo falla, queda la vista previa clásica.
+
 ## [0.34.0] - 2026-10-28
 
 ### Agregado
