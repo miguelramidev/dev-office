@@ -330,10 +330,11 @@ T.cancelIdle(busy);
 say(T.state.stalls[0] === null && !busy.doing, "baño: si lo llaman mientras está adentro, libera el cubículo");
 // Vista 3D: cada escritorio, silla y equipamiento del catálogo tiene su modelo 3D.
 const src3d = require("fs").readFileSync(process.argv[2].replace(/index\.html$/, "src/js/09-vista3d.js"), "utf8");
-const MODELADOS = ["desk", "chair", "small", "big", "lean", "ceiling", "coffee", "water", "bath"];
+const MODELADOS = ["desk", "chair", "small", "big", "lean", "ceiling", "coffee", "water", "bath", "hat", "face", "neck"];
 const sinModelo = T.KINDS.filter(k => MODELADOS.includes(k.slot)).map(k => k.k).filter(k => !src3d.includes('k === "' + k + '"') && !src3d.includes('"' + k + '"') && !src3d.includes(k + ": "));
-const kits = T.VARIANTS.kitRoom.map(v => v.c).filter(r => !src3d.includes('rid === "' + r + '"'));
-say(!sinModelo.length && !kits.length, "vista 3D: todo lo de la tienda que no es ropa tiene modelo (los cuadros, su pixel art)" + (sinModelo.length || kits.length ? " (faltan: " + sinModelo.concat(kits).join(", ") + ")" : ""));
+const kits = T.VARIANTS.kitRoom.map(v => v.c).filter(r => !src3d.includes('rid === "' + r + '"'))
+  .concat(T.KINDS.filter(k => k.slot === "top" && !["hoodie", "shirt", "suit", "coat"].includes(k.top)).map(k => k.top).filter(t => !src3d.includes('o === "' + t + '"')));
+say(!sinModelo.length && !kits.length, "vista 3D: todo lo de la tienda tiene modelo, ropa incluida (los cuadros, su pixel art)" + (sinModelo.length || kits.length ? " (faltan: " + sinModelo.concat(kits).join(", ") + ")" : ""));
 // Muebles que se usan: con un arcade comprado, alguien va a jugar.
 T.place({ item: "arcade.0", to: "back", slot: 0, price: 0 });
 let played = false;

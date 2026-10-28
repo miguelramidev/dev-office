@@ -8,6 +8,15 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.34.0] - 2026-10-28
+
+### Agregado
+
+- **La ropa, en 3D** (`office` 0.32.0), cuarta parte de la tienda en 3D.
+  - Las 16 prendas: buzo, camisa con corbata, chomba, polera, saco, chaleco, cárdigan, guardapolvo, remera a rayas, camisa hawaiana, campera de jean, suéter navideño, remera con corazón, traje de gala, armadura y traje espacial, cada una con su tela, sus mangas y sus detalles.
+  - Los 20 gorros (gorra, lana con pompón, galera, cowboy, corona, casco vikingo, chef, orejas de gato, cumpleaños, boina, mago, casco de obra, flor, paja, auriculares gamer con luz, aureola, casco de astronauta y laureles), las 7 cosas de la cara (anteojos de sol y de corazón, monóculo, bigote, antifaz, parche y visor) y los 7 collares (bufanda, moño, perlas, medalla, pañuelo, collar de flores y diamantes).
+  - Con un gorro grande, el pelo de arriba no asoma. Al comprar, el personaje se vuelve a vestir en el momento.
+
 ## [0.33.0] - 2026-10-28
 
 ### Agregado
