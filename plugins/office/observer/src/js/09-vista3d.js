@@ -371,6 +371,15 @@
       if (ANIMATED.includes(it.kind.k)) animTex.push(t);
       return tex2dCache[key] = t;
     }
+    // Lo mismo, con cualquier forma de dibujar (cuadros: draw(x, y, v, now)).
+    function texDraw(key, w, h, draw, anim) {
+      if (tex2dCache[key]) return tex2dCache[key];
+      const t = canvasTex(w, h, () => {});
+      t.userData.paint = now => { const saved = g; g = t.userData.ctx; g.clearRect(0, 0, w, h); try { draw(now); } catch (e) { /* un dibujo roto no frena la oficina */ } g = saved; t.needsUpdate = true; };
+      t.userData.paint(0);
+      if (anim) animTex.push(t);
+      return tex2dCache[key] = t;
+    }
     const colorOf = (v, i = 0, alt = "#8a909c") => { const c = v && v[i] && v[i].c; return typeof c === "string" && c[0] === "#" ? c : Array.isArray(c) && typeof c[0] === "string" ? c[0] : alt; };
     const glassMat = v => { const m = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/.exec((v[0] && v[0].c) || ""); return toon(m ? `rgb(${m[1]},${m[2]},${m[3]})` : "#bfe0f2", { transparent: true, opacity: m && m[4] ? Math.max(0.35, Number(m[4])) : 0.5 }); };
     const glowColor = v => (v[0] && v[0].c) || "#ff4fd8";
@@ -487,6 +496,15 @@
         back: [[2.6, 6.55], [0.45, 2.9]], front: [[2.6, 6.55], [0.45, 2.9]], db: [[2.6, 6.55], [6.55, 2.9]], scrap: [[2.6, 6.55], [6.55, 2.9]], ops: [[2.6, 6.55], [6.55, 2.9]], qa: [[2.6, 6.55], [4.6, 6.55]],
         hall: [[2.3, 7.35], [7.3, 7.35], [9.4, 7.35], [12.3, 7.35], [16.6, 7.35], [20.3, 7.35], [23.3, 7.35], [27.75, 9.65], [5.2, 9.65], [8.9, 9.65], [16.6, 9.65], [23.6, 9.65]],
       },
+      // Cuadros: en la pared de atrás (oficinas de arriba) o sobre el tabique del fondo (abajo). x local.
+      wall: { meet: [2.5], design: [1.2, 5.9], back: [1.2, 5.9], front: [1.2, 5.9], db: [0.75, 1.95, 5.35, 6.4], scrap: [0.75, 1.95, 5.35, 6.4], ops: [0.75, 1.95, 5.35, 6.4], qa: [0.75, 1.95, 5.35, 6.4] },
+      // Muebles grandes: centro (x, z local), giro y dónde se para quien lo usa.
+      big: {
+        meet: [{ x: 5.9, z: 5.9, rot: 0, stand: [4.75, 5.9, "+x"] }, { x: 0.55, z: 2.2, rot: Math.PI / 2, stand: [1.65, 2.2, "-x"] }],
+        back: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }], front: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }],
+        db: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }], scrap: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }], ops: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }],
+        qa: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }, { x: 3.0, z: 4.7, rot: 0, stand: [3.0, 5.75, "-y"] }],
+      },
       // Contra los bordes del pasillo: los de arriba miran al pasillo (+z), los de abajo también (-z).
       lean: [[6.3, 7.12], [8.4, 7.12], [13.4, 7.12], [15.6, 7.12], [22.4, 7.12], [1.8, 9.88], [6.4, 9.88], [13.6, 9.88], [15.4, 9.88], [22.8, 9.88]],
     };
@@ -550,6 +568,48 @@
       else if (k === "cabina") { at(g, RB(0.8, 2.0, 0.8, 0.03), c, 0, 1.0, 0.4); front(0.6, 1.3, 0.35, 0.8, toon("#cfe8f2", { transparent: true, opacity: 0.55 })); front(0.6, 0.12, 1.8, 0.8, panelTex(24, 4, q => { P(q, "#16131f", 0, 0, 24, 4); q.fillStyle = "#f6f2e7"; q.font = "4px monospace"; q.fillText("TELÉFONO", 2, 3.5); })); }
       else at(g, RB(0.6, 0.8, 0.4), c, 0, 0.4, 0.2);
     }
+    // Cuadros: el mismo pixel art de la vista clásica, colgado en la pared o parado sobre el tabique.
+    const WALL_ANIM = ["reloj", "neon", "guirnalda", "pantalla"];
+    function wallOf(it, rid, i) {
+      const r = r3(rid), x = r.x + SLOT3.wall[rid][i], t = texDraw(it.id + ":pared", 34, 24, now => it.kind.draw(0, 0, it.v, now), WALL_ANIM.includes(it.kind.k));
+      const m = toon("#ffffff", { map: t, transparent: true, alphaTest: 0.5 });
+      if (r.top) { const o = planeZ(x - 0.55, 0.03, 1.2, 1.1, 0.78, m); o.renderOrder = 2; }
+      else { [x - 0.4, x + 0.4].forEach(a => box(a - 0.02, 10.0, PART_H - 0.02, 0.04, 0.04, 0.12, "#5b6070")); planeZ(x - 0.55, 10.06, PART_H + 0.06, 1.1, 0.78, m); }
+    }
+    // Muebles grandes: (x, z) es el centro; se arman mirando a +z y se giran con rot.
+    function bigOf(it, x, z, rot) {
+      const k = it.kind.k, v = it.v, c = colorOf(v, 0, "#8a909c");
+      const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; statics.add(g);
+      const A = (geo, m, X, Y, Z) => at(g, geo, m, X, Y, Z);
+      const face = (w, h, y, d, m) => { const o = mesh(new THREE.PlaneGeometry(w, h), m, g, 0, y + h / 2, d + 0.002); o.castShadow = false; return o; };
+      const R = rand(hash(it.id));
+      if (k === "biblioteca") { A(RB(1.2, 1.9, 0.4, 0.02), c, 0, 0.95, 0); A(new THREE.BoxGeometry(1.1, 1.8, 0.02), tint(c, -0.45), 0, 0.95, 0.19); for (let sh = 0; sh < 4; sh++) { const y = 0.12 + sh * 0.44; A(new THREE.BoxGeometry(1.12, 0.03, 0.36), c, 0, y, 0.02); let bx = -0.52; while (bx < 0.48) { const bw = 0.05 + R() * 0.05, bh = 0.24 + R() * 0.12; A(new THREE.BoxGeometry(bw, bh, 0.26), pickR(R, ["#cf4b47", "#4a78d6", "#47a865", "#e3c14a", "#8b6cd6", "#e9e4d8", "#e08a3a"]), bx + bw / 2, y + 0.015 + bh / 2, 0.04); bx += bw + 0.01; } } }
+      else if (k === "sofa") { A(RB(1.7, 0.36, 0.75, 0.06), tint(c, -0.05), 0, 0.2, 0); A(RB(1.7, 0.5, 0.2, 0.06), tint(c, -0.12), 0, 0.55, -0.28); [-0.8, 0.8].forEach(a => A(RB(0.18, 0.5, 0.75, 0.06), tint(c, -0.15), a, 0.33, 0)); [-0.38, 0.38].forEach(a => A(RB(0.74, 0.1, 0.55, 0.04), tint(c, 0.1), a, 0.42, 0.05)); A(RB(0.3, 0.26, 0.1, 0.05), "#f2c14e", -0.5, 0.6, -0.15); }
+      else if (k === "arcade") { A(RB(0.7, 1.75, 0.65, 0.02), c, 0, 0.88, 0); face(0.56, 0.42, 1.0, 0.33, basic({ map: canvasTex(24, 18, q => { P(q, "#16131f", 0, 0, 24, 18); P(q, "#f2c14e", 4, 12, 3, 3); P(q, "#ef6b5b", 14, 5, 4, 3); P(q, "#5cc98a", 9, 8, 2, 2); P(q, "#e9e4d8", 2, 2, 8, 1); }) })); A(new THREE.BoxGeometry(0.66, 0.08, 0.3), "#2b2d36", 0, 0.95, 0.4); [["#ef6b5b", -0.1], ["#4fb0ff", 0.05], ["#5cc98a", 0.15]].forEach(([u, a]) => A(new THREE.CylinderGeometry(0.025, 0.025, 0.03, 8), u, a, 1.0, 0.45)); face(0.6, 0.15, 1.55, 0.33, toon("#f2c14e", { emissive: "#f2c14e", emissiveIntensity: 0.6 })); }
+      else if (k === "acuario") { const w = colorOf(v, 0, "#5fb8e0"); A(RB(1.3, 0.6, 0.5, 0.02), "#2b2d36", 0, 0.3, 0); A(new THREE.BoxGeometry(1.26, 0.62, 0.46), toon(w, { transparent: true, opacity: 0.55, emissive: w, emissiveIntensity: 0.25 }), 0, 0.92, 0); A(new THREE.BoxGeometry(1.3, 0.04, 0.5), "#2b2d36", 0, 1.25, 0); [["#f2c14e", -0.3, 0.95], ["#ef6b5b", 0.2, 0.85], ["#e17aa8", 0.35, 1.05]].forEach(([u, a, y]) => A(new THREE.SphereGeometry(0.05, 6, 4), u, a, y, 0.05).scale.set(1.5, 0.8, 0.5)); for (let n = 0; n < 4; n++) A(new THREE.ConeGeometry(0.03, 0.3, 4), "#3f8a4a", -0.5 + n * 0.12, 0.78, -0.1); }
+      else if (k === "minibar") { A(RB(0.6, 0.9, 0.55, 0.03), c, 0, 0.45, 0); A(new THREE.BoxGeometry(0.02, 0.4, 0.03), "#c9ced8", 0.22, 0.6, 0.29); A(RB(0.62, 0.04, 0.57, 0.01), "#e9e4d8", 0, 0.92, 0); ["#47a865", "#cf4b47", "#e3c14a"].forEach((u, n) => A(new THREE.CylinderGeometry(0.03, 0.03, 0.22, 8), u, -0.15 + n * 0.15, 1.05, 0)); }
+      else if (k === "metegol") { const [a, b] = Array.isArray(v[0] && v[0].c) ? v[0].c : ["#cf4b47", "#4a78d6"]; A(RB(1.2, 0.3, 0.7, 0.02), "#6e4a2f", 0, 0.75, 0); A(new THREE.BoxGeometry(1.1, 0.01, 0.6), "#47a865", 0, 0.9, 0); [[-0.45, -0.3], [0.45, -0.3], [-0.45, 0.3], [0.45, 0.3]].forEach(([p, q]) => A(new THREE.BoxGeometry(0.08, 0.6, 0.08), "#3a2a22", p, 0.3, q)); for (let n = 0; n < 4; n++) { const rx = -0.42 + n * 0.28; const rod = A(new THREE.CylinderGeometry(0.012, 0.012, 1.0, 6), "#c9ced8", rx, 0.95, 0); rod.rotation.x = Math.PI / 2; for (let m = 0; m < 3; m++) A(RB(0.04, 0.12, 0.04, 0.01), n % 2 ? a : b, rx, 0.93, -0.2 + m * 0.2); } }
+      else if (k === "expendedora") { leanOf(it, x, z - 0.3, false); statics.remove(g); return; }
+      else if (k === "piano") { const pc = colorOf(v, 0, "#1f2028"); A(RB(1.4, 1.2, 0.55, 0.03), pc, 0, 0.62, -0.05); A(new THREE.BoxGeometry(1.3, 0.05, 0.25), pc, 0, 0.72, 0.3); A(new THREE.BoxGeometry(1.24, 0.02, 0.18), "#f4f1ea", 0, 0.76, 0.32); for (let n = 0; n < 16; n++) if (n % 7 !== 2 && n % 7 !== 6) A(new THREE.BoxGeometry(0.035, 0.02, 0.1), "#16131f", -0.56 + n * 0.075, 0.78, 0.28); A(RB(0.6, 0.06, 0.3, 0.01), pc, 0, 0.45, 0.65); }
+      else if (k === "puf") { const p = A(new THREE.SphereGeometry(0.42, 14, 10), c, 0, 0.3, 0); p.scale.set(1, 0.65, 1); A(new THREE.SphereGeometry(0.2, 10, 8), tint(c, 0.15), -0.08, 0.5, -0.05).scale.set(1.3, 0.5, 1); }
+      else if (k === "ficus") { const pc = colorOf(v, 0, "#b8673e"); A(new THREE.CylinderGeometry(0.26, 0.2, 0.42, 12), pc, 0, 0.21, 0); A(new THREE.CylinderGeometry(0.035, 0.05, 1.0, 6), "#6e4a2f", 0, 0.9, 0); [[0, 1.5, 0, 0.38], [-0.25, 1.3, 0.1, 0.28], [0.25, 1.32, -0.1, 0.28], [0.05, 1.75, 0.05, 0.26]].forEach(([a, y, b, r2], n) => A(new THREE.IcosahedronGeometry(r2, 1), greens[n % 3], a, y, b)); }
+      else if (k === "archivero") { A(RB(0.8, 1.3, 0.55, 0.02), c, 0, 0.65, 0); for (let n = 0; n < 4; n++) { A(new THREE.BoxGeometry(0.72, 0.28, 0.01), tint(c, 0.08), 0, 0.15 + n * 0.31, 0.28); A(new THREE.BoxGeometry(0.2, 0.03, 0.03), "#c9ced8", 0, 0.24 + n * 0.31, 0.29); A(new THREE.BoxGeometry(0.16, 0.05, 0.005), "#f4f1ea", 0, 0.17 + n * 0.31, 0.29); } }
+      else if (k === "pizarra") { [-0.6, 0.6].forEach(a => { A(new THREE.BoxGeometry(0.05, 1.5, 0.05), "#5b6070", a, 0.78, 0); A(new THREE.BoxGeometry(0.05, 0.05, 0.5), "#5b6070", a, 0.08, 0); }); A(RB(1.3, 0.9, 0.04, 0.01), "#c3c9d4", 0, 1.05, 0); face(1.22, 0.82, 0.64, 0.025, toon("#ffffff", { map: canvasTex(32, 20, q => { P(q, "#f6f8fa", 0, 0, 32, 20); const RR = rand((v[0] && v[0].c) || 1); for (let n = 0; n < 5; n++) P(q, ["#f2e27a", "#f4b6c2", "#9fd0ea", "#b8e0d2"][n % 4], 2 + Math.floor(RR() * 24), 2 + Math.floor(RR() * 13), 5, 4); P(q, "#4a78d6", 3, 17, 20, 1); }) })); }
+      else if (k === "pingpong") { A(RB(1.5, 0.05, 0.85, 0.01), c, 0, 0.72, 0); A(new THREE.BoxGeometry(1.5, 0.006, 0.02), "#ffffff", 0, 0.75, 0); A(new THREE.BoxGeometry(0.02, 0.006, 0.85), "#ffffff", 0, 0.75, 0); A(new THREE.BoxGeometry(0.02, 0.12, 0.9), "#e9e4d8", 0, 0.8, 0); [[-0.6, -0.3], [0.6, -0.3], [-0.6, 0.3], [0.6, 0.3]].forEach(([p, q]) => A(new THREE.BoxGeometry(0.05, 0.7, 0.05), "#3a3f4a", p, 0.35, q)); A(new THREE.SphereGeometry(0.025, 6, 4), "#ffffff", 0.3, 0.78, 0.1); }
+      else if (k === "consola") { A(RB(1.2, 0.4, 0.45, 0.02), "#3a2a22", 0, 0.2, 0); A(RB(1.0, 0.6, 0.06, 0.02), "#16131f", 0, 0.75, -0.1); face(0.92, 0.52, 0.49, -0.069, basic({ map: canvasTex(32, 18, q => { P(q, "#4a8fd6", 0, 0, 32, 18); P(q, "#5cc98a", 0, 12, 32, 6); P(q, "#ef6b5b", 8, 8, 3, 4); P(q, "#f2c14e", 20, 6, 3, 6); }) })); A(RB(0.3, 0.06, 0.2, 0.02), c, -0.2, 0.43, 0.05); A(RB(0.12, 0.04, 0.08, 0.02), "#2b2d36", 0.2, 0.42, 0.12); }
+      else if (k === "cafetera") { const e = colorOf(v, 0, "#c9ced8"); A(RB(0.8, 0.85, 0.5, 0.02), "#6e4a2f", 0, 0.42, 0); A(RB(0.6, 0.4, 0.4, 0.03), e, 0, 1.05, 0); [-0.12, 0.12].forEach(a => A(new THREE.CylinderGeometry(0.04, 0.04, 0.06, 8), "#2b2d36", a, 0.9, 0.18)); A(RB(0.18, 0.3, 0.18, 0.02), "#2b2d36", 0.3, 1.0, -0.05); }
+      else if (k === "telescopio") { [[0, 0.2], [0.18, -0.12], [-0.18, -0.12]].forEach(([a, b]) => { const l = A(new THREE.CylinderGeometry(0.015, 0.015, 1.0, 5), "#3a3f4a", a * 0.6, 0.5, b * 0.6); l.rotation.x = b * 0.5; l.rotation.z = -a * 0.5; }); const t = A(new THREE.CylinderGeometry(0.06, 0.08, 0.8, 10), c, 0, 1.1, 0.05); t.rotation.x = -0.9; }
+      else if (k === "camaperro") { const bed = A(new THREE.CylinderGeometry(0.42, 0.45, 0.14, 16), c, 0, 0.07, 0); A(new THREE.TorusGeometry(0.4, 0.08, 6, 16), tint(c, -0.15), 0, 0.14, 0).rotation.x = Math.PI / 2; const dog = petMesh(itemOf("perro." + Math.max(0, VARIANTS.fur.indexOf(v[1])))).g.clone(); dog.position.set(x, 0.1, z); dog.rotation.y = rot + 0.8; dog.visible = true; live.add(dog); if (curLive) curLive.push(dog); }
+      else if (k === "busto") { const sc = colorOf(v, 0, "#e6e2da"); A(RB(0.4, 0.9, 0.4, 0.02), "#c9c3b8", 0, 0.45, 0); A(RB(0.36, 0.22, 0.24, 0.06), sc, 0, 1.02, 0); A(new THREE.SphereGeometry(0.14, 10, 8), sc, 0, 1.25, 0); }
+      else if (k === "bateria") { A(new THREE.CylinderGeometry(0.28, 0.28, 0.24, 14), c, 0, 0.32, -0.05).rotation.x = Math.PI / 2; [[-0.3, 0.55, 0.1], [0.3, 0.55, 0.1]].forEach(([a, y, b]) => A(new THREE.CylinderGeometry(0.13, 0.13, 0.14, 12), c, a, y, b)); A(new THREE.CylinderGeometry(0.15, 0.15, 0.18, 12), "#e9e4d8", 0.15, 0.45, 0.3); [[-0.45, 1.0], [0.48, 0.92]].forEach(([a, y]) => { A(new THREE.CylinderGeometry(0.01, 0.01, y, 5), "#c9ced8", a, y / 2, -0.15); A(new THREE.CylinderGeometry(0.2, 0.2, 0.01, 14), "#e3b341", a, y, -0.15); }); }
+      else if (k === "fuente") { const sc = colorOf(v, 0, "#e6e2da"); A(new THREE.CylinderGeometry(0.55, 0.6, 0.3, 18), sc, 0, 0.15, 0); A(new THREE.CylinderGeometry(0.5, 0.5, 0.02, 18), toon("#6fb4e6", { transparent: true, opacity: 0.8 }), 0, 0.29, 0); A(new THREE.CylinderGeometry(0.06, 0.1, 0.7, 8), sc, 0, 0.65, 0); A(new THREE.CylinderGeometry(0.25, 0.15, 0.1, 14), sc, 0, 1.0, 0); }
+      else if (k === "cohete") { A(new THREE.CylinderGeometry(0.2, 0.25, 0.08, 10), "#3a3f4a", 0, 0.04, 0); A(new THREE.CylinderGeometry(0.16, 0.16, 1.0, 12), "#e9e4d8", 0, 0.7, 0); A(new THREE.ConeGeometry(0.16, 0.35, 12), c, 0, 1.37, 0); for (let n = 0; n < 3; n++) { const f = A(new THREE.BoxGeometry(0.02, 0.3, 0.2), c, Math.sin(n * 2.1) * 0.16, 0.3, Math.cos(n * 2.1) * 0.16); f.rotation.y = n * 2.1; } A(new THREE.CylinderGeometry(0.05, 0.05, 0.01, 10), "#4fb0ff", 0, 0.9, 0.161).rotation.x = Math.PI / 2; }
+      else if (k === "pool") { A(RB(1.6, 0.16, 0.95, 0.03), "#5e4229", 0, 0.75, 0); A(new THREE.BoxGeometry(1.44, 0.01, 0.8), c, 0, 0.84, 0); [[-0.65, -0.35], [0.65, -0.35], [-0.65, 0.35], [0.65, 0.35]].forEach(([p, q]) => A(new THREE.BoxGeometry(0.1, 0.68, 0.1), "#3a2a22", p, 0.34, q)); [["#f2c14e", 0.3, 0], ["#cf4b47", 0.36, 0.06], ["#4a78d6", 0.36, -0.06], ["#ffffff", -0.4, 0]].forEach(([u, a, b]) => A(new THREE.SphereGeometry(0.03, 6, 4), u, a, 0.87, b)); }
+      else if (k === "pochoclera") { A(RB(0.6, 0.7, 0.5, 0.02), c, 0, 0.35, 0); A(new THREE.BoxGeometry(0.56, 0.5, 0.46), toon("#e6f4ff", { transparent: true, opacity: 0.45 }), 0, 0.95, 0); A(RB(0.6, 0.1, 0.5, 0.02), c, 0, 1.25, 0); for (let n = 0; n < 12; n++) A(new THREE.IcosahedronGeometry(0.04, 0), "#f6e9b8", -0.2 + (n % 4) * 0.13, 0.75 + Math.floor(n / 4) * 0.06, -0.1 + (n % 3) * 0.1); [-0.25, 0.25].forEach(a => A(new THREE.CylinderGeometry(0.06, 0.06, 0.06, 8), "#2b2d36", a, 0.03, 0.2).rotation.z = Math.PI / 2); }
+      else if (k === "holograma") { A(new THREE.CylinderGeometry(0.3, 0.35, 0.2, 16), "#3a3f4a", 0, 0.1, 0); A(new THREE.CylinderGeometry(0.28, 0.28, 0.01, 16), toon(c, { emissive: c, emissiveIntensity: 1 }), 0, 0.21, 0); const planet = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 2), new THREE.MeshToonMaterial({ color: c, gradientMap: gradient, transparent: true, opacity: 0.55, emissive: c, emissiveIntensity: 0.6 })); planet.position.set(x, 0.9, z); live.add(planet); if (curLive) curLive.push(planet); spinners.push(planet); }
+      else if (k === "robotasistente") { const rb = new THREE.Group(); rb.position.set(x, 0, z); live.add(rb); if (curLive) curLive.push(rb); spinners.push(rb); [[RB(0.4, 0.45, 0.32, 0.06), c, 0, 0.5, 0], [RB(0.32, 0.26, 0.28, 0.06), "#e9e4d8", 0, 0.9, 0]].forEach(([geo, m, a, y, b]) => mesh(geo, asMat(m), rb, a, y, b)); [-0.07, 0.07].forEach(a => mesh(new THREE.SphereGeometry(0.03, 6, 4), toon("#4ff0ff", { emissive: "#4ff0ff" }), rb, a, 0.92, 0.14)); mesh(new THREE.CylinderGeometry(0.1, 0.16, 0.25, 10), toon("#3a3f4a"), rb, 0, 0.15, 0); }
+      else A(RB(1.0, 0.8, 0.6), c, 0, 0.4, 0);
+    }
     // Lo que cuelga sobre el pasillo.
     function ceilingOf(it) {
       const k = it.kind.k, v = it.v, Y = 2.15;
@@ -564,7 +624,7 @@
       } else if (k === "lamparas") { const c = colorOf(v, 0, "#f2c14e"); for (let x = 2; x < 27; x += 3.5) { cyl(x, 8.5, 1.85, 0.01, 0.6, "#3a3f4a"); mesh(new THREE.ConeGeometry(0.2, 0.18, 12, 1, true), toon(c, { side: THREE.DoubleSide }), null, x, 1.82, 8.5); const b = mesh(new THREE.SphereGeometry(0.06, 8, 6), toon("#fff1b8", { emissive: "#ffe2a0", emissiveIntensity: 1 }), null, x, 1.76, 8.5); b.castShadow = false; } }
       else if (k === "plantascolgantes") { for (let x = 3, n = 0; x < 27; x += 4, n++) { cyl(x, 8.5, 1.8, 0.008, 0.5, "#8a6440"); cyl(x, 8.5, 1.62, 0.12, 0.14, "#b8673e"); for (let i = 0; i < 5; i++) { const l = mesh(new THREE.ConeGeometry(0.03, 0.4, 3), toon(greens[i % 3]), null, x + Math.sin(i * 1.3) * 0.1, 1.5, 8.5 + Math.cos(i * 1.3) * 0.1); l.rotation.x = Math.PI + Math.cos(i * 1.3) * 0.3; } } }
       else if (k === "tuboneon") { const c = colorOf(v, 0, "#ff5fc8"); const t = mesh(new THREE.CylinderGeometry(0.03, 0.03, 26.8, 8), toon(c, { emissive: c, emissiveIntensity: 1.2 }), null, 14, Y, 8.5); t.rotation.z = Math.PI / 2; t.castShadow = false; }
-      else if (k === "bolasdisco") { for (let x = 5; x < 27; x += 7) { cyl(x, 8.5, 1.95, 0.008, 0.3, "#3a3f4a"); const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 1), new THREE.MeshToonMaterial({ color: "#c9ced8", gradientMap: gradient, flatShading: true, emissive: "#3a3f4a" })); ball.position.set(x, 1.8, 8.5); live.add(ball); if (curLive) curLive.push(ball); spinners.push(ball); } }
+      else if (k === "bolasdisco") { for (let x = 5; x < 27; x += 7) { cyl(x, 8.5, 1.95, 0.008, 0.3, "#3a3f4a"); const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 1), new THREE.MeshToonMaterial({ color: "#c9ced8", gradientMap: gradient, emissive: "#3a3f4a" })); ball.position.set(x, 1.8, 8.5); live.add(ball); if (curLive) curLive.push(ball); spinners.push(ball); } }
     }
     // Cafetera y agua del pasillo: la básica o la mejorada.
     function coffeeOf(it) {
@@ -597,7 +657,7 @@
     let curLive = null;
     const ROOMS_BUY = ["meet", "design", "back", "front", "db", "scrap", "ops", "qa", "hall", "bath"];
     const ids = list => (list || []).map(it => it ? it.id : "-").join(",");
-    const sigOf = rid => { if (rid === "bath") { const b = roomOf("hall").bath; return b ? b.id : "-"; } const R = roomOf(rid); return ["floor", "paint", "desk", "chair", "kit", "runner", "ceiling", "coffee", "water"].map(k => R[k] ? R[k].id : "-").join("|") + "|" + ids(R.small) + "|" + ids(R.lean); };
+    const sigOf = rid => { if (rid === "bath") { const b = roomOf("hall").bath; return b ? b.id : "-"; } const R = roomOf(rid); return ["floor", "paint", "desk", "chair", "kit", "runner", "ceiling", "coffee", "water"].map(k => R[k] ? R[k].id : "-").join("|") + "|" + ids(R.small) + "|" + ids(R.lean) + "|" + ids(R.wall) + "|" + ids(R.big); };
     function dispose(o) { o.traverse(m => { if (m.isMesh && m.geometry) m.geometry.dispose(); }); }
     function buildRoom(rid) {
       const old = built[rid];
@@ -619,6 +679,8 @@
         SLOT3.small.hall.forEach(([x, z], i) => { if (R.small && R.small[i]) smallOf(R.small[i], x, z, "hall:" + i); });
       } else {
         (SLOT3.small[rid] || []).forEach(([x, z], i) => { if (R.small && R.small[i]) smallOf(R.small[i], r.x + x, r.y + z, rid + ":" + i); });
+        (SLOT3.wall[rid] || []).forEach((_, i) => { if (R.wall && R.wall[i]) wallOf(R.wall[i], rid, i); });
+        (SLOT3.big[rid] || []).forEach((b, i) => { if (R.big && R.big[i]) bigOf(R.big[i], r.x + b.x, r.y + b.z, b.rot); });
         if (R.floor) planeY(r.x, r.y, 0.006, 7, 7, toon("#ffffff", { map: tex2d(R.floor, 192, 192) }));
         if (R.paint) {
           const wall = toon("#ffffff", { map: tex2d(R.paint, 192, 72) });
@@ -835,6 +897,8 @@
         if (to.coffee) return { key: "coffee", pt: posOf3(k).x < 14 ? SPOT.cooler : SPOT.coffee };
         if (to.debate !== undefined) return { key: "debate" + to.debate, pt: SPOT["debate" + to.debate] };
         if (to.spot) { const pt = to.spot === "window" || to.spot === "printer" ? roomSpot(p.room, to.spot) : SPOT[to.spot]; if (pt) return { key: "spot:" + to.spot, pt }; }
+        // Un mueble grande comprado (arcade, metegol, piano...): se para a usarlo.
+        if (to.x !== undefined && to.room && SLOT3.big[to.room]) { const r2 = room(to.room), i = (SLOTS[to.room].big || []).findIndex(([bx, by]) => Math.abs(r2.x + bx - to.x) < 4 && Math.abs(r2.y + by + 10 - to.y) < 4), b = i >= 0 && SLOT3.big[to.room][i]; if (b) { const r = r3(to.room); return { key: "big:" + to.room + i, pt: { x: r.x + b.stand[0], y: r.y + b.stand[1], f: b.stand[2] } }; } }
         // La máquina o el dispensador comprados para el pasillo: se para enfrente.
         if (to.x !== undefined) { const i = SLOTS.hall.lean.findIndex(([lx, ly]) => Math.abs(lx - to.x) < 4 && Math.abs(ly + 8 - to.y) < 4); if (i >= 0) { const [x, z] = SLOT3.lean[i], top = z < 9; return { key: "lean:" + i, pt: { x, y: top ? z + 0.95 : z - 0.95, f: top ? "-y" : "+y" } }; } }
         if (to.x !== undefined) { const pt = from2d(to); return { key: "xy:" + Math.round(pt.x * 4) + ":" + Math.round(pt.y * 4), pt }; }

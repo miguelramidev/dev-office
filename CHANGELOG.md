@@ -8,6 +8,15 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.33.0] - 2026-10-28
+
+### Agregado
+
+- **Cuadros y muebles grandes, en 3D** (`office` 0.31.0), tercera parte de la tienda en 3D.
+  - Los 19 cuadros y adornos de pared usan el pixel art de la vista clásica: cuelgan de la pared en las oficinas de arriba y quedan parados sobre el tabique en las de abajo. Los que se mueven (reloj, neón, guirnalda, pantalla) se mueven.
+  - Los 25 muebles grandes tienen su modelo: biblioteca, sofá, arcade, acuario, heladerita, metegol, máquina expendedora, piano, puf, ficus, archivero, pizarra, ping-pong, tele con consola, cafetera, telescopio, cama con perro, busto, batería, fuente, cohete, pool, máquina de pochoclo, holograma que gira y robot asistente.
+  - **La gente usa lo comprado**: en los ratos libres alguien va a jugar al arcade, al metegol o al ping-pong, toca el piano o la batería, mira el acuario o el telescopio, o se tira en el sofá o el puf, cada uno con sus frases. En las dos vistas.
+
 ## [0.32.0] - 2026-10-28
 
 ### Agregado

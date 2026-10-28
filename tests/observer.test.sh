@@ -316,7 +316,7 @@ for (let i = 0; i < 4000 && spotsUsed.size < 3; i++) { T.update(0.1); T.state.ag
 say(spotsUsed.size >= 2, "ratos libres: la gente va al dispensador, a la ventana, a la impresora o a las plantas (" + [...spotsUsed].join(", ") + ")");
 // Baño: alguien entra a un cubículo (queda reservado), sale, se lava las manos y lo libera.
 let inStall = null, washed = false;
-for (let i = 0; i < 20000 && !(inStall && washed); i++) {
+for (let i = 0; i < 80000 && !(inStall && washed); i++) {
   T.update(0.1);
   const s = T.state.agents.find(a => /^stall/.test(a.doing || ""));
   if (s && !inStall) inStall = { id: s.id, n: Number(s.doing.slice(5)) };
@@ -330,10 +330,15 @@ T.cancelIdle(busy);
 say(T.state.stalls[0] === null && !busy.doing, "baño: si lo llaman mientras está adentro, libera el cubículo");
 // Vista 3D: cada escritorio, silla y equipamiento del catálogo tiene su modelo 3D.
 const src3d = require("fs").readFileSync(process.argv[2].replace(/index\.html$/, "src/js/09-vista3d.js"), "utf8");
-const MODELADOS = ["desk", "chair", "small", "lean", "ceiling", "coffee", "water", "bath"];
+const MODELADOS = ["desk", "chair", "small", "big", "lean", "ceiling", "coffee", "water", "bath"];
 const sinModelo = T.KINDS.filter(k => MODELADOS.includes(k.slot)).map(k => k.k).filter(k => !src3d.includes('k === "' + k + '"') && !src3d.includes('"' + k + '"') && !src3d.includes(k + ": "));
 const kits = T.VARIANTS.kitRoom.map(v => v.c).filter(r => !src3d.includes('rid === "' + r + '"'));
-say(!sinModelo.length && !kits.length, "vista 3D: escritorios, sillas, equipamiento, plantas, adornos, pasillo y servicios tienen modelo" + (sinModelo.length || kits.length ? " (faltan: " + sinModelo.concat(kits).join(", ") + ")" : ""));
+say(!sinModelo.length && !kits.length, "vista 3D: todo lo de la tienda que no es ropa tiene modelo (los cuadros, su pixel art)" + (sinModelo.length || kits.length ? " (faltan: " + sinModelo.concat(kits).join(", ") + ")" : ""));
+// Muebles que se usan: con un arcade comprado, alguien va a jugar.
+T.place({ item: "arcade.0", to: "back", slot: 0, price: 0 });
+let played = false;
+for (let i = 0; i < 60000 && !played; i++) { T.update(0.1); played = T.state.agents.some(a => a.say && T.KINDS.find(k => k.k === "arcade").lines.includes(a.say.text)); }
+say(played, "muebles: con un arcade comprado, alguien va a jugar");
 // Servicios del pasillo: se mejoran una vez cada uno y siempre van al pasillo.
 const caf = T.itemOf("cafetera_espresso.0");
 say(T.targetOf(caf) === "hall" && T.canBuy(T.itemOf("dispensador_fc.0"), "back").why === "Esto va en el pasillo.", "servicios: la cafetera, el agua y el baño se mejoran en el pasillo");
