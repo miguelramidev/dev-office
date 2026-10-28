@@ -11,7 +11,7 @@ FAILED=0
 
 PROJ="$WORK/proj"
 mkdir -p "$PROJ/.claude"
-(cd "$PROJ" && git init -q -b main && git config user.email t@example.com && git config user.name T && git commit -q --allow-empty -m init && git switch -qc feature/PROJ-123-pedidos)
+(cd "$PROJ" && git init -q -b main && git config user.email t@example.com && git config user.name "Ana Prueba" && git commit -q --allow-empty -m init && git switch -qc feature/PROJ-123-pedidos)
 EVENTS="$PROJ/.office/observer/events.js"
 export CLAUDE_PROJECT_DIR="$PROJ"
 export HOME="$WORK/home"
@@ -49,6 +49,7 @@ quiet "SessionStart"
 expect '.type == "session" and .branch == "feature/PROJ-123-pedidos" and .ticket == "PROJ-123"' "sesión: rama y ticket"
 expect '.config["backend.developer"] == ["claude"] and .config.qa == ["claude","codex"]' "sesión: proveedores, con el archivo personal mandando"
 expect '.departments == ["backend","frontend"]' "sesión: departamentos instalados (solo los habilitados)"
+expect '.user == "Ana"' "sesión: el nombre de pila del dueño del ticket (Git)"
 [ -f "$PROJ/.office/observer/index.html" ] && cmp -s "$PROJ/.office/observer/index.html" "$REPO/plugins/office/observer/index.html" && ok "sesión: copia la página" || fail "sesión: copia la página"
 
 hook '{"hook_event_name":"SessionStart","source":"resume"}'
@@ -244,6 +245,9 @@ fi
 
 # --- La página se arma desde src/ ---------------------------------------------------
 bash "$REPO/plugins/office/observer/build.sh" --check && ok "index.html está al día con src/ (build.sh)" || fail "index.html está al día con src/ (build.sh)"
+IDX="$REPO/plugins/office/observer/index.html"
+grep -q '<script id="three-office">' "$IDX" && grep -q 'window.THREE_OFFICE' "$IDX" && grep -q '<script id="kaykit">' "$IDX" && grep -q 'window.KAYKIT = {' "$IDX" && ok "vista 3D: three.js y los muebles KayKit van dentro de la página" || fail "vista 3D: three.js y los muebles KayKit van dentro de la página"
+grep -q 'CC0' "$REPO/plugins/office/observer/src/vendor/KAYKIT-LICENSE.txt" && grep -q 'MIT License' "$REPO/plugins/office/observer/src/vendor/THREE-LICENSE.txt" && ok "vista 3D: licencias de three.js (MIT) y KayKit (CC0)" || fail "vista 3D: licencias de three.js (MIT) y KayKit (CC0)"
 grep -q '<link rel="icon" id="favicon" type="image/svg+xml" href="data:image/svg+xml,' "$REPO/plugins/office/observer/index.html" && ok "la página tiene ícono para la pestaña" || fail "la página tiene ícono para la pestaña"
 STALE="$WORK/stale"; mkdir -p "$STALE" && cp -R "$REPO/plugins/office/observer/." "$STALE/" && echo "// cambio" >>"$STALE/src/js/08-panel.js"
 bash "$STALE/build.sh" --check 2>/dev/null && fail "build.sh --check detecta un index.html viejo" || ok "build.sh --check detecta un index.html viejo"
@@ -257,7 +261,7 @@ const fs = require("fs");
 const html = fs.readFileSync(process.argv[2], "utf8");
 let code = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</script>"));
 const end = code.lastIndexOf("})();");
-code = code.slice(0, end) + "\nglobal.T = { KINDS, VARIANTS, itemOf, buildShop, canBuy, targetOf, SLOTS, roomOf, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, live: evs => { liveEvents = evs; liveAnimFrom = -1; liveProc = null; mode = 'live'; liveRebuild(); }, more: evs => { liveEvents = evs; liveRebuild(); } };\n" + code.slice(end);
+code = code.slice(0, end) + "\nglobal.T = { resolveSpot, idleLife, view3d, KINDS, VARIANTS, itemOf, buildShop, canBuy, targetOf, SLOTS, roomOf, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, live: evs => { liveEvents = evs; liveAnimFrom = -1; liveProc = null; mode = 'live'; liveRebuild(); }, more: evs => { liveEvents = evs; liveRebuild(); } };\n" + code.slice(end);
 const stub = () => new Proxy(function () {}, { get: (t, k) => k === Symbol.toPrimitive ? () => 0 : k === "length" ? 0 : stub(), apply: () => stub(), construct: () => stub(), set: () => true });
 Object.assign(global, { document: stub(), window: stub(), requestAnimationFrame: () => 0, setInterval: () => 0, matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} },
   getComputedStyle: () => ({ paddingLeft: "0", paddingRight: "0", paddingBottom: "0" }) });
@@ -304,6 +308,12 @@ let snack = false;
 for (let i = 0; i < 6000 && !snack; i++) { T.update(0.1); T.lifeTick(0.1); snack = T.state.agents.some(a => a.prop === "snack"); }
 T.render(2);
 say(snack && T.roomOf("hall").runner === rug && !!T.roomOf("hall").ceiling, "pasillo: alguien va a la máquina expendedora y vuelve con algo");
+// Ratos libres: los lugares nuevos se resuelven en la vista clásica, y sin WebGL no hay vista 3D.
+const ag = id => T.state.agents.find(a => a.id === id), cool = T.resolveSpot(ag("bdev"), { spot: "cooler" }), win = T.resolveSpot(ag("bdev"), { spot: "window" });
+say(cool.room === "hall" && win.room === "back" && T.view3d.ok === false && T.view3d.on === false, "ratos libres: agua, ventana y demás tienen su lugar; sin WebGL queda la vista clásica");
+const spotsUsed = new Set();
+for (let i = 0; i < 4000 && spotsUsed.size < 3; i++) { T.update(0.1); T.state.agents.forEach(a => a.acts.forEach(k => { if (k.to && k.to.spot) spotsUsed.add(k.to.spot); })); }
+say(spotsUsed.size >= 2, "ratos libres: la gente va al dispensador, a la ventana, a la impresora o a las plantas (" + [...spotsUsed].join(", ") + ")");
 // Sin elegir oficina ni empleado, las compras se reparten.
 const spread = new Set(["planta.0", "cactus.0", "suculenta.0", "helecho.0"].map(id => T.targetOf(T.itemOf(id))));
 const wearTo = new Set(T.KINDS.filter(k => k.slot === "hat").slice(0, 4).map(k => T.targetOf(T.itemOf(k.k + k.vars.map(() => ".0").join("")))));

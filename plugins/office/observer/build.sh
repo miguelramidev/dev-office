@@ -2,7 +2,9 @@
 # Arma la página del observer (index.html) a partir de src/:
 #   src/page.html  la página, con <!-- @style --> y <!-- @script --> donde va el resto;
 #   src/style.css  los estilos;
-#   src/js/*.js    el script, en partes que se juntan en orden dentro de una sola función.
+#   src/js/*.js    el script, en partes que se juntan en orden dentro de una sola función;
+#   src/vendor/    three.js y los muebles KayKit de la vista 3D (<!-- @vendor -->), que arma
+#                  tools/vendor.mjs (ver tools/package.json).
 # La página se abre desde el disco, sin servidor, y con file:// el navegador no deja cargar
 # módulos de otros archivos: por eso se entrega todo junto en un solo index.html.
 #
@@ -16,6 +18,9 @@ build() {
   while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in
       "<!-- @style -->") cat "$DIR/src/style.css" ;;
+      "<!-- @vendor -->")
+        for f in three-office kaykit; do printf '<script id="%s">\n' "$f"; cat "$DIR/src/vendor/$f.js"; printf '</script>\n'; done
+        ;;
       "<!-- @script -->")
         printf '%s\n' '<script>' '(() => {' '  "use strict";' ''
         for f in "$DIR"/src/js/*.js; do cat "$f"; done

@@ -1,0 +1,7 @@
+{
+  "name": "office-observer-vendor",
+  "private": true,
+  "description": "Arma src/vendor/: three.js (con lo que usa la vista 3D) y los muebles KayKit (CC0).",
+  "scripts": { "vendor": "node vendor.mjs" },
+  "devDependencies": { "esbuild": "0.24.0", "three": "0.170.0" }
+}

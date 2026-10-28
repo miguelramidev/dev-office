@@ -8,6 +8,20 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.29.0] - 2026-10-28
+
+### Agregado
+
+- **La oficina en pixel art 3D** (`office` 0.27.0). Es la vista nueva del observer: three.js con cámara isométrica, dibujada a baja resolución y con contornos, con sombras y luz por las ventanas.
+  - Va sincronizada con la consola: copia el mismo estado que la vista clásica (quién trabaja y en qué, quién camina hacia quién, qué se dicen, resultados, pizza, torta, corte de luz y tablero). La demo también se ve en 3D.
+  - Muebles KayKit Furniture Bits (CC0, Kay Lousberg) y personajes chibi hechos acá, con la cara en pixel art que parpadea y habla, peinados y ropa según el rol.
+  - Nombres al azar para cada empleado, distintos en cada sesión. El CEO es el dueño del ticket: su nombre de pila sale de `git config user.name` (el evento de sesión ahora trae `user`).
+  - El PM tiene su escritorio en Reuniones y espera ahí.
+  - Burbujas legibles con la carita de quien habla, qué está haciendo cada uno y su resultado arriba de la cabeza; nombre y rol al pasar el mouse; tocar a alguien abre su ficha (con su nombre).
+  - Se acerca con la rueda, se mueve arrastrando y el doble click vuelve a la vista general. En "Ajustes" se puede volver a la vista clásica, que sigue mostrando lo comprado en la tienda (la tienda en 3D viene después). Sin WebGL, queda la clásica.
+  - three.js (MIT) y los muebles van dentro de la página; `observer/tools/vendor.mjs` los regenera.
+- **Más vida en los ratos libres**, en las dos vistas: más charlas, ir al dispensador de agua (a veces de a dos), mirar por la ventana, buscar algo en la impresora y regar las plantas, con sus frases.
+
 ## [0.28.1] - 2026-10-28
 
 ### Corregido

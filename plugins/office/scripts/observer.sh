@@ -69,6 +69,8 @@ case "$EVENT" in
     fi
     BRANCH=$(git -C "$PROJECT" symbolic-ref --short -q HEAD | tr -d '\r')
     TICKET=$(printf '%s' "$BRANCH" | grep -oE '[A-Z][A-Z0-9]+-[0-9]+' | head -n1)
+    # Quién es el CEO (el dueño del ticket): el nombre de pila de Git en el proyecto.
+    OWNER=$(git -C "$PROJECT" config user.name 2>/dev/null | tr -d '\r' | awk '{print $1}')
     # Proveedores por rol: el archivo personal manda sobre el del equipo.
     CONFIG=$(for f in "$PROJECT/.claude/office-agents.json" "$PROJECT/.claude/office-agents.local.json"; do
       [ -f "$f" ] && jq -c '.roles // {}' "$f" | tr -d '\r'
@@ -85,8 +87,8 @@ case "$EVENT" in
     [ -z "$CONFIG" ] && CONFIG='{}'
     [ -z "$DEPTS" ] && DEPTS='null'
     emit "$(jq -c -n --argjson t "$NOW" --arg source "$SOURCE" --arg branch "$BRANCH" --arg ticket "$TICKET" \
-      --arg project "${PROJECT##*/}" --argjson config "$CONFIG" --argjson depts "$DEPTS" --argjson teams "$TEAMS" \
-      '{type: "session", t: $t, source: $source, branch: $branch, ticket: $ticket, project: $project, config: $config, departments: $depts, teams: $teams}')"
+      --arg project "${PROJECT##*/}" --arg user "$OWNER" --argjson config "$CONFIG" --argjson depts "$DEPTS" --argjson teams "$TEAMS" \
+      '{type: "session", t: $t, source: $source, branch: $branch, ticket: $ticket, project: $project, user: $user, config: $config, departments: $depts, teams: $teams}')"
     ;;
 
   UserPromptSubmit)

@@ -187,7 +187,7 @@
       <div class="head">
         <canvas id="portrait" width="224" height="224" aria-label="Retrato de ${a.label}"></canvas>
         <div>
-          <div class="name"><i style="width:12px;height:12px;display:inline-block;background:${PROVIDERS[a.provider].color}"></i>${a.label}</div>
+          <div class="name"><i style="width:12px;height:12px;display:inline-block;background:${PROVIDERS[a.provider].color}"></i>${view3d.nameOf(a.id) ? esc(view3d.nameOf(a.id)) + " · " : ""}${a.label}</div>
           <div class="quote">${open(a.status === "working" ? a.brief : a.reply || a.brief, quote)}</div>
         </div>
       </div>
@@ -308,6 +308,7 @@
 
   // La oficina ocupa todo el lugar libre de la ventana sin deformarse, debajo de los
   // botones de arriba (y al lado del panel, si está abierto en una pantalla ancha).
+  let resize3d = null; // lo pone la vista 3D (09-vista3d.js), que se carga después
   function resize() {
     const st = $("stage"), cs = getComputedStyle(st);
     const top = Math.max($("hud-left").getBoundingClientRect().bottom, $("hud-right").getBoundingClientRect().bottom) + 8;
@@ -319,6 +320,7 @@
     canvas.style.height = Math.floor(H * k) + "px";
     S = Math.max(1, Math.round(k * (window.devicePixelRatio || 1)));
     canvas.width = W * S; canvas.height = H * S;
+    if (resize3d) resize3d(Math.round(parseFloat(cs.paddingLeft)), Math.round(top), Math.floor(aw), Math.floor(ah));
   }
   new ResizeObserver(resize).observe($("stage"));
   new ResizeObserver(resize).observe($("hud-right"));
@@ -405,7 +407,7 @@
     else if (playing) update(dt * speed);
     shopTick();
     lifeTick(mode === "live" ? dt : playing ? dt * speed : 0);
-    render(reduced ? Math.floor(ts / 600) : ts / 1000);
+    if (view3d.on) view3d.frame(ts, mode === "live" ? 1 : playing ? speed : 0); else render(reduced ? Math.floor(ts / 600) : ts / 1000);
     renderPanel(false);
     requestAnimationFrame(frame);
   }
