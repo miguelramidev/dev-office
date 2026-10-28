@@ -247,6 +247,8 @@
   function renderPanel(force) {
     if (!force && performance.now() - lastPanel < 250) return;
     lastPanel = performance.now();
+    renderHud();
+    if (!drawerTab) return;
     renderPhases(); renderStats(); renderAgents(); renderDetail(); renderFeed(); renderShop();
   }
 
@@ -260,7 +262,7 @@
     const pmD = Math.hypot(state.pm.x - wx, state.pm.y - 22 - wy);
     if (pmD < bestD) { best = "pm"; bestD = pmD; }
     state.agents.forEach(a => { if (!a.provider || !a.present) return; const s = a.pos ? { x: a.pos.x, y: a.pos.y - 18 } : seatOf(a); const d = Math.hypot(s.x - wx, s.y - 4 - wy); if (d < bestD) { best = a.id; bestD = d; } });
-    if (best) { state.selected = best; shopSel.room = shopSel.who = ""; renderPanel(true); }
+    if (best) { state.selected = best; shopSel.room = shopSel.who = ""; if (drawerTab !== "tienda") openDrawer("empleado"); else renderPanel(true); }
   });
   // Los textos completos se abren en grande. Si el panel se volvió a pintar entre que se apretó
   // y se soltó el botón, el click llega al contenedor: se usa el botón que se apretó.
@@ -283,7 +285,7 @@
   $("reader-close").addEventListener("click", closeDoc);
   $("reader").addEventListener("click", e => { if (e.target === $("reader")) closeDoc(); }); // tocar afuera cierra
 
-  $("agents").addEventListener("click", e => { const b = e.target.closest(".agent"); if (b) { state.selected = b.dataset.id; shopSel.room = shopSel.who = ""; renderPanel(true); } });
+  $("agents").addEventListener("click", e => { const b = e.target.closest(".agent"); if (b) { state.selected = b.dataset.id; shopSel.room = shopSel.who = ""; openDrawer("empleado"); } });
   $("shop-room").addEventListener("change", e => { shopSel.room = e.target.value; renderPanel(true); });
   $("shop-who").addEventListener("change", e => { shopSel.who = e.target.value; renderPanel(true); });
   $("shop-cats").addEventListener("click", e => { const b = e.target.closest("[data-cat]"); if (b) { shopSel.cat = b.dataset.cat; renderPanel(true); } });
@@ -300,13 +302,68 @@
   }));
   $("btn-restart").addEventListener("click", () => { state = freshState(); startStep(); renderPanel(true); });
 
+  // La oficina ocupa todo el lugar libre de la ventana sin deformarse, debajo de los
+  // botones de arriba (y al lado del panel, si está abierto en una pantalla ancha).
   function resize() {
-    const w = canvas.parentElement.clientWidth * (window.devicePixelRatio || 1);
-    S = Math.max(1, Math.round(w / W));
+    const st = $("stage"), cs = getComputedStyle(st);
+    const top = Math.max($("hud-left").getBoundingClientRect().bottom, $("hud-right").getBoundingClientRect().bottom) + 8;
+    st.style.paddingTop = Math.round(top) + "px";
+    const aw = st.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const ah = st.clientHeight - top - parseFloat(cs.paddingBottom);
+    const k = Math.max(0.1, Math.min(aw / W, ah / H));
+    canvas.style.width = Math.floor(W * k) + "px";
+    canvas.style.height = Math.floor(H * k) + "px";
+    S = Math.max(1, Math.round(k * (window.devicePixelRatio || 1)));
     canvas.width = W * S; canvas.height = H * S;
   }
-  new ResizeObserver(resize).observe(canvas.parentElement);
+  new ResizeObserver(resize).observe($("stage"));
+  new ResizeObserver(resize).observe($("hud-right"));
   resize();
+
+  // --- Paneles: el panel lateral con pestañas y la barra de arriba -------------------
+  let drawerTab = null, seenFeed = null;
+  // La pista de abajo se va con el primer click; el aviso de la demo, cuando lo cierran.
+  const dropHint = () => { $("hint").hidden = true; };
+  document.addEventListener("pointerdown", dropHint, { once: true });
+  $("notice-close").addEventListener("click", () => { noticeClosed = true; updateModeUI(); });
+  const app = $("app");
+  function openDrawer(tab) {
+    drawerTab = tab;
+    $("drawer").hidden = false;
+    app.classList.add("drawer-open");
+    app.classList.toggle("wide", tab === "tienda");
+    document.querySelectorAll("[data-panel]").forEach(p => { p.hidden = p.dataset.panel !== tab; });
+    document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
+    document.querySelectorAll("[data-open]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.open === tab)));
+    $("drawer").querySelector(".drawer-body").scrollTop = 0;
+    renderPanel(true);
+  }
+  function closeDrawer() {
+    drawerTab = null;
+    $("drawer").hidden = true;
+    app.classList.remove("drawer-open", "wide");
+    document.querySelectorAll("[data-open]").forEach(b => b.setAttribute("aria-pressed", "false"));
+  }
+  $("hud-right").addEventListener("click", e => { const b = e.target.closest("[data-open]"); if (b) { if (drawerTab === b.dataset.open) closeDrawer(); else openDrawer(b.dataset.open); } });
+  $("drawer").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b) openDrawer(b.dataset.tab); });
+  $("drawer-close").addEventListener("click", closeDrawer);
+  function toggleSettings(open) { $("settings").hidden = !open; $("btn-settings").setAttribute("aria-expanded", String(open)); }
+  $("btn-settings").addEventListener("click", () => toggleSettings($("settings").hidden));
+  document.addEventListener("click", e => { if (!$("settings").hidden && !e.target.closest(".settings-wrap")) toggleSettings(false); });
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape" || $("reader").open) return;
+    if (!$("settings").hidden) toggleSettings(false); else if (drawerTab) closeDrawer();
+  });
+  // Lo que muestran los botones: tokens, nivel y saldo, y novedades sin leer.
+  function renderHud() {
+    const t = state.tokens;
+    $("hud-tokens").textContent = fmtK(t.claude + t.codex + t.gemini);
+    $("hud-shop").textContent = game ? "Nv " + levelOf(earned()) + " · " + fmtK(Math.max(0, earned() + bonus() - spent())) : "";
+    if (drawerTab === "actividad" || seenFeed === null) seenFeed = state.feed[0] || seenFeed;
+    const i = seenFeed ? state.feed.indexOf(seenFeed) : -1, unread = i < 0 ? (seenFeed ? Math.min(state.feed.length, 99) : 0) : i;
+    $("hud-unread").hidden = !unread;
+    $("hud-unread").textContent = unread > 98 ? "99+" : String(unread);
+  }
 
   // --- Arranque ----------------------------------------------------------------
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

@@ -12,73 +12,90 @@
 </style>
 </head>
 <body>
-<div class="page">
-  <header class="top">
+<main class="app" id="app">
+  <div class="stage" id="stage">
+    <canvas id="office" width="1536" height="896" aria-label="Oficina en pixel art: el PM camina entre las oficinas, cada departamento trabaja en su escritorio y la gente se levanta a hablar con su líder"></canvas>
+  </div>
+
+  <header class="hud-left" id="hud-left">
     <h1>Oficina dev-office</h1>
     <span class="sim-chip" id="mode-chip">DEMO</span>
     <span class="ticket" id="ticket">Sin sesión todavía</span>
-    <div class="controls">
-      <button id="btn-summary" type="button">Cierre del día</button>
-      <button id="btn-sound" type="button" aria-pressed="false">Sonido: no</button>
-      <button id="btn-alerts" type="button" aria-pressed="false">Avisos: no</button>
-      <div class="mode" role="group" aria-label="Qué mostrar">
-        <button id="btn-live" type="button" aria-pressed="false">En vivo</button>
-        <button id="btn-demo" type="button" aria-pressed="true">Demo</button>
-      </div>
-      <div class="mode" id="demo-controls" role="group" aria-label="Controles de la demo">
-      <button id="btn-play" type="button" aria-pressed="false">Pausa</button>
-      <button type="button" aria-pressed="false" data-speed="1">1x</button>
-      <button type="button" aria-pressed="true" data-speed="2">2x</button>
-      <button type="button" aria-pressed="false" data-speed="4">4x</button>
-      <button id="btn-restart" type="button">Reiniciar</button>
-      </div>
-    </div>
   </header>
 
-  <p class="notice" id="notice" hidden>Todavía no hay actividad de la oficina en este proyecto. Abrí una sesión con <code>claude --agent office:pm</code> y esta página se actualiza sola. Mientras tanto, mirá la demo.</p>
-
-  <nav class="phases" id="phases" aria-label="Recorrido de la oficina"></nav>
-
-  <div class="stage">
-    <canvas id="office" width="1536" height="896" aria-label="Oficina en pixel art: el PM camina entre las oficinas, cada departamento trabaja en su escritorio y la gente se levanta a hablar con su líder"></canvas>
-    <div class="hint">Tocá un empleado para ver qué está haciendo, o el tablero del pasillo para ver el ticket</div>
-  </div>
-
-  <section class="stats" id="stats" aria-label="Resumen"></section>
-
-  <div class="cols">
-    <section class="card detail" id="detail" aria-live="polite"></section>
-    <section class="card">
-      <h2>Equipo</h2>
-      <div class="agents" id="agents"></div>
-      <div class="legend">
-        <span><i style="background:var(--claude)"></i>Claude</span>
-        <span><i style="background:var(--codex)"></i>Codex</span>
-        <span><i style="background:var(--gemini)"></i>Gemini</span>
-      </div>
-    </section>
-    <section class="card">
-      <h2>Actividad</h2>
-      <ol class="feed" id="feed"></ol>
-    </section>
-  </div>
-
-  <section class="card shop" id="shop" aria-labelledby="shop-title">
-    <div class="shop-top">
-      <div class="shop-head">
-        <h2 id="shop-title">Tienda de la oficina</h2>
-        <div class="shop-level" id="shop-level"></div>
-      </div>
-      <div class="shop-targets">
-        <label>Oficina <select id="shop-room"></select></label>
-        <label>Empleado <select id="shop-who"></select></label>
+  <nav class="hud-right" id="hud-right" aria-label="Paneles de la oficina">
+    <button type="button" data-open="equipo" aria-pressed="false" aria-controls="drawer">Equipo</button>
+    <button type="button" data-open="actividad" aria-pressed="false" aria-controls="drawer">Actividad <b class="count" id="hud-unread" hidden></b></button>
+    <button type="button" data-open="tokens" aria-pressed="false" aria-controls="drawer">Tokens <b id="hud-tokens"></b></button>
+    <button type="button" data-open="tienda" aria-pressed="false" aria-controls="drawer">Tienda <b id="hud-shop"></b></button>
+    <button type="button" id="btn-summary">Cierre del día</button>
+    <div class="settings-wrap">
+      <button type="button" id="btn-settings" aria-expanded="false" aria-controls="settings" aria-label="Ajustes">Ajustes</button>
+      <div class="settings" id="settings" hidden>
+        <button id="btn-alerts" type="button" aria-pressed="false">Avisos: no</button>
+        <button id="btn-sound" type="button" aria-pressed="false">Sonido: no</button>
+        <div class="mode" role="group" aria-label="Qué mostrar">
+          <button id="btn-live" type="button" aria-pressed="false">En vivo</button>
+          <button id="btn-demo" type="button" aria-pressed="true">Demo</button>
+        </div>
+        <div class="mode" id="demo-controls" role="group" aria-label="Controles de la demo">
+          <button id="btn-play" type="button" aria-pressed="false">Pausa</button>
+          <button type="button" aria-pressed="false" data-speed="1">1x</button>
+          <button type="button" aria-pressed="true" data-speed="2">2x</button>
+          <button type="button" aria-pressed="false" data-speed="4">4x</button>
+          <button id="btn-restart" type="button">Reiniciar</button>
+        </div>
       </div>
     </div>
-    <div class="shop-cats" id="shop-cats" role="group" aria-label="Categorías"></div>
-    <div class="shop-grid" id="shop-grid"></div>
-    <p class="shop-note" id="shop-note"></p>
-  </section>
-</div>
+  </nav>
+
+  <div class="notice" id="notice" hidden><p>Todavía no hay actividad de la oficina en este proyecto. Abrí una sesión con <code>claude --agent office:pm</code> y esta página se actualiza sola. Mientras tanto, mirá la demo.</p><button type="button" id="notice-close">Entendido</button></div>
+  <div class="hint" id="hint">Tocá un empleado o el tablero del pasillo. Arriba a la derecha están el equipo, la actividad, los tokens y la tienda.</div>
+
+  <aside class="drawer" id="drawer" role="dialog" aria-label="Panel de la oficina" hidden>
+    <header>
+      <div class="tabs" role="tablist" aria-label="Paneles">
+        <button type="button" role="tab" data-tab="empleado" aria-selected="false">Empleado</button>
+        <button type="button" role="tab" data-tab="equipo" aria-selected="false">Equipo</button>
+        <button type="button" role="tab" data-tab="actividad" aria-selected="false">Actividad</button>
+        <button type="button" role="tab" data-tab="tokens" aria-selected="false">Tokens</button>
+        <button type="button" role="tab" data-tab="tienda" aria-selected="false">Tienda</button>
+      </div>
+      <button type="button" id="drawer-close" aria-label="Cerrar el panel">✕</button>
+    </header>
+    <div class="drawer-body">
+      <section data-panel="empleado" role="tabpanel"><div class="detail" id="detail" aria-live="polite"></div></section>
+      <section data-panel="equipo" role="tabpanel">
+        <div class="agents" id="agents"></div>
+        <div class="legend">
+          <span><i style="background:var(--claude)"></i>Claude</span>
+          <span><i style="background:var(--codex)"></i>Codex</span>
+          <span><i style="background:var(--gemini)"></i>Gemini</span>
+        </div>
+      </section>
+      <section data-panel="actividad" role="tabpanel">
+        <nav class="phases" id="phases" aria-label="Recorrido de la oficina"></nav>
+        <ol class="feed" id="feed"></ol>
+      </section>
+      <section data-panel="tokens" role="tabpanel"><div class="stats" id="stats" aria-label="Resumen"></div></section>
+      <section data-panel="tienda" role="tabpanel" class="shop" id="shop" aria-labelledby="shop-title">
+        <div class="shop-top">
+          <div class="shop-head">
+            <h2 id="shop-title">Tienda de la oficina</h2>
+            <div class="shop-level" id="shop-level"></div>
+          </div>
+          <div class="shop-targets">
+            <label>Oficina <select id="shop-room"></select></label>
+            <label>Empleado <select id="shop-who"></select></label>
+          </div>
+        </div>
+        <div class="shop-cats" id="shop-cats" role="group" aria-label="Categorías"></div>
+        <div class="shop-grid" id="shop-grid"></div>
+        <p class="shop-note" id="shop-note"></p>
+      </section>
+    </div>
+  </aside>
+</main>
 
 <dialog class="reader" id="reader" aria-labelledby="reader-title">
   <header>

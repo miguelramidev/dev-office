@@ -1,6 +1,7 @@
   // --- En vivo: los eventos de .office/observer/events.js ------------------------
   // La página se abre desde el disco, sin servidor: el archivo de eventos es JavaScript
   // ("OFFICE_EVENT({...});" por línea) y se vuelve a cargar cada 1,5 segundos.
+  let noticeClosed = false;
   let mode = "demo", userPicked = false, liveEvents = [], liveCount = -1, liveFile = false, liveAnimFrom = -1, liveProc = null;
   const ROLE_SEAT = {
     "backend.architect": "barch", "frontend.architect": "farch", "frontend.designer": "dsgn", "devops.architect": "oarch",
@@ -404,7 +405,7 @@
     $("btn-live").setAttribute("aria-pressed", String(live));
     $("btn-demo").setAttribute("aria-pressed", String(!live));
     $("demo-controls").hidden = live;
-    $("notice").hidden = live || (liveFile && liveCount > 0);
+    $("notice").hidden = live || (liveFile && liveCount > 0) || noticeClosed;
   }
 
   // Cada script del registro junta sus eventos en su propio buffer, así events.js y

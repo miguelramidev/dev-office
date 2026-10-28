@@ -8,6 +8,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.27.0] - 2026-10-28
+
+### Cambiado
+
+- **Observer en una sola pantalla** (`office` 0.25.0). La oficina ocupa toda la ventana y se ajusta a su tamaño sin deformarse; la página ya no hace scroll.
+  - Arriba a la derecha hay botones para el equipo, la actividad (con las novedades sin leer), los tokens, la tienda (con el nivel y el saldo), el cierre del día y los ajustes (avisos, sonido, en vivo o demo y los controles de la demo).
+  - Cada botón abre un panel lateral con pestañas. En una pantalla ancha, la oficina se achica a su lado y sigue a la vista. Se cierra con Esc o con la ✕.
+  - Tocar un empleado abre su ficha. Si la tienda está abierta, la compra pasa a ser para él.
+  - El aviso de la demo se puede cerrar, y la pista de abajo se va con el primer click.
+
 ## [0.26.0] - 2026-10-27
 
 ### Agregado
