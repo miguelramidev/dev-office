@@ -366,6 +366,8 @@
     } else if (a.prop === "cup") {
       px(hx - 3, ty + 9, 7, 7, OUT); px(hx - 2, ty + 10, 5, 5, ["#d9534f", "#4a78d6", "#e9e4d8", "#47a865"][a.look % 4]); px(hx - 2, ty + 10, 5, 1, "#3a2418");
       if (Math.floor(now * 2) % 2) px(hx, ty + 5, 1, 3, "rgba(255,255,255,0.4)");
+    } else if (a.prop === "snack") { // el paquete de la máquina
+      px(hx - 3, ty + 8, 7, 8, OUT); px(hx - 2, ty + 9, 5, 6, ["#cf4b47", "#f2c14e", "#47a865", "#4a78d6"][a.look % 4]); px(hx - 2, ty + 9, 5, 1, "#e9e4d8"); px(hx - 1, ty + 11, 3, 2, "#f6f2e7");
     } else if (/\.lead$/.test(a.role || "") || a.role === "qa") {
       px(hx - 4, ty + 6, 9, 11, OUT); px(hx - 3, ty + 7, 7, 9, "#c9a777"); px(hx - 2, ty + 8, 5, 7, "#f6f2e7");
       px(hx - 1, ty + 9, 3, 1, a.role === "qa" ? "#cf4b47" : "#2f9e8f"); px(hx - 1, ty + 11, 3, 1, "#98a1b3"); px(hx - 1, ty + 6, 3, 2, "#5e4229");
@@ -497,15 +499,7 @@
 
   // --- Escenario ----------------------------------------------------------------
   function drawHall(now) {
-    for (let x = 0; x < W; x += 12) {
-      const c = (x / 12) % 2 ? "#5d4733" : "#654e38";
-      px(x, 184, 12, 80, c);
-      px(x, 184, 1, 80, "#4a3828");
-      for (let y = 196 + ((x / 12) % 3) * 9; y < 264; y += 27) px(x + 1, y, 11, 1, "#4a3828");
-    }
-    px(0, 184, W, 2, "#2a2119"); px(0, 262, W, 2, "#2a2119");
-    px(0, 216, W, 24, "#4a2f3a"); px(0, 216, W, 2, "#5d3a48"); px(0, 238, W, 2, "#3a2430");
-    for (let x = 6; x < W; x += 16) px(x, 227, 6, 2, "#5d3a48");
+    drawHallFloor(now);
     px(10, 188, 16, 28, OUT); px(11, 189, 14, 26, "#d4dbe5"); px(13, 190, 10, 9, "#7fb6e6"); px(14, 191, 3, 6, "#a9d1f2"); px(16, 202, 4, 3, "#3a3f4a");
     px(722, 188, 22, 28, OUT); px(723, 189, 20, 26, "#3a3f4a"); px(726, 192, 14, 7, "#1d2028"); px(728, 194, 4, 2, "#ef6b5b"); px(729, 204, 8, 6, "#1d2028");
     if (Math.floor(now * 1.5) % 2) px(732, 199, 2, 3, "rgba(255,255,255,0.3)");
@@ -515,6 +509,7 @@
     px(bx - 1, by - 1, bw + 2, bh + 2, OUT); px(bx, by, bw, bh, "#e9e4d8"); px(bx + 1, by + 1, bw - 2, bh - 2, "#f6f2e7");
     px(bx + 1, by + 1, bw - 2, 6, "#3a3f4a");
     b.lights.forEach((l, i) => { const lx = bx + 3 + i * 30; px(lx, by + bh - 7, 5, 5, OUT); px(lx + 1, by + bh - 6, 3, 3, l.color); });
+    drawHallCeiling(now);
   }
 
   // La oficina básica (piso de cemento y pared lisa) o lo que se compró para ella.

@@ -5,7 +5,7 @@
   const earned = () => mode === "live" ? liveEarned : Math.round(state.tokens.claude + state.tokens.codex + state.tokens.gemini);
   const spent = () => game ? game.buys.reduce((n, b) => n + (b.price || 0), 0) : 0;
   const fmtK = n => n >= 1e6 ? (Math.round(n / 1e5) / 10).toLocaleString("es-AR") + "M" : n >= 1000 ? (Math.round(n / 100) / 10).toLocaleString("es-AR") + "k" : String(Math.round(n));
-  const roomOf = id => placed.rooms[id] || { wall: [], small: [], big: [] };
+  const roomOf = id => placed.rooms[id] || { wall: [], small: [], big: [], lean: [] };
 
   function gameLoad(key) {
     let data = null;
@@ -24,7 +24,7 @@
   function place(b) {
     const it = itemOf(b.item), s = it.kind.slot;
     if (WEAR.includes(s)) { (placed.wear[b.to] = placed.wear[b.to] || {})[s] = it; return; }
-    const R = placed.rooms[b.to] = placed.rooms[b.to] || { wall: [], small: [], big: [] };
+    const R = placed.rooms[b.to] = placed.rooms[b.to] || { wall: [], small: [], big: [], lean: [] };
     if (ROOM_ONE.includes(s) || s === "kit") R[s] = it; else R[s][b.slot] = it;
   }
   function freeSlot(roomId, slot) {
@@ -64,6 +64,7 @@
     const s = it.kind.slot;
     if (WEAR.includes(s)) return shopWho();
     if (s === "kit") return it.v[0].c;
+    if (HALL_ONLY.includes(s)) return "hall";
     return shopRoom();
   }
   function destName(it, to) { return WEAR.includes(it.kind.slot) ? whoName(to) : placeName(to); }
@@ -80,7 +81,8 @@
       if (w && w[s] === it) return { ok: false, label: "Ya lo tiene", why: whoName(to) + " ya lo tiene puesto." };
     } else {
       if (to !== "hall" && room(to) && room(to).off) return { ok: false, label: "No instalada", why: "Esa oficina no está instalada." };
-      if (to === "hall" && s !== "small") return { ok: false, label: "Solo en oficinas", why: "En el pasillo solo entran plantas y adornos chicos." };
+      if (to === "hall" && !HALL_OK.includes(s)) return { ok: false, label: "Solo en oficinas", why: "En el pasillo entran plantas, adornos chicos, pisos y lo de la categoría Pasillo." };
+      if (to !== "hall" && HALL_ONLY.includes(s)) return { ok: false, label: "Solo en el pasillo", why: "Esto va en el pasillo." };
       const R = roomOf(to);
       if (s === "kit") {
         if (R.kit) return { ok: false, label: "Ya está", why: "Esa oficina ya tiene su equipamiento." };
@@ -122,7 +124,7 @@
       const R = Math.random, rooms = shopRooms(), who = shopPeople().map(p => p.id), had = new Set(game.buys.map(b => b.item));
       const opts = game.shop.filter(it => it.lv <= lv && !had.has(it.id)).sort(() => R() - 0.5);
       for (const it of opts) {
-        const to = WEAR.includes(it.kind.slot) ? who[Math.floor(R() * who.length)] : it.kind.slot === "kit" ? it.v[0].c : rooms[Math.floor(R() * rooms.length)];
+        const to = WEAR.includes(it.kind.slot) ? who[Math.floor(R() * who.length)] : it.kind.slot === "kit" ? it.v[0].c : HALL_ONLY.includes(it.kind.slot) ? "hall" : rooms[Math.floor(R() * rooms.length)];
         if (buy(it, to, true)) break;
       }
     }
@@ -141,9 +143,38 @@
     S.big.forEach(([x, y], i) => { const it = R.big[i]; if (it) it.kind.draw(r.x + x, r.y + y, it.v, now); });
     S.small.forEach(([x, y], i) => { const it = R.small[i]; if (it && !walkingPet(r.id, i)) it.kind.draw(r.x + x, r.y + y, it.v, now); });
   }
+  // El pasillo: el piso y la alfombra (los comprados o los de siempre), y lo que va arriba.
+  function hallPlanks(x, y, w, h) {
+    for (let xx = 0; xx < w; xx += 12) {
+      const k = (xx / 12) % 2, c = k ? "#5d4733" : "#654e38";
+      px(x + xx, y, Math.min(12, w - xx), h, c); px(x + xx, y, 1, h, "#4a3828");
+      for (let yy = 12 + ((xx / 12) % 3) * 9; yy < h; yy += 27) px(x + xx + 1, y + yy, Math.min(11, w - xx - 1), 1, "#4a3828");
+    }
+  }
+  function hallRug(x, y, w, h) {
+    px(x, y, w, h, "#4a2f3a"); px(x, y, w, 2, "#5d3a48"); px(x, y + h - 2, w, 2, "#3a2430");
+    for (let xx = x + 6; xx < x + w; xx += 16) px(xx, y + 11, 6, 2, "#5d3a48");
+  }
+  function drawHallFloor(now) {
+    const R = roomOf("hall");
+    if (R.floor) R.floor.kind.draw(0, 184, W, 80, R.floor.v, now); else hallPlanks(0, 184, W, 80);
+    px(0, 184, W, 2, "#2a2119"); px(0, 262, W, 2, "#2a2119");
+    if (R.runner) R.runner.kind.draw(0, 216, W, 24, R.runner.v, now); else hallRug(0, 216, W, 24);
+  }
   function drawHallItems(now) {
     const R = roomOf("hall");
+    SLOTS.hall.lean.forEach(([x, y], i) => { const it = R.lean[i]; if (it) it.kind.draw(x, y, it.v, now); });
     SLOTS.hall.small.forEach(([x, y], i) => { const it = R.small[i]; if (it && !walkingPet("hall", i)) it.kind.draw(x, y, it.v, now); });
+  }
+  function drawHallCeiling(now) {
+    const it = roomOf("hall").ceiling;
+    if (it) it.kind.draw(0, 184, W, it.v, now);
+  }
+  // Lugares del pasillo con visitas: lo comprado contra el borde de arriba que tiene frases.
+  function hallBreaks() {
+    const R = roomOf("hall");
+    return SLOTS.hall.lean.map(([x, y], i) => ({ x, y, it: R.lean[i] })).filter(o => o.it && o.it.kind.lines && o.y < 240)
+      .map(o => ({ x: o.x, y: o.y + 8, room: "hall", lines: o.it.kind.lines, prop: o.it.kind.prop || null }));
   }
   // Ropa comprada: la prenda y su color, o la de su rol.
   function dress(a, colorKey) {
@@ -179,6 +210,9 @@
     else if (s === "kit") { px(0, 0, 72, 30, "#2a3142"); concrete(0, 30, 72, 22); drawDeco({ deco: v[0].c, x: -6, y: 1 }, 0); }
     else if (s === "small") { concrete(0, 0, 72, 52); it.kind.draw(36, 46, v, 0); }
     else if (s === "big") { concrete(0, 0, 72, 52); it.kind.draw(36, 50, v, 0); }
+    else if (s === "lean") { hallPlanks(0, 0, 72, 52); hallRug(0, 40, 72, 12); it.kind.draw(36, 40, v, 0); }
+    else if (s === "runner") { hallPlanks(0, 0, 72, 52); it.kind.draw(0, 14, 72, 24, v, 0); }
+    else if (s === "ceiling") { hallPlanks(0, 0, 72, 52); hallRug(0, 30, 72, 14); it.kind.draw(0, 0, 72, v, 0); }
     else if (s === "desk") { concrete(0, 0, 72, 52); it.kind.draw(36, 16, v, 0); }
     else if (s === "chair") { concrete(0, 0, 72, 52); it.kind.draw(36, 34, v, 0); }
     else if (s === "floor") it.kind.draw(0, 0, 72, 52, v, 0);

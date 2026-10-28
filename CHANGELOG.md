@@ -8,6 +8,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.28.0] - 2026-10-28
+
+### Agregado
+
+- **El pasillo en la tienda** (`office` 0.26.0). Nueva categoría Pasillo, con artículos que siempre van ahí:
+  - Contra los bordes, sin cortar el paso (10 lugares): máquina expendedora, dispensador de agua, banco y sillón de espera, perchero, buzón de sugerencias, cartel de bienvenida, tele del sprint, casillero, fotocopiadora, máquina de chicles y cabina telefónica.
+  - La alfombra del medio: larga, a rayas, a cuadros, línea de señalización, alfombra roja o camino de luces.
+  - Del techo: guirnalda larga, banderines, lámparas, plantas colgantes, tubo de neón o bolas de espejos.
+  - El pasillo también acepta cualquier piso del catálogo y pasa de 8 a 12 lugares para plantas y adornos chicos.
+  - Quien está libre a veces va a la máquina expendedora, a la de chicles o al dispensador, y vuelve con algo.
+
 ## [0.27.0] - 2026-10-28
 
 ### Cambiado
