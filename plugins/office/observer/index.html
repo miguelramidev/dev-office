@@ -4502,7 +4502,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     const m = DOOR_SPOT();
     return {
       t: 0, step: -1, stepT: 0, phase: 0, rounds: 0, nextIdle: 3, holds: {}, demoRun: Date.now().toString(36),
-      courier: null, pizza: {}, pizzaBase: {}, pizzaWins: {}, facts: freshFacts(), blackout: 0, cake: null, petWalk: null, nextPet: 30,
+      courier: null, stalls: [null, null], pizza: {}, pizzaBase: {}, pizzaWins: {}, facts: freshFacts(), blackout: 0, cake: null, petWalk: null, nextPet: 30,
       tokens: { claude: 0, codex: 0, gemini: 0 },
       feed: [], selected: "pm", docs: [],
       pm: { id: "pm", x: m.x, y: m.y, path: [], facing: 1, walking: false, status: "idle", tool: "", task: "", tokens: 0, startedAt: 0, room: "hall", label: "PM", ...NO_DOCS() },
@@ -4827,6 +4827,12 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     printer: ["¿Quién imprimió 40 páginas?", "Se trabó el papel", "Ya salió", "¿Era a doble faz?"],
     plants: ["Hay que regarla", "Creció un montón", "Está hermosa", "Le hace falta sol"],
   };
+  // El baño: dos cubículos y el lavamanos, al final del pasillo.
+  const BATH = {
+    in: ["Ya vuelvo", "Un minuto", "Vuelvo enseguida", "Pausa técnica", "Voy al baño"],
+    wash: ["Manos limpias, código limpio", "¿Quién dejó la canilla abierta?", "Se acabó el jabón", "Siempre lavarse las manos", "El secador no anda", "Hay que reponer papel"],
+    queue: ["¿Falta mucho?", "Están los dos ocupados", "Vuelvo en un rato", "¡Hay cola!"],
+  };
   // Charlas de a dos junto al dispensador de agua.
   const COOLER_CHATS = [
     ["¿Viste el último deploy?", "Salió perfecto", "¿Sin rollback?", "Ni uno"],
@@ -4848,15 +4854,16 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     if (to.debate !== undefined) { const r = room("qa"); return { x: r.x + DEBATE[to.debate][0], y: r.y + DEBATE[to.debate][1], room: "qa" }; }
     if (to.spot) {
       if (to.spot === "window" || to.spot === "printer") { const r = room(a.room); return { x: r.x + 96, y: r.y + 52, room: a.room }; }
-      const s = { cooler: COFFEE[1], cooler2: { x: 40, y: 230 }, plants: { x: 300, y: 222 } }[to.spot] || COFFEE[0];
+      const s = { cooler: COFFEE[1], cooler2: { x: 40, y: 230 }, plants: { x: 300, y: 222 }, stall0: { x: 754, y: 214 }, stall1: { x: 762, y: 222 }, sink: { x: 752, y: 236 }, bathq: { x: 740, y: 246 } }[to.spot] || COFFEE[0];
       return { x: s.x, y: s.y, room: "hall" };
     }
     return to;
   }
   const posOf = p => p.pos || (p.id === "pm" ? { x: p.x, y: p.y } : seatOf(p));
   function faceTo(p, q) { if (!p || !q) return; p.facing = posOf(q).x >= posOf(p).x ? 1 : -1; }
-  function clearAnim(a) { a.pos = null; a.path = []; a.acts = []; a.say = null; a.pose = null; a.prop = null; a.curRoom = a.room; a.idleTrip = false; a.facing = 1; }
-  function cancelIdle(a) { if (a && a.idleTrip) { a.acts = [{ k: "home" }, { k: "prop", prop: null }]; a.idleTrip = false; } }
+  const freeStalls = a => { if (state.stalls) state.stalls.forEach((id, i) => { if (id === a.id) state.stalls[i] = null; }); a.doing = null; };
+  function clearAnim(a) { freeStalls(a); a.pos = null; a.path = []; a.acts = []; a.say = null; a.pose = null; a.prop = null; a.curRoom = a.room; a.idleTrip = false; a.facing = 1; }
+  function cancelIdle(a) { if (a && a.idleTrip) { freeStalls(a); a.acts = [{ k: "home" }, { k: "prop", prop: null }]; a.idleTrip = false; } }
   function pose(id, kind, d) { const a = agent(id); if (a && a.present && !a.pos) a.pose = { kind, until: state.t + d }; }
   function later(id, d, kind) { const a = agent(id); if (a && a.present) a.acts.push({ k: "wait", d }, { k: "pose", pose: kind, d: 2.5 }); }
   // A camina hasta B, charlan (las líneas se alternan: A, B, A...) y A vuelve.
@@ -4937,6 +4944,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     else if (act.k === "pose") { if (!a.pos) a.pose = { kind: act.pose, until: state.t + act.d }; }
     else if (act.k === "prop") a.prop = act.prop;
     else if (act.k === "say") a.say = { text: act.text, until: state.t + act.d };
+    else if (act.k === "do") a.doing = act.what;
   }
   function stepAct(a, act, dt) {
     const el = state.t - act.t0;
@@ -4969,6 +4977,12 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       return false;
     }
     if (act.k === "hold") return !!state.holds[act.key] || el > 40;
+    if (act.k === "do") {
+      if (el < act.d) return false;
+      a.doing = null;
+      if (act.free !== undefined) { state.stalls[act.free] = null; if (Math.random() < 0.7) sfx("flush"); }
+      return true;
+    }
     if (act.k === "wait" || act.k === "pose" || act.k === "say") return el >= act.d;
     return true;
   }
@@ -5021,13 +5035,24 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       const spot = spots[Math.floor(Math.random() * spots.length)];
       a.idleTrip = true;
       a.acts.push({ k: "go", to: { spot } }, ...(spot === "cooler" ? [{ k: "prop", prop: "cup" }] : []), say(IDLE_SPOTS[spot]), { k: "home" }, { k: "prop", prop: null });
-    } else if (r < 0.52 && others.length) {
+    } else if (r < 0.5) {
+      // Al baño: entra a un cubículo libre, se lava las manos y vuelve. Si están los dos
+      // ocupados, espera en la puerta un momento y se vuelve.
+      const n = state.stalls.indexOf(null);
+      a.idleTrip = true;
+      if (n < 0) a.acts.push({ k: "go", to: { spot: "bathq" } }, say(BATH.queue), { k: "wait", d: 1.5 }, { k: "home" });
+      else {
+        state.stalls[n] = a.id;
+        a.acts.push(say(BATH.in), { k: "go", to: { spot: "stall" + n } }, { k: "do", what: "stall" + n, d: 6 + Math.random() * 6, free: n },
+          { k: "go", to: { spot: "sink" } }, { k: "do", what: "wash", d: 2.5 }, say(BATH.wash), { k: "home" });
+      }
+    } else if (r < 0.58 && others.length) {
       // Dos se cruzan en el dispensador y charlan un rato.
       const b = others[Math.floor(Math.random() * others.length)], key = "agua" + Math.random().toString(36).slice(2);
       a.idleTrip = b.idleTrip = true;
       a.acts.push({ k: "go", to: { spot: "cooler" } }, { k: "talk", with: b.id, lines: COOLER_CHATS[Math.floor(Math.random() * COOLER_CHATS.length)], key }, { k: "home" });
       b.acts.push({ k: "go", to: { spot: "cooler2" } }, { k: "hold", key }, { k: "home" });
-    } else if (r < 0.85 && mates.length) {
+    } else if (r < 0.88 && mates.length) {
       const lines = goFar ? CHATS_OTHER : CHATS;
       a.idleTrip = true;
       a.acts.push({ k: "go", to: { visit: mates[Math.floor(Math.random() * mates.length)].id } });
@@ -5656,7 +5681,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     drawMeetingTable();
     drawSelection(now);
     // La gente de pie y el PM, de atrás hacia adelante.
-    const standing = state.agents.filter(a => a.present && a.pos).map(a => ({ y: a.pos.y, draw: () => drawWalker(a, now) }));
+    const standing = state.agents.filter(a => a.present && a.pos && !/^stall/.test(a.doing || "")).map(a => ({ y: a.pos.y, draw: () => drawWalker(a, now) }));
     standing.push({ y: state.pm.y, draw: () => drawPM(now) });
     if (state.courier) standing.push({ y: state.courier.pos.y, draw: () => drawWalker(state.courier, now) });
     if (state.petWalk) standing.push({ y: state.petWalk.pos.y, draw: () => drawPetWalking(state.petWalk, now) });
@@ -6702,6 +6727,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     else if (kind === "level") [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, i * 0.1, "square", 0.04));
     else if (kind === "achievement") [784, 988, 1175].forEach((f, i) => tone(f, 0.16, i * 0.08, "triangle", 0.06));
     else if (kind === "birthday") [392, 392, 440, 392, 523, 494].forEach((f, i) => tone(f, 0.25, i * 0.28, "triangle", 0.05));
+    else if (kind === "flush") { noise(1.1, 0, 0.02); tone(140, 0.5, 0.1, "sine", 0.02); }
     else if (kind === "power") { tone(110, 0.7, 0, "sawtooth", 0.05); noise(0.35, 0.1, 0.04); }
   }
 
@@ -7838,6 +7864,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       coffee: { x: 26.9, y: 8.05, f: "-y" }, coffee2: { x: 26.4, y: 8.1, f: "-y" }, cooler: { x: 1.2, y: 8.05, f: "-y" }, cooler2: { x: 1.95, y: 8.2, f: "-x" },
       vending: { x: 6.35, y: 8.0, f: "-y" }, plants: { x: 9.3, y: 8.1, f: "-y" }, bench: { x: 6.2, y: 9.15, f: "+y" }, board: { x: 20.7, y: 8.95, f: "+y" },
       debate0: { x: 21.9, y: 16.4, f: "-y" }, debate1: { x: 22.8, y: 16.4, f: "-y" }, exit: { x: 0.4, y: 8.45, f: "+x" }, ceo: { x: 2.3, y: 3.0, f: "+x" },
+      stall0: { x: 29.5, y: 8.65, f: "-y" }, stall1: { x: 30.5, y: 8.65, f: "-y" }, sink: { x: 28.45, y: 7.85, f: "-y" }, bathq: { x: 28.55, y: 9.35, f: "-y" },
     };
     const roomSpot = (rid, kind) => { const r = r3(rid); if (!r || !r.top || rid === "meet") return SPOT.plants; return kind === "printer" ? { x: r.x + 4.05, y: 1.0, f: "-y" } : { x: r.x + 3.2, y: 1.0, f: "-y" }; };
 
@@ -7955,6 +7982,44 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
         box(r.x + 2.95, Z - 0.1, 0, 0.1, 0.2, DOOR_H, "#6e4a2f"); box(r.x + 4.95, Z - 0.1, 0, 0.1, 0.2, DOOR_H, "#6e4a2f"); box(r.x + 2.8, Z - 0.12, DOOR_H, 2.4, 0.24, 0.16, "#6e4a2f");
       });
       [7, 14, 21].forEach(X => { across(X, 0, 7); across(X, 10, 17); });
+    }
+
+    // --- El baño, al final del pasillo: dos cubículos con puerta y un lavamanos con espejo ---
+    const stallDoors = [];
+    function buildBathroom() {
+      planeY(28, 7, 0.004, 3, 3, toon("#ffffff", { map: floorTex("tiles", "#e4f0f6", "#bfd9e6", [6, 6]) }));
+      box(28, 7, -0.35, 3.2, 3.2, 0.345, "#4a4058");
+      const tiles = canvasTex(16, 16, x => { P(x, "#e6f2f7", 0, 0, 16, 16); P(x, "#c3dbe6", 0, 0, 16, 1); P(x, "#c3dbe6", 0, 0, 1, 16); P(x, "#c3dbe6", 8, 0, 1, 16); P(x, "#c3dbe6", 0, 8, 16, 1); P(x, "#7fb3d5", 0, 13, 16, 3); }, [6, 3]);
+      const faces = Array(6).fill(toon("#f4ede2")); faces[4] = toon("#ffffff", { map: tiles });
+      box(28, 6.8, 0, 3.2, 0.2, 1.5, faces); box(28, 6.76, 1.5, 3.2, 0.28, 0.06, "#8a5d3b");
+      // Tabique hacia el pasillo, con la puerta, y el cartel.
+      const fab = toon("#ddd3c3"), rail = toon("#8a5d3b");
+      [[7, 7.95], [8.95, 10]].forEach(([z0, z1]) => { box(27.93, z0, 0, 0.14, z1 - z0, PART_H - 0.06, fab); box(27.91, z0, PART_H - 0.06, 0.18, z1 - z0, 0.06, rail); box(27.92, z0, 0, 0.16, z1 - z0, 0.06, "#6b6157"); });
+      box(27.9, 7.9, 0, 0.2, 0.1, DOOR_H, "#6e4a2f"); box(27.9, 8.95, 0, 0.2, 0.1, DOOR_H, "#6e4a2f"); box(27.88, 7.8, DOOR_H, 0.24, 1.3, 0.16, "#6e4a2f");
+      // Cubículos.
+      const panel = "#7fb3d5";
+      [29.0, 30.0, 31.0].forEach(x => box(x - 0.03, 7.0, 0.12, 0.06, 1.2, 1.2, panel));
+      [29.0, 30.0].forEach((x0, n) => {
+        box(x0, 8.17, 0.12, 0.1, 0.06, 1.2, panel); box(x0 + 0.9, 8.17, 0.12, 0.1, 0.06, 1.2, panel); box(x0, 8.15, 1.3, 1.0, 0.08, 0.05, "#5f8fb0");
+        // Inodoro: tanque contra la pared, taza y tapa.
+        box(x0 + 0.32, 7.02, 0.3, 0.36, 0.18, 0.35, "#f4f6f8"); cyl(x0 + 0.5, 7.42, 0, 0.13, 0.28, "#f4f6f8"); cyl(x0 + 0.5, 7.45, 0.28, 0.17, 0.06, "#ffffff"); box(x0 + 0.34, 7.2, 0.34, 0.32, 0.04, 0.3, "#e9eef2");
+        box(x0 + 0.75, 7.05, 0.7, 0.12, 0.08, 0.12, "#e9eef2"); // papel
+        // Puerta, con bisagra a la izquierda, y el cartelito de libre u ocupado.
+        const hinge = new THREE.Group(); hinge.position.set(x0 + 0.1, 0.15, 8.2); live.add(hinge);
+        const door = mesh(new THREE.BoxGeometry(0.8, 1.1, 0.04), toon("#6fa6cb"), hinge, 0.4, 0.55, 0);
+        const sign = mesh(new THREE.PlaneGeometry(0.1, 0.06), basic({ color: "#5cc98a" }), hinge, 0.68, 0.75, 0.025); sign.castShadow = false;
+        mesh(new THREE.BoxGeometry(0.04, 0.03, 0.06), toon("#c9ced8"), hinge, 0.7, 0.55, 0.04);
+        stallDoors.push({ hinge, door, sign, open: 1 });
+      });
+      // Lavamanos con espejo y secador.
+      box(28.12, 7.02, 0, 0.72, 0.5, 0.78, "#8a6440"); box(28.1, 7.0, 0.78, 0.76, 0.54, 0.05, "#f4f1ea"); cyl(28.48, 7.3, 0.8, 0.17, 0.04, "#cfd8de"); box(28.45, 7.05, 0.83, 0.06, 0.12, 0.1, "#c9ced8");
+      box(28.16, 7.0, 0.95, 0.56, 0.03, 0.5, "#c9ced8"); planeZ(28.19, 7.031, 0.98, 0.5, 0.44, toon("#cfe8f2", { emissive: "#9fc4d8", emissiveIntensity: 0.4 }));
+      box(28.76, 7.0, 1.05, 0.2, 0.14, 0.24, "#e9eef2"); box(28.8, 7.12, 1.07, 0.12, 0.03, 0.04, "#3a3f4a");
+      cyl(29.6, 9.72, 0, 0.13, 0.36, "#9aa3b0"); cyl(29.6, 9.72, 0.36, 0.14, 0.03, "#6c727d");
+      plant(30.62, 9.62, true, "tall", "#e9e4d8");
+
+      const sign = canvasTex(24, 12, x => { P(x, "#2f5f8a", 0, 0, 24, 12); x.fillStyle = "#fff"; x.fillRect(4, 3, 3, 3); x.fillRect(3, 6, 5, 4); x.fillRect(16, 3, 3, 3); x.fillRect(15, 6, 5, 4); x.fillRect(11, 2, 1, 8); });
+      box(28.05, 8.2, 1.35, 0.03, 0.5, 0.25, [basic({ map: sign }), toon("#2f5f8a"), toon("#2f5f8a"), toon("#2f5f8a"), toon("#2f5f8a"), toon("#2f5f8a")]);
     }
 
     // --- Muebles hechos acá ---
@@ -8376,7 +8441,8 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     }
     function animate(q, p, now) {
       const m = q.m, walking = q.path.length > 0, sit = !walking && q.seated, working = p.status === "working";
-      m.root.visible = q.visible; if (!q.visible) return;
+      const inStall = /^stall/.test(p.doing || "");
+      m.root.visible = q.visible && !inStall; if (!m.root.visible) return;
       m.root.position.set(q.x, 0, q.y);
       let d = FACE[q.facing] - m.root.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); m.root.rotation.y += d * 0.3;
       const ph = now * 9 + q.x * 3, s = Math.sin(ph), pose = p.pose && p.pose.kind;
@@ -8395,6 +8461,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
         m.legs.forEach(l => { l.hip.rotation.x = 0; l.knee.rotation.x = 0; });
         m.arms[0].rotation.x = p.prop === "clip" || q.id === "pm" ? -0.5 : 0; m.arms[1].rotation.x = p.prop === "cup" ? -0.7 : 0; m.arms[0].rotation.z = -0.06; m.arms[1].rotation.z = 0.06;
         if (pose === "celebrate") { m.arms[0].rotation.x = m.arms[1].rotation.x = -2.9 + Math.sin(now * 10) * 0.2; m.body.position.y = Math.abs(Math.sin(now * 8)) * 0.08; }
+        else if (p.doing === "wash") { const t = Math.sin(now * 12) * 0.12; m.arms[0].rotation.x = -1.0 + t; m.arms[1].rotation.x = -1.0 - t; }
         else m.body.position.y = Math.sin(now * 2 + q.x) * 0.006;
       }
       if (p.prop === "pizza") m.arms[0].rotation.x = m.arms[1].rotation.x = -1.3;
@@ -8411,7 +8478,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
 
     // --- Cámara, luces y textos ---
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
-    const home = new THREE.Vector3(14, 0, 8.5), target = home.clone();
+    const home = new THREE.Vector3(15, 0, 8.5), target = home.clone();
     let zoom = 1, vw = 1, vh = 1;
     const composer = new EffectComposer(renderer);
     const pixelPass = new RenderPixelatedPass(2, scene, camera, { normalEdgeStrength: 0.25, depthEdgeStrength: 0.5 });
@@ -8419,7 +8486,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     function placeCamera() {
       const dir = new THREE.Vector3(1, Math.tan(Math.PI / 6) * Math.SQRT2, 1).normalize();
       camera.position.copy(target).addScaledVector(dir, 60); camera.lookAt(target);
-      const viewH = Math.max(21, 33 * vh / vw) / zoom;
+      const viewH = Math.max(21, 35 * vh / vw) / zoom;
       camera.left = -viewH * vw / vh / 2; camera.right = viewH * vw / vh / 2; camera.top = viewH / 2; camera.bottom = -viewH / 2; camera.updateProjectionMatrix();
     }
     function resize(x, y, w, h) {
@@ -8447,7 +8514,16 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       target.copy(drag.t).addScaledVector(new THREE.Vector3(1, 0, -1).normalize(), -dx).addScaledVector(new THREE.Vector3(-1, 0, -1).normalize(), dy * 2);
       placeCamera();
     });
-    cv.addEventListener("wheel", e => { e.preventDefault(); zoom = Math.min(4, Math.max(0.8, zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12))); placeCamera(); }, { passive: false });
+    // La rueda acerca hacia donde está el mouse: ese punto del piso queda quieto.
+    const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), ray = new THREE.Raycaster();
+    const floorAt = (mx, my) => { ray.setFromCamera(new THREE.Vector2(mx / vw * 2 - 1, 1 - my / vh * 2), camera); const p = new THREE.Vector3(); return ray.ray.intersectPlane(ground, p) ? p : null; };
+    cv.addEventListener("wheel", e => {
+      e.preventDefault();
+      const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, before = floorAt(mx, my);
+      zoom = Math.min(4, Math.max(0.8, zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12))); placeCamera();
+      const after = floorAt(mx, my);
+      if (before && after) { target.add(before.sub(after)); placeCamera(); }
+    }, { passive: false });
     cv.addEventListener("dblclick", () => { zoom = 1; target.copy(home); placeCamera(); });
     const v3 = new THREE.Vector3();
     const toScreen = (x, y, z) => { v3.set(x, y, z).project(camera); return [(v3.x + 1) / 2 * vw, (1 - v3.y) / 2 * vh]; };
@@ -8487,10 +8563,12 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       const fs = 14;
       // Carteles de las puertas.
       u.globalAlpha = 0.92; u.font = "600 12px " + FONT; u.textBaseline = "middle"; u.textAlign = "center";
-      R3.forEach(r => { const [x, y] = toScreen(r.x + 4, DOOR_H + 0.3, r.top ? 7 : 10), name = nameOfRoom(r.id), w = Math.ceil(u.measureText(name).width) + 14; pixRect(Math.round(x - w / 2), Math.round(y - 10), w, 20, "#4a3222", "#21160f"); u.fillStyle = "#f6dfa6"; u.fillText(name, Math.round(x), Math.round(y) + 1); });
+      const plate = (name, at) => { const [x, y] = at, w = Math.ceil(u.measureText(name).width) + 14; pixRect(Math.round(x - w / 2), Math.round(y - 10), w, 20, "#4a3222", "#21160f"); u.fillStyle = "#f6dfa6"; u.fillText(name, Math.round(x), Math.round(y) + 1); };
+      R3.forEach(r => plate(nameOfRoom(r.id), toScreen(r.x + 4, DOOR_H + 0.3, r.top ? 7 : 10)));
+      plate("Baños", toScreen(28, DOOR_H + 0.3, 8.45));
       u.globalAlpha = 1;
       heads = [];
-      everyone((k, p, q) => { if (q && q.visible) heads.push({ id: k, p, q, at: toScreen(q.x, q.seated ? 1.45 : 1.62, q.y) }); });
+      everyone((k, p, q) => { if (q && q.visible && !/^stall/.test(p.doing || "")) heads.push({ id: k, p, q, at: toScreen(q.x, q.seated ? 1.45 : 1.62, q.y) }); });
       // Qué está haciendo cada uno y cómo le fue.
       heads.forEach(({ p, at }) => {
         if (p.say) return;
@@ -8545,7 +8623,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     // --- Arranque y cada cuadro ---
     let ready = false, lastT = 0, lastScreens = 0, lastClock = 0;
     loadKayKit().then(() => {
-      buildRoomShell(); buildFurniture();
+      buildRoomShell(); buildFurniture(); buildBathroom();
       const merged = bake(statics); scene.remove(statics); scene.add(merged); statics = merged;
       buildSeats(); Object.values(seatGroups).forEach(sg => { const b = bake(sg.g); scene.remove(sg.g); scene.add(b); sg.g = b; });
       buildShades();
@@ -8565,6 +8643,11 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
         sg.cake.visible = !!(state.cake && state.cake.id === id);
       });
       R3.forEach(r => { shades[r.id].visible = !!(room(r.id) && room(r.id).off); });
+      stallDoors.forEach((d, n) => {
+        const busy = state.agents.some(a => a.doing === "stall" + n);
+        d.open += ((busy ? 0 : 1) - d.open) * Math.min(1, dt * 6 + 0.02);
+        d.hinge.rotation.y = d.open * 1.35; d.sign.material.color.set(busy ? "#ef6b5b" : "#5cc98a");
+      });
       if (now - lastScreens > 0.4) {
         lastScreens = now;
         Object.values(SCREENS).forEach(t => { const o = t.userData.owner, p = o === "pm" ? state.pm : agent(o); drawScreen(t, now, !!(p && p.status === "working") || o === "pm"); });

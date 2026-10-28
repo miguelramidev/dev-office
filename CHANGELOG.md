@@ -8,6 +8,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.30.0] - 2026-10-28
+
+### Agregado
+
+- **Baño en la oficina** (`office` 0.28.0), al final del pasillo: dos cubículos con inodoro y puerta, lavamanos con espejo y secador, tacho, planta y su cartel en la puerta.
+  - En los ratos libres alguien va al baño: avisa ("Ya vuelvo"), entra a un cubículo libre (la puerta se cierra y el cartelito pasa a rojo), sale, se lava las manos con alguna frase y vuelve. Con el sonido prendido, se escucha la descarga.
+  - Si están los dos ocupados, espera en la puerta ("¿Falta mucho?") y se vuelve.
+  - Si lo llaman a trabajar mientras está adentro, el cubículo queda libre.
+  - En la vista clásica camina hasta el final del pasillo y, mientras está en el cubículo, no se ve.
+- **La rueda acerca hacia el mouse** en la vista 3D: el punto del piso bajo el puntero queda quieto.
+
 ## [0.29.0] - 2026-10-28
 
 ### Agregado

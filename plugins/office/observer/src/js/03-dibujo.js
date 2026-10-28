@@ -617,7 +617,7 @@
     drawMeetingTable();
     drawSelection(now);
     // La gente de pie y el PM, de atrás hacia adelante.
-    const standing = state.agents.filter(a => a.present && a.pos).map(a => ({ y: a.pos.y, draw: () => drawWalker(a, now) }));
+    const standing = state.agents.filter(a => a.present && a.pos && !/^stall/.test(a.doing || "")).map(a => ({ y: a.pos.y, draw: () => drawWalker(a, now) }));
     standing.push({ y: state.pm.y, draw: () => drawPM(now) });
     if (state.courier) standing.push({ y: state.courier.pos.y, draw: () => drawWalker(state.courier, now) });
     if (state.petWalk) standing.push({ y: state.petWalk.pos.y, draw: () => drawPetWalking(state.petWalk, now) });

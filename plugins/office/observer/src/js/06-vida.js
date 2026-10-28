@@ -23,6 +23,7 @@
     else if (kind === "level") [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, i * 0.1, "square", 0.04));
     else if (kind === "achievement") [784, 988, 1175].forEach((f, i) => tone(f, 0.16, i * 0.08, "triangle", 0.06));
     else if (kind === "birthday") [392, 392, 440, 392, 523, 494].forEach((f, i) => tone(f, 0.25, i * 0.28, "triangle", 0.05));
+    else if (kind === "flush") { noise(1.1, 0, 0.02); tone(140, 0.5, 0.1, "sine", 0.02); }
     else if (kind === "power") { tone(110, 0.7, 0, "sawtooth", 0.05); noise(0.35, 0.1, 0.04); }
   }
 

@@ -7,7 +7,7 @@
     const m = DOOR_SPOT();
     return {
       t: 0, step: -1, stepT: 0, phase: 0, rounds: 0, nextIdle: 3, holds: {}, demoRun: Date.now().toString(36),
-      courier: null, pizza: {}, pizzaBase: {}, pizzaWins: {}, facts: freshFacts(), blackout: 0, cake: null, petWalk: null, nextPet: 30,
+      courier: null, stalls: [null, null], pizza: {}, pizzaBase: {}, pizzaWins: {}, facts: freshFacts(), blackout: 0, cake: null, petWalk: null, nextPet: 30,
       tokens: { claude: 0, codex: 0, gemini: 0 },
       feed: [], selected: "pm", docs: [],
       pm: { id: "pm", x: m.x, y: m.y, path: [], facing: 1, walking: false, status: "idle", tool: "", task: "", tokens: 0, startedAt: 0, room: "hall", label: "PM", ...NO_DOCS() },
@@ -332,6 +332,12 @@
     printer: ["¿Quién imprimió 40 páginas?", "Se trabó el papel", "Ya salió", "¿Era a doble faz?"],
     plants: ["Hay que regarla", "Creció un montón", "Está hermosa", "Le hace falta sol"],
   };
+  // El baño: dos cubículos y el lavamanos, al final del pasillo.
+  const BATH = {
+    in: ["Ya vuelvo", "Un minuto", "Vuelvo enseguida", "Pausa técnica", "Voy al baño"],
+    wash: ["Manos limpias, código limpio", "¿Quién dejó la canilla abierta?", "Se acabó el jabón", "Siempre lavarse las manos", "El secador no anda", "Hay que reponer papel"],
+    queue: ["¿Falta mucho?", "Están los dos ocupados", "Vuelvo en un rato", "¡Hay cola!"],
+  };
   // Charlas de a dos junto al dispensador de agua.
   const COOLER_CHATS = [
     ["¿Viste el último deploy?", "Salió perfecto", "¿Sin rollback?", "Ni uno"],
@@ -353,15 +359,16 @@
     if (to.debate !== undefined) { const r = room("qa"); return { x: r.x + DEBATE[to.debate][0], y: r.y + DEBATE[to.debate][1], room: "qa" }; }
     if (to.spot) {
       if (to.spot === "window" || to.spot === "printer") { const r = room(a.room); return { x: r.x + 96, y: r.y + 52, room: a.room }; }
-      const s = { cooler: COFFEE[1], cooler2: { x: 40, y: 230 }, plants: { x: 300, y: 222 } }[to.spot] || COFFEE[0];
+      const s = { cooler: COFFEE[1], cooler2: { x: 40, y: 230 }, plants: { x: 300, y: 222 }, stall0: { x: 754, y: 214 }, stall1: { x: 762, y: 222 }, sink: { x: 752, y: 236 }, bathq: { x: 740, y: 246 } }[to.spot] || COFFEE[0];
       return { x: s.x, y: s.y, room: "hall" };
     }
     return to;
   }
   const posOf = p => p.pos || (p.id === "pm" ? { x: p.x, y: p.y } : seatOf(p));
   function faceTo(p, q) { if (!p || !q) return; p.facing = posOf(q).x >= posOf(p).x ? 1 : -1; }
-  function clearAnim(a) { a.pos = null; a.path = []; a.acts = []; a.say = null; a.pose = null; a.prop = null; a.curRoom = a.room; a.idleTrip = false; a.facing = 1; }
-  function cancelIdle(a) { if (a && a.idleTrip) { a.acts = [{ k: "home" }, { k: "prop", prop: null }]; a.idleTrip = false; } }
+  const freeStalls = a => { if (state.stalls) state.stalls.forEach((id, i) => { if (id === a.id) state.stalls[i] = null; }); a.doing = null; };
+  function clearAnim(a) { freeStalls(a); a.pos = null; a.path = []; a.acts = []; a.say = null; a.pose = null; a.prop = null; a.curRoom = a.room; a.idleTrip = false; a.facing = 1; }
+  function cancelIdle(a) { if (a && a.idleTrip) { freeStalls(a); a.acts = [{ k: "home" }, { k: "prop", prop: null }]; a.idleTrip = false; } }
   function pose(id, kind, d) { const a = agent(id); if (a && a.present && !a.pos) a.pose = { kind, until: state.t + d }; }
   function later(id, d, kind) { const a = agent(id); if (a && a.present) a.acts.push({ k: "wait", d }, { k: "pose", pose: kind, d: 2.5 }); }
   // A camina hasta B, charlan (las líneas se alternan: A, B, A...) y A vuelve.
@@ -442,6 +449,7 @@
     else if (act.k === "pose") { if (!a.pos) a.pose = { kind: act.pose, until: state.t + act.d }; }
     else if (act.k === "prop") a.prop = act.prop;
     else if (act.k === "say") a.say = { text: act.text, until: state.t + act.d };
+    else if (act.k === "do") a.doing = act.what;
   }
   function stepAct(a, act, dt) {
     const el = state.t - act.t0;
@@ -474,6 +482,12 @@
       return false;
     }
     if (act.k === "hold") return !!state.holds[act.key] || el > 40;
+    if (act.k === "do") {
+      if (el < act.d) return false;
+      a.doing = null;
+      if (act.free !== undefined) { state.stalls[act.free] = null; if (Math.random() < 0.7) sfx("flush"); }
+      return true;
+    }
     if (act.k === "wait" || act.k === "pose" || act.k === "say") return el >= act.d;
     return true;
   }
@@ -526,13 +540,24 @@
       const spot = spots[Math.floor(Math.random() * spots.length)];
       a.idleTrip = true;
       a.acts.push({ k: "go", to: { spot } }, ...(spot === "cooler" ? [{ k: "prop", prop: "cup" }] : []), say(IDLE_SPOTS[spot]), { k: "home" }, { k: "prop", prop: null });
-    } else if (r < 0.52 && others.length) {
+    } else if (r < 0.5) {
+      // Al baño: entra a un cubículo libre, se lava las manos y vuelve. Si están los dos
+      // ocupados, espera en la puerta un momento y se vuelve.
+      const n = state.stalls.indexOf(null);
+      a.idleTrip = true;
+      if (n < 0) a.acts.push({ k: "go", to: { spot: "bathq" } }, say(BATH.queue), { k: "wait", d: 1.5 }, { k: "home" });
+      else {
+        state.stalls[n] = a.id;
+        a.acts.push(say(BATH.in), { k: "go", to: { spot: "stall" + n } }, { k: "do", what: "stall" + n, d: 6 + Math.random() * 6, free: n },
+          { k: "go", to: { spot: "sink" } }, { k: "do", what: "wash", d: 2.5 }, say(BATH.wash), { k: "home" });
+      }
+    } else if (r < 0.58 && others.length) {
       // Dos se cruzan en el dispensador y charlan un rato.
       const b = others[Math.floor(Math.random() * others.length)], key = "agua" + Math.random().toString(36).slice(2);
       a.idleTrip = b.idleTrip = true;
       a.acts.push({ k: "go", to: { spot: "cooler" } }, { k: "talk", with: b.id, lines: COOLER_CHATS[Math.floor(Math.random() * COOLER_CHATS.length)], key }, { k: "home" });
       b.acts.push({ k: "go", to: { spot: "cooler2" } }, { k: "hold", key }, { k: "home" });
-    } else if (r < 0.85 && mates.length) {
+    } else if (r < 0.88 && mates.length) {
       const lines = goFar ? CHATS_OTHER : CHATS;
       a.idleTrip = true;
       a.acts.push({ k: "go", to: { visit: mates[Math.floor(Math.random() * mates.length)].id } });
