@@ -164,7 +164,7 @@
     ];
   }
   function openSummary() {
-    const lines = summaryLines(), photo = canvas.toDataURL("image/png");
+    const lines = summaryLines(), photo = view3d.on ? view3d.snapshot() : canvas.toDataURL("image/png");
     openDoc({ kind: "Cierre del día", title: mode === "live" ? "Así quedó la oficina hoy" : "Así quedó la oficina de la demo", at: Date.now() / 1000, t: state.t, text: lines.join("\n") });
     $("reader-body").insertAdjacentHTML("afterbegin", `<img class="photo" src="${photo}" alt="Foto de la oficina"><p><button type="button" id="dl-summary">Descargar imagen</button></p>`);
     $("dl-summary").addEventListener("click", () => downloadSummary(photo, lines));

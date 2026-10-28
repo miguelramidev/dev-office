@@ -6868,7 +6868,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     ];
   }
   function openSummary() {
-    const lines = summaryLines(), photo = canvas.toDataURL("image/png");
+    const lines = summaryLines(), photo = view3d.on ? view3d.snapshot() : canvas.toDataURL("image/png");
     openDoc({ kind: "Cierre del día", title: mode === "live" ? "Así quedó la oficina hoy" : "Así quedó la oficina de la demo", at: Date.now() / 1000, t: state.t, text: lines.join("\n") });
     $("reader-body").insertAdjacentHTML("afterbegin", `<img class="photo" src="${photo}" alt="Foto de la oficina"><p><button type="button" id="dl-summary">Descargar imagen</button></p>`);
     $("dl-summary").addEventListener("click", () => downloadSummary(photo, lines));
@@ -7894,17 +7894,20 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
         P(x, "#8d7a66", 0, 37, 16, 3); P(x, "#b3a08a", 0, 37, 16, 1);
       }, [len, 1]);
     }
-    function skyTex() {
-      const h = new Date().getHours(), day = h >= 7 && h < 18, dusk = h >= 18 && h < 20;
+    const skies = [];
+    function skyTex() { const t = canvasTex(48, 32, () => {}); drawSky(t); skies.push(t); return t; }
+    function drawSky(t) {
+      const x = t.userData.ctx, h = new Date().getHours(), day = h >= 7 && h < 18, dusk = h >= 18 && h < 20;
       const top = day ? "#6fb6ee" : dusk ? "#e07a58" : "#121a36", low = day ? "#c2e6f8" : dusk ? "#f6c97a" : "#2c376a", city = day ? "#8aa2bf" : dusk ? "#6b5a7a" : "#1f2644", lit = day ? "#c9d8ea" : "#ffd27a";
-      return canvasTex(48, 32, x => {
+      {
         const R = rand(7);
         for (let y = 0; y < 32; y++) P(x, y < 16 ? top : low, 0, y, 48, 1);
         if (day) { P(x, "#ffffff", 8, 5, 9, 2); P(x, "#ffffff", 10, 4, 5, 1); P(x, "#ffffff", 30, 9, 8, 2); }
         else for (let i = 0; i < 10; i++) P(x, "#ffffff", Math.floor(R() * 48), Math.floor(R() * 14), 1, 1);
         let q = 0; while (q < 48) { const w = 3 + Math.floor(R() * 6), hh = 8 + Math.floor(R() * 14); P(x, city, q, 32 - hh, w, hh); for (let k = 0; k < 3; k++) P(x, lit, q + 1 + Math.floor(R() * Math.max(1, w - 2)), 32 - hh + 2 + Math.floor(R() * (hh - 4)), 1, 1); q += w; }
         for (let y = 0; y < 9; y += 2) P(x, "#efe9dc", 0, y, 48, 1);
-      });
+      }
+      t.needsUpdate = true;
     }
     const winLights = [];
     function windowOn(onX, a, b, y0 = 0.95, y1 = 2.05) {
@@ -8423,6 +8426,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
         q.key = t.key; q.goal = t; q.seated = false;
         q.path = route3({ x: q.x, y: q.y }, t.pt);
       }
+      if (q.path.length && reduced) { const end = q.path[q.path.length - 1]; q.x = end.x; q.y = end.y; q.path = [end]; }
       if (q.path.length) {
         const pt = q.path[0], dx = pt.x - q.x, dy = pt.y - q.y, dist = Math.hypot(dx, dy), done = !(p.path && p.path.length) && !(p.acts && p.acts[0] && p.acts[0].k === "go");
         const step = SPEED3 * (done ? 1.8 : 1) * dt;
@@ -8445,7 +8449,8 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       m.root.visible = q.visible && !inStall; if (!m.root.visible) return;
       m.root.position.set(q.x, 0, q.y);
       let d = FACE[q.facing] - m.root.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); m.root.rotation.y += d * 0.3;
-      const ph = now * 9 + q.x * 3, s = Math.sin(ph), pose = p.pose && p.pose.kind;
+      if (reduced) now = Math.floor(now / 5) * 5;
+      const ph = now * 9 + q.x * 3, s = reduced ? 0 : Math.sin(ph), pose = p.pose && p.pose.kind;
       if (walking) {
         m.legs[0].hip.rotation.x = s * 0.55; m.legs[1].hip.rotation.x = -s * 0.55; m.legs[0].knee.rotation.x = Math.max(0, -s) * 0.6; m.legs[1].knee.rotation.x = Math.max(0, s) * 0.6;
         m.arms[0].rotation.x = -s * 0.5; m.arms[1].rotation.x = s * 0.5; m.arms[0].rotation.z = -0.08; m.arms[1].rotation.z = 0.08; m.body.position.y = Math.abs(Math.cos(ph)) * 0.035;
@@ -8474,6 +8479,43 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       if (m.faceMat.map !== tex) { m.faceMat.map = tex; m.faceMat.needsUpdate = true; }
       m.cup.visible = p.prop === "cup"; m.clip.visible = q.id === "pm" && !sit; m.pizza.visible = p.prop === "pizza";
       m.ring.visible = state.selected === q.id;
+    }
+
+    // --- Mascotas: la que sale a pasear en la vista clásica también pasea acá ---
+    const pets = {};
+    function petMesh(it) {
+      const k = it.kind.k, key = it.id;
+      if (pets[key]) return pets[key];
+      const g = new THREE.Group(), body = new THREE.Group(); g.add(body); live.add(g);
+      if (k === "robot") {
+        const c = it.v[0].c;
+        mesh(new RoundedBoxGeometry(0.24, 0.2, 0.2, 2, 0.04), toon(c), body, 0, 0.18, 0); mesh(new RoundedBoxGeometry(0.18, 0.14, 0.16, 2, 0.04), toon("#c9ced8"), body, 0, 0.35, 0);
+        [-0.04, 0.04].forEach(x => mesh(new THREE.SphereGeometry(0.02, 6, 4), toon("#4ff0ff", { emissive: "#4ff0ff" }), body, x, 0.36, 0.08));
+        mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.08, 4), toon("#3a3f4a"), body, 0, 0.46, 0); mesh(new THREE.SphereGeometry(0.02, 6, 4), toon("#ef6b5b", { emissive: "#ef6b5b" }), body, 0, 0.5, 0);
+        [-0.1, 0.1].forEach(x => mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 10), toon("#3a3f4a"), body, x, 0.05, 0).rotation.z = Math.PI / 2);
+      } else {
+        const [a, b] = it.v[0].c, dog = k === "perro", fur = toon(a), spot = toon(b);
+        const len = dog ? 0.36 : 0.28, hgt = dog ? 0.2 : 0.15;
+        mesh(new THREE.CapsuleGeometry(dog ? 0.09 : 0.07, len - 0.1, 4, 8), fur, body, 0, hgt + 0.02, 0).rotation.x = Math.PI / 2;
+        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => mesh(new THREE.CylinderGeometry(0.025, 0.025, hgt, 6), fur, body, sx * 0.05, hgt / 2, sz * len * 0.32));
+        const head = new THREE.Group(); head.position.set(0, hgt + 0.1, len * 0.5); body.add(head);
+        mesh(new RoundedBoxGeometry(dog ? 0.16 : 0.13, dog ? 0.14 : 0.12, dog ? 0.16 : 0.12, 2, 0.04), fur, head, 0, 0, 0);
+        if (dog) { mesh(new RoundedBoxGeometry(0.08, 0.06, 0.08, 1, 0.02), spot, head, 0, -0.03, 0.09); [-1, 1].forEach(s => mesh(new RoundedBoxGeometry(0.04, 0.1, 0.06, 1, 0.015), spot, head, s * 0.09, -0.02, -0.01)); }
+        else [-1, 1].forEach(s => mesh(new THREE.ConeGeometry(0.03, 0.06, 4), spot, head, s * 0.045, 0.08, 0));
+        [-0.035, 0.035].forEach(x => mesh(new THREE.SphereGeometry(0.012, 5, 4), toon("#1d1a26"), head, x, 0.015, (dog ? 0.08 : 0.06)));
+        const tail = mesh(new THREE.CylinderGeometry(0.015, 0.02, dog ? 0.12 : 0.16, 5), spot, body, 0, hgt + (dog ? 0.08 : 0.1), -len * 0.5); tail.rotation.x = dog ? -0.7 : -0.3;
+      }
+      return pets[key] = { g, body };
+    }
+    function petsFrame(now) {
+      const w = state.petWalk;
+      Object.values(pets).forEach(p => { p.g.visible = false; });
+      if (!w || !w.it) return;
+      const p = petMesh(w.it), at = from2d(w.pos);
+      p.g.visible = true;
+      if (p.last) { const dx = at.x - p.last.x, dy = at.y - p.last.y; if (Math.abs(dx) + Math.abs(dy) > 0.002) p.g.rotation.y = Math.atan2(dx, dy); }
+      p.last = at; p.g.position.set(at.x, 0, at.y);
+      p.body.position.y = reduced ? 0 : Math.abs(Math.sin(now * 12)) * 0.03;
     }
 
     // --- Cámara, luces y textos ---
@@ -8569,16 +8611,20 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       u.globalAlpha = 1;
       heads = [];
       everyone((k, p, q) => { if (q && q.visible && !/^stall/.test(p.doing || "")) heads.push({ id: k, p, q, at: toScreen(q.x, q.seated ? 1.45 : 1.62, q.y) }); });
-      // Qué está haciendo cada uno y cómo le fue.
-      heads.forEach(({ p, at }) => {
+      // Qué está haciendo cada uno y cómo le fue (sin pisarse).
+      const chips = [];
+      heads.slice().sort((a, b) => b.at[1] - a.at[1]).forEach(({ p, at }) => {
         if (p.say) return;
         const res = p.bubble && (p.status === "pass" || p.status === "fail" || p.status === "waiting") ? p.bubble : null;
-        const busy = p.status === "working" && p.tool;
-        if (!res && !busy) return;
-        const t = res || (p.tool.length > 30 ? p.tool.slice(0, 29) + "…" : p.tool);
+        const busy = p.status === "working" && p.tool, stuck = p.status === "working" && p.stuck;
+        if (!res && !busy && !stuck) return;
+        const t = res || (stuck ? "¿trabado? " + p.stuck + " min sin novedades" : p.tool.length > 30 ? p.tool.slice(0, 29) + "…" : p.tool);
         u.font = (res ? "600 12px " : "11px ") + FONT; u.textAlign = "center";
-        const w = Math.ceil(u.measureText(t).width) + (res ? 14 : 24), x = Math.round(at[0] - w / 2), y = Math.round(at[1] - 26);
-        pixRect(x, y, w, 18, res ? { pass: "#2f8a52", fail: "#c23b3b", waiting: "#c98a1c" }[p.status] : "rgba(29,26,38,0.88)", "#241d2e");
+        const w = Math.ceil(u.measureText(t).width) + (res ? 14 : 24), x = Math.round(at[0] - w / 2);
+        let y = Math.round(at[1] - 26);
+        for (let n = 0; n < 8; n++) { const hit = chips.find(o => x < o.x + o.w + 2 && o.x < x + w + 2 && y < o.y + 20 && o.y < y + 20); if (!hit) break; y = hit.y - 21; }
+        chips.push({ x, y, w });
+        pixRect(x, y, w, 18, res ? { pass: "#2f8a52", fail: "#c23b3b", waiting: "#c98a1c" }[p.status] : stuck ? "#b86a2c" : "rgba(29,26,38,0.88)", "#241d2e");
         if (!res) { const k = Math.floor(now * 3) % 3; for (let i = 0; i < 3; i++) { u.fillStyle = i === k ? "#f2c14e" : "#6c727d"; u.fillRect(x + 6 + i * 4, y + 8, 2, 2); } }
         u.fillStyle = "#ffffff"; u.fillText(t, x + w / 2 + (res ? 0 : 5), y + 9.5);
       });
@@ -8621,7 +8667,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     }
 
     // --- Arranque y cada cuadro ---
-    let ready = false, lastT = 0, lastScreens = 0, lastClock = 0;
+    let ready = false, lastT = 0, lastScreens = 0, lastClock = 0, lastSky = 0;
     loadKayKit().then(() => {
       buildRoomShell(); buildFurniture(); buildBathroom();
       const merged = bake(statics); scene.remove(statics); scene.add(merged); statics = merged;
@@ -8635,6 +8681,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       if (!ready) return;
       const now = ts / 1000, dt = Math.min(0.1, now - lastT || 0) * pace; lastT = now;
       everyone((k, p) => { const q = syncPerson(k, p, dt); animate(q, p, now); });
+      petsFrame(now);
       // Puestos que no se usan, oficinas apagadas, pizza y torta sobre el escritorio.
       Object.entries(seatGroups).forEach(([id, sg]) => {
         const a = id === "pm" ? null : agent(id), used = id === "pm" || (a && a.present !== false && !(/\.lead$/.test(a.role || "") && !a.present));
@@ -8650,10 +8697,11 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       });
       if (now - lastScreens > 0.4) {
         lastScreens = now;
-        Object.values(SCREENS).forEach(t => { const o = t.userData.owner, p = o === "pm" ? state.pm : agent(o); drawScreen(t, now, !!(p && p.status === "working") || o === "pm"); });
+        Object.values(SCREENS).forEach(t => { const o = t.userData.owner, p = o === "pm" ? state.pm : agent(o); drawScreen(t, reduced ? 0 : now, !!(p && p.status === "working") || o === "pm"); });
         racks.forEach(t => drawRack(t, now)); drawBoard3();
       }
       if (now - lastClock > 1) { lastClock = now; clocks.forEach(drawClock); }
+      if (now - lastSky > 600) { lastSky = now; skies.forEach(drawSky); }
       // Corte de luz: casi todo a oscuras.
       const dark = (state.blackout || 0) > state.t;
       sun.intensity = dark ? 0.15 : 2.4; sky.intensity = dark ? 0.12 : 1.4; amb.intensity = dark ? 0.05 : 0.35;
@@ -8665,7 +8713,13 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       host.hidden = !api.on;
       $("office").hidden = api.on;
     }
-    const api = { ok: true, on: false, frame, resize, setOn, nameOf };
+    function snapshot() {
+      composer.render(); drawUI(performance.now() / 1000);
+      const c = document.createElement("canvas"); c.width = vw; c.height = vh;
+      const x = c.getContext("2d"); x.drawImage(renderer.domElement, 0, 0, vw, vh); x.drawImage(ui, 0, 0, vw, vh);
+      return c.toDataURL("image/png");
+    }
+    const api = { ok: true, on: false, frame, resize, setOn, nameOf, snapshot };
     return api;
   })();
 

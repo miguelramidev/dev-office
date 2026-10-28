@@ -8,6 +8,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.30.1] - 2026-10-28
+
+### Corregido
+
+- **Detalles de la vista 3D** (`office` 0.28.1):
+  - La foto del "Cierre del día" sale de la vista 3D, con los carteles y las burbujas; antes salía vacía o vieja.
+  - Las mascotas compradas (gato, perro, robot) también salen a pasear en 3D.
+  - El aviso "¿trabado? N min sin novedades" aparece arriba de quien lleva 8 minutos sin novedades, como en la vista clásica. Los cartelitos de arriba de la cabeza ya no se pisan.
+  - Con "reducir movimiento" en el sistema, la gente aparece donde va sin caminar, y no hay balanceo ni pantallas que corren.
+  - El cielo de las ventanas cambia con la hora aunque la página quede abierta todo el día.
+
 ## [0.30.0] - 2026-10-28
 
 ### Agregado
