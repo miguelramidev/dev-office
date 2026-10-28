@@ -328,6 +328,11 @@ const busy = T.state.agents.find(a => a.present && a.provider && a.room !== "mee
 T.state.stalls[0] = busy.id; busy.doing = "stall0"; busy.idleTrip = true; busy.acts.push({ k: "do", what: "stall0", d: 30, free: 0 });
 T.cancelIdle(busy);
 say(T.state.stalls[0] === null && !busy.doing, "baño: si lo llaman mientras está adentro, libera el cubículo");
+// Vista 3D: cada escritorio, silla y equipamiento del catálogo tiene su modelo 3D.
+const src3d = require("fs").readFileSync(process.argv[2].replace(/index\.html$/, "src/js/09-vista3d.js"), "utf8");
+const sinModelo = T.KINDS.filter(k => k.slot === "desk" || k.slot === "chair").map(k => k.k).filter(k => !src3d.includes('k === "' + k + '"'));
+const kits = T.VARIANTS.kitRoom.map(v => v.c).filter(r => !src3d.includes('rid === "' + r + '"'));
+say(!sinModelo.length && !kits.length, "vista 3D: escritorios, sillas y equipamiento de la tienda tienen modelo" + (sinModelo.length || kits.length ? " (faltan: " + sinModelo.concat(kits).join(", ") + ")" : ""));
 // Sin elegir oficina ni empleado, las compras se reparten.
 const spread = new Set(["planta.0", "cactus.0", "suculenta.0", "helecho.0"].map(id => T.targetOf(T.itemOf(id))));
 const wearTo = new Set(T.KINDS.filter(k => k.slot === "hat").slice(0, 4).map(k => T.targetOf(T.itemOf(k.k + k.vars.map(() => ".0").join("")))));
