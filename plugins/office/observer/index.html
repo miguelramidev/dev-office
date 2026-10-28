@@ -4833,6 +4833,14 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     wash: ["Manos limpias, código limpio", "¿Quién dejó la canilla abierta?", "Se acabó el jabón", "Siempre lavarse las manos", "El secador no anda", "Hay que reponer papel"],
     queue: ["¿Falta mucho?", "Están los dos ocupados", "Vuelvo en un rato", "¡Hay cola!"],
   };
+  // Lo que mejoraron en la tienda también se nota en lo que dicen.
+  const TIER_LINES = {
+    cafetera_capsulas: ["¿Qué cápsula querés?", "La de vainilla", "Cápsula y a seguir"], cafetera_espresso: ["Un espresso", "¡Qué crema tiene!", "Ristretto, por favor"],
+    barra_cafe: ["Un cortado en la barra", "¿Hay medialunas?", "Esto es una cafetería"],
+    dispensador_fc: ["Agua fría, por favor", "Té con agua caliente"], heladera_bebidas: ["Una gaseosa fría", "¿Quién se tomó la última?"], fuente_agua: ["Qué relajante la fuente", "Agua filtrada y todo"],
+    bano_renovado: ["Quedó lindo el baño", "Por fin un espejo"], bano_moderno: ["Este espejo con luz es otra cosa", "Qué lindo quedó"], bano_lujo: ["¡Qué lujo este baño!", "¿Eso es mármol?", "Hasta perfume hay"],
+  };
+  const withTier = (list, slot) => { const it = roomOf("hall")[slot]; return it && TIER_LINES[it.kind.k] ? list.concat(TIER_LINES[it.kind.k], TIER_LINES[it.kind.k]) : list; };
   // Charlas de a dos junto al dispensador de agua.
   const COOLER_CHATS = [
     ["¿Viste el último deploy?", "Salió perfecto", "¿Sin rollback?", "Ni uno"],
@@ -5028,13 +5036,13 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     } else if (r < 0.2) {
       a.idleTrip = true;
       if (Math.random() < 0.5) setTimeout(() => sfx("coffee"), 2500);
-      a.acts.push({ k: "go", to: { coffee: true } }, { k: "prop", prop: "cup" }, say(COFFEE_LINES), { k: "home" }, { k: "prop", prop: null });
+      a.acts.push({ k: "go", to: { coffee: true } }, { k: "prop", prop: "cup" }, say(withTier(COFFEE_LINES, "coffee")), { k: "home" }, { k: "prop", prop: null });
     } else if (r < 0.42) {
       // Agua, ventana, impresora o plantas (la ventana y la impresora, en las oficinas de arriba).
       const spots = Object.keys(IDLE_SPOTS).filter(k => (k !== "window" && k !== "printer") || (room(a.room).top && a.room !== "meet"));
       const spot = spots[Math.floor(Math.random() * spots.length)];
       a.idleTrip = true;
-      a.acts.push({ k: "go", to: { spot } }, ...(spot === "cooler" ? [{ k: "prop", prop: "cup" }] : []), say(IDLE_SPOTS[spot]), { k: "home" }, { k: "prop", prop: null });
+      a.acts.push({ k: "go", to: { spot } }, ...(spot === "cooler" ? [{ k: "prop", prop: "cup" }] : []), say(spot === "cooler" ? withTier(IDLE_SPOTS[spot], "water") : IDLE_SPOTS[spot]), { k: "home" }, { k: "prop", prop: null });
     } else if (r < 0.5) {
       // Al baño: entra a un cubículo libre, se lava las manos y vuelve. Si están los dos
       // ocupados, espera en la puerta un momento y se vuelve.
@@ -5044,7 +5052,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       else {
         state.stalls[n] = a.id;
         a.acts.push(say(BATH.in), { k: "go", to: { spot: "stall" + n } }, { k: "do", what: "stall" + n, d: 6 + Math.random() * 6, free: n },
-          { k: "go", to: { spot: "sink" } }, { k: "do", what: "wash", d: 2.5 }, say(BATH.wash), { k: "home" });
+          { k: "go", to: { spot: "sink" } }, { k: "do", what: "wash", d: 2.5 }, say(withTier(BATH.wash, "bath")), { k: "home" });
       }
     } else if (r < 0.58 && others.length) {
       // Dos se cruzan en el dispensador y charlan un rato.
@@ -5564,9 +5572,15 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
   // --- Escenario ----------------------------------------------------------------
   function drawHall(now) {
     drawHallFloor(now);
-    px(10, 188, 16, 28, OUT); px(11, 189, 14, 26, "#d4dbe5"); px(13, 190, 10, 9, "#7fb6e6"); px(14, 191, 3, 6, "#a9d1f2"); px(16, 202, 4, 3, "#3a3f4a");
-    px(722, 188, 22, 28, OUT); px(723, 189, 20, 26, "#3a3f4a"); px(726, 192, 14, 7, "#1d2028"); px(728, 194, 4, 2, "#ef6b5b"); px(729, 204, 8, 6, "#1d2028");
-    if (Math.floor(now * 1.5) % 2) px(732, 199, 2, 3, "rgba(255,255,255,0.3)");
+    // El agua y la cafetera: las básicas o las mejoradas en la tienda.
+    const hallR = roomOf("hall");
+    if (hallR.water) hallR.water.kind.draw(18, 216, hallR.water.v, now);
+    else { px(10, 188, 16, 28, OUT); px(11, 189, 14, 26, "#d4dbe5"); px(13, 190, 10, 9, "#7fb6e6"); px(14, 191, 3, 6, "#a9d1f2"); px(16, 202, 4, 3, "#3a3f4a"); }
+    if (hallR.coffee) hallR.coffee.kind.draw(733, 216, hallR.coffee.v, now);
+    else {
+      px(722, 188, 22, 28, OUT); px(723, 189, 20, 26, "#3a3f4a"); px(726, 192, 14, 7, "#1d2028"); px(728, 194, 4, 2, "#ef6b5b"); px(729, 204, 8, 6, "#1d2028");
+      if (Math.floor(now * 1.5) % 2) px(732, 199, 2, 3, "rgba(255,255,255,0.3)");
+    }
     drawHallItems(now);
     // Tablero del ticket: el texto lo escribe drawLabels; acá, el pizarrón y las luces de estado.
     const { x: bx, y: by, w: bw, h: bh } = BOARD, b = boardInfo();
@@ -6386,6 +6400,28 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       draw(x, y, w, _, now) { for (let lx = x + 96; lx < x + w; lx += 192) { px(lx, y, 1, 3, "#3a3f4a"); disc(lx, y + 7, 4, "#9aa0ab");
         for (let k = 0; k < 4; k++) px(lx - 3 + ((k * 3 + Math.floor(now * 4)) % 7), y + 4 + k * 2, 1, 1, "#ffffff"); if (Math.floor(now * 2) % 2) px(lx - 14, y + 14, 2, 1, `hsl(${(now * 120) % 360},90%,70%)`); } } },
   );
+  // Servicios del pasillo: la cafetera, el agua y el baño arrancan básicos y se mejoran.
+  // coffee y water: (cx, by) es el centro de la base; bath: la vista del baño, para la tienda.
+  KINDS.push(
+    { k: "cafetera_capsulas", cat: "Servicios", slot: "coffee", name: "Cafetera de cápsulas", lv: 1, price: 15000, vars: ["color"], g: "f",
+      draw(cx, by, [c]) { box(cx - 7, by - 18, 14, 18, c.c); px(cx - 5, by - 15, 10, 5, "#1d2028"); px(cx - 3, by - 6, 6, 2, "#3a3f4a"); box(cx + 8, by - 16, 4, 16, "#c9ced8"); for (let i = 0; i < 5; i++) px(cx + 9, by - 14 + i * 3, 2, 2, ["#cf4b47", "#f2c14e", "#47a865", "#4a78d6", "#8b6cd6"][i]); } },
+    { k: "cafetera_espresso", cat: "Servicios", slot: "coffee", name: "Cafetera espresso", lv: 3, price: 60000, vars: ["espresso"], g: "f",
+      draw(cx, by, [e], now) { box(cx - 11, by - 20, 22, 16, e.c); px(cx - 9, by - 18, 18, 3, "#c9ced8"); px(cx - 7, by - 10, 4, 3, "#2b2d36"); px(cx + 3, by - 10, 4, 3, "#2b2d36"); px(cx - 7, by - 5, 4, 4, "#f4f1ea"); px(cx + 3, by - 5, 4, 4, "#f4f1ea"); if (Math.floor(now * 2) % 2) px(cx - 6, by - 9, 1, 3, "rgba(255,255,255,0.5)"); } },
+    { k: "barra_cafe", cat: "Servicios", slot: "coffee", name: "Barra de café", lv: 6, price: 250000, vars: ["wood"], g: "f",
+      draw(cx, by, [w]) { box(cx - 14, by - 12, 28, 12, w.c); px(cx - 14, by - 13, 28, 2, "#e9e4d8"); box(cx - 10, by - 25, 12, 12, "#c9ced8"); px(cx - 8, by - 21, 8, 3, "#3a3f4a"); box(cx + 5, by - 20, 7, 7, "rgba(200,230,255,0.5)"); px(cx + 6, by - 16, 5, 2, "#e08a3a"); } },
+    { k: "dispensador_fc", cat: "Servicios", slot: "water", name: "Dispensador frío y calor", lv: 1, price: 12000, vars: ["color"], g: "m",
+      draw(cx, by, [c]) { box(cx - 6, by - 22, 12, 22, "#e9eef5"); px(cx - 6, by - 22, 12, 3, c.c); px(cx - 4, by - 14, 3, 2, "#4a78d6"); px(cx + 1, by - 14, 3, 2, "#cf4b47"); box(cx - 5, by - 32, 10, 10, "#8fc8f0"); } },
+    { k: "heladera_bebidas", cat: "Servicios", slot: "water", name: "Heladera de bebidas", lv: 4, price: 90000, vars: ["color"], g: "f",
+      draw(cx, by, [c]) { box(cx - 9, by - 32, 18, 32, c.c); px(cx - 7, by - 30, 14, 24, "#bfe0f2"); for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) px(cx - 6 + k * 3, by - 28 + r * 6, 2, 4, ["#cf4b47", "#47a865", "#f2c14e", "#4a78d6"][(r + k) % 4]); px(cx + 6, by - 20, 1, 6, "#c9ced8"); } },
+    { k: "fuente_agua", cat: "Servicios", slot: "water", name: "Fuente de agua", lv: 7, price: 200000, vars: [], g: "f",
+      draw(cx, by, _, now) { box(cx - 10, by - 10, 20, 10, "#a9b1bd"); px(cx - 8, by - 9, 16, 3, "#6fb4e6"); box(cx - 2, by - 22, 4, 12, "#c9ced8"); const d = Math.floor(now * 6) % 6; px(cx - 1, by - 21 + d * 2, 2, 2, "#9fd0ff"); px(cx - 6, by - 24, 12, 2, "#c9ced8"); } },
+    { k: "bano_renovado", cat: "Servicios", slot: "bath", name: "Baño renovado", lv: 2, price: 50000, vars: ["color"], g: "m",
+      draw(cx, by, [c]) { px(cx - 20, by - 30, 40, 30, "#e6f2f7"); [0, 1].forEach(i => { box(cx - 18 + i * 13, by - 26, 11, 24, c.c); px(cx - 9 + i * 13, by - 14, 1, 3, "#c9ced8"); }); box(cx + 9, by - 12, 9, 6, "#f4f1ea"); box(cx + 9, by - 26, 9, 10, "#cfe8f2"); } },
+    { k: "bano_moderno", cat: "Servicios", slot: "bath", name: "Baño moderno", lv: 5, price: 180000, vars: ["wood"], g: "m",
+      draw(cx, by, [w]) { px(cx - 20, by - 30, 40, 30, "#d9dde5"); [0, 1].forEach(i => { box(cx - 18 + i * 13, by - 26, 11, 24, w.c); for (let k = 1; k < 5; k++) px(cx - 18 + i * 13 + k * 2, by - 25, 1, 22, "#00000022"); }); box(cx + 8, by - 12, 11, 6, "#e6e2da"); box(cx + 9, by - 27, 9, 11, "#cfe8f2"); px(cx + 9, by - 27, 9, 1, "#fff1b8"); } },
+    { k: "bano_lujo", cat: "Servicios", slot: "bath", name: "Baño de lujo", lv: 8, price: 600000, vars: [], g: "m",
+      draw(cx, by, _, now) { px(cx - 20, by - 30, 40, 30, "#f4efe6"); [0, 1].forEach(i => { box(cx - 18 + i * 13, by - 26, 11, 24, "#e6e2da"); px(cx - 18 + i * 13, by - 26, 11, 2, "#d4a933"); px(cx - 9 + i * 13, by - 14, 1, 3, "#d4a933"); }); box(cx + 8, by - 12, 11, 6, "#e6e2da"); px(cx + 12, by - 15, 3, 3, "#d4a933"); box(cx + 9, by - 27, 9, 11, "#cfe8f2"); if (Math.floor(now * 3) % 2) px(cx + 1, by - 29, 2, 2, "#fff1b8"); } },
+  );
   KINDS.push({ k: "top_gala", cat: "Ropa", slot: "top", name: "Traje de gala", g: "m", lv: 7, price: 240000, vars: ["color"], top: "gala" });
   KINDS.push({ k: "top_armor", cat: "Ropa", slot: "top", name: "Armadura", g: "f", lv: 10, price: 1100000, vars: ["metal"], top: "armor" });
   KINDS.push({ k: "top_astro", cat: "Ropa", slot: "top", name: "Traje espacial", g: "m", lv: 9, price: 500000, vars: ["color"], top: "astro" });
@@ -6406,9 +6442,9 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
 
   const KIND = Object.fromEntries(KINDS.map(k => [k.k, k]));
   const WEAR = ["top", "hat", "face", "neck"];
-  const ROOM_ONE = ["desk", "chair", "floor", "paint", "runner", "ceiling"];
+  const ROOM_ONE = ["desk", "chair", "floor", "paint", "runner", "ceiling", "coffee", "water", "bath"];
   // Lo que solo va en el pasillo, y lo que entra en el pasillo.
-  const HALL_ONLY = ["lean", "runner", "ceiling"];
+  const HALL_ONLY = ["lean", "runner", "ceiling", "coffee", "water", "bath"];
   const HALL_OK = ["small", "floor", ...HALL_ONLY];
   // Un artículo es un tipo más un índice por variante: "planta.3" es la planta en maceta azul.
   const itemCache = {};
@@ -6425,7 +6461,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     return itemCache[id] = { id, kind, v, name, price: Math.max(1000, Math.round(price / 500) * 500), lv: Math.min(10, lv) };
   }
   const CATALOG_SIZE = KINDS.reduce((n, k) => n + k.vars.reduce((m, d) => m * VARIANTS[d].length, 1), 0);
-  const CATS = ["Escritorios", "Sillas", "Pisos", "Paredes", "Cuadros", "Plantas", "Muebles", "Adornos", "Equipamiento", "Pasillo", "Ropa"];
+  const CATS = ["Escritorios", "Sillas", "Pisos", "Paredes", "Cuadros", "Plantas", "Muebles", "Adornos", "Equipamiento", "Pasillo", "Servicios", "Ropa"];
 
   // La vitrina de una partida: unos artículos por nivel, al azar pero siempre los mismos
   // para la misma partida. Así cada sesión trae un catálogo distinto.
@@ -6685,6 +6721,8 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     else if (s === "kit") { px(0, 0, 72, 30, "#2a3142"); concrete(0, 30, 72, 22); drawDeco({ deco: v[0].c, x: -6, y: 1 }, 0); }
     else if (s === "small") { concrete(0, 0, 72, 52); it.kind.draw(36, 46, v, 0); }
     else if (s === "big") { concrete(0, 0, 72, 52); it.kind.draw(36, 50, v, 0); }
+    else if (s === "coffee" || s === "water") { hallPlanks(0, 0, 72, 52); it.kind.draw(36, 46, v, 0); }
+    else if (s === "bath") { it.kind.draw(36, 50, v, 0); }
     else if (s === "lean") { hallPlanks(0, 0, 72, 52); hallRug(0, 40, 72, 12); it.kind.draw(36, 40, v, 0); }
     else if (s === "runner") { hallPlanks(0, 0, 72, 52); it.kind.draw(0, 14, 72, 24, v, 0); }
     else if (s === "ceiling") { hallPlanks(0, 0, 72, 52); hallRug(0, 30, 72, 14); it.kind.draw(0, 0, 72, v, 0); }
@@ -7951,8 +7989,6 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     function buildRoomShell() {
       R3.forEach(r => planeY(r.x, r.y, 0.004, 7, 7, toon("#ffffff", { map: floorTex("concrete", "#9a9ea8", null, [7, 7]) })));
       planeY(0, 7, 0.004, 28, 3, toon("#ffffff", { map: floorTex("hall", "#8a6440", null, [28, 3]) }));
-      const runner = canvasTex(64, 8, x => { P(x, "#d4a24c", 0, 0, 64, 8); P(x, "#a63a4d", 0, 1, 64, 6); for (let i = 2; i < 64; i += 8) { P(x, "#d4a24c", i + 2, 3, 3, 2); P(x, "#c4505f", i + 3, 2, 1, 4); } }, [27 / 4, 1]);
-      planeY(0.6, 8.1, 0.012, 26.8, 0.8, toon("#ffffff", { map: runner }));
       box(-0.2, -0.2, -0.35, GX + 0.2, GY + 0.2, 0.345, "#4a4058");
       const seg = (onX, a, b, color) => {
         const len = b - a, faces = Array(6).fill(toon("#f4ede2"));
@@ -7982,44 +8018,56 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     }
 
     // --- El baño, al final del pasillo: dos cubículos con puerta y un lavamanos con espejo ---
-    const stallDoors = [];
+    let stallDoors = [];
     function buildBathroom() {
-      planeY(28, 7, 0.004, 3, 3, toon("#ffffff", { map: floorTex("tiles", "#e4f0f6", "#bfd9e6", [6, 6]) }));
       box(28, 7, -0.35, 3.2, 3.2, 0.345, "#4a4058");
-      const tiles = canvasTex(16, 16, x => { P(x, "#e6f2f7", 0, 0, 16, 16); P(x, "#c3dbe6", 0, 0, 16, 1); P(x, "#c3dbe6", 0, 0, 1, 16); P(x, "#c3dbe6", 8, 0, 1, 16); P(x, "#c3dbe6", 0, 8, 16, 1); P(x, "#7fb3d5", 0, 13, 16, 3); }, [6, 3]);
-      const faces = Array(6).fill(toon("#f4ede2")); faces[4] = toon("#ffffff", { map: tiles });
-      box(28, 6.8, 0, 3.2, 0.2, 1.5, faces); box(28, 6.76, 1.5, 3.2, 0.28, 0.06, "#8a5d3b");
       // Tabique hacia el pasillo, con la puerta, y el cartel.
       const fab = toon("#ddd3c3"), rail = toon("#8a5d3b");
       [[7, 7.95], [8.95, 10]].forEach(([z0, z1]) => { box(27.93, z0, 0, 0.14, z1 - z0, PART_H - 0.06, fab); box(27.91, z0, PART_H - 0.06, 0.18, z1 - z0, 0.06, rail); box(27.92, z0, 0, 0.16, z1 - z0, 0.06, "#6b6157"); });
       box(27.9, 7.9, 0, 0.2, 0.1, DOOR_H, "#6e4a2f"); box(27.9, 8.95, 0, 0.2, 0.1, DOOR_H, "#6e4a2f"); box(27.88, 7.8, DOOR_H, 0.24, 1.3, 0.16, "#6e4a2f");
-      // Cubículos.
-      const panel = "#7fb3d5";
-      [29.0, 30.0, 31.0].forEach(x => box(x - 0.03, 7.0, 0.12, 0.06, 1.2, 1.2, panel));
-      [29.0, 30.0].forEach((x0, n) => {
-        box(x0, 8.17, 0.12, 0.1, 0.06, 1.2, panel); box(x0 + 0.9, 8.17, 0.12, 0.1, 0.06, 1.2, panel); box(x0, 8.15, 1.3, 1.0, 0.08, 0.05, "#5f8fb0");
-        // Inodoro: tanque contra la pared, taza y tapa.
-        box(x0 + 0.32, 7.02, 0.3, 0.36, 0.18, 0.35, "#f4f6f8"); cyl(x0 + 0.5, 7.42, 0, 0.13, 0.28, "#f4f6f8"); cyl(x0 + 0.5, 7.45, 0.28, 0.17, 0.06, "#ffffff"); box(x0 + 0.34, 7.2, 0.34, 0.32, 0.04, 0.3, "#e9eef2");
-        box(x0 + 0.75, 7.05, 0.7, 0.12, 0.08, 0.12, "#e9eef2"); // papel
-        // Puerta, con bisagra a la izquierda, y el cartelito de libre u ocupado.
-        const hinge = new THREE.Group(); hinge.position.set(x0 + 0.1, 0.15, 8.2); live.add(hinge);
-        const door = mesh(new THREE.BoxGeometry(0.8, 1.1, 0.04), toon("#6fa6cb"), hinge, 0.4, 0.55, 0);
-        const sign = mesh(new THREE.PlaneGeometry(0.1, 0.06), basic({ color: "#5cc98a" }), hinge, 0.68, 0.75, 0.025); sign.castShadow = false;
-        mesh(new THREE.BoxGeometry(0.04, 0.03, 0.06), toon("#c9ced8"), hinge, 0.7, 0.55, 0.04);
-        stallDoors.push({ hinge, door, sign, open: 1 });
-      });
-      // Lavamanos con espejo y secador.
-      box(28.12, 7.02, 0, 0.72, 0.5, 0.78, "#8a6440"); box(28.1, 7.0, 0.78, 0.76, 0.54, 0.05, "#f4f1ea"); cyl(28.48, 7.3, 0.8, 0.17, 0.04, "#cfd8de"); box(28.45, 7.05, 0.83, 0.06, 0.12, 0.1, "#c9ced8");
-      box(28.16, 7.0, 0.95, 0.56, 0.03, 0.5, "#c9ced8"); planeZ(28.19, 7.031, 0.98, 0.5, 0.44, toon("#cfe8f2", { emissive: "#9fc4d8", emissiveIntensity: 0.4 }));
-      box(28.76, 7.0, 1.05, 0.2, 0.14, 0.24, "#e9eef2"); box(28.8, 7.12, 1.07, 0.12, 0.03, 0.04, "#3a3f4a");
-      cyl(29.6, 9.72, 0, 0.13, 0.36, "#9aa3b0"); cyl(29.6, 9.72, 0.36, 0.14, 0.03, "#6c727d");
-      plant(30.62, 9.62, true, "tall", "#e9e4d8");
-
       const sign = canvasTex(24, 12, x => { P(x, "#2f5f8a", 0, 0, 24, 12); x.fillStyle = "#fff"; x.fillRect(4, 3, 3, 3); x.fillRect(3, 6, 5, 4); x.fillRect(16, 3, 3, 3); x.fillRect(15, 6, 5, 4); x.fillRect(11, 2, 1, 8); });
       box(28.05, 8.2, 1.35, 0.03, 0.5, 0.25, [basic({ map: sign }), toon("#2f5f8a"), toon("#2f5f8a"), toon("#2f5f8a"), toon("#2f5f8a"), toon("#2f5f8a")]);
     }
+    // Lo de adentro del baño: el básico (cubículos grises y una pileta simple) o la mejora.
+    const BATH_LOOK = {
+      base: { floor: ["#c9ccd2", "#b3b7bf"], wall: ["#d9dbe0", "#c3c6cc", "#a9adb5"], panel: "#9aa1ad", door: "#8a909c", top: "#c9ced8", sink: "#e9eef2", counter: "#9aa1ad", metal: "#c9ced8" },
+      bano_renovado: v => ({ floor: ["#e4f0f6", "#bfd9e6"], wall: ["#e6f2f7", "#c3dbe6", "#7fb3d5"], panel: colorOf(v, 0, "#7fb3d5"), door: tint(colorOf(v, 0, "#7fb3d5"), -0.1), top: "#5f8fb0", sink: "#f4f1ea", counter: "#8a6440", metal: "#c9ced8", mirror: true, dryer: true, plants: 1 }),
+      bano_moderno: v => ({ floor: ["#3a3f4a", "#4a5060"], wall: ["#e6e2da", "#d0cbc2", "#2b2d36"], panel: colorOf(v, 0, "#b07a4a"), door: tint(colorOf(v, 0, "#b07a4a"), -0.08), slats: true, top: "#2b2d36", sink: "#ffffff", counter: "#e6e2da", metal: "#2b2d36", mirror: true, led: true, dryer: true, plants: 2 }),
+      bano_lujo: () => ({ floor: ["#f2eee6", "#d9d2c4"], wall: ["#f4efe6", "#e3dccd", "#d4a933"], panel: "#ece6da", door: "#e6dfd2", top: "#d4a933", sink: "#ffffff", counter: "#e6e2da", metal: "#d4a933", mirror: true, led: true, dryer: true, plants: 2, chandelier: true, candles: true, rug: true }),
+    };
+    function bathInterior(it) {
+      const L = it ? BATH_LOOK[it.kind.k](it.v) : BATH_LOOK.base;
+      stallDoors = [];
+      planeY(28, 7, 0.004, 3, 3, toon("#ffffff", { map: floorTex("tiles", L.floor[0], L.floor[1], [6, 6]) }));
+      const tiles = canvasTex(16, 16, x => { P(x, L.wall[0], 0, 0, 16, 16); P(x, L.wall[1], 0, 0, 16, 1); P(x, L.wall[1], 0, 0, 1, 16); P(x, L.wall[1], 8, 0, 1, 16); P(x, L.wall[1], 0, 8, 16, 1); P(x, L.wall[2], 0, 13, 16, 3); }, [6, 3]);
+      const faces = Array(6).fill(toon("#f4ede2")); faces[4] = toon("#ffffff", { map: tiles });
+      box(28, 6.8, 0, 3.2, 0.2, 1.5, faces); box(28, 6.76, 1.5, 3.2, 0.28, 0.06, L.top === "#d4a933" ? "#d4a933" : "#8a5d3b");
+      [29.0, 30.0, 31.0].forEach(x => box(x - 0.03, 7.0, 0.12, 0.06, 1.2, 1.2, L.panel));
+      [29.0, 30.0].forEach(x0 => {
+        box(x0, 8.17, 0.12, 0.1, 0.06, 1.2, L.panel); box(x0 + 0.9, 8.17, 0.12, 0.1, 0.06, 1.2, L.panel); box(x0, 8.15, 1.3, 1.0, 0.08, 0.05, L.top);
+        box(x0 + 0.32, 7.02, 0.3, 0.36, 0.18, 0.35, "#f4f6f8"); cyl(x0 + 0.5, 7.42, 0, 0.13, 0.28, "#f4f6f8"); cyl(x0 + 0.5, 7.45, 0.28, 0.17, 0.06, "#ffffff"); box(x0 + 0.34, 7.2, 0.34, 0.32, 0.04, 0.3, "#e9eef2");
+        box(x0 + 0.75, 7.05, 0.7, 0.12, 0.08, 0.12, "#e9eef2");
+        const hinge = new THREE.Group(); hinge.position.set(x0 + 0.1, 0.15, 8.2); live.add(hinge); if (curLive) curLive.push(hinge);
+        const door = mesh(new THREE.BoxGeometry(0.8, 1.1, 0.04), toon(L.door), hinge, 0.4, 0.55, 0);
+        if (L.slats) for (let k = 1; k < 6; k++) mesh(new THREE.BoxGeometry(0.02, 1.05, 0.05), toon(tint(L.door, -0.25)), hinge, k * 0.13, 0.55, 0);
+        const sign = mesh(new THREE.PlaneGeometry(0.1, 0.06), basic({ color: "#5cc98a" }), hinge, 0.68, 0.75, 0.025); sign.castShadow = false;
+        mesh(new THREE.BoxGeometry(0.04, 0.03, 0.06), toon(L.metal), hinge, 0.7, 0.55, 0.04);
+        stallDoors.push({ hinge, door, sign, open: 1 });
+      });
+      // Lavamanos.
+      box(28.12, 7.02, 0, 0.72, 0.5, 0.78, L.counter); box(28.1, 7.0, 0.78, 0.76, 0.54, 0.05, L.sink === "#ffffff" ? L.counter : "#f4f1ea"); cyl(28.48, 7.3, 0.8, 0.17, 0.04, L.sink); box(28.45, 7.05, 0.83, 0.06, 0.12, 0.1, L.metal);
+      if (L.mirror) { box(28.16, 7.0, 0.95, 0.56, 0.03, 0.5, L.metal); planeZ(28.19, 7.031, 0.98, 0.5, 0.44, toon("#cfe8f2", { emissive: "#9fc4d8", emissiveIntensity: 0.4 })); if (L.led) box(28.16, 7.035, 1.44, 0.56, 0.01, 0.02, toon("#fff1b8", { emissive: "#fff1b8", emissiveIntensity: 1 })); }
+      else box(28.3, 7.0, 1.0, 0.3, 0.02, 0.3, "#cfd8de");
+      if (L.dryer) { box(28.76, 7.0, 1.05, 0.2, 0.14, 0.24, L.metal === "#d4a933" ? "#ece6da" : "#e9eef2"); box(28.8, 7.12, 1.07, 0.12, 0.03, 0.04, "#3a3f4a"); }
+      cyl(29.6, 9.72, 0, 0.13, 0.36, L.metal === "#d4a933" ? "#d4a933" : "#9aa3b0"); cyl(29.6, 9.72, 0.36, 0.14, 0.03, "#6c727d");
+      if (L.plants >= 1) plant(30.62, 9.62, true, "tall", "#e9e4d8");
+      if (L.plants >= 2) plant(28.45, 9.7, false, "round", "#e9e4d8");
+      if (L.rug) planeY(29.0, 8.55, 0.008, 1.9, 0.9, toon("#7a2f3f"));
+      if (L.candles) [[28.2, 7.1], [28.7, 7.12]].forEach(([x, z]) => { cyl(x, z, 0.83, 0.025, 0.06, "#f4f1ea"); mesh(new THREE.SphereGeometry(0.012, 5, 4), toon("#ffb347", { emissive: "#ff9a3c" }), null, x, 0.9, z); });
+      if (L.chandelier) { cyl(29.9, 8.4, 1.85, 0.01, 0.5, "#d4a933"); const c = mesh(new THREE.IcosahedronGeometry(0.16, 1), toon("#fff4d2", { emissive: "#ffe2a0", emissiveIntensity: 0.9 }), null, 29.9, 1.8, 8.4); c.castShadow = false; }
+    }
 
-    // --- Muebles hechos acá ---
+    // --- Muebles hechos acá ---    // --- Muebles hechos acá ---
     const SCREENS = {}, screenMeshes = {};
     const addScreen = (owner, m) => { live.add(m); (screenMeshes[owner] = screenMeshes[owner] || []).push(m); };
     const PAL = { code: ["#7fd1ff", "#f2c14e", "#c792ea", "#9be37a", "#ff8a80"], term: ["#7dff9a", "#4fd17a", "#b7ffcc"], ui: ["#4a78d6", "#e17aa8", "#f2c14e"], data: ["#79e0d0", "#e9e4d8", "#4fb0a8"], test: ["#5cc98a", "#5cc98a", "#ef6b5b", "#5cc98a"], design: ["#ff7eb6", "#ffd166", "#06d6a0", "#118ab2"], web: ["#9fd36b", "#6fb4e6", "#e9e4d8"], off: ["#1a2232"] };
@@ -8103,28 +8151,12 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       if (top === "plant") plant(x + 0.3, z + 0.25, false, "round", "#e9e4d8").position.y = 0.95;
       if (top === "jar") { cyl(x + 0.3, z + 0.25, 0.95, 0.12, 0.26, toon("#cfe8f2", { transparent: true, opacity: 0.7 })); cyl(x + 0.3, z + 0.25, 1.21, 0.13, 0.04, "#8a909c"); [[0.25, 1.02], [0.33, 1.1], [0.28, 1.15]].forEach(([a, y]) => mesh(new THREE.SphereGeometry(0.025, 6, 4), toon("#2b2d36"), null, x + a, y, z + 0.25)); }
     }
-    function vending(x, z) {
-      box(x, z, 0, 0.9, 0.6, 1.7, "#cf4b47");
-      const t = canvasTex(24, 44, c => { P(c, "#cf4b47", 0, 0, 24, 44); P(c, "#1d2433", 2, 4, 15, 34); for (let r = 0; r < 6; r++) { for (let k = 0; k < 4; k++) P(c, ["#f2c14e", "#47a865", "#6fb4e6", "#e17aa8", "#e08a3a"][(r + k) % 5], 3 + k * 4, 6 + r * 5, 2, 3); P(c, "#5b6070", 2, 9 + r * 5, 15, 1); } P(c, "#3a3f4a", 19, 14, 3, 10); P(c, "#5cc98a", 20, 16, 1, 1); P(c, "#16131f", 3, 39, 13, 3); P(c, "#f4f1ea", 2, 0, 20, 3); });
-      planeZ(x, z + 0.601, 0, 0.9, 1.7, toon("#ffffff", { map: t }));
-    }
-    function lockers(x, z, n) {
-      box(x, z, 0, n * 0.5, 0.45, 1.6, "#5f86a8");
-      const t = canvasTex(12 * n, 40, c => { for (let k = 0; k < n; k++) { P(c, k % 2 ? "#6a92b5" : "#6189ab", k * 12, 0, 12, 40); P(c, "#3f5f7a", k * 12 + 11, 0, 1, 40); for (let v = 0; v < 4; v++) P(c, "#3f5f7a", k * 12 + 3, 3 + v * 2, 6, 1); P(c, "#c9ced8", k * 12 + 9, 18, 1, 4); P(c, "#f4f1ea", k * 12 + 3, 12, 4, 2); } });
-      planeZ(x, z + 0.451, 0, n * 0.5, 1.6, toon("#ffffff", { map: t }));
-    }
     let boardTex = null;
-    // Lo fijo: la mesa del CEO y, por ahora, el pasillo (café, agua, máquina, casilleros,
-    // plantas, banco y tachos) y el tablero del ticket.
+    // Lo fijo: la mesa del CEO y, en el pasillo, el matafuegos, los tachos y el tablero del ticket.
+    // El resto del pasillo (cafetera, agua, máquinas, plantas, alfombra) sale de la tienda.
     function buildFixed() {
       kay("table_medium_long", 3.75, 3.0, 0, 0.62);
-      box(26.2, 7.12, 0, 1.6, 0.6, 0.62, "#6e4a2f"); box(26.2, 7.12, 0.62, 1.6, 0.6, 0.04, "#e9e4d8");
-      box(26.4, 7.18, 0.66, 0.45, 0.42, 0.55, "#3a3f4a"); box(26.46, 7.6, 0.85, 0.33, 0.01, 0.25, "#1d2028"); box(26.7, 7.6, 1.12, 0.04, 0.01, 0.04, toon("#ef6b5b", { emissive: "#ef6b5b" }));
-      ["#e9e4d8", "#cf4b47", "#4a78d6"].forEach((c, i) => cyl(27.1 + i * 0.2, 7.4, 0.66, 0.05, 0.12, c));
-      box(1.0, 7.3, 0, 0.4, 0.4, 0.75, "#e9eef5"); cyl(1.2, 7.5, 0.75, 0.16, 0.5, toon("#8fc8f0", { transparent: true, opacity: 0.85 })); cyl(0.32, 7.27, 0, 0.08, 0.42, "#cf4b47");
-      vending(5.9, 7.12); lockers(12.6, 9.42, 4);
-      [[9.3, 7.5], [16.3, 7.5], [22.3, 7.5], [2.0, 9.5], [9.0, 9.5], [23.0, 9.5]].forEach(([x, z]) => plant(x, z, true, null, "#e9e4d8"));
-      box(5.7, 9.4, 0, 0.06, 0.35, 0.25, "#3a3f4a"); box(7.04, 9.4, 0, 0.06, 0.35, 0.25, "#3a3f4a"); box(5.6, 9.3, 0.25, 1.6, 0.5, 0.06, "#b07a4a"); box(5.6, 9.72, 0.31, 1.6, 0.08, 0.35, "#b07a4a");
+      cyl(0.32, 7.27, 0, 0.08, 0.42, "#cf4b47");
       [["#4a78d6", 0], ["#47a865", 0.34], ["#e3c14a", 0.68]].forEach(([c, o]) => { box(26.4 + o, 9.38, 0, 0.3, 0.38, 0.55, c); box(26.39 + o, 9.37, 0.55, 0.32, 0.4, 0.05, tint(c, -0.15)); });
       box(19.75, 9.42, 0, 0.06, 0.06, 1.6, "#5b6070"); box(21.55, 9.42, 0, 0.06, 0.06, 1.6, "#5b6070"); box(19.6, 9.4, 0.62, 2.2, 0.06, 0.95, "#6e4a2f");
       boardTex = canvasTex(64, 28, () => {});
@@ -8134,7 +8166,7 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     // --- Lo comprado en la tienda: piso, pintura, escritorios, sillas y equipamiento ---
     // El piso y la pintura usan el mismo pixel art de la vista clásica como textura.
     const tex2dCache = {}, animTex = [];
-    const ANIMATED = ["pisoled", "led", "espacio"];
+    const ANIMATED = ["pisoled", "led", "espacio", "caminoluces", "alfombraroja", "senalizacion"];
     function tex2d(it, w, h) {
       const key = it.id + ":" + w + "x" + h;
       if (tex2dCache[key]) return tex2dCache[key];
@@ -8253,20 +8285,145 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
         ck.position.set(top.x - 0.25, top.y || DESK_H, top.z); ck.visible = false; scene.add(ck); seatGroups[id].cake = ck;
       });
     }
+    // Lugares de la tienda en 3D, en el mismo orden que los de la vista clásica (SLOTS).
+    const SLOT3 = {
+      small: {
+        meet: [[6.5, 0.45], [6.55, 3.8]], design: [[6.5, 6.5], [0.45, 2.9], [2.65, 0.4], [4.55, 0.4]],
+        back: [[2.6, 6.55], [0.45, 2.9]], front: [[2.6, 6.55], [0.45, 2.9]], db: [[2.6, 6.55], [6.55, 2.9]], scrap: [[2.6, 6.55], [6.55, 2.9]], ops: [[2.6, 6.55], [6.55, 2.9]], qa: [[2.6, 6.55], [4.6, 6.55]],
+        hall: [[2.3, 7.35], [7.3, 7.35], [9.4, 7.35], [12.3, 7.35], [16.6, 7.35], [20.3, 7.35], [23.3, 7.35], [27.75, 9.65], [5.2, 9.65], [8.9, 9.65], [16.6, 9.65], [23.6, 9.65]],
+      },
+      // Contra los bordes del pasillo: los de arriba miran al pasillo (+z), los de abajo también (-z).
+      lean: [[6.3, 7.12], [8.4, 7.12], [13.4, 7.12], [15.6, 7.12], [22.4, 7.12], [1.8, 9.88], [6.4, 9.88], [13.6, 9.88], [15.4, 9.88], [22.8, 9.88]],
+    };
+    const slotPets = [], spinners = [];
+    const RB = (w, h, d, r = 0.03) => new RoundedBoxGeometry(w, h, d, 2, Math.min(r, w / 2, h / 2, d / 2));
+    const at = (g, geo, m, x, y, z) => mesh(geo, asMat(m), g, x, y, z);
+    function potOf(g, c, big) { const h = big ? 0.3 : 0.2, r = big ? 0.16 : 0.11; at(g, new THREE.CylinderGeometry(r, r * 0.78, h, 10), c, 0, h / 2, 0); at(g, new THREE.CylinderGeometry(r * 1.08, r * 1.08, 0.04, 10), tint(c, 0.15), 0, h, 0); at(g, new THREE.CylinderGeometry(r * 0.92, r * 0.92, 0.01, 10), "#4a3222", 0, h + 0.02, 0); return h + 0.02; }
+    const greens = ["#3f8a4a", "#4f9d58", "#6cbf6f"];
+    // Plantas y adornos chicos: (x, z) es el centro de la base.
+    function smallOf(it, x, z, key) {
+      const k = it.kind.k, v = it.v, c = colorOf(v, 0, "#8a909c");
+      if (["gato", "perro", "robot"].includes(k)) {
+        const p = petMesh(it), g = p.g.clone(); g.position.set(x, 0, z); g.rotation.y = 0.6; g.visible = true; live.add(g); if (curLive) curLive.push(g);
+        if (k !== "robot") { const bed = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.28, 0.06, 14), toon("#cf8a6a")); bed.position.set(x, 0.03, z); live.add(bed); if (curLive) curLive.push(bed); }
+        slotPets.push({ g, key }); return;
+      }
+      const g = new THREE.Group(); g.position.set(x, 0, z); statics.add(g);
+      const potC = k === "lampara" || !v[v.length - 1] ? "#b8673e" : colorOf(v, v.length - 1, "#b8673e");
+      const flower = k === "tulipanes" || k === "orquidea" ? colorOf(v, 0, "#cf4b47") : null;
+      if (k === "planta") { const h = potOf(g, potC); [[0, 0.16, 0, 0.15], [-0.08, 0.26, 0.03, 0.1], [0.07, 0.28, -0.03, 0.1]].forEach(([a, y, b, r], i) => at(g, new THREE.IcosahedronGeometry(r, 0), greens[i % 3], a, h + y, b)); }
+      else if (k === "cactus") { const h = potOf(g, potC); at(g, new THREE.CapsuleGeometry(0.07, 0.22, 4, 8), "#4f9d58", 0, h + 0.16, 0); [-1, 1].forEach(sg => { const a = at(g, new THREE.CapsuleGeometry(0.04, 0.08, 4, 6), "#4f9d58", sg * 0.09, h + 0.2, 0); a.rotation.z = -sg * 0.6; }); at(g, new THREE.SphereGeometry(0.03, 6, 4), "#ef8fbf", 0, h + 0.33, 0); }
+      else if (k === "suculenta") { const h = potOf(g, potC); for (let i = 0; i < 8; i++) { const l = at(g, new THREE.ConeGeometry(0.035, 0.12, 4), i % 2 ? "#8fcf9a" : "#6fb37d", Math.sin(i * 0.8) * 0.06, h + 0.04, Math.cos(i * 0.8) * 0.06); l.rotation.x = Math.cos(i * 0.8) * 0.9; l.rotation.z = -Math.sin(i * 0.8) * 0.9; } }
+      else if (k === "tulipanes") { const h = potOf(g, potC); [-0.05, 0, 0.05].forEach((a, i) => { at(g, new THREE.CylinderGeometry(0.008, 0.008, 0.3, 4), "#3f8a4a", a, h + 0.15, i * 0.02); at(g, new THREE.SphereGeometry(0.045, 6, 5), flower, a, h + 0.32, i * 0.02).scale.y = 1.4; }); }
+      else if (k === "bonsai") { at(g, RB(0.3, 0.08, 0.2, 0.02), potC, 0, 0.04, 0); const t = at(g, new THREE.CylinderGeometry(0.02, 0.035, 0.2, 6), "#6e4a2f", 0, 0.18, 0); t.rotation.z = 0.3; [[-0.06, 0.3, 0.1], [0.07, 0.26, 0.08], [0, 0.36, 0.08]].forEach(([a, y, r], i) => at(g, new THREE.SphereGeometry(r, 8, 6), greens[i % 3], a, y, 0).scale.y = 0.5); }
+      else if (k === "helecho") { const h = potOf(g, potC); for (let i = 0; i < 9; i++) { const f = at(g, new THREE.ConeGeometry(0.025, 0.3, 4), greens[i % 3], Math.sin(i * 0.7) * 0.08, h + 0.12, Math.cos(i * 0.7) * 0.08); f.rotation.x = Math.cos(i * 0.7) * 0.8; f.rotation.z = -Math.sin(i * 0.7) * 0.8; } }
+      else if (k === "bambu") { const h = potOf(g, potC); [-0.05, 0.02, 0.06].forEach((a, i) => { const hh = 0.6 + i * 0.15; at(g, new THREE.CylinderGeometry(0.015, 0.015, hh, 6), "#9bc46a", a, h + hh / 2, (i - 1) * 0.03); for (let n = 1; n < 4; n++) at(g, new THREE.CylinderGeometry(0.019, 0.019, 0.015, 6), "#6f9a45", a, h + n * hh / 4, (i - 1) * 0.03); at(g, new THREE.ConeGeometry(0.03, 0.12, 3), "#4f9d58", a + 0.05, h + hh, 0).rotation.z = -1; }); }
+      else if (k === "girasol") { const h = potOf(g, potC); at(g, new THREE.CylinderGeometry(0.012, 0.012, 0.55, 5), "#3f8a4a", 0, h + 0.27, 0); const fl = at(g, new THREE.CylinderGeometry(0.11, 0.11, 0.02, 12), "#f2c14e", 0, h + 0.56, 0.02); fl.rotation.x = 1.2; const ce = at(g, new THREE.CylinderGeometry(0.05, 0.05, 0.03, 10), "#6e4a2f", 0, h + 0.565, 0.035); ce.rotation.x = 1.2; }
+      else if (k === "lavanda") { const h = potOf(g, potC); for (let i = 0; i < 9; i++) { const a = Math.sin(i * 1.3) * 0.07, b = Math.cos(i * 1.3) * 0.07; at(g, new THREE.CylinderGeometry(0.006, 0.006, 0.25, 4), "#6f9a6a", a, h + 0.12, b); at(g, new THREE.CapsuleGeometry(0.018, 0.06, 3, 5), "#9a7ad6", a, h + 0.27, b); } }
+      else if (k === "orquidea") { const h = potOf(g, potC); const st = at(g, new THREE.CylinderGeometry(0.008, 0.008, 0.4, 4), "#3f8a4a", 0, h + 0.2, 0); st.rotation.z = 0.15; [[0.03, 0.36], [0.07, 0.32], [0.1, 0.27]].forEach(([a, y]) => at(g, new THREE.SphereGeometry(0.035, 6, 4), flower, a, h + y, 0).scale.set(1.3, 0.8, 0.4)); [-1, 1].forEach(sg => at(g, new THREE.SphereGeometry(0.07, 6, 4), "#3f8a4a", sg * 0.06, h + 0.04, 0).scale.set(1, 0.3, 0.5)); }
+      else if (k === "palmerita") { const h = potOf(g, potC, true); at(g, new THREE.CylinderGeometry(0.03, 0.045, 0.5, 6), "#8a6440", 0, h + 0.25, 0); for (let i = 0; i < 6; i++) { const f = at(g, new THREE.ConeGeometry(0.06, 0.4, 3), greens[i % 3], Math.sin(i) * 0.12, h + 0.5, Math.cos(i) * 0.12); f.rotation.x = Math.cos(i) * 1.4; f.rotation.z = -Math.sin(i) * 1.4; } }
+      else if (k === "monstera") { const h = potOf(g, potC, true); for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; at(g, new THREE.CylinderGeometry(0.008, 0.008, 0.35, 4), "#3f8a4a", Math.cos(a) * 0.08, h + 0.16, Math.sin(a) * 0.08); const l = at(g, new THREE.SphereGeometry(0.13, 8, 6), i % 2 ? "#2f7a3e" : "#3f8a4a", Math.cos(a) * 0.17, h + 0.33 + (i % 2) * 0.06, Math.sin(a) * 0.17); l.scale.set(1, 0.25, 0.8); l.rotation.y = -a; } }
+      else if (k === "lampara") { at(g, new THREE.CylinderGeometry(0.12, 0.14, 0.03, 12), "#3a3f4a", 0, 0.015, 0); at(g, new THREE.CylinderGeometry(0.015, 0.015, 1.1, 6), "#3a3f4a", 0, 0.56, 0); at(g, new THREE.CylinderGeometry(0.12, 0.18, 0.22, 12, 1, true), toon(c, { side: THREE.DoubleSide }), 0, 1.18, 0); at(g, new THREE.SphereGeometry(0.05, 8, 6), toon("#fff1b8", { emissive: "#ffe2a0", emissiveIntensity: 1 }), 0, 1.13, 0); }
+      else if (k === "papelera") { at(g, new THREE.CylinderGeometry(0.12, 0.1, 0.3, 10), c, 0, 0.15, 0); [[0.03, 0.31], [-0.04, 0.32]].forEach(([a, y]) => at(g, new THREE.IcosahedronGeometry(0.04, 0), "#f4f1ea", a, y, 0)); }
+      else if (k === "pelota") { at(g, new THREE.SphereGeometry(0.3, 14, 10), c, 0, 0.3, 0); }
+      else if (k === "guitarra") { const b = new THREE.Group(); b.position.set(0, 0.04, 0); b.rotation.z = 0.25; g.add(b); at(b, new THREE.SphereGeometry(0.14, 10, 8), c, 0, 0.18, 0).scale.z = 0.35; at(b, new THREE.SphereGeometry(0.11, 10, 8), c, 0, 0.36, 0).scale.z = 0.35; at(b, new THREE.CylinderGeometry(0.04, 0.04, 0.02, 10), "#2b2d36", 0, 0.24, 0.05).rotation.x = Math.PI / 2; at(b, RB(0.05, 0.42, 0.03, 0.01), "#6e4a2f", 0, 0.64, 0); at(b, RB(0.07, 0.1, 0.04, 0.01), "#2b2d36", 0, 0.88, 0); at(g, new THREE.BoxGeometry(0.2, 0.04, 0.2), "#2b2d36", 0, 0.02, 0); }
+      else if (k === "libros") { const R = rand(v[0] ? v[0].c * 77 : 3); let y = 0; for (let i = 0; i < 5; i++) { const h = 0.05 + R() * 0.03; const b = at(g, RB(0.3 - R() * 0.06, h, 0.22, 0.01), pickR(R, ["#cf4b47", "#4a78d6", "#47a865", "#e3c14a", "#8b6cd6", "#e9e4d8"]), 0, y + h / 2, 0); b.rotation.y = (R() - 0.5) * 0.4; y += h; } }
+      else if (k === "globo") { at(g, new THREE.CylinderGeometry(0.1, 0.12, 0.04, 10), c, 0, 0.02, 0); at(g, new THREE.CylinderGeometry(0.012, 0.012, 0.25, 6), c, 0, 0.15, 0); at(g, new THREE.IcosahedronGeometry(0.15, 2), "#3f86d0", 0, 0.38, 0); at(g, new THREE.TorusGeometry(0.17, 0.01, 4, 16), c, 0, 0.38, 0).rotation.y = Math.PI / 2; }
+      else if (k === "trofeo") { at(g, RB(0.16, 0.08, 0.16, 0.01), "#3a2a22", 0, 0.04, 0); at(g, new THREE.CylinderGeometry(0.02, 0.04, 0.12, 8), c, 0, 0.14, 0); at(g, new THREE.CylinderGeometry(0.1, 0.05, 0.16, 12), toon(c, { emissive: c, emissiveIntensity: 0.15 }), 0, 0.28, 0); [-1, 1].forEach(sg => at(g, new THREE.TorusGeometry(0.04, 0.01, 4, 10), c, sg * 0.11, 0.3, 0).rotation.y = Math.PI / 2); }
+      else if (k === "extintor") { at(g, new THREE.CylinderGeometry(0.08, 0.08, 0.42, 10), "#cf4b47", 0, 0.21, 0); at(g, new THREE.CylinderGeometry(0.03, 0.03, 0.06, 6), "#2b2d36", 0, 0.45, 0); at(g, new THREE.BoxGeometry(0.1, 0.02, 0.03), "#2b2d36", 0.04, 0.48, 0); at(g, new THREE.CylinderGeometry(0.012, 0.012, 0.3, 4), "#2b2d36", 0.09, 0.3, 0); }
+      else if (k === "paraguero") { at(g, new THREE.CylinderGeometry(0.11, 0.11, 0.4, 10, 1, true), toon(c, { side: THREE.DoubleSide }), 0, 0.2, 0); [["#cf4b47", -0.04], ["#4a78d6", 0.03], ["#f2c14e", 0.0]].forEach(([u, a], i) => { at(g, new THREE.CylinderGeometry(0.02, 0.035, 0.55, 6), u, a, 0.4, (i - 1) * 0.04); at(g, new THREE.TorusGeometry(0.03, 0.008, 4, 8, Math.PI), "#3a2a22", a + 0.03, 0.7, (i - 1) * 0.04); }); }
+      else if (k === "trofeocristal") { at(g, RB(0.18, 0.06, 0.14, 0.01), "#3a2a22", 0, 0.03, 0); at(g, new THREE.CylinderGeometry(0.05, 0.08, 0.4, 6), toon("#bfe6ff", { transparent: true, opacity: 0.6, emissive: "#9fd0ff", emissiveIntensity: 0.3 }), 0, 0.26, 0); }
+      else { const h = potOf(g, potC); at(g, new THREE.IcosahedronGeometry(0.15, 0), greens[1], 0, h + 0.15, 0); }
+    }
+    // Contra los bordes del pasillo: se arma mirando a +z (flip lo da vuelta).
+    const panelTex = (w, h, draw) => toon("#ffffff", { map: canvasTex(w, h, draw) });
+    function leanOf(it, x, z, flip) {
+      const k = it.kind.k, v = it.v, c = colorOf(v, 0, "#8a909c");
+      const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = flip ? Math.PI : 0; statics.add(g);
+      const front = (w, h, y, d, m) => { const o = mesh(new THREE.PlaneGeometry(w, h), m, g, 0, y + h / 2, d + 0.002); o.castShadow = false; return o; };
+      if (k === "expendedora") { at(g, RB(0.9, 1.7, 0.6, 0.03), c, 0, 0.85, 0.3); front(0.8, 1.5, 0.1, 0.6, panelTex(24, 44, q => { P(q, c, 0, 0, 24, 44); P(q, "#1d2433", 2, 4, 15, 34); for (let r = 0; r < 6; r++) { for (let n = 0; n < 4; n++) P(q, ["#f2c14e", "#47a865", "#6fb4e6", "#e17aa8", "#e08a3a"][(r + n) % 5], 3 + n * 4, 6 + r * 5, 2, 3); P(q, "#5b6070", 2, 9 + r * 5, 15, 1); } P(q, "#3a3f4a", 19, 14, 3, 10); P(q, "#5cc98a", 20, 16, 1, 1); P(q, "#16131f", 3, 39, 13, 3); })); }
+      else if (k === "dispensador") { at(g, RB(0.38, 0.8, 0.38, 0.03), "#e9eef5", 0, 0.4, 0.2); at(g, new THREE.BoxGeometry(0.38, 0.06, 0.38), c, 0, 0.78, 0.2); at(g, new THREE.CylinderGeometry(0.15, 0.15, 0.4, 12), toon("#8fc8f0", { transparent: true, opacity: 0.85 }), 0, 1.02, 0.2); [[-0.07, "#4a78d6"], [0.07, "#cf4b47"]].forEach(([a, u]) => at(g, new THREE.BoxGeometry(0.05, 0.04, 0.04), u, a, 0.55, 0.4)); }
+      else if (k === "banco") { [-0.65, 0.65].forEach(a => at(g, new THREE.BoxGeometry(0.06, 0.25, 0.35), "#3a3f4a", a, 0.125, 0.25)); at(g, RB(1.6, 0.06, 0.45, 0.01), c, 0, 0.28, 0.25); at(g, RB(1.6, 0.35, 0.06, 0.01), c, 0, 0.5, 0.04); }
+      else if (k === "perchero") { at(g, new THREE.CylinderGeometry(0.03, 0.03, 1.5, 6), c, 0, 0.75, 0.2); at(g, new THREE.CylinderGeometry(0.16, 0.18, 0.04, 10), c, 0, 0.02, 0.2); [["#4a78d6", -1], ["#cf4b47", 1]].forEach(([u, sg]) => at(g, RB(0.18, 0.5, 0.1, 0.03), u, sg * 0.1, 1.15, 0.22)); at(g, new THREE.CylinderGeometry(0.1, 0.1, 0.06, 10), "#2b2d36", 0.08, 1.5, 0.2); }
+      else if (k === "buzon") { at(g, new THREE.CylinderGeometry(0.03, 0.03, 0.8, 6), "#3a3f4a", 0, 0.4, 0.2); at(g, RB(0.32, 0.3, 0.24, 0.02), c, 0, 0.95, 0.2); at(g, new THREE.BoxGeometry(0.16, 0.02, 0.05), "#16131f", 0, 1.08, 0.31); front(0.2, 0.08, 0.82, 0.32, panelTex(12, 4, q => { P(q, "#f4f1ea", 0, 0, 12, 4); P(q, "#3a3f4a", 2, 1, 8, 1); })); }
+      else if (k === "bienvenida") { [-0.25, 0.25].forEach(a => { const l = at(g, new THREE.BoxGeometry(0.04, 1.2, 0.04), "#6e4a2f", a, 0.6, 0.25); l.rotation.x = 0.12; }); at(g, RB(0.7, 0.55, 0.04, 0.01), "#6e4a2f", 0, 0.95, 0.3).rotation.x = 0.12; const pc = colorOf(v, 0, "#efe6cf"); const m = front(0.62, 0.47, 0.71, 0.32, panelTex(32, 24, q => { P(q, pc, 0, 0, 32, 24); const dark = ["#22242c", "#cf4b47", "#8b6cd6"].includes(pc); q.fillStyle = dark ? "#f6f2e7" : "#22242c"; q.font = "bold 6px monospace"; q.fillText("BIENVE-", 3, 9); q.fillText("NIDOS", 5, 16); P(q, "#cf4b47", 14, 19, 4, 2); })); m.rotation.x = 0.12; }
+      else if (k === "tele") { at(g, new THREE.CylinderGeometry(0.03, 0.03, 0.9, 6), "#3a3f4a", 0, 0.45, 0.2); at(g, new THREE.BoxGeometry(0.4, 0.04, 0.3), "#3a3f4a", 0, 0.02, 0.2); at(g, RB(1.0, 0.6, 0.06, 0.02), c, 0, 1.15, 0.2); front(0.9, 0.5, 0.9, 0.23, basic({ map: canvasTex(36, 20, q => { P(q, "#16131f", 0, 0, 36, 20); P(q, "#e9e4d8", 2, 2, 14, 1); for (let n = 0; n < 8; n++) P(q, n < 5 ? "#5cc98a" : "#3a3f4a", 3 + n * 4, 16 - n * 1.5, 2, 2); }) })); }
+      else if (k === "casillero") { at(g, RB(0.6, 1.6, 0.45, 0.02), c, 0, 0.8, 0.22); front(0.56, 1.52, 0.04, 0.45, panelTex(16, 40, q => { [0, 8].forEach(o => { P(q, tint(c, o ? 0.05 : 0), o, 0, 8, 40); P(q, tint(c, -0.35), o + 7, 0, 1, 40); for (let n = 0; n < 4; n++) P(q, tint(c, -0.3), o + 2, 3 + n * 2, 4, 1); P(q, "#c9ced8", o + 6, 18, 1, 4); }); })); }
+      else if (k === "fotocopiadora") { at(g, RB(0.9, 0.85, 0.6, 0.03), "#c9ced8", 0, 0.42, 0.3); at(g, RB(0.85, 0.12, 0.55, 0.02), "#8a909c", 0, 0.9, 0.3); at(g, new THREE.BoxGeometry(0.4, 0.02, 0.25), "#ffffff", 0.15, 0.97, 0.3); front(0.3, 0.06, 0.65, 0.6, basic({ color: "#5cc98a" })); }
+      else if (k === "chicles") { at(g, new THREE.CylinderGeometry(0.04, 0.06, 0.6, 8), c, 0, 0.3, 0.2); at(g, RB(0.24, 0.16, 0.24, 0.03), c, 0, 0.68, 0.2); at(g, new THREE.SphereGeometry(0.18, 12, 10), toon("#dff2ff", { transparent: true, opacity: 0.45 }), 0, 0.92, 0.2); for (let n = 0; n < 9; n++) at(g, new THREE.SphereGeometry(0.035, 6, 4), ["#cf4b47", "#f2c14e", "#47a865", "#4a78d6", "#e17aa8"][n % 5], Math.sin(n * 2) * 0.08, 0.84 + (n % 3) * 0.05, 0.2 + Math.cos(n * 2) * 0.08); }
+      else if (k === "sillon") { at(g, RB(0.8, 0.38, 0.7, 0.06), c, 0, 0.19, 0.35); at(g, RB(0.8, 0.5, 0.18, 0.06), tint(c, -0.1), 0, 0.55, 0.09); [-0.36, 0.36].forEach(a => at(g, RB(0.12, 0.25, 0.62, 0.04), tint(c, -0.15), a, 0.45, 0.35)); }
+      else if (k === "cabina") { at(g, RB(0.8, 2.0, 0.8, 0.03), c, 0, 1.0, 0.4); front(0.6, 1.3, 0.35, 0.8, toon("#cfe8f2", { transparent: true, opacity: 0.55 })); front(0.6, 0.12, 1.8, 0.8, panelTex(24, 4, q => { P(q, "#16131f", 0, 0, 24, 4); q.fillStyle = "#f6f2e7"; q.font = "4px monospace"; q.fillText("TELÉFONO", 2, 3.5); })); }
+      else at(g, RB(0.6, 0.8, 0.4), c, 0, 0.4, 0.2);
+    }
+    // Lo que cuelga sobre el pasillo.
+    function ceilingOf(it) {
+      const k = it.kind.k, v = it.v, Y = 2.15;
+      if (k === "guirnaldalarga" || k === "banderineslargos") {
+        const cols = Array.isArray(v[0] && v[0].c) ? v[0].c : ["#ef6b5b", "#f2c14e", "#5cc98a", "#6f9cff"];
+        for (let x = 0.4, n = 0; x < 27.6; x += 0.45, n++) {
+          const sag = Math.sin((x % 4.5) / 4.5 * Math.PI) * 0.25, y = Y - sag;
+          mesh(new THREE.BoxGeometry(0.46, 0.01, 0.01), toon("#3a3f4a"), null, x + 0.22, y, 8.5);
+          if (k === "guirnaldalarga") { const b = mesh(new THREE.SphereGeometry(0.04, 6, 4), toon(cols[n % cols.length], { emissive: cols[n % cols.length], emissiveIntensity: 0.8 }), null, x, y - 0.06, 8.5); b.castShadow = false; }
+          else { const f = mesh(new THREE.ConeGeometry(0.1, 0.2, 3), toon(cols[n % cols.length]), null, x, y - 0.11, 8.5); f.rotation.x = Math.PI; f.scale.z = 0.15; }
+        }
+      } else if (k === "lamparas") { const c = colorOf(v, 0, "#f2c14e"); for (let x = 2; x < 27; x += 3.5) { cyl(x, 8.5, 1.85, 0.01, 0.6, "#3a3f4a"); mesh(new THREE.ConeGeometry(0.2, 0.18, 12, 1, true), toon(c, { side: THREE.DoubleSide }), null, x, 1.82, 8.5); const b = mesh(new THREE.SphereGeometry(0.06, 8, 6), toon("#fff1b8", { emissive: "#ffe2a0", emissiveIntensity: 1 }), null, x, 1.76, 8.5); b.castShadow = false; } }
+      else if (k === "plantascolgantes") { for (let x = 3, n = 0; x < 27; x += 4, n++) { cyl(x, 8.5, 1.8, 0.008, 0.5, "#8a6440"); cyl(x, 8.5, 1.62, 0.12, 0.14, "#b8673e"); for (let i = 0; i < 5; i++) { const l = mesh(new THREE.ConeGeometry(0.03, 0.4, 3), toon(greens[i % 3]), null, x + Math.sin(i * 1.3) * 0.1, 1.5, 8.5 + Math.cos(i * 1.3) * 0.1); l.rotation.x = Math.PI + Math.cos(i * 1.3) * 0.3; } } }
+      else if (k === "tuboneon") { const c = colorOf(v, 0, "#ff5fc8"); const t = mesh(new THREE.CylinderGeometry(0.03, 0.03, 26.8, 8), toon(c, { emissive: c, emissiveIntensity: 1.2 }), null, 14, Y, 8.5); t.rotation.z = Math.PI / 2; t.castShadow = false; }
+      else if (k === "bolasdisco") { for (let x = 5; x < 27; x += 7) { cyl(x, 8.5, 1.95, 0.008, 0.3, "#3a3f4a"); const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 1), new THREE.MeshToonMaterial({ color: "#c9ced8", gradientMap: gradient, flatShading: true, emissive: "#3a3f4a" })); ball.position.set(x, 1.8, 8.5); live.add(ball); if (curLive) curLive.push(ball); spinners.push(ball); } }
+    }
+    // Cafetera y agua del pasillo: la básica o la mejorada.
+    function coffeeOf(it) {
+      const k = it ? it.kind.k : "base", v = it ? it.v : [];
+      if (k === "barra_cafe") {
+        const w = colorOf(v, 0, "#6e4a2f");
+        box(25.95, 7.1, 0, 2.0, 0.65, 0.95, w); box(25.93, 7.08, 0.95, 2.04, 0.69, 0.05, "#e9e4d8");
+        rbox(26.05, 7.15, 1.0, 0.55, 0.45, 0.45, 0.03, "#c9ced8"); box(26.1, 7.6, 1.15, 0.45, 0.01, 0.12, "#3a3f4a"); rbox(26.75, 7.2, 1.0, 0.3, 0.3, 0.5, 0.03, "#2b2d36");
+        cyl(27.5, 7.4, 1.0, 0.16, 0.02, "#e9e4d8"); mesh(new THREE.SphereGeometry(0.15, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), toon("#dff2ff", { transparent: true, opacity: 0.5 }), null, 27.5, 1.02, 7.4);
+        [[27.42, 7.36], [27.56, 7.44]].forEach(([x, z]) => mesh(new THREE.SphereGeometry(0.05, 6, 4), toon("#e0a35a"), null, x, 1.06, z).scale.y = 0.5);
+        for (let n = 0; n < 4; n++) cyl(27.1 + (n % 2) * 0.12, 7.55 + Math.floor(n / 2) * 0.1, 1.0, 0.04, 0.08, "#f4f1ea");
+        return;
+      }
+      box(26.2, 7.12, 0, 1.6, 0.6, 0.62, k === "base" ? "#9aa0ab" : "#6e4a2f"); box(26.2, 7.12, 0.62, 1.6, 0.6, 0.04, "#e9e4d8");
+      if (k === "base") { rbox(26.45, 7.2, 0.66, 0.3, 0.3, 0.38, 0.02, "#2b2d36"); cyl(26.6, 7.48, 0.66, 0.08, 0.16, toon("#cfe8f2", { transparent: true, opacity: 0.6 })); cyl(26.6, 7.48, 0.66, 0.07, 0.07, "#4a3222"); }
+      else if (k === "cafetera_capsulas") { const c = colorOf(v, 0, "#cf4b47"); rbox(26.4, 7.2, 0.66, 0.3, 0.38, 0.36, 0.04, c); box(26.45, 7.58, 0.9, 0.2, 0.005, 0.08, "#1d2028"); for (let n = 0; n < 6; n++) cyl(26.9, 7.4, 0.66 + n * 0.06, 0.05, 0.05, ["#cf4b47", "#f2c14e", "#47a865", "#4a78d6", "#8b6cd6", "#e08a3a"][n]); }
+      else if (k === "cafetera_espresso") { const c = colorOf(v, 0, "#c9ced8"); rbox(26.35, 7.17, 0.66, 0.7, 0.42, 0.45, 0.03, c); box(26.35, 7.17, 1.11, 0.7, 0.42, 0.04, "#c9ced8"); [26.5, 26.85].forEach(x => { cyl(x, 7.55, 0.86, 0.04, 0.06, "#2b2d36"); cyl(x, 7.55, 0.66, 0.035, 0.07, "#f4f1ea"); }); rbox(27.2, 7.25, 0.66, 0.2, 0.2, 0.32, 0.02, "#2b2d36"); }
+      ["#e9e4d8", "#cf4b47", "#4a78d6"].forEach((u, i) => cyl(27.25 + i * 0.16, 7.6, 0.66, 0.04, 0.09, u));
+    }
+    function waterOf(it) {
+      const k = it ? it.kind.k : "base", v = it ? it.v : [];
+      if (k === "base") { box(1.0, 7.3, 0, 0.4, 0.4, 0.04, "#8a909c"); [[1.03, 7.33], [1.33, 7.33], [1.03, 7.63], [1.33, 7.63]].forEach(([x, z]) => box(x, z, 0, 0.04, 0.04, 0.6, "#8a909c")); box(1.0, 7.3, 0.6, 0.4, 0.4, 0.04, "#8a909c"); cyl(1.2, 7.5, 0.64, 0.17, 0.42, toon("#7fbde6", { transparent: true, opacity: 0.8 })); box(1.17, 7.68, 0.5, 0.06, 0.04, 0.06, "#4a78d6"); return; }
+      if (k === "dispensador_fc") { const c = colorOf(v, 0, "#4a78d6"); rbox(1.0, 7.3, 0, 0.4, 0.4, 0.85, 0.03, "#e9eef5"); box(1.0, 7.3, 0.82, 0.4, 0.4, 0.05, c); cyl(1.2, 7.5, 0.87, 0.16, 0.42, toon("#8fc8f0", { transparent: true, opacity: 0.85 })); box(1.08, 7.7, 0.55, 0.06, 0.04, 0.05, "#4a78d6"); box(1.26, 7.7, 0.55, 0.06, 0.04, 0.05, "#cf4b47"); return; }
+      if (k === "heladera_bebidas") { const c = colorOf(v, 0, "#cf4b47"); rbox(0.75, 7.12, 0, 0.8, 0.6, 1.6, 0.03, c); const t = canvasTex(16, 32, q => { P(q, "#bfe0f2", 0, 0, 16, 32); for (let r = 0; r < 5; r++) { P(q, "#9aa1ad", 0, 6 + r * 6, 16, 1); for (let n = 0; n < 5; n++) P(q, ["#cf4b47", "#47a865", "#f2c14e", "#4a78d6", "#e17aa8"][(r + n) % 5], 1 + n * 3, 2 + r * 6, 2, 4); } }); planeZ(0.82, 7.722, 0.1, 0.66, 1.4, toon("#ffffff", { map: t, emissive: "#ffffff", emissiveMap: t, emissiveIntensity: 0.25 })); return; }
+      if (k === "fuente_agua") { cyl(1.2, 7.55, 0, 0.42, 0.3, "#a9b1bd", null, 16); cyl(1.2, 7.55, 0.28, 0.37, 0.03, toon("#6fb4e6", { transparent: true, opacity: 0.85 }), null, 16); cyl(1.2, 7.55, 0.3, 0.06, 0.5, "#c9ced8"); cyl(1.2, 7.55, 0.8, 0.18, 0.05, "#c9ced8", null, 12); const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.06, 0.5, 6), toon("#9fd0ff", { transparent: true, opacity: 0.6, emissive: "#6fb4e6" })); sp.position.set(1.2, 0.58, 7.55); live.add(sp); if (curLive) curLive.push(sp); spinners.push(sp); rbox(1.75, 7.2, 0, 0.3, 0.3, 0.9, 0.03, "#e9eef5"); return; }
+    }
+
     // Cada oficina se vuelve a armar cuando cambia lo comprado para ella.
     const built = {};
     let curLive = null;
-    const ROOMS_BUY = ["meet", "design", "back", "front", "db", "scrap", "ops", "qa", "hall"];
-    const sigOf = rid => { const R = roomOf(rid); return ["floor", "paint", "desk", "chair", "kit"].map(k => R[k] ? R[k].id : "-").join("|"); };
+    const ROOMS_BUY = ["meet", "design", "back", "front", "db", "scrap", "ops", "qa", "hall", "bath"];
+    const ids = list => (list || []).map(it => it ? it.id : "-").join(",");
+    const sigOf = rid => { if (rid === "bath") { const b = roomOf("hall").bath; return b ? b.id : "-"; } const R = roomOf(rid); return ["floor", "paint", "desk", "chair", "kit", "runner", "ceiling", "coffee", "water"].map(k => R[k] ? R[k].id : "-").join("|") + "|" + ids(R.small) + "|" + ids(R.lean); };
     function dispose(o) { o.traverse(m => { if (m.isMesh && m.geometry) m.geometry.dispose(); }); }
     function buildRoom(rid) {
       const old = built[rid];
-      if (old) { scene.remove(old.room); dispose(old.room); Object.values(old.seats).forEach(gr => { scene.remove(gr); dispose(gr); }); old.live.forEach(m => live.remove(m)); }
+      if (old) {
+        scene.remove(old.room); dispose(old.room); Object.values(old.seats).forEach(gr => { scene.remove(gr); dispose(gr); }); old.live.forEach(m => live.remove(m));
+        for (const list of [slotPets, spinners]) for (let i = list.length - 1; i >= 0; i--) { const o = list[i].g || list[i]; if (!o.parent) list.splice(i, 1); }
+      }
       const R = roomOf(rid), r = r3(rid), keep = statics, liveParts = [];
       curLive = liveParts;
       const grp = new THREE.Group(); statics = grp;
-      if (rid === "hall") { if (R.floor) planeY(0, 7, 0.006, 28, 3, toon("#ffffff", { map: tex2d(R.floor, 768, 82) })); }
-      else {
+      if (rid === "bath") bathInterior(roomOf("hall").bath);
+      else if (rid === "hall") {
+        if (R.floor) planeY(0, 7, 0.006, 28, 3, toon("#ffffff", { map: tex2d(R.floor, 768, 82) }));
+        if (R.runner) planeY(0.6, 8.1, 0.012, 26.8, 0.8, toon("#ffffff", { map: tex2d(R.runner, 768, 24) }));
+        if (R.ceiling) ceilingOf(R.ceiling);
+        coffeeOf(R.coffee); waterOf(R.water);
+        // Los del borde de abajo se ven de frente, como en la vista clásica (pegados al tabique).
+        SLOT3.lean.forEach(([x, z], i) => { if (R.lean && R.lean[i]) leanOf(R.lean[i], x, z > 9 ? 9.24 : z, false); });
+        SLOT3.small.hall.forEach(([x, z], i) => { if (R.small && R.small[i]) smallOf(R.small[i], x, z, "hall:" + i); });
+      } else {
+        (SLOT3.small[rid] || []).forEach(([x, z], i) => { if (R.small && R.small[i]) smallOf(R.small[i], r.x + x, r.y + z, rid + ":" + i); });
         if (R.floor) planeY(r.x, r.y, 0.006, 7, 7, toon("#ffffff", { map: tex2d(R.floor, 192, 192) }));
         if (R.paint) {
           const wall = toon("#ffffff", { map: tex2d(R.paint, 192, 72) });
@@ -8483,6 +8640,8 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
         if (to.coffee) return { key: "coffee", pt: posOf3(k).x < 14 ? SPOT.cooler : SPOT.coffee };
         if (to.debate !== undefined) return { key: "debate" + to.debate, pt: SPOT["debate" + to.debate] };
         if (to.spot) { const pt = to.spot === "window" || to.spot === "printer" ? roomSpot(p.room, to.spot) : SPOT[to.spot]; if (pt) return { key: "spot:" + to.spot, pt }; }
+        // La máquina o el dispensador comprados para el pasillo: se para enfrente.
+        if (to.x !== undefined) { const i = SLOTS.hall.lean.findIndex(([lx, ly]) => Math.abs(lx - to.x) < 4 && Math.abs(ly + 8 - to.y) < 4); if (i >= 0) { const [x, z] = SLOT3.lean[i], top = z < 9; return { key: "lean:" + i, pt: { x, y: top ? z + 0.95 : z - 0.95, f: top ? "-y" : "+y" } }; } }
         if (to.x !== undefined) { const pt = from2d(to); return { key: "xy:" + Math.round(pt.x * 4) + ":" + Math.round(pt.y * 4), pt }; }
       }
       return null; // charla, espera o pose: se queda donde está
@@ -8763,6 +8922,8 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
       if (now - lastSync > 0.5) { lastSync = now; syncRooms(); }
       everyone((k, p) => { const q = syncPerson(k, p, dt); animate(q, p, now); });
       petsFrame(now);
+      slotPets.forEach(p => { const [rid, i] = p.key.split(":"); p.g.visible = !walkingPet(rid, Number(i)); });
+      if (!reduced) spinners.forEach((o, i) => { o.rotation.y = now * (1 + i % 3 * 0.3); });
       // Puestos que no se usan, oficinas apagadas, pizza y torta sobre el escritorio.
       Object.entries(seatGroups).forEach(([id, sg]) => {
         const a = id === "pm" ? null : agent(id), used = id === "pm" || (a && a.present !== false && !(/\.lead$/.test(a.role || "") && !a.present));

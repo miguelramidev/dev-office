@@ -215,6 +215,8 @@
     else if (s === "kit") { px(0, 0, 72, 30, "#2a3142"); concrete(0, 30, 72, 22); drawDeco({ deco: v[0].c, x: -6, y: 1 }, 0); }
     else if (s === "small") { concrete(0, 0, 72, 52); it.kind.draw(36, 46, v, 0); }
     else if (s === "big") { concrete(0, 0, 72, 52); it.kind.draw(36, 50, v, 0); }
+    else if (s === "coffee" || s === "water") { hallPlanks(0, 0, 72, 52); it.kind.draw(36, 46, v, 0); }
+    else if (s === "bath") { it.kind.draw(36, 50, v, 0); }
     else if (s === "lean") { hallPlanks(0, 0, 72, 52); hallRug(0, 40, 72, 12); it.kind.draw(36, 40, v, 0); }
     else if (s === "runner") { hallPlanks(0, 0, 72, 52); it.kind.draw(0, 14, 72, 24, v, 0); }
     else if (s === "ceiling") { hallPlanks(0, 0, 72, 52); hallRug(0, 30, 72, 14); it.kind.draw(0, 0, 72, v, 0); }
