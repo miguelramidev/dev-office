@@ -8,6 +8,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.35.3] - 2026-10-28
+
+### Corregido
+
+- **Codex y Gemini en Windows** (`office` 0.33.3), en el puente (`run-external.sh`):
+  - **Codex** no podía leer el proyecto: con su sandbox apagado, que es como viene en Windows, rechazaba hasta `rg --files` con "blocked by policy". Ahora el puente lo prende en modo `unelevated` (`-c windows.sandbox="unelevated"`), que no pide permisos de administrador. `OFFICE_CODEX_ARGS` va después y lo puede cambiar.
+  - **Rutas:** en Windows, Codex y Antigravity reciben la carpeta del proyecto, la del reporte y las de las skills en formato de Windows (`C:/dev/app`), no en el de Git Bash (`/c/dev/app`).
+  - **Gemini:** en modo sin pantalla, Antigravity rechaza solo cualquier comando, aunque sea para listar una carpeta. El encargo ahora le pide leer, listar y buscar con sus herramientas de archivos, y el puente le pasa la carpeta del proyecto actual con `--add-dir` si la versión de `agy` lo permite.
+- Pruebas: 14 nuevas en `tests/run-external.test.sh`, que simulan Windows con `OFFICE_OS`.
+
 ## [0.35.2] - 2026-10-28
 
 ### Cambiado

@@ -51,6 +51,8 @@ EOF
 # agy (Antigravity CLI): el encargo se lee del archivo que nombra el -p.
 cat >"$FAKE_BIN/agy" <<'EOF'
 #!/usr/bin/env bash
+# La ayuda nombra --add-dir solo si FAKE_AGY_HELP lo trae (versiones nuevas de agy).
+[ "$1" = "--help" ] && { printf '%s\n' "${FAKE_AGY_HELP:-}"; exit 0; }
 printf '%s\n' "$*" >"$FAKE_ARGS"
 PROMPT_FILE=$(printf '%s' "$2" | grep -oE '\.office/[^ ]+prompt\.md')
 [ -n "$PROMPT_FILE" ] && cp "$PROMPT_FILE" "$FAKE_STDIN"
@@ -63,7 +65,15 @@ case "${FAKE_MODE:-ok}" in
 esac
 exit 0
 EOF
-chmod +x "$FAKE_BIN/codex" "$FAKE_BIN/agy"
+# cygpath de Git Bash, para probar Windows: anota cada ruta que convierte y la devuelve igual
+# (una ruta C:/... no existiría en este sistema).
+export FAKE_CYGPATH="$WORK/cygpath.txt"
+cat >"$FAKE_BIN/cygpath" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$FAKE_CYGPATH"
+printf '%s\n' "$2"
+EOF
+chmod +x "$FAKE_BIN/codex" "$FAKE_BIN/agy" "$FAKE_BIN/cygpath"
 
 # PATH sin codex ni agy reales, para que las pruebas no dependan de lo instalado.
 CLEAN_PATH=""
@@ -97,7 +107,7 @@ new_project() {
     mkdir -p .office/runs/r1
     echo "Objetivo: agregar el endpoint de pedidos." >.office/runs/r1/task.md
   )
-  rm -f "$FAKE_ARGS" "$FAKE_STDIN"
+  rm -f "$FAKE_ARGS" "$FAKE_STDIN" "$FAKE_CYGPATH"
 }
 
 # check <código esperado> <descripción> <rol> <proveedor> [opciones extra del runner]
@@ -306,6 +316,36 @@ export PATH="$CLEAN_PATH"
 check 2 "agy no instalado" frontend.developer gemini
 expect "$WORK/out.txt" "Antigravity" "dice que Gemini se usa con Antigravity"
 export PATH="$SAVED_PATH"
+
+# --- Windows: sandbox de Codex, rutas y carpeta de Antigravity ----------------------
+
+new_project
+FAKE_MODE=ok check 0 "codex en Linux o macOS" backend.developer codex
+expect_not "$FAKE_ARGS" "windows.sandbox" "codex: fuera de Windows no toca el sandbox de Windows"
+[ ! -s "$FAKE_CYGPATH" ] && echo "ok    fuera de Windows no convierte rutas" || { echo "FALLA fuera de Windows no convierte rutas"; FAILED=1; }
+new_project
+OFFICE_OS=msys FAKE_MODE=ok check 0 "codex en Windows" backend.developer codex
+expect "$FAKE_ARGS" 'windows.sandbox="unelevated"' "codex: en Windows prende su sandbox sin permisos de administrador"
+expect "$FAKE_CYGPATH" "-m $PROJ" "codex: en Windows la carpeta del proyecto pasa a formato de Windows"
+expect "$FAKE_CYGPATH" "-m $PROJ/.office/runs/r1/output.md" "codex: en Windows la ruta del reporte pasa a formato de Windows"
+expect "$FAKE_CYGPATH" "/skills/solid-backend" "prompt: en Windows las carpetas de las skills pasan a formato de Windows"
+new_project
+OFFICE_OS=msys OFFICE_CODEX_ARGS='-c windows.sandbox="elevated"' FAKE_MODE=ok check 0 "codex en Windows con opciones propias" backend.developer codex
+expect "$FAKE_ARGS" 'windows.sandbox="unelevated" -c windows.sandbox="elevated"' "codex: las opciones propias van después y mandan"
+
+new_project
+FAKE_MODE=ok check 0 "gemini: agy sin --add-dir" frontend.developer gemini
+expect_not "$FAKE_ARGS" "--add-dir" "gemini: si agy no lo tiene, no le pasa --add-dir"
+expect "$FAKE_STDIN" "ni siquiera para listar o buscar archivos" "gemini: el prompt le pide usar sus herramientas de archivos"
+new_project
+FAKE_AGY_HELP="  --add-dir <dir>  Add a directory to the workspace" FAKE_MODE=ok check 0 "gemini: agy con --add-dir" frontend.developer gemini
+expect "$FAKE_ARGS" "--add-dir $PROJ" "gemini: le pasa la carpeta del proyecto actual"
+new_project
+OFFICE_OS=msys FAKE_AGY_HELP="--add-dir" FAKE_MODE=ok check 0 "gemini en Windows" frontend.developer gemini
+expect "$FAKE_CYGPATH" "-m $PROJ" "gemini: en Windows la carpeta pasa a formato de Windows"
+new_project
+FAKE_MODE=noop check 0 "gemini: asesor sin comandos" pm gemini
+expect "$FAKE_STDIN" "ni siquiera para listar o buscar archivos" "gemini: el asesor también usa sus herramientas de archivos"
 
 if [ "$FAILED" -ne 0 ]; then
   echo "Hay pruebas que fallan."
