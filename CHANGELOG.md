@@ -8,6 +8,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.32.0] - 2026-10-28
+
+### Agregado
+
+- **El pasillo y lo chico de la tienda, en 3D** (`office` 0.30.0), segunda parte de la tienda en 3D.
+  - El pasillo arranca básico: piso de madera, una cafetera de filtro, un bidón de agua y un baño con cubículos grises y una pileta simple. Quedan fijos el matafuegos, los tachos y el tablero.
+  - Lo que se compra para el pasillo se ve en 3D: los 12 artículos contra los bordes (máquina expendedora, dispensador, banco, perchero, buzón, cartel de bienvenida, tele del sprint, casillero, fotocopiadora, máquina de chicles, sillón y cabina telefónica), las 6 alfombras (las animadas se mueven) y los 6 adornos del techo (guirnaldas, banderines, lámparas, plantas colgantes, tubo de neón y bolas de espejos que giran).
+  - Las 25 plantas y adornos chicos, en el pasillo y en las oficinas. El gato, el perro y el robot comprados duermen en su lugar y salen a pasear.
+  - **Servicios**, una categoría nueva con mejoras que van siempre al pasillo: la cafetera (de cápsulas, espresso y barra de café), el agua (dispensador frío y calor, heladera de bebidas y fuente) y el baño (renovado, moderno y de lujo). Se ven en las dos vistas, y cada mejora suma frases ("¡Qué crema tiene!", "¡Qué lujo este baño!").
+  - Quien va a la máquina expendedora o al dispensador comprados se para enfrente de ellos en 3D.
+
 ## [0.31.0] - 2026-10-28
 
 ### Cambiado

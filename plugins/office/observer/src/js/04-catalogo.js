@@ -613,6 +613,28 @@
       draw(x, y, w, _, now) { for (let lx = x + 96; lx < x + w; lx += 192) { px(lx, y, 1, 3, "#3a3f4a"); disc(lx, y + 7, 4, "#9aa0ab");
         for (let k = 0; k < 4; k++) px(lx - 3 + ((k * 3 + Math.floor(now * 4)) % 7), y + 4 + k * 2, 1, 1, "#ffffff"); if (Math.floor(now * 2) % 2) px(lx - 14, y + 14, 2, 1, `hsl(${(now * 120) % 360},90%,70%)`); } } },
   );
+  // Servicios del pasillo: la cafetera, el agua y el baño arrancan básicos y se mejoran.
+  // coffee y water: (cx, by) es el centro de la base; bath: la vista del baño, para la tienda.
+  KINDS.push(
+    { k: "cafetera_capsulas", cat: "Servicios", slot: "coffee", name: "Cafetera de cápsulas", lv: 1, price: 15000, vars: ["color"], g: "f",
+      draw(cx, by, [c]) { box(cx - 7, by - 18, 14, 18, c.c); px(cx - 5, by - 15, 10, 5, "#1d2028"); px(cx - 3, by - 6, 6, 2, "#3a3f4a"); box(cx + 8, by - 16, 4, 16, "#c9ced8"); for (let i = 0; i < 5; i++) px(cx + 9, by - 14 + i * 3, 2, 2, ["#cf4b47", "#f2c14e", "#47a865", "#4a78d6", "#8b6cd6"][i]); } },
+    { k: "cafetera_espresso", cat: "Servicios", slot: "coffee", name: "Cafetera espresso", lv: 3, price: 60000, vars: ["espresso"], g: "f",
+      draw(cx, by, [e], now) { box(cx - 11, by - 20, 22, 16, e.c); px(cx - 9, by - 18, 18, 3, "#c9ced8"); px(cx - 7, by - 10, 4, 3, "#2b2d36"); px(cx + 3, by - 10, 4, 3, "#2b2d36"); px(cx - 7, by - 5, 4, 4, "#f4f1ea"); px(cx + 3, by - 5, 4, 4, "#f4f1ea"); if (Math.floor(now * 2) % 2) px(cx - 6, by - 9, 1, 3, "rgba(255,255,255,0.5)"); } },
+    { k: "barra_cafe", cat: "Servicios", slot: "coffee", name: "Barra de café", lv: 6, price: 250000, vars: ["wood"], g: "f",
+      draw(cx, by, [w]) { box(cx - 14, by - 12, 28, 12, w.c); px(cx - 14, by - 13, 28, 2, "#e9e4d8"); box(cx - 10, by - 25, 12, 12, "#c9ced8"); px(cx - 8, by - 21, 8, 3, "#3a3f4a"); box(cx + 5, by - 20, 7, 7, "rgba(200,230,255,0.5)"); px(cx + 6, by - 16, 5, 2, "#e08a3a"); } },
+    { k: "dispensador_fc", cat: "Servicios", slot: "water", name: "Dispensador frío y calor", lv: 1, price: 12000, vars: ["color"], g: "m",
+      draw(cx, by, [c]) { box(cx - 6, by - 22, 12, 22, "#e9eef5"); px(cx - 6, by - 22, 12, 3, c.c); px(cx - 4, by - 14, 3, 2, "#4a78d6"); px(cx + 1, by - 14, 3, 2, "#cf4b47"); box(cx - 5, by - 32, 10, 10, "#8fc8f0"); } },
+    { k: "heladera_bebidas", cat: "Servicios", slot: "water", name: "Heladera de bebidas", lv: 4, price: 90000, vars: ["color"], g: "f",
+      draw(cx, by, [c]) { box(cx - 9, by - 32, 18, 32, c.c); px(cx - 7, by - 30, 14, 24, "#bfe0f2"); for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) px(cx - 6 + k * 3, by - 28 + r * 6, 2, 4, ["#cf4b47", "#47a865", "#f2c14e", "#4a78d6"][(r + k) % 4]); px(cx + 6, by - 20, 1, 6, "#c9ced8"); } },
+    { k: "fuente_agua", cat: "Servicios", slot: "water", name: "Fuente de agua", lv: 7, price: 200000, vars: [], g: "f",
+      draw(cx, by, _, now) { box(cx - 10, by - 10, 20, 10, "#a9b1bd"); px(cx - 8, by - 9, 16, 3, "#6fb4e6"); box(cx - 2, by - 22, 4, 12, "#c9ced8"); const d = Math.floor(now * 6) % 6; px(cx - 1, by - 21 + d * 2, 2, 2, "#9fd0ff"); px(cx - 6, by - 24, 12, 2, "#c9ced8"); } },
+    { k: "bano_renovado", cat: "Servicios", slot: "bath", name: "Baño renovado", lv: 2, price: 50000, vars: ["color"], g: "m",
+      draw(cx, by, [c]) { px(cx - 20, by - 30, 40, 30, "#e6f2f7"); [0, 1].forEach(i => { box(cx - 18 + i * 13, by - 26, 11, 24, c.c); px(cx - 9 + i * 13, by - 14, 1, 3, "#c9ced8"); }); box(cx + 9, by - 12, 9, 6, "#f4f1ea"); box(cx + 9, by - 26, 9, 10, "#cfe8f2"); } },
+    { k: "bano_moderno", cat: "Servicios", slot: "bath", name: "Baño moderno", lv: 5, price: 180000, vars: ["wood"], g: "m",
+      draw(cx, by, [w]) { px(cx - 20, by - 30, 40, 30, "#d9dde5"); [0, 1].forEach(i => { box(cx - 18 + i * 13, by - 26, 11, 24, w.c); for (let k = 1; k < 5; k++) px(cx - 18 + i * 13 + k * 2, by - 25, 1, 22, "#00000022"); }); box(cx + 8, by - 12, 11, 6, "#e6e2da"); box(cx + 9, by - 27, 9, 11, "#cfe8f2"); px(cx + 9, by - 27, 9, 1, "#fff1b8"); } },
+    { k: "bano_lujo", cat: "Servicios", slot: "bath", name: "Baño de lujo", lv: 8, price: 600000, vars: [], g: "m",
+      draw(cx, by, _, now) { px(cx - 20, by - 30, 40, 30, "#f4efe6"); [0, 1].forEach(i => { box(cx - 18 + i * 13, by - 26, 11, 24, "#e6e2da"); px(cx - 18 + i * 13, by - 26, 11, 2, "#d4a933"); px(cx - 9 + i * 13, by - 14, 1, 3, "#d4a933"); }); box(cx + 8, by - 12, 11, 6, "#e6e2da"); px(cx + 12, by - 15, 3, 3, "#d4a933"); box(cx + 9, by - 27, 9, 11, "#cfe8f2"); if (Math.floor(now * 3) % 2) px(cx + 1, by - 29, 2, 2, "#fff1b8"); } },
+  );
   KINDS.push({ k: "top_gala", cat: "Ropa", slot: "top", name: "Traje de gala", g: "m", lv: 7, price: 240000, vars: ["color"], top: "gala" });
   KINDS.push({ k: "top_armor", cat: "Ropa", slot: "top", name: "Armadura", g: "f", lv: 10, price: 1100000, vars: ["metal"], top: "armor" });
   KINDS.push({ k: "top_astro", cat: "Ropa", slot: "top", name: "Traje espacial", g: "m", lv: 9, price: 500000, vars: ["color"], top: "astro" });
@@ -633,9 +655,9 @@
 
   const KIND = Object.fromEntries(KINDS.map(k => [k.k, k]));
   const WEAR = ["top", "hat", "face", "neck"];
-  const ROOM_ONE = ["desk", "chair", "floor", "paint", "runner", "ceiling"];
+  const ROOM_ONE = ["desk", "chair", "floor", "paint", "runner", "ceiling", "coffee", "water", "bath"];
   // Lo que solo va en el pasillo, y lo que entra en el pasillo.
-  const HALL_ONLY = ["lean", "runner", "ceiling"];
+  const HALL_ONLY = ["lean", "runner", "ceiling", "coffee", "water", "bath"];
   const HALL_OK = ["small", "floor", ...HALL_ONLY];
   // Un artículo es un tipo más un índice por variante: "planta.3" es la planta en maceta azul.
   const itemCache = {};
@@ -652,7 +674,7 @@
     return itemCache[id] = { id, kind, v, name, price: Math.max(1000, Math.round(price / 500) * 500), lv: Math.min(10, lv) };
   }
   const CATALOG_SIZE = KINDS.reduce((n, k) => n + k.vars.reduce((m, d) => m * VARIANTS[d].length, 1), 0);
-  const CATS = ["Escritorios", "Sillas", "Pisos", "Paredes", "Cuadros", "Plantas", "Muebles", "Adornos", "Equipamiento", "Pasillo", "Ropa"];
+  const CATS = ["Escritorios", "Sillas", "Pisos", "Paredes", "Cuadros", "Plantas", "Muebles", "Adornos", "Equipamiento", "Pasillo", "Servicios", "Ropa"];
 
   // La vitrina de una partida: unos artículos por nivel, al azar pero siempre los mismos
   // para la misma partida. Así cada sesión trae un catálogo distinto.

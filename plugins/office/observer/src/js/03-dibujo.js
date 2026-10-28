@@ -500,9 +500,15 @@
   // --- Escenario ----------------------------------------------------------------
   function drawHall(now) {
     drawHallFloor(now);
-    px(10, 188, 16, 28, OUT); px(11, 189, 14, 26, "#d4dbe5"); px(13, 190, 10, 9, "#7fb6e6"); px(14, 191, 3, 6, "#a9d1f2"); px(16, 202, 4, 3, "#3a3f4a");
-    px(722, 188, 22, 28, OUT); px(723, 189, 20, 26, "#3a3f4a"); px(726, 192, 14, 7, "#1d2028"); px(728, 194, 4, 2, "#ef6b5b"); px(729, 204, 8, 6, "#1d2028");
-    if (Math.floor(now * 1.5) % 2) px(732, 199, 2, 3, "rgba(255,255,255,0.3)");
+    // El agua y la cafetera: las básicas o las mejoradas en la tienda.
+    const hallR = roomOf("hall");
+    if (hallR.water) hallR.water.kind.draw(18, 216, hallR.water.v, now);
+    else { px(10, 188, 16, 28, OUT); px(11, 189, 14, 26, "#d4dbe5"); px(13, 190, 10, 9, "#7fb6e6"); px(14, 191, 3, 6, "#a9d1f2"); px(16, 202, 4, 3, "#3a3f4a"); }
+    if (hallR.coffee) hallR.coffee.kind.draw(733, 216, hallR.coffee.v, now);
+    else {
+      px(722, 188, 22, 28, OUT); px(723, 189, 20, 26, "#3a3f4a"); px(726, 192, 14, 7, "#1d2028"); px(728, 194, 4, 2, "#ef6b5b"); px(729, 204, 8, 6, "#1d2028");
+      if (Math.floor(now * 1.5) % 2) px(732, 199, 2, 3, "rgba(255,255,255,0.3)");
+    }
     drawHallItems(now);
     // Tablero del ticket: el texto lo escribe drawLabels; acá, el pizarrón y las luces de estado.
     const { x: bx, y: by, w: bw, h: bh } = BOARD, b = boardInfo();

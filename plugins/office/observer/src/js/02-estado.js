@@ -338,6 +338,14 @@
     wash: ["Manos limpias, código limpio", "¿Quién dejó la canilla abierta?", "Se acabó el jabón", "Siempre lavarse las manos", "El secador no anda", "Hay que reponer papel"],
     queue: ["¿Falta mucho?", "Están los dos ocupados", "Vuelvo en un rato", "¡Hay cola!"],
   };
+  // Lo que mejoraron en la tienda también se nota en lo que dicen.
+  const TIER_LINES = {
+    cafetera_capsulas: ["¿Qué cápsula querés?", "La de vainilla", "Cápsula y a seguir"], cafetera_espresso: ["Un espresso", "¡Qué crema tiene!", "Ristretto, por favor"],
+    barra_cafe: ["Un cortado en la barra", "¿Hay medialunas?", "Esto es una cafetería"],
+    dispensador_fc: ["Agua fría, por favor", "Té con agua caliente"], heladera_bebidas: ["Una gaseosa fría", "¿Quién se tomó la última?"], fuente_agua: ["Qué relajante la fuente", "Agua filtrada y todo"],
+    bano_renovado: ["Quedó lindo el baño", "Por fin un espejo"], bano_moderno: ["Este espejo con luz es otra cosa", "Qué lindo quedó"], bano_lujo: ["¡Qué lujo este baño!", "¿Eso es mármol?", "Hasta perfume hay"],
+  };
+  const withTier = (list, slot) => { const it = roomOf("hall")[slot]; return it && TIER_LINES[it.kind.k] ? list.concat(TIER_LINES[it.kind.k], TIER_LINES[it.kind.k]) : list; };
   // Charlas de a dos junto al dispensador de agua.
   const COOLER_CHATS = [
     ["¿Viste el último deploy?", "Salió perfecto", "¿Sin rollback?", "Ni uno"],
@@ -533,13 +541,13 @@
     } else if (r < 0.2) {
       a.idleTrip = true;
       if (Math.random() < 0.5) setTimeout(() => sfx("coffee"), 2500);
-      a.acts.push({ k: "go", to: { coffee: true } }, { k: "prop", prop: "cup" }, say(COFFEE_LINES), { k: "home" }, { k: "prop", prop: null });
+      a.acts.push({ k: "go", to: { coffee: true } }, { k: "prop", prop: "cup" }, say(withTier(COFFEE_LINES, "coffee")), { k: "home" }, { k: "prop", prop: null });
     } else if (r < 0.42) {
       // Agua, ventana, impresora o plantas (la ventana y la impresora, en las oficinas de arriba).
       const spots = Object.keys(IDLE_SPOTS).filter(k => (k !== "window" && k !== "printer") || (room(a.room).top && a.room !== "meet"));
       const spot = spots[Math.floor(Math.random() * spots.length)];
       a.idleTrip = true;
-      a.acts.push({ k: "go", to: { spot } }, ...(spot === "cooler" ? [{ k: "prop", prop: "cup" }] : []), say(IDLE_SPOTS[spot]), { k: "home" }, { k: "prop", prop: null });
+      a.acts.push({ k: "go", to: { spot } }, ...(spot === "cooler" ? [{ k: "prop", prop: "cup" }] : []), say(spot === "cooler" ? withTier(IDLE_SPOTS[spot], "water") : IDLE_SPOTS[spot]), { k: "home" }, { k: "prop", prop: null });
     } else if (r < 0.5) {
       // Al baño: entra a un cubículo libre, se lava las manos y vuelve. Si están los dos
       // ocupados, espera en la puerta un momento y se vuelve.
@@ -549,7 +557,7 @@
       else {
         state.stalls[n] = a.id;
         a.acts.push(say(BATH.in), { k: "go", to: { spot: "stall" + n } }, { k: "do", what: "stall" + n, d: 6 + Math.random() * 6, free: n },
-          { k: "go", to: { spot: "sink" } }, { k: "do", what: "wash", d: 2.5 }, say(BATH.wash), { k: "home" });
+          { k: "go", to: { spot: "sink" } }, { k: "do", what: "wash", d: 2.5 }, say(withTier(BATH.wash, "bath")), { k: "home" });
       }
     } else if (r < 0.58 && others.length) {
       // Dos se cruzan en el dispensador y charlan un rato.
