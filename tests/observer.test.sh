@@ -304,6 +304,10 @@ let snack = false;
 for (let i = 0; i < 6000 && !snack; i++) { T.update(0.1); T.lifeTick(0.1); snack = T.state.agents.some(a => a.prop === "snack"); }
 T.render(2);
 say(snack && T.roomOf("hall").runner === rug && !!T.roomOf("hall").ceiling, "pasillo: alguien va a la máquina expendedora y vuelve con algo");
+// Sin elegir oficina ni empleado, las compras se reparten.
+const spread = new Set(["planta.0", "cactus.0", "suculenta.0", "helecho.0"].map(id => T.targetOf(T.itemOf(id))));
+const wearTo = new Set(T.KINDS.filter(k => k.slot === "hat").slice(0, 4).map(k => T.targetOf(T.itemOf(k.k + k.vars.map(() => ".0").join("")))));
+say(spread.size > 1 && wearTo.size > 1 && !spread.has("hall"), "tienda: en automático las compras se reparten entre oficinas y empleados");
 // En vivo: compactar no reinicia la sesión, y un agente sin novedades se marca como trabado.
 const now = Math.floor(Date.now() / 1000), u = { i: 1000, o: 4000, cw: 20000 };
 T.live([
