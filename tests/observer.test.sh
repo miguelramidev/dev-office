@@ -257,7 +257,7 @@ const fs = require("fs");
 const html = fs.readFileSync(process.argv[2], "utf8");
 let code = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</script>"));
 const end = code.lastIndexOf("})();");
-code = code.slice(0, end) + "\nglobal.T = { KINDS, VARIANTS, itemOf, buildShop, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, live: evs => { liveEvents = evs; liveAnimFrom = -1; liveProc = null; mode = 'live'; liveRebuild(); }, more: evs => { liveEvents = evs; liveRebuild(); } };\n" + code.slice(end);
+code = code.slice(0, end) + "\nglobal.T = { KINDS, VARIANTS, itemOf, buildShop, canBuy, targetOf, SLOTS, roomOf, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, live: evs => { liveEvents = evs; liveAnimFrom = -1; liveProc = null; mode = 'live'; liveRebuild(); }, more: evs => { liveEvents = evs; liveRebuild(); } };\n" + code.slice(end);
 const stub = () => new Proxy(function () {}, { get: (t, k) => k === Symbol.toPrimitive ? () => 0 : k === "length" ? 0 : stub(), apply: () => stub(), construct: () => stub(), set: () => true });
 Object.assign(global, { document: stub(), window: stub(), requestAnimationFrame: () => 0, setInterval: () => 0, matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} },
   getComputedStyle: () => ({ paddingLeft: "0", paddingRight: "0", paddingBottom: "0" }) });
@@ -295,6 +295,15 @@ let walked = false;
 for (let i = 0; i < 2000 && !walked; i++) { T.update(0.1); T.lifeTick(0.1); walked = !!T.petWalk; }
 for (let i = 0; i < 3000 && T.petWalk; i++) { T.update(0.1); T.lifeTick(0.1); }
 say(walked && !T.petWalk, "mascotas: la comprada sale a pasear y vuelve a su lugar");
+// Pasillo: lo suyo va siempre ahí, no entra en una oficina, y los empleados lo usan.
+const vend = T.itemOf("expendedora.0"), rug = T.itemOf("alfombra.0"), hallFloor = T.KINDS.find(k => k.slot === "floor");
+say(T.targetOf(vend) === "hall" && T.targetOf(rug) === "hall" && T.canBuy(T.itemOf("dispensador.0"), "back").why === "Esto va en el pasillo." && T.canBuy(T.itemOf(hallFloor.k + hallFloor.vars.map(() => ".0").join("")), "hall").ok && /^En el pasillo entran/.test(T.canBuy(T.itemOf("reloj.0"), "hall").why)
+  && T.SLOTS.hall.small.length === 12 && T.SLOTS.hall.lean.length === 10, "pasillo: artículos propios, pisos y 12 lugares chicos y 10 contra el borde");
+T.place({ item: "expendedora.0", to: "hall", slot: 0, price: 0 }); T.place({ item: "alfombra.0", to: "hall", slot: 0, price: 0 }); T.place({ item: "bolasdisco", to: "hall", slot: 0, price: 0 });
+let snack = false;
+for (let i = 0; i < 6000 && !snack; i++) { T.update(0.1); T.lifeTick(0.1); snack = T.state.agents.some(a => a.prop === "snack"); }
+T.render(2);
+say(snack && T.roomOf("hall").runner === rug && !!T.roomOf("hall").ceiling, "pasillo: alguien va a la máquina expendedora y vuelve con algo");
 // En vivo: compactar no reinicia la sesión, y un agente sin novedades se marca como trabado.
 const now = Math.floor(Date.now() / 1000), u = { i: 1000, o: 4000, cw: 20000 };
 T.live([

@@ -471,7 +471,13 @@
     const same = others.filter(b => b.room === a.room), far = others.filter(b => b.room !== a.room);
     const goFar = far.length > 0 && (!same.length || Math.random() < 0.55);
     const mates = goFar ? far : same;
-    if (r < 0.35) {
+    const breaks = hallBreaks();
+    if (r < 0.35 && breaks.length && Math.random() < 0.5) {
+      // Lo que compraron para el pasillo también se usa: la máquina, el dispensador.
+      const b = breaks[Math.floor(Math.random() * breaks.length)];
+      a.idleTrip = true;
+      a.acts.push({ k: "go", to: { x: b.x, y: b.y, room: "hall" } }, { k: "prop", prop: b.prop }, { k: "say", text: b.lines[Math.floor(Math.random() * b.lines.length)], d: 2.2 }, { k: "home" }, { k: "prop", prop: null });
+    } else if (r < 0.35) {
       a.idleTrip = true;
       if (Math.random() < 0.5) setTimeout(() => sfx("coffee"), 2500);
       a.acts.push({ k: "go", to: { coffee: true } }, { k: "prop", prop: "cup" }, { k: "say", text: COFFEE_LINES[Math.floor(Math.random() * COFFEE_LINES.length)], d: 2.2 }, { k: "home" }, { k: "prop", prop: null });

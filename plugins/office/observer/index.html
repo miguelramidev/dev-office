@@ -939,7 +939,13 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const same = others.filter(b => b.room === a.room), far = others.filter(b => b.room !== a.room);
     const goFar = far.length > 0 && (!same.length || Math.random() < 0.55);
     const mates = goFar ? far : same;
-    if (r < 0.35) {
+    const breaks = hallBreaks();
+    if (r < 0.35 && breaks.length && Math.random() < 0.5) {
+      // Lo que compraron para el pasillo también se usa: la máquina, el dispensador.
+      const b = breaks[Math.floor(Math.random() * breaks.length)];
+      a.idleTrip = true;
+      a.acts.push({ k: "go", to: { x: b.x, y: b.y, room: "hall" } }, { k: "prop", prop: b.prop }, { k: "say", text: b.lines[Math.floor(Math.random() * b.lines.length)], d: 2.2 }, { k: "home" }, { k: "prop", prop: null });
+    } else if (r < 0.35) {
       a.idleTrip = true;
       if (Math.random() < 0.5) setTimeout(() => sfx("coffee"), 2500);
       a.acts.push({ k: "go", to: { coffee: true } }, { k: "prop", prop: "cup" }, { k: "say", text: COFFEE_LINES[Math.floor(Math.random() * COFFEE_LINES.length)], d: 2.2 }, { k: "home" }, { k: "prop", prop: null });
@@ -1321,6 +1327,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     } else if (a.prop === "cup") {
       px(hx - 3, ty + 9, 7, 7, OUT); px(hx - 2, ty + 10, 5, 5, ["#d9534f", "#4a78d6", "#e9e4d8", "#47a865"][a.look % 4]); px(hx - 2, ty + 10, 5, 1, "#3a2418");
       if (Math.floor(now * 2) % 2) px(hx, ty + 5, 1, 3, "rgba(255,255,255,0.4)");
+    } else if (a.prop === "snack") { // el paquete de la máquina
+      px(hx - 3, ty + 8, 7, 8, OUT); px(hx - 2, ty + 9, 5, 6, ["#cf4b47", "#f2c14e", "#47a865", "#4a78d6"][a.look % 4]); px(hx - 2, ty + 9, 5, 1, "#e9e4d8"); px(hx - 1, ty + 11, 3, 2, "#f6f2e7");
     } else if (/\.lead$/.test(a.role || "") || a.role === "qa") {
       px(hx - 4, ty + 6, 9, 11, OUT); px(hx - 3, ty + 7, 7, 9, "#c9a777"); px(hx - 2, ty + 8, 5, 7, "#f6f2e7");
       px(hx - 1, ty + 9, 3, 1, a.role === "qa" ? "#cf4b47" : "#2f9e8f"); px(hx - 1, ty + 11, 3, 1, "#98a1b3"); px(hx - 1, ty + 6, 3, 2, "#5e4229");
@@ -1452,15 +1460,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 
   // --- Escenario ----------------------------------------------------------------
   function drawHall(now) {
-    for (let x = 0; x < W; x += 12) {
-      const c = (x / 12) % 2 ? "#5d4733" : "#654e38";
-      px(x, 184, 12, 80, c);
-      px(x, 184, 1, 80, "#4a3828");
-      for (let y = 196 + ((x / 12) % 3) * 9; y < 264; y += 27) px(x + 1, y, 11, 1, "#4a3828");
-    }
-    px(0, 184, W, 2, "#2a2119"); px(0, 262, W, 2, "#2a2119");
-    px(0, 216, W, 24, "#4a2f3a"); px(0, 216, W, 2, "#5d3a48"); px(0, 238, W, 2, "#3a2430");
-    for (let x = 6; x < W; x += 16) px(x, 227, 6, 2, "#5d3a48");
+    drawHallFloor(now);
     px(10, 188, 16, 28, OUT); px(11, 189, 14, 26, "#d4dbe5"); px(13, 190, 10, 9, "#7fb6e6"); px(14, 191, 3, 6, "#a9d1f2"); px(16, 202, 4, 3, "#3a3f4a");
     px(722, 188, 22, 28, OUT); px(723, 189, 20, 26, "#3a3f4a"); px(726, 192, 14, 7, "#1d2028"); px(728, 194, 4, 2, "#ef6b5b"); px(729, 204, 8, 6, "#1d2028");
     if (Math.floor(now * 1.5) % 2) px(732, 199, 2, 3, "rgba(255,255,255,0.3)");
@@ -1470,6 +1470,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     px(bx - 1, by - 1, bw + 2, bh + 2, OUT); px(bx, by, bw, bh, "#e9e4d8"); px(bx + 1, by + 1, bw - 2, bh - 2, "#f6f2e7");
     px(bx + 1, by + 1, bw - 2, 6, "#3a3f4a");
     b.lights.forEach((l, i) => { const lx = bx + 3 + i * 30; px(lx, by + bh - 7, 5, 5, OUT); px(lx + 1, by + bh - 6, 3, 3, l.color); });
+    drawHallCeiling(now);
   }
 
   // La oficina básica (piso de cemento y pared lisa) o lo que se compró para ella.
@@ -1787,7 +1788,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   // --- Catálogo general ---
   // slot: dónde va. wall (pared, 34 x 24), kit (equipamiento de un departamento),
   // small (piso, hasta 14 de ancho), big (piso, hasta 60 x 44), desk, chair, floor y
-  // paint (uno por oficina), top, hat, face y neck (ropa de un empleado).
+  // paint (uno por oficina), lean, runner y ceiling (solo en el pasillo), top, hat, face
+  // y neck (ropa de un empleado).
   // Precios en tokens; lv es el nivel desde el que se puede comprar.
   const KINDS = [
     // Cuadros y pared.
@@ -2204,6 +2206,83 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     { k: "diamantes", cat: "Ropa", slot: "neck", name: "Collar de diamantes", lv: 9, price: 650000, vars: [], g: "m",
       draw(cx, ty, _, now) { for (let i = 0; i < 7; i++) { const dy = (i > 0 && i < 6 ? 1 : 0) + (i > 1 && i < 5 ? 1 : 0); px(cx - 6 + i * 2, ty + 1 + dy, 1, 1, (Math.floor(now * 4) + i) % 5 ? "#c8f0ff" : "#ffffff"); } px(cx - 1, ty + 4, 2, 2, "#9ad3ef"); } },
   );
+  // Pasillo. lean: contra el borde, sin cortar el paso, (cx, by) es el centro de la base,
+  // hasta 24 x 28; los de arriba pueden tener visitas (lines y prop). runner: la alfombra
+  // del medio, en (x, y, w, h). ceiling: lo que cuelga del techo, a lo largo de (x, y, w).
+  KINDS.push(
+    { k: "expendedora", cat: "Pasillo", slot: "lean", name: "Máquina expendedora", lv: 3, price: 40000, vars: ["color"], g: "f",
+      lines: ["Unas papitas", "¿Y mi cambio?", "Se trabó otra vez", "Algo dulce", "Snack y sigo"], prop: "snack",
+      draw(cx, by, [c], now) { const x = cx - 11, y = by - 28; box(x, y, 22, 28, c.c); px(x + 2, y + 2, 13, 20, "rgba(200,230,255,0.35)");
+        for (let r = 0; r < 4; r++) for (let k = 0; k < 3; k++) px(x + 3 + k * 4, y + 3 + r * 5, 3, 3, ["#cf4b47", "#f2c14e", "#47a865", "#4a78d6", "#e17aa8"][(r * 3 + k) % 5]);
+        px(x + 16, y + 3, 4, 6, "#16131f"); px(x + 17, y + 4, 2, 1, Math.floor(now * 2) % 2 ? "#5cc98a" : "#2f6f45"); px(x + 16, y + 11, 4, 2, "#c9ced8"); px(x + 2, y + 23, 13, 3, "#16131f"); } },
+    { k: "dispensador", cat: "Pasillo", slot: "lean", name: "Dispensador de agua", lv: 1, price: 8000, vars: ["color"], g: "m",
+      lines: ["Agua y vuelvo", "Hay que hidratarse", "Fresquita", "Un vasito"], prop: "cup",
+      draw(cx, by, [c], now) { const x = cx - 6; box(x, by - 16, 12, 16, c.c); px(x + 2, by - 12, 3, 2, "#3a3f4a"); px(x + 7, by - 12, 3, 2, "#3a3f4a");
+        box(x + 1, by - 27, 10, 10, "rgba(140,200,240,0.7)"); px(x + 2, by - 26 + Math.floor(now * 1.5) % 7, 2, 1, "rgba(255,255,255,0.8)"); px(x + 4, by - 28, 4, 1, "#4a78d6"); } },
+    { k: "banco", cat: "Pasillo", slot: "lean", name: "Banco de espera", lv: 1, price: 7000, vars: ["wood"], g: "m",
+      draw(cx, by, [w]) { const x = cx - 12; box(x, by - 10, 24, 3, w.c); px(x, by - 10, 24, 1, shade(w.c, 0.25)); box(x + 1, by - 17, 22, 3, shade(w.c, -0.1));
+        px(x + 2, by - 14, 2, 4, "#3a3f4a"); px(x + 20, by - 14, 2, 4, "#3a3f4a"); px(x + 2, by - 7, 2, 7, "#3a3f4a"); px(x + 20, by - 7, 2, 7, "#3a3f4a"); } },
+    { k: "perchero", cat: "Pasillo", slot: "lean", name: "Perchero", lv: 1, price: 5000, vars: ["wood"], g: "m",
+      draw(cx, by, [w]) { px(cx - 1, by - 27, 3, 25, OUT); px(cx, by - 26, 1, 23, w.c); px(cx - 5, by - 2, 11, 2, OUT); px(cx - 4, by - 2, 9, 1, w.c);
+        px(cx - 4, by - 25, 9, 1, w.c); px(cx - 6, by - 24, 4, 9, "#4a78d6"); px(cx + 3, by - 24, 4, 7, "#cf4b47"); px(cx + 4, by - 27, 3, 2, "#2b2d36"); } },
+    { k: "buzon", cat: "Pasillo", slot: "lean", name: "Buzón de sugerencias", lv: 2, price: 6000, vars: ["color"], g: "m",
+      draw(cx, by, [c]) { px(cx - 1, by - 12, 3, 12, "#3a3f4a"); box(cx - 6, by - 22, 12, 10, c.c); px(cx - 3, by - 20, 6, 1, OUT); px(cx - 4, by - 16, 8, 2, "#f6f2e7"); px(cx - 3, by - 15, 2, 1, "#98a1b3"); } },
+    { k: "bienvenida", cat: "Pasillo", slot: "lean", name: "Cartel de bienvenida", lv: 1, price: 5000, vars: ["paper"], g: "m",
+      draw(cx, by, [p]) { px(cx - 7, by - 10, 1, 10, "#6e4a2f"); px(cx + 6, by - 10, 1, 10, "#6e4a2f"); box(cx - 9, by - 26, 18, 16, p.c); const dark = ["#22242c", "#cf4b47", "#8b6cd6"].includes(p.c), ink = dark ? "#f6f2e7" : "#22242c";
+        px(cx - 6, by - 23, 12, 2, ink); px(cx - 5, by - 19, 10, 1, dark ? "#f2c14e" : "#98a1b3"); px(cx - 4, by - 16, 8, 1, dark ? "#f2c14e" : "#98a1b3"); px(cx - 1, by - 14, 2, 2, "#cf4b47"); } },
+    { k: "tele", cat: "Pasillo", slot: "lean", name: "Tele del sprint", lv: 4, price: 35000, vars: ["color"], g: "f",
+      draw(cx, by, [c], now) { px(cx - 1, by - 10, 3, 10, "#3a3f4a"); px(cx - 6, by - 2, 13, 2, "#3a3f4a"); box(cx - 12, by - 27, 24, 17, c.c); px(cx - 10, by - 25, 20, 13, "#16131f");
+        const done = Math.floor(now / 2) % 8; for (let k = 0; k < 8; k++) px(cx - 9 + k * 2, by - 24 + Math.round(k * 1.3), 1, 1, k <= done ? "#5cc98a" : "#3a3f4a"); px(cx - 9, by - 14, 18, 1, "#6c727d"); px(cx + 6, by - 24, 3, 2, "#f2c14e"); } },
+    { k: "casillero", cat: "Pasillo", slot: "lean", name: "Casillero", lv: 2, price: 15000, vars: ["color"], g: "m",
+      draw(cx, by, [c]) { const x = cx - 11, y = by - 28; box(x, y, 22, 28, c.c); for (let k = 0; k < 3; k++) { px(x + 1 + k * 7, y + 1, 1, 26, shade(c.c, -0.35)); for (let s = 0; s < 3; s++) px(x + 3 + k * 7, y + 3 + s * 2, 3, 1, shade(c.c, -0.25)); px(x + 6 + k * 7, y + 13, 1, 3, "#c9ced8"); } } },
+    { k: "fotocopiadora", cat: "Pasillo", slot: "lean", name: "Fotocopiadora", lv: 3, price: 25000, vars: [], g: "f",
+      draw(cx, by, _, now) { const x = cx - 11; box(x, by - 18, 22, 18, "#c9ced8"); px(x, by - 18, 22, 1, "#e9eef5"); box(x + 1, by - 22, 20, 3, "#8a909c"); px(x + 3, by - 13, 12, 1, "#6c727d"); px(x + 4, by - 9, 8, 4, "#f6f2e7");
+        px(x + 17, by - 15, 2, 2, Math.floor(now * 3) % 2 ? "#5cc98a" : "#2f6f45"); if (Math.floor(now) % 3 === 0) px(x + 2, by - 21, 18, 1, "#9ad3ef"); } },
+    { k: "chicles", cat: "Pasillo", slot: "lean", name: "Máquina de chicles", lv: 2, price: 6000, vars: ["color"], g: "f",
+      lines: ["Uno de menta", "¡Salió el rojo!", "Para pensar mejor"], prop: "snack",
+      draw(cx, by, [c]) { px(cx - 1, by - 8, 3, 8, "#3a3f4a"); box(cx - 5, by - 13, 10, 6, c.c); px(cx - 1, by - 11, 2, 2, "#c9ced8"); disc(cx, by - 19, 6, OUT); disc(cx, by - 19, 5, "rgba(210,235,255,0.6)");
+        for (let i = 0; i < 7; i++) px(cx - 4 + (i * 3) % 8, by - 21 + Math.floor(i / 3) * 3, 2, 2, ["#cf4b47", "#f2c14e", "#47a865", "#4a78d6", "#e17aa8"][i % 5]); px(cx - 2, by - 26, 4, 2, c.c); } },
+    { k: "sillon", cat: "Pasillo", slot: "lean", name: "Sillón de espera", lv: 4, price: 45000, vars: ["leather"], g: "m",
+      draw(cx, by, [l]) { const x = cx - 12; box(x + 2, by - 22, 20, 10, shade(l.c, -0.15)); box(x, by - 14, 5, 11, l.c); box(x + 19, by - 14, 5, 11, l.c); box(x + 5, by - 12, 14, 7, l.c);
+        px(x + 5, by - 12, 14, 1, shade(l.c, 0.25)); px(x + 2, by - 3, 2, 3, "#3a2a22"); px(x + 20, by - 3, 2, 3, "#3a2a22"); } },
+    { k: "cabina", cat: "Pasillo", slot: "lean", name: "Cabina telefónica", lv: 6, price: 120000, vars: ["color"], g: "f",
+      draw(cx, by, [c], now) { const x = cx - 10, y = by - 28; box(x, y, 20, 28, c.c); px(x + 2, y + 1, 16, 3, "#16131f"); px(x + 4, y + 2, 12, 1, Math.floor(now * 2) % 2 ? "#f6f2e7" : "#c9c1b0");
+        for (let r = 0; r < 3; r++) for (let k = 0; k < 2; k++) px(x + 3 + k * 7, y + 6 + r * 6, 6, 5, "rgba(200,230,255,0.45)"); px(x + 3, y + 24, 14, 2, shade(c.c, -0.3)); } },
+  );
+  KINDS.push(
+    { k: "alfombra", cat: "Pasillo", slot: "runner", name: "Alfombra larga", lv: 1, price: 8000, vars: ["color"], g: "f",
+      draw(x, y, w, h, [c]) { px(x, y, w, h, shade(c.c, -0.35)); px(x, y + 3, w, h - 6, c.c); px(x, y + 5, w, 1, shade(c.c, 0.25)); px(x, y + h - 6, w, 1, shade(c.c, 0.25)); } },
+    { k: "alfombrarayas", cat: "Pasillo", slot: "runner", name: "Alfombra a rayas", lv: 2, price: 14000, vars: ["stripes"], g: "f",
+      draw(x, y, w, h, [s]) { px(x, y, w, h, s.c[1]); for (let xx = x; xx < x + w; xx += 16) px(xx, y, 8, h, s.c[0]); px(x, y, w, 2, shade(s.c[0], -0.3)); px(x, y + h - 2, w, 2, shade(s.c[0], -0.3)); } },
+    { k: "alfombracuadros", cat: "Pasillo", slot: "runner", name: "Alfombra a cuadros", lv: 3, price: 18000, vars: ["checker"], g: "f",
+      draw(x, y, w, h, [ch]) { for (let xx = x, k = 0; xx < x + w; xx += 6, k++) for (let yy = y, r = 0; yy < y + h; yy += 6, r++) px(xx, yy, 6, Math.min(6, y + h - yy), (k + r) % 2 ? ch.c[0] : ch.c[1]); } },
+    { k: "senalizacion", cat: "Pasillo", slot: "runner", name: "Línea de señalización", lv: 1, price: 3000, vars: [], g: "f",
+      draw(x, y, w, h, _, now) { for (let xx = x; xx < x + w; xx += 12) px(xx, y + 2, 7, 2, "#e3c14a"); for (let xx = x + 6; xx < x + w; xx += 12) px(xx, y + h - 4, 7, 2, "#e3c14a");
+        for (let xx = x + 30; xx < x + w; xx += 120) { const a = Math.floor(now * 2) % 2 ? 0 : 1; tri(xx + a, y + 8, 5, "rgba(227,193,74,0.75)"); } } },
+    { k: "alfombraroja", cat: "Pasillo", slot: "runner", name: "Alfombra roja", lv: 7, price: 260000, vars: [], g: "f",
+      draw(x, y, w, h, _, now) { px(x, y, w, h, "#d4a933"); px(x, y + 2, w, h - 4, "#a3202a"); px(x, y + 4, w, 1, "#c4303a");
+        for (let i = 0; i < 6; i++) { const sx = x + ((i * 131 + Math.floor(now * 3) * 37) % w); px(sx, y + 6 + (i * 5) % (h - 10), 1, 1, "#ffe9a8"); } } },
+    { k: "caminoluces", cat: "Pasillo", slot: "runner", name: "Camino de luces", lv: 9, price: 650000, vars: ["neonColor"], g: "m",
+      draw(x, y, w, h, [c], now) { px(x, y, w, h, "#16131f"); px(x, y + 1, w, 1, c.c); px(x, y + h - 2, w, 1, c.c);
+        for (let xx = x, k = 0; xx < x + w; xx += 10, k++) if ((k + Math.floor(now * 8)) % 6 === 0) px(xx + 2, y + 6, 6, h - 12, shade(c.c, -0.3)); } },
+  );
+  KINDS.push(
+    { k: "guirnaldalarga", cat: "Pasillo", slot: "ceiling", name: "Guirnalda larga de luces", lv: 2, price: 12000, vars: ["lights"], g: "f",
+      draw(x, y, w, [l], now) { for (let i = 0; i < w; i++) { const sag = Math.round(Math.abs(Math.sin(i / 64 * Math.PI)) * 5); px(x + i, y + 1 + sag, 1, 1, "#3a3f4a");
+        if (i % 8 === 3) { const on = (Math.floor(now * 2) + (i >> 3)) % 3 !== 0, col = l.c[(i >> 3) % l.c.length]; px(x + i, y + 2 + sag, 2, 3, on ? col : shade(col, -0.6)); } } } },
+    { k: "banderineslargos", cat: "Pasillo", slot: "ceiling", name: "Banderines largos", lv: 1, price: 6000, vars: ["flags"], g: "m",
+      draw(x, y, w, [f]) { for (let i = 0; i < w; i++) px(x + i, y + 1 + Math.round(Math.abs(Math.sin(i / 48 * Math.PI)) * 3), 1, 1, "#3a3f4a");
+        for (let i = 0; i * 8 < w; i++) { const fx = x + 2 + i * 8, fy = y + 2 + Math.round(Math.abs(Math.sin((i * 8 + 3) / 48 * Math.PI)) * 3); for (let k = 0; k < 4; k++) px(fx + k / 2, fy + k, 5 - k, 1, f.c[i % f.c.length]); } } },
+    { k: "lamparas", cat: "Pasillo", slot: "ceiling", name: "Lámparas colgantes", lv: 3, price: 22000, vars: ["color"], g: "f",
+      draw(x, y, w, [c]) { for (let lx = x + 56; lx < x + w; lx += 112) { px(lx, y, 1, 4, "#3a3f4a"); px(lx - 4, y + 4, 9, 3, OUT); px(lx - 3, y + 4, 7, 2, c.c); px(lx - 1, y + 7, 3, 1, "#ffe9a8"); px(lx - 6, y + 8, 13, 3, "rgba(255,233,168,0.12)"); } } },
+    { k: "plantascolgantes", cat: "Pasillo", slot: "ceiling", name: "Plantas colgantes", lv: 2, price: 10000, vars: [], g: "f",
+      draw(x, y, w) { for (let lx = x + 28; lx < x + w; lx += 112) { px(lx, y, 1, 3, "#8a6440"); px(lx - 3, y + 3, 7, 3, "#a5603c"); for (let k = 0; k < 5; k++) px(lx - 4 + k * 2, y + 6 + (k % 2) * 2, 1, 3 + (k % 3), "#3f8f5a"); } } },
+    { k: "tuboneon", cat: "Pasillo", slot: "ceiling", name: "Tubo de neón", lv: 5, price: 70000, vars: ["neonColor"], g: "m",
+      draw(x, y, w, [c], now) { const on = Math.floor(now * 9) % 41 !== 0; px(x, y + 2, w, 2, on ? c.c : shade(c.c, -0.6)); if (on) px(x, y + 4, w, 2, shade(c.c, -0.65)); } },
+    { k: "bolasdisco", cat: "Pasillo", slot: "ceiling", name: "Bolas de espejos", lv: 8, price: 380000, vars: [], g: "f",
+      draw(x, y, w, _, now) { for (let lx = x + 96; lx < x + w; lx += 192) { px(lx, y, 1, 3, "#3a3f4a"); disc(lx, y + 7, 4, "#9aa0ab");
+        for (let k = 0; k < 4; k++) px(lx - 3 + ((k * 3 + Math.floor(now * 4)) % 7), y + 4 + k * 2, 1, 1, "#ffffff"); if (Math.floor(now * 2) % 2) px(lx - 14, y + 14, 2, 1, `hsl(${(now * 120) % 360},90%,70%)`); } } },
+  );
   KINDS.push({ k: "top_gala", cat: "Ropa", slot: "top", name: "Traje de gala", g: "m", lv: 7, price: 240000, vars: ["color"], top: "gala" });
   KINDS.push({ k: "top_armor", cat: "Ropa", slot: "top", name: "Armadura", g: "f", lv: 10, price: 1100000, vars: ["metal"], top: "armor" });
   KINDS.push({ k: "top_astro", cat: "Ropa", slot: "top", name: "Traje espacial", g: "m", lv: 9, price: 500000, vars: ["color"], top: "astro" });
@@ -2214,6 +2293,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   KINDS.find(k => k.k === "flor").label = ([f]) => `Flor ${f.s} en el pelo`;
   KINDS.find(k => k.k === "collar_flores").label = ([f]) => `Collar de flores ${f.n}`;
   KINDS.find(k => k.k === "camaperro").label = ([c, f]) => `Cama ${c.n[1]} con perro ${f.n}`;
+  KINDS.find(k => k.k === "lamparas").label = ([c]) => `Lámparas colgantes de color ${c.n[0]}`;
   KINDS.find(k => k.k === "bigote").label = ([f]) => `Bigote ${f.b}`;
   KINDS.find(k => k.k === "lentes_sol").label = ([c]) => `Anteojos de sol con marco ${c.n[0]}`;
   KINDS.find(k => k.k === "lentes_corazon").label = ([c]) => `Anteojos de corazón (${c.n[0]})`;
@@ -2223,7 +2303,10 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 
   const KIND = Object.fromEntries(KINDS.map(k => [k.k, k]));
   const WEAR = ["top", "hat", "face", "neck"];
-  const ROOM_ONE = ["desk", "chair", "floor", "paint"];
+  const ROOM_ONE = ["desk", "chair", "floor", "paint", "runner", "ceiling"];
+  // Lo que solo va en el pasillo, y lo que entra en el pasillo.
+  const HALL_ONLY = ["lean", "runner", "ceiling"];
+  const HALL_OK = ["small", "floor", ...HALL_ONLY];
   // Un artículo es un tipo más un índice por variante: "planta.3" es la planta en maceta azul.
   const itemCache = {};
   function itemOf(id) {
@@ -2239,7 +2322,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     return itemCache[id] = { id, kind, v, name, price: Math.max(1000, Math.round(price / 500) * 500), lv: Math.min(10, lv) };
   }
   const CATALOG_SIZE = KINDS.reduce((n, k) => n + k.vars.reduce((m, d) => m * VARIANTS[d].length, 1), 0);
-  const CATS = ["Escritorios", "Sillas", "Pisos", "Paredes", "Cuadros", "Plantas", "Muebles", "Adornos", "Equipamiento", "Ropa"];
+  const CATS = ["Escritorios", "Sillas", "Pisos", "Paredes", "Cuadros", "Plantas", "Muebles", "Adornos", "Equipamiento", "Pasillo", "Ropa"];
 
   // La vitrina de una partida: unos artículos por nivel, al azar pero siempre los mismos
   // para la misma partida. Así cada sesión trae un catálogo distinto.
@@ -2272,7 +2355,10 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     back: { wall: TOP_WALL, ...DEPT_FLOOR }, front: { wall: TOP_WALL, ...DEPT_FLOOR },
     db: { wall: BOT_WALL, ...DEPT_FLOOR }, scrap: { wall: BOT_WALL, ...DEPT_FLOOR }, ops: { wall: BOT_WALL, ...DEPT_FLOOR },
     qa: { wall: BOT_WALL, small: [[10, 174], [183, 174]], big: [[42, 74], [150, 74]] },
-    hall: { wall: [], small: [[46, 216], [262, 216], [314, 216], [382, 216], [480, 216], [578, 216], [676, 216], [752, 262]], big: [] },
+    // En el pasillo, los lugares de abajo van después para no cambiar los de compras viejas.
+    hall: { wall: [], big: [],
+      small: [[46, 216], [262, 216], [314, 216], [382, 216], [480, 216], [578, 216], [676, 216], [752, 262], [150, 262], [240, 262], [430, 262], [620, 262]],
+      lean: [[345, 216], [420, 216], [530, 216], [615, 216], [707, 216], [40, 262], [190, 262], [384, 262], [576, 262], [730, 262]] },
   };
   // La pared que ocupa el equipamiento de cada departamento (lo que dibuja drawDeco).
   const KIT_RANGES = { meet: [[12, 66]], design: [[12, 98]], back: [[12, 86]], front: [[12, 76]], db: [[10, 74]], scrap: [[14, 36], [124, 160]], ops: [[10, 76], [130, 144]], qa: [[12, 36], [124, 164]] };
@@ -2286,7 +2372,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   const earned = () => mode === "live" ? liveEarned : Math.round(state.tokens.claude + state.tokens.codex + state.tokens.gemini);
   const spent = () => game ? game.buys.reduce((n, b) => n + (b.price || 0), 0) : 0;
   const fmtK = n => n >= 1e6 ? (Math.round(n / 1e5) / 10).toLocaleString("es-AR") + "M" : n >= 1000 ? (Math.round(n / 100) / 10).toLocaleString("es-AR") + "k" : String(Math.round(n));
-  const roomOf = id => placed.rooms[id] || { wall: [], small: [], big: [] };
+  const roomOf = id => placed.rooms[id] || { wall: [], small: [], big: [], lean: [] };
 
   function gameLoad(key) {
     let data = null;
@@ -2305,7 +2391,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   function place(b) {
     const it = itemOf(b.item), s = it.kind.slot;
     if (WEAR.includes(s)) { (placed.wear[b.to] = placed.wear[b.to] || {})[s] = it; return; }
-    const R = placed.rooms[b.to] = placed.rooms[b.to] || { wall: [], small: [], big: [] };
+    const R = placed.rooms[b.to] = placed.rooms[b.to] || { wall: [], small: [], big: [], lean: [] };
     if (ROOM_ONE.includes(s) || s === "kit") R[s] = it; else R[s][b.slot] = it;
   }
   function freeSlot(roomId, slot) {
@@ -2345,6 +2431,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const s = it.kind.slot;
     if (WEAR.includes(s)) return shopWho();
     if (s === "kit") return it.v[0].c;
+    if (HALL_ONLY.includes(s)) return "hall";
     return shopRoom();
   }
   function destName(it, to) { return WEAR.includes(it.kind.slot) ? whoName(to) : placeName(to); }
@@ -2361,7 +2448,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       if (w && w[s] === it) return { ok: false, label: "Ya lo tiene", why: whoName(to) + " ya lo tiene puesto." };
     } else {
       if (to !== "hall" && room(to) && room(to).off) return { ok: false, label: "No instalada", why: "Esa oficina no está instalada." };
-      if (to === "hall" && s !== "small") return { ok: false, label: "Solo en oficinas", why: "En el pasillo solo entran plantas y adornos chicos." };
+      if (to === "hall" && !HALL_OK.includes(s)) return { ok: false, label: "Solo en oficinas", why: "En el pasillo entran plantas, adornos chicos, pisos y lo de la categoría Pasillo." };
+      if (to !== "hall" && HALL_ONLY.includes(s)) return { ok: false, label: "Solo en el pasillo", why: "Esto va en el pasillo." };
       const R = roomOf(to);
       if (s === "kit") {
         if (R.kit) return { ok: false, label: "Ya está", why: "Esa oficina ya tiene su equipamiento." };
@@ -2403,7 +2491,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
       const R = Math.random, rooms = shopRooms(), who = shopPeople().map(p => p.id), had = new Set(game.buys.map(b => b.item));
       const opts = game.shop.filter(it => it.lv <= lv && !had.has(it.id)).sort(() => R() - 0.5);
       for (const it of opts) {
-        const to = WEAR.includes(it.kind.slot) ? who[Math.floor(R() * who.length)] : it.kind.slot === "kit" ? it.v[0].c : rooms[Math.floor(R() * rooms.length)];
+        const to = WEAR.includes(it.kind.slot) ? who[Math.floor(R() * who.length)] : it.kind.slot === "kit" ? it.v[0].c : HALL_ONLY.includes(it.kind.slot) ? "hall" : rooms[Math.floor(R() * rooms.length)];
         if (buy(it, to, true)) break;
       }
     }
@@ -2422,9 +2510,38 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     S.big.forEach(([x, y], i) => { const it = R.big[i]; if (it) it.kind.draw(r.x + x, r.y + y, it.v, now); });
     S.small.forEach(([x, y], i) => { const it = R.small[i]; if (it && !walkingPet(r.id, i)) it.kind.draw(r.x + x, r.y + y, it.v, now); });
   }
+  // El pasillo: el piso y la alfombra (los comprados o los de siempre), y lo que va arriba.
+  function hallPlanks(x, y, w, h) {
+    for (let xx = 0; xx < w; xx += 12) {
+      const k = (xx / 12) % 2, c = k ? "#5d4733" : "#654e38";
+      px(x + xx, y, Math.min(12, w - xx), h, c); px(x + xx, y, 1, h, "#4a3828");
+      for (let yy = 12 + ((xx / 12) % 3) * 9; yy < h; yy += 27) px(x + xx + 1, y + yy, Math.min(11, w - xx - 1), 1, "#4a3828");
+    }
+  }
+  function hallRug(x, y, w, h) {
+    px(x, y, w, h, "#4a2f3a"); px(x, y, w, 2, "#5d3a48"); px(x, y + h - 2, w, 2, "#3a2430");
+    for (let xx = x + 6; xx < x + w; xx += 16) px(xx, y + 11, 6, 2, "#5d3a48");
+  }
+  function drawHallFloor(now) {
+    const R = roomOf("hall");
+    if (R.floor) R.floor.kind.draw(0, 184, W, 80, R.floor.v, now); else hallPlanks(0, 184, W, 80);
+    px(0, 184, W, 2, "#2a2119"); px(0, 262, W, 2, "#2a2119");
+    if (R.runner) R.runner.kind.draw(0, 216, W, 24, R.runner.v, now); else hallRug(0, 216, W, 24);
+  }
   function drawHallItems(now) {
     const R = roomOf("hall");
+    SLOTS.hall.lean.forEach(([x, y], i) => { const it = R.lean[i]; if (it) it.kind.draw(x, y, it.v, now); });
     SLOTS.hall.small.forEach(([x, y], i) => { const it = R.small[i]; if (it && !walkingPet("hall", i)) it.kind.draw(x, y, it.v, now); });
+  }
+  function drawHallCeiling(now) {
+    const it = roomOf("hall").ceiling;
+    if (it) it.kind.draw(0, 184, W, it.v, now);
+  }
+  // Lugares del pasillo con visitas: lo comprado contra el borde de arriba que tiene frases.
+  function hallBreaks() {
+    const R = roomOf("hall");
+    return SLOTS.hall.lean.map(([x, y], i) => ({ x, y, it: R.lean[i] })).filter(o => o.it && o.it.kind.lines && o.y < 240)
+      .map(o => ({ x: o.x, y: o.y + 8, room: "hall", lines: o.it.kind.lines, prop: o.it.kind.prop || null }));
   }
   // Ropa comprada: la prenda y su color, o la de su rol.
   function dress(a, colorKey) {
@@ -2460,6 +2577,9 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     else if (s === "kit") { px(0, 0, 72, 30, "#2a3142"); concrete(0, 30, 72, 22); drawDeco({ deco: v[0].c, x: -6, y: 1 }, 0); }
     else if (s === "small") { concrete(0, 0, 72, 52); it.kind.draw(36, 46, v, 0); }
     else if (s === "big") { concrete(0, 0, 72, 52); it.kind.draw(36, 50, v, 0); }
+    else if (s === "lean") { hallPlanks(0, 0, 72, 52); hallRug(0, 40, 72, 12); it.kind.draw(36, 40, v, 0); }
+    else if (s === "runner") { hallPlanks(0, 0, 72, 52); it.kind.draw(0, 14, 72, 24, v, 0); }
+    else if (s === "ceiling") { hallPlanks(0, 0, 72, 52); hallRug(0, 30, 72, 14); it.kind.draw(0, 0, 72, v, 0); }
     else if (s === "desk") { concrete(0, 0, 72, 52); it.kind.draw(36, 16, v, 0); }
     else if (s === "chair") { concrete(0, 0, 72, 52); it.kind.draw(36, 34, v, 0); }
     else if (s === "floor") it.kind.draw(0, 0, 72, 52, v, 0);
