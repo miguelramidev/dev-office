@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.35.2] - 2026-10-28
+
+### Cambiado
+
+- **El CEO es joven** (`office` 0.33.2). En la vista 3D ya no es un señor pelado de barba gris con un tono de piel al azar: tiene pelo castaño corto, sin barba y la misma piel clara que en la vista clásica. En la vista clásica tampoco tiene canas.
+
 ## [0.35.1] - 2026-10-28
 
 ### Corregido

@@ -5719,7 +5719,6 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
     const ty = s.y - 2;
     drawTorso(s.x, ty, a, a.color);
     drawHead(s.x - 8, ty - 13, lk, { mood: moodOf(a), blink: Math.floor(now * 2.2 + s.x) % 17 === 0, style: a.id === "ceo" ? 0 : undefined });
-    if (a.id === "ceo" && !hasHat(a)) px(s.x - 6, ty - 17, 12, 2, "#c9c3b6"); // canas del CEO
     drawWear(a, s.x, ty, now);
     if (a.status === "working") { const f = Math.floor(now * 4) % 2; px(s.x - 7, ty + 10 - f, 5, 3, lk.skin.s); }
   }
@@ -8583,7 +8582,8 @@ window.KAYKIT = {"armchair_pillows":"{\"asset\":{\"generator\":\"Khronos glTF Bl
         pants: pickR(R, ["#2f3a55", "#3a3f4a", "#5a4632", "#27303f", "#4a5a7a"]), shoes: pickR(R, ["#2b2d36", "#5a3825", "#3a3f4a"]),
         shirt: k === "pm" ? "#5b3fa0" : k === "courier" ? "#cf4b47" : SHIRT[p.color] || "#4a78d6" }, o);
       if (k === "pm") Object.assign(L, { style: "slick", hair: "#2b1d14", skin: "#f1c27d", pants: "#3a2a5a", beard: false, shoes: "#2b2d36" });
-      if (k === "ceo") Object.assign(L, { style: "bald", hair: "#8a8f99", pants: "#2b2d36", beard: true, shoes: "#2b2d36" });
+      // El CEO es joven: pelo castaño corto, sin barba, con la misma piel que en la vista clásica.
+      if (k === "ceo") Object.assign(L, { style: "short", hair: "#5b3a20", skin: "#f6d5b8", pants: "#2b2d36", beard: false, shoes: "#2b2d36" });
       if (k === "courier") Object.assign(L, { style: "short", pants: "#2b2d36", beard: false, cap: "#cf4b47" });
       // Lo que le compraron: la prenda (y su color), y gorro, anteojos y collar.
       const w = (placed && placed.wear && placed.wear[p.id]) || {};

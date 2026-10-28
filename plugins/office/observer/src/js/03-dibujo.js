@@ -647,7 +647,6 @@
     const ty = s.y - 2;
     drawTorso(s.x, ty, a, a.color);
     drawHead(s.x - 8, ty - 13, lk, { mood: moodOf(a), blink: Math.floor(now * 2.2 + s.x) % 17 === 0, style: a.id === "ceo" ? 0 : undefined });
-    if (a.id === "ceo" && !hasHat(a)) px(s.x - 6, ty - 17, 12, 2, "#c9c3b6"); // canas del CEO
     drawWear(a, s.x, ty, now);
     if (a.status === "working") { const f = Math.floor(now * 4) % 2; px(s.x - 7, ty + 10 - f, 5, 3, lk.skin.s); }
   }
