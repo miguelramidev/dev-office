@@ -328,7 +328,8 @@ OFFICE_OS=msys FAKE_MODE=ok check 0 "codex en Windows" backend.developer codex
 expect "$FAKE_ARGS" 'windows.sandbox="unelevated"' "codex: en Windows prende su sandbox sin permisos de administrador"
 expect "$FAKE_CYGPATH" "-m $PROJ" "codex: en Windows la carpeta del proyecto pasa a formato de Windows"
 expect "$FAKE_CYGPATH" "-m $PROJ/.office/runs/r1/output.md" "codex: en Windows la ruta del reporte pasa a formato de Windows"
-expect "$FAKE_CYGPATH" "/skills/solid-backend" "prompt: en Windows las carpetas de las skills pasan a formato de Windows"
+expect "$FAKE_STDIN" "están en \`.office/runs/r1/skills/dept-backend/solid-backend/\`, dentro del proyecto" "prompt: las skills apuntan a su copia dentro del proyecto"
+[ -f "$PROJ/.office/runs/r1/skills/dept-backend/solid-backend/SKILL.md" ] && echo "ok    las skills del rol se copian dentro de la corrida" || { echo "FALLA las skills del rol se copian dentro de la corrida"; FAILED=1; }
 new_project
 OFFICE_OS=msys OFFICE_CODEX_ARGS='-c windows.sandbox="elevated"' FAKE_MODE=ok check 0 "codex en Windows con opciones propias" backend.developer codex
 expect "$FAKE_ARGS" 'windows.sandbox="unelevated" -c windows.sandbox="elevated"' "codex: las opciones propias van después y mandan"
@@ -346,6 +347,22 @@ expect "$FAKE_CYGPATH" "-m $PROJ" "gemini: en Windows la carpeta pasa a formato 
 new_project
 FAKE_MODE=noop check 0 "gemini: asesor sin comandos" pm gemini
 expect "$FAKE_STDIN" "ni siquiera para listar o buscar archivos" "gemini: el asesor también usa sus herramientas de archivos"
+
+# --- Caché de plugins con varias versiones -----------------------------------------
+# Como en ~/.claude/plugins/cache/<marketplace>/<plugin>/<versión>/: se usa la versión más
+# nueva por número, aunque una vieja se haya modificado después.
+CACHE="$WORK/cache/dev-office"
+mkdir -p "$CACHE/office" "$CACHE/dept-backend"
+cp -R "$REPO/plugins/office" "$CACHE/office/9.0.0"
+cp -R "$REPO/plugins/dept-backend" "$CACHE/dept-backend/0.10.0"
+cp -R "$REPO/plugins/dept-backend" "$CACHE/dept-backend/0.9.0"
+printf '\nMARCA-VERSION-NUEVA\n' >>"$CACHE/dept-backend/0.10.0/agents/developer.md"
+printf '\nMARCA-VERSION-VIEJA\n' >>"$CACHE/dept-backend/0.9.0/agents/developer.md"
+touch "$CACHE/dept-backend/0.9.0"
+new_project
+(cd "$PROJ" && FAKE_MODE=ok bash "$CACHE/office/9.0.0/skills/external-agents/run-external.sh" --role backend.developer --provider codex --run-dir .office/runs/r1) >"$WORK/out.txt" 2>&1
+expect "$FAKE_STDIN" "MARCA-VERSION-NUEVA" "caché: usa la versión más nueva del plugin (0.10.0 > 0.9.0)"
+expect_not "$FAKE_STDIN" "MARCA-VERSION-VIEJA" "caché: no usa la carpeta vieja aunque se haya modificado después"
 
 if [ "$FAILED" -ne 0 ]; then
   echo "Hay pruebas que fallan."
