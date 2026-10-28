@@ -261,7 +261,7 @@ const fs = require("fs");
 const html = fs.readFileSync(process.argv[2], "utf8");
 let code = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</script>"));
 const end = code.lastIndexOf("})();");
-code = code.slice(0, end) + "\nglobal.T = { resolveSpot, idleLife, view3d, KINDS, VARIANTS, itemOf, buildShop, canBuy, targetOf, SLOTS, roomOf, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, live: evs => { liveEvents = evs; liveAnimFrom = -1; liveProc = null; mode = 'live'; liveRebuild(); }, more: evs => { liveEvents = evs; liveRebuild(); } };\n" + code.slice(end);
+code = code.slice(0, end) + "\nglobal.T = { resolveSpot, idleLife, cancelIdle, view3d, KINDS, VARIANTS, itemOf, buildShop, canBuy, targetOf, SLOTS, roomOf, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, live: evs => { liveEvents = evs; liveAnimFrom = -1; liveProc = null; mode = 'live'; liveRebuild(); }, more: evs => { liveEvents = evs; liveRebuild(); } };\n" + code.slice(end);
 const stub = () => new Proxy(function () {}, { get: (t, k) => k === Symbol.toPrimitive ? () => 0 : k === "length" ? 0 : stub(), apply: () => stub(), construct: () => stub(), set: () => true });
 Object.assign(global, { document: stub(), window: stub(), requestAnimationFrame: () => 0, setInterval: () => 0, matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} },
   getComputedStyle: () => ({ paddingLeft: "0", paddingRight: "0", paddingBottom: "0" }) });
@@ -314,6 +314,20 @@ say(cool.room === "hall" && win.room === "back" && T.view3d.ok === false && T.vi
 const spotsUsed = new Set();
 for (let i = 0; i < 4000 && spotsUsed.size < 3; i++) { T.update(0.1); T.state.agents.forEach(a => a.acts.forEach(k => { if (k.to && k.to.spot) spotsUsed.add(k.to.spot); })); }
 say(spotsUsed.size >= 2, "ratos libres: la gente va al dispensador, a la ventana, a la impresora o a las plantas (" + [...spotsUsed].join(", ") + ")");
+// Baño: alguien entra a un cubículo (queda reservado), sale, se lava las manos y lo libera.
+let inStall = null, washed = false;
+for (let i = 0; i < 20000 && !(inStall && washed); i++) {
+  T.update(0.1);
+  const s = T.state.agents.find(a => /^stall/.test(a.doing || ""));
+  if (s && !inStall) inStall = { id: s.id, n: Number(s.doing.slice(5)) };
+  if (inStall && T.state.agents.find(a => a.id === inStall.id).doing === "wash") washed = true;
+}
+say(inStall && washed && T.state.stalls[inStall.n] !== inStall.id, "baño: entra a un cubículo libre, se lava las manos y lo libera");
+// Si lo llaman a trabajar mientras está en el baño, el cubículo queda libre.
+const busy = T.state.agents.find(a => a.present && a.provider && a.room !== "meet" && !a.acts.length);
+T.state.stalls[0] = busy.id; busy.doing = "stall0"; busy.idleTrip = true; busy.acts.push({ k: "do", what: "stall0", d: 30, free: 0 });
+T.cancelIdle(busy);
+say(T.state.stalls[0] === null && !busy.doing, "baño: si lo llaman mientras está adentro, libera el cubículo");
 // Sin elegir oficina ni empleado, las compras se reparten.
 const spread = new Set(["planta.0", "cactus.0", "suculenta.0", "helecho.0"].map(id => T.targetOf(T.itemOf(id))));
 const wearTo = new Set(T.KINDS.filter(k => k.slot === "hat").slice(0, 4).map(k => T.targetOf(T.itemOf(k.k + k.vars.map(() => ".0").join("")))));
