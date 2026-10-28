@@ -1395,7 +1395,9 @@
       try { const { g, frame, base } = previewBuild(it); return prevCache[it.id] = previewShoot(g, frame, base); }
       catch (e) { return null; } // si algo falla, queda la vista previa clásica
     }
-    const api = { ok: true, on: false, frame, resize, setOn, nameOf, snapshot, preview };
+    // Nitidez: el tamaño del píxel (1 es lo más nítido, 4 lo más grueso).
+    function setPixel(n) { pixelPass.setPixelSize(n); }
+    const api = { ok: true, on: false, frame, resize, setOn, nameOf, snapshot, preview, setPixel };
     return api;
   })();
 
@@ -1407,4 +1409,11 @@
     view3d.setOn(prefs.view !== "2d");
     $("btn-view").addEventListener("click", () => { view3d.setOn(!view3d.on); prefs.view = view3d.on ? "3d" : "2d"; savePrefs(); renderViewBtn(); resize(); });
     renderViewBtn(); resize();
+    // Con las teclas 1 a 4 se cambia la nitidez de la vista 3D; se recuerda la elección.
+    if ([1, 2, 3, 4].includes(prefs.pixel)) view3d.setPixel(prefs.pixel);
+    document.addEventListener("keydown", e => {
+      if (!view3d.on || !["1", "2", "3", "4"].includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.target.closest && e.target.closest("input, select, textarea, [contenteditable]")) return;
+      prefs.pixel = Number(e.key); savePrefs(); view3d.setPixel(prefs.pixel);
+    });
   }
