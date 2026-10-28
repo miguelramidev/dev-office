@@ -247,8 +247,14 @@ plugin_dir() {
   for base in "${OFFICE_PLUGINS_DIR:-}" "$OFFICE_ROOT/.."; do
     [ -n "$base" ] && [ -f "$base/$name/.claude-plugin/plugin.json" ] && { (cd "$base/$name" && pwd); return 0; }
   done
-  found=$(ls -td "$OFFICE_ROOT/../../$name"/*/ 2>/dev/null | head -n1)
-  [ -n "$found" ] && [ -f "$found/.claude-plugin/plugin.json" ] && { (cd "$found" && pwd); return 0; }
+  # En la caché de Claude Code puede haber varias versiones: se usa la más nueva por número
+  # de versión (no la carpeta modificada más recientemente, que puede ser una vieja).
+  found=$(for d in "$OFFICE_ROOT/../../$name"/*/; do
+      [ -f "$d.claude-plugin/plugin.json" ] || continue
+      v=$(basename "$d")
+      printf '%s\t%s\n' "$(printf '%s' "$v" | awk -F'[.-]' '{ printf "%06d%06d%06d", $1, $2, $3 }')" "$d"
+    done | sort | tail -n1 | cut -f2-)
+  [ -n "$found" ] && { (cd "$found" && pwd); return 0; }
   return 1
 }
 
@@ -337,9 +343,13 @@ EOF
       SKILL_FILE="$PDIR/skills/$name/SKILL.md"
       echo
       if [ -n "$PDIR" ] && [ -f "$SKILL_FILE" ]; then
+        # Una copia de la skill dentro de la corrida: el proveedor no tiene que salir del
+        # proyecto para leer sus archivos (Antigravity, sin pantalla, niega todo lo de afuera).
+        COPY="$RUN_DIR/skills/$plugin/$name"
+        mkdir -p "$COPY" && cp -R "$PDIR/skills/$name/." "$COPY/" 2>/dev/null
         echo "### Skill $skill"
         echo
-        echo "(Los archivos de esta skill están en \`$(native_path "$PDIR/skills/$name")/\`.)"
+        echo "(Los archivos de esta skill están en \`${COPY#"$PROJECT"/}/\`, dentro del proyecto.)"
         echo
         strip_frontmatter "$SKILL_FILE"
       else

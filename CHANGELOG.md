@@ -8,6 +8,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.35.4] - 2026-10-28
+
+### Corregido
+
+- **Gemini no podía hacer los encargos** (`office` 0.33.4). El encargo le decía que los archivos de las skills del rol estaban en la caché de plugins de Claude Code, fuera del proyecto. En modo sin pantalla, Antigravity niega cualquier lectura fuera del proyecto, y el encargo terminaba sin respuesta ("read_file auto-denied"). Ahora el puente copia esas skills dentro de la corrida (`.office/runs/<corrida>/skills/`) y el encargo apunta a la copia.
+- **El puente podía usar instrucciones viejas de un rol.** Cuando la caché de Claude Code tiene varias versiones de un departamento, elegía la carpeta modificada más recientemente, que podía ser una versión vieja. Ahora elige la versión más nueva por número.
+- Pruebas: 4 nuevas en `tests/run-external.test.sh` (la copia de las skills y la elección de versión en una caché con dos versiones).
+
 ## [0.35.3] - 2026-10-28
 
 ### Corregido
