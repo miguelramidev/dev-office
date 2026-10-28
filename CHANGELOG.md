@@ -8,6 +8,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.31.0] - 2026-10-28
+
+### Cambiado
+
+- **La tienda amuebla la oficina 3D** (`office` 0.29.0), primera parte. La oficina 3D arranca básica, como la clásica: piso de cemento, paredes lisas, mesas plegables y sillas de plástico. Lo comprado para cada oficina se ve en 3D:
+  - Pisos y pintura, con el mismo pixel art de la vista clásica como textura (los animados, como el piso de luces y la pared de pantallas, se mueven).
+  - Los 11 escritorios (clásico, moderno, de vidrio, industrial, gamer con luz, de mármol, retro, escandinavo, ejecutivo, flotante y de oro) y las 8 sillas (de oficina, gamer, ergonómica, de cuero, de madera, huevo, trono y masajeadora), cada uno con su modelo.
+  - El equipamiento de cada departamento: la tele y la credenza de Reuniones, las pizarras, los racks, los discos de base de datos, el globo y la vitrina de QA.
+  - Cuadros, plantas, adornos, muebles, ropa y lo del pasillo se suman en los próximos cambios.
+
 ## [0.30.1] - 2026-10-28
 
 ### Corregido
