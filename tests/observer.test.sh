@@ -259,7 +259,8 @@ let code = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</script>"
 const end = code.lastIndexOf("})();");
 code = code.slice(0, end) + "\nglobal.T = { KINDS, VARIANTS, itemOf, buildShop, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, live: evs => { liveEvents = evs; liveAnimFrom = -1; liveProc = null; mode = 'live'; liveRebuild(); }, more: evs => { liveEvents = evs; liveRebuild(); } };\n" + code.slice(end);
 const stub = () => new Proxy(function () {}, { get: (t, k) => k === Symbol.toPrimitive ? () => 0 : k === "length" ? 0 : stub(), apply: () => stub(), construct: () => stub(), set: () => true });
-Object.assign(global, { document: stub(), window: stub(), requestAnimationFrame: () => 0, setInterval: () => 0, matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} } });
+Object.assign(global, { document: stub(), window: stub(), requestAnimationFrame: () => 0, setInterval: () => 0, matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} },
+  getComputedStyle: () => ({ paddingLeft: "0", paddingRight: "0", paddingBottom: "0" }) });
 const store = {}; global.sessionStorage = { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = v; } };
 eval(code.replace("window.matchMedia(", "matchMedia(")); // sin "reducir movimiento": las animaciones corren
 const say = (ok, msg) => console.log((ok ? "ok    " : "FALLA ") + msg);

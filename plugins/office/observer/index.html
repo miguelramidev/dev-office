@@ -28,30 +28,66 @@
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+/* Todo en una pantalla, sin scroll: la oficina se ajusta a la ventana; los botones de
+   arriba a la derecha abren un panel lateral (equipo, actividad, tokens, tienda). */
+html, body { height: 100%; }
 body {
-  background: var(--night);
+  margin: 0;
+  overflow: hidden;
+  background: #0b0e14;
   color: var(--ink);
   font-family: var(--font-data);
   font-size: 13px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 16px;
 }
-.page { display: grid; gap: 14px; }
-
-header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
-header.top h1 { font-family: var(--font-pixel); font-weight: 700; font-size: 20px; letter-spacing: 0.04em; margin: 0; }
+.app { position: fixed; inset: 0; --drawer-w: min(440px, 100vw); }
+.app.wide { --drawer-w: min(780px, 100vw); }
+.stage { position: absolute; inset: 0; display: grid; place-items: center; padding: 56px 12px 12px; }
+@media (min-width: 1000px) { .app.drawer-open .stage { padding-right: calc(var(--drawer-w) + 12px); } }
+.hud-left { position: absolute; top: 10px; left: max(12px, env(safe-area-inset-left, 0px)); display: flex; align-items: center; gap: 10px; max-width: 46vw; z-index: 2; }
+.hud-left h1 { font-family: var(--font-pixel); font-weight: 700; font-size: 16px; letter-spacing: 0.04em; margin: 0; white-space: nowrap; }
+.hud-left .ticket { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hud-right { position: absolute; top: 8px; right: max(12px, env(safe-area-inset-right, 0px)); display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 60vw; z-index: 3; }
+@media (min-width: 1000px) {
+  .app.drawer-open { --open-w: var(--drawer-w); }
+  .app.drawer-open .hud-right { right: calc(var(--drawer-w) + 12px); }
+  .app.drawer-open .hud-right > [data-open] { display: none; } /* el panel ya tiene sus pestañas */
+  .app.drawer-open .hud-left { max-width: calc(100vw - var(--drawer-w) - 300px); }
+}
+.hud-left { overflow: hidden; }
+.hud-right > button, .settings-wrap > button { background: rgba(27,32,43,0.92); }
+.hud-right b { font-family: var(--font-data); font-weight: 700; font-size: 10px; color: var(--accent); margin-left: 4px; }
+.hud-right b.count { color: #1a1406; background: var(--accent); padding: 0 4px; }
+.settings-wrap { position: relative; }
+.settings { position: absolute; right: 0; top: calc(100% + 6px); display: grid; gap: 8px; padding: 10px; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 6px 0 #090b10; width: max-content; max-width: calc(100vw - 24px); }
+.settings .mode { flex-wrap: wrap; }
+.drawer { position: absolute; top: 0; right: 0; bottom: 0; width: var(--drawer-w); display: grid; grid-template-rows: auto minmax(0, 1fr); background: var(--panel); border-left: 2px solid var(--line); box-shadow: -8px 0 0 rgba(9,11,16,0.6); z-index: 4; }
+.drawer > header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.drawer .tabs { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; min-width: 0; }
+.drawer .tabs button { font-size: 10px; padding: 6px 8px; box-shadow: none; }
+.drawer .tabs button[aria-selected="true"] { background: var(--accent); color: #1a1406; border-color: var(--accent); }
+.drawer-body { overflow-y: auto; padding: 12px; overscroll-behavior: contain; }
+.drawer .agents, .drawer .feed { max-height: none; }
+.drawer .phases { margin-bottom: 10px; }
+@media (max-width: 640px) {
+  .hint { display: none; }
+  .hud-left .ticket, .hud-left h1 { display: none; }
+  .hud-right { max-width: calc(100vw - 110px); }
+  .hud-right button, .settings-wrap button { font-size: 9px; padding: 6px 7px; }
+  .stage { padding: 96px 8px 8px; }
+}
 .sim-chip { font-family: var(--font-pixel); font-size: 10px; letter-spacing: 0.08em; padding: 4px 8px; border: 1px dashed var(--accent); color: var(--accent); }
 .sim-chip.live { border-style: solid; border-color: var(--ok); color: var(--ok); }
 .sim-chip.live::before { content: ""; display: inline-block; width: 7px; height: 7px; background: var(--ok); margin-right: 6px; animation: pulse 1.2s steps(2) infinite; }
 @keyframes pulse { 50% { opacity: 0.2; } }
 @media (prefers-reduced-motion: reduce) { .sim-chip.live::before { animation: none; } }
-.notice { margin: 0; background: var(--panel); border: 1px dashed var(--line); padding: 10px 12px; font-size: 12px; line-height: 1.5; color: var(--ink-dim); }
+.notice { position: absolute; left: calc((100% - var(--open-w, 0px)) / 2); bottom: 44px; transform: translateX(-50%); width: min(560px, calc(100vw - 24px)); z-index: 2; margin: 0; background: var(--panel); border: 1px dashed var(--line); padding: 10px 12px; font-size: 12px; line-height: 1.5; color: var(--ink-dim); }
 .notice code { color: var(--ink); background: var(--panel-2); padding: 1px 5px; }
+.notice { display: flex; gap: 12px; align-items: start; }
+.notice p { margin: 0; }
+.notice button { flex: none; font-size: 10px; padding: 5px 8px; }
 .mode { display: flex; gap: 6px; }
 .ticket { color: var(--ink-dim); font-size: 12px; min-width: 0; overflow-wrap: anywhere; }
 .ticket b { color: var(--ink); }
-.controls { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
 button {
   font-family: var(--font-pixel); font-size: 11px; letter-spacing: 0.05em;
   background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
@@ -67,9 +103,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 .phase.done { color: var(--ok); border-color: #2e5a43; }
 .phase.now { color: #1a1406; background: var(--accent); border-color: var(--accent); }
 
-.stage { position: relative; background: #0b0e14; border: 2px solid var(--line); }
-.stage canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; cursor: pointer; }
-.hint { position: absolute; left: 10px; bottom: 10px; font-size: 11px; color: var(--ink-dim); background: rgba(11,14,20,0.85); padding: 3px 7px; pointer-events: none; }
+.stage canvas { display: block; image-rendering: pixelated; cursor: pointer; outline: 2px solid var(--line); }
+.hint { position: absolute; left: 12px; bottom: 10px; z-index: 1; max-width: calc(100vw - 24px); font-size: 11px; color: var(--ink-dim); background: rgba(11,14,20,0.85); padding: 3px 7px; pointer-events: none; }
 
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
 .stat { background: var(--panel); border: 1px solid var(--line); padding: 10px 12px; min-width: 0; }
@@ -197,73 +232,90 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
 </style>
 </head>
 <body>
-<div class="page">
-  <header class="top">
+<main class="app" id="app">
+  <div class="stage" id="stage">
+    <canvas id="office" width="1536" height="896" aria-label="Oficina en pixel art: el PM camina entre las oficinas, cada departamento trabaja en su escritorio y la gente se levanta a hablar con su líder"></canvas>
+  </div>
+
+  <header class="hud-left" id="hud-left">
     <h1>Oficina dev-office</h1>
     <span class="sim-chip" id="mode-chip">DEMO</span>
     <span class="ticket" id="ticket">Sin sesión todavía</span>
-    <div class="controls">
-      <button id="btn-summary" type="button">Cierre del día</button>
-      <button id="btn-sound" type="button" aria-pressed="false">Sonido: no</button>
-      <button id="btn-alerts" type="button" aria-pressed="false">Avisos: no</button>
-      <div class="mode" role="group" aria-label="Qué mostrar">
-        <button id="btn-live" type="button" aria-pressed="false">En vivo</button>
-        <button id="btn-demo" type="button" aria-pressed="true">Demo</button>
-      </div>
-      <div class="mode" id="demo-controls" role="group" aria-label="Controles de la demo">
-      <button id="btn-play" type="button" aria-pressed="false">Pausa</button>
-      <button type="button" aria-pressed="false" data-speed="1">1x</button>
-      <button type="button" aria-pressed="true" data-speed="2">2x</button>
-      <button type="button" aria-pressed="false" data-speed="4">4x</button>
-      <button id="btn-restart" type="button">Reiniciar</button>
-      </div>
-    </div>
   </header>
 
-  <p class="notice" id="notice" hidden>Todavía no hay actividad de la oficina en este proyecto. Abrí una sesión con <code>claude --agent office:pm</code> y esta página se actualiza sola. Mientras tanto, mirá la demo.</p>
-
-  <nav class="phases" id="phases" aria-label="Recorrido de la oficina"></nav>
-
-  <div class="stage">
-    <canvas id="office" width="1536" height="896" aria-label="Oficina en pixel art: el PM camina entre las oficinas, cada departamento trabaja en su escritorio y la gente se levanta a hablar con su líder"></canvas>
-    <div class="hint">Tocá un empleado para ver qué está haciendo, o el tablero del pasillo para ver el ticket</div>
-  </div>
-
-  <section class="stats" id="stats" aria-label="Resumen"></section>
-
-  <div class="cols">
-    <section class="card detail" id="detail" aria-live="polite"></section>
-    <section class="card">
-      <h2>Equipo</h2>
-      <div class="agents" id="agents"></div>
-      <div class="legend">
-        <span><i style="background:var(--claude)"></i>Claude</span>
-        <span><i style="background:var(--codex)"></i>Codex</span>
-        <span><i style="background:var(--gemini)"></i>Gemini</span>
-      </div>
-    </section>
-    <section class="card">
-      <h2>Actividad</h2>
-      <ol class="feed" id="feed"></ol>
-    </section>
-  </div>
-
-  <section class="card shop" id="shop" aria-labelledby="shop-title">
-    <div class="shop-top">
-      <div class="shop-head">
-        <h2 id="shop-title">Tienda de la oficina</h2>
-        <div class="shop-level" id="shop-level"></div>
-      </div>
-      <div class="shop-targets">
-        <label>Oficina <select id="shop-room"></select></label>
-        <label>Empleado <select id="shop-who"></select></label>
+  <nav class="hud-right" id="hud-right" aria-label="Paneles de la oficina">
+    <button type="button" data-open="equipo" aria-pressed="false" aria-controls="drawer">Equipo</button>
+    <button type="button" data-open="actividad" aria-pressed="false" aria-controls="drawer">Actividad <b class="count" id="hud-unread" hidden></b></button>
+    <button type="button" data-open="tokens" aria-pressed="false" aria-controls="drawer">Tokens <b id="hud-tokens"></b></button>
+    <button type="button" data-open="tienda" aria-pressed="false" aria-controls="drawer">Tienda <b id="hud-shop"></b></button>
+    <button type="button" id="btn-summary">Cierre del día</button>
+    <div class="settings-wrap">
+      <button type="button" id="btn-settings" aria-expanded="false" aria-controls="settings" aria-label="Ajustes">Ajustes</button>
+      <div class="settings" id="settings" hidden>
+        <button id="btn-alerts" type="button" aria-pressed="false">Avisos: no</button>
+        <button id="btn-sound" type="button" aria-pressed="false">Sonido: no</button>
+        <div class="mode" role="group" aria-label="Qué mostrar">
+          <button id="btn-live" type="button" aria-pressed="false">En vivo</button>
+          <button id="btn-demo" type="button" aria-pressed="true">Demo</button>
+        </div>
+        <div class="mode" id="demo-controls" role="group" aria-label="Controles de la demo">
+          <button id="btn-play" type="button" aria-pressed="false">Pausa</button>
+          <button type="button" aria-pressed="false" data-speed="1">1x</button>
+          <button type="button" aria-pressed="true" data-speed="2">2x</button>
+          <button type="button" aria-pressed="false" data-speed="4">4x</button>
+          <button id="btn-restart" type="button">Reiniciar</button>
+        </div>
       </div>
     </div>
-    <div class="shop-cats" id="shop-cats" role="group" aria-label="Categorías"></div>
-    <div class="shop-grid" id="shop-grid"></div>
-    <p class="shop-note" id="shop-note"></p>
-  </section>
-</div>
+  </nav>
+
+  <div class="notice" id="notice" hidden><p>Todavía no hay actividad de la oficina en este proyecto. Abrí una sesión con <code>claude --agent office:pm</code> y esta página se actualiza sola. Mientras tanto, mirá la demo.</p><button type="button" id="notice-close">Entendido</button></div>
+  <div class="hint" id="hint">Tocá un empleado o el tablero del pasillo. Arriba a la derecha están el equipo, la actividad, los tokens y la tienda.</div>
+
+  <aside class="drawer" id="drawer" role="dialog" aria-label="Panel de la oficina" hidden>
+    <header>
+      <div class="tabs" role="tablist" aria-label="Paneles">
+        <button type="button" role="tab" data-tab="empleado" aria-selected="false">Empleado</button>
+        <button type="button" role="tab" data-tab="equipo" aria-selected="false">Equipo</button>
+        <button type="button" role="tab" data-tab="actividad" aria-selected="false">Actividad</button>
+        <button type="button" role="tab" data-tab="tokens" aria-selected="false">Tokens</button>
+        <button type="button" role="tab" data-tab="tienda" aria-selected="false">Tienda</button>
+      </div>
+      <button type="button" id="drawer-close" aria-label="Cerrar el panel">✕</button>
+    </header>
+    <div class="drawer-body">
+      <section data-panel="empleado" role="tabpanel"><div class="detail" id="detail" aria-live="polite"></div></section>
+      <section data-panel="equipo" role="tabpanel">
+        <div class="agents" id="agents"></div>
+        <div class="legend">
+          <span><i style="background:var(--claude)"></i>Claude</span>
+          <span><i style="background:var(--codex)"></i>Codex</span>
+          <span><i style="background:var(--gemini)"></i>Gemini</span>
+        </div>
+      </section>
+      <section data-panel="actividad" role="tabpanel">
+        <nav class="phases" id="phases" aria-label="Recorrido de la oficina"></nav>
+        <ol class="feed" id="feed"></ol>
+      </section>
+      <section data-panel="tokens" role="tabpanel"><div class="stats" id="stats" aria-label="Resumen"></div></section>
+      <section data-panel="tienda" role="tabpanel" class="shop" id="shop" aria-labelledby="shop-title">
+        <div class="shop-top">
+          <div class="shop-head">
+            <h2 id="shop-title">Tienda de la oficina</h2>
+            <div class="shop-level" id="shop-level"></div>
+          </div>
+          <div class="shop-targets">
+            <label>Oficina <select id="shop-room"></select></label>
+            <label>Empleado <select id="shop-who"></select></label>
+          </div>
+        </div>
+        <div class="shop-cats" id="shop-cats" role="group" aria-label="Categorías"></div>
+        <div class="shop-grid" id="shop-grid"></div>
+        <p class="shop-note" id="shop-note"></p>
+      </section>
+    </div>
+  </aside>
+</main>
 
 <dialog class="reader" id="reader" aria-labelledby="reader-title">
   <header>
@@ -2614,6 +2666,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   // --- En vivo: los eventos de .office/observer/events.js ------------------------
   // La página se abre desde el disco, sin servidor: el archivo de eventos es JavaScript
   // ("OFFICE_EVENT({...});" por línea) y se vuelve a cargar cada 1,5 segundos.
+  let noticeClosed = false;
   let mode = "demo", userPicked = false, liveEvents = [], liveCount = -1, liveFile = false, liveAnimFrom = -1, liveProc = null;
   const ROLE_SEAT = {
     "backend.architect": "barch", "frontend.architect": "farch", "frontend.designer": "dsgn", "devops.architect": "oarch",
@@ -3017,7 +3070,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     $("btn-live").setAttribute("aria-pressed", String(live));
     $("btn-demo").setAttribute("aria-pressed", String(!live));
     $("demo-controls").hidden = live;
-    $("notice").hidden = live || (liveFile && liveCount > 0);
+    $("notice").hidden = live || (liveFile && liveCount > 0) || noticeClosed;
   }
 
   // Cada script del registro junta sus eventos en su propio buffer, así events.js y
@@ -3317,6 +3370,8 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   function renderPanel(force) {
     if (!force && performance.now() - lastPanel < 250) return;
     lastPanel = performance.now();
+    renderHud();
+    if (!drawerTab) return;
     renderPhases(); renderStats(); renderAgents(); renderDetail(); renderFeed(); renderShop();
   }
 
@@ -3330,7 +3385,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
     const pmD = Math.hypot(state.pm.x - wx, state.pm.y - 22 - wy);
     if (pmD < bestD) { best = "pm"; bestD = pmD; }
     state.agents.forEach(a => { if (!a.provider || !a.present) return; const s = a.pos ? { x: a.pos.x, y: a.pos.y - 18 } : seatOf(a); const d = Math.hypot(s.x - wx, s.y - 4 - wy); if (d < bestD) { best = a.id; bestD = d; } });
-    if (best) { state.selected = best; shopSel.room = shopSel.who = ""; renderPanel(true); }
+    if (best) { state.selected = best; shopSel.room = shopSel.who = ""; if (drawerTab !== "tienda") openDrawer("empleado"); else renderPanel(true); }
   });
   // Los textos completos se abren en grande. Si el panel se volvió a pintar entre que se apretó
   // y se soltó el botón, el click llega al contenedor: se usa el botón que se apretó.
@@ -3353,7 +3408,7 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   $("reader-close").addEventListener("click", closeDoc);
   $("reader").addEventListener("click", e => { if (e.target === $("reader")) closeDoc(); }); // tocar afuera cierra
 
-  $("agents").addEventListener("click", e => { const b = e.target.closest(".agent"); if (b) { state.selected = b.dataset.id; shopSel.room = shopSel.who = ""; renderPanel(true); } });
+  $("agents").addEventListener("click", e => { const b = e.target.closest(".agent"); if (b) { state.selected = b.dataset.id; shopSel.room = shopSel.who = ""; openDrawer("empleado"); } });
   $("shop-room").addEventListener("change", e => { shopSel.room = e.target.value; renderPanel(true); });
   $("shop-who").addEventListener("change", e => { shopSel.who = e.target.value; renderPanel(true); });
   $("shop-cats").addEventListener("click", e => { const b = e.target.closest("[data-cat]"); if (b) { shopSel.cat = b.dataset.cat; renderPanel(true); } });
@@ -3370,13 +3425,68 @@ button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-
   }));
   $("btn-restart").addEventListener("click", () => { state = freshState(); startStep(); renderPanel(true); });
 
+  // La oficina ocupa todo el lugar libre de la ventana sin deformarse, debajo de los
+  // botones de arriba (y al lado del panel, si está abierto en una pantalla ancha).
   function resize() {
-    const w = canvas.parentElement.clientWidth * (window.devicePixelRatio || 1);
-    S = Math.max(1, Math.round(w / W));
+    const st = $("stage"), cs = getComputedStyle(st);
+    const top = Math.max($("hud-left").getBoundingClientRect().bottom, $("hud-right").getBoundingClientRect().bottom) + 8;
+    st.style.paddingTop = Math.round(top) + "px";
+    const aw = st.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const ah = st.clientHeight - top - parseFloat(cs.paddingBottom);
+    const k = Math.max(0.1, Math.min(aw / W, ah / H));
+    canvas.style.width = Math.floor(W * k) + "px";
+    canvas.style.height = Math.floor(H * k) + "px";
+    S = Math.max(1, Math.round(k * (window.devicePixelRatio || 1)));
     canvas.width = W * S; canvas.height = H * S;
   }
-  new ResizeObserver(resize).observe(canvas.parentElement);
+  new ResizeObserver(resize).observe($("stage"));
+  new ResizeObserver(resize).observe($("hud-right"));
   resize();
+
+  // --- Paneles: el panel lateral con pestañas y la barra de arriba -------------------
+  let drawerTab = null, seenFeed = null;
+  // La pista de abajo se va con el primer click; el aviso de la demo, cuando lo cierran.
+  const dropHint = () => { $("hint").hidden = true; };
+  document.addEventListener("pointerdown", dropHint, { once: true });
+  $("notice-close").addEventListener("click", () => { noticeClosed = true; updateModeUI(); });
+  const app = $("app");
+  function openDrawer(tab) {
+    drawerTab = tab;
+    $("drawer").hidden = false;
+    app.classList.add("drawer-open");
+    app.classList.toggle("wide", tab === "tienda");
+    document.querySelectorAll("[data-panel]").forEach(p => { p.hidden = p.dataset.panel !== tab; });
+    document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
+    document.querySelectorAll("[data-open]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.open === tab)));
+    $("drawer").querySelector(".drawer-body").scrollTop = 0;
+    renderPanel(true);
+  }
+  function closeDrawer() {
+    drawerTab = null;
+    $("drawer").hidden = true;
+    app.classList.remove("drawer-open", "wide");
+    document.querySelectorAll("[data-open]").forEach(b => b.setAttribute("aria-pressed", "false"));
+  }
+  $("hud-right").addEventListener("click", e => { const b = e.target.closest("[data-open]"); if (b) { if (drawerTab === b.dataset.open) closeDrawer(); else openDrawer(b.dataset.open); } });
+  $("drawer").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b) openDrawer(b.dataset.tab); });
+  $("drawer-close").addEventListener("click", closeDrawer);
+  function toggleSettings(open) { $("settings").hidden = !open; $("btn-settings").setAttribute("aria-expanded", String(open)); }
+  $("btn-settings").addEventListener("click", () => toggleSettings($("settings").hidden));
+  document.addEventListener("click", e => { if (!$("settings").hidden && !e.target.closest(".settings-wrap")) toggleSettings(false); });
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape" || $("reader").open) return;
+    if (!$("settings").hidden) toggleSettings(false); else if (drawerTab) closeDrawer();
+  });
+  // Lo que muestran los botones: tokens, nivel y saldo, y novedades sin leer.
+  function renderHud() {
+    const t = state.tokens;
+    $("hud-tokens").textContent = fmtK(t.claude + t.codex + t.gemini);
+    $("hud-shop").textContent = game ? "Nv " + levelOf(earned()) + " · " + fmtK(Math.max(0, earned() + bonus() - spent())) : "";
+    if (drawerTab === "actividad" || seenFeed === null) seenFeed = state.feed[0] || seenFeed;
+    const i = seenFeed ? state.feed.indexOf(seenFeed) : -1, unread = i < 0 ? (seenFeed ? Math.min(state.feed.length, 99) : 0) : i;
+    $("hud-unread").hidden = !unread;
+    $("hud-unread").textContent = unread > 98 ? "99+" : String(unread);
+  }
 
   // --- Arranque ----------------------------------------------------------------
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
