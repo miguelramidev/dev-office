@@ -758,7 +758,8 @@
         pants: pickR(R, ["#2f3a55", "#3a3f4a", "#5a4632", "#27303f", "#4a5a7a"]), shoes: pickR(R, ["#2b2d36", "#5a3825", "#3a3f4a"]),
         shirt: k === "pm" ? "#5b3fa0" : k === "courier" ? "#cf4b47" : SHIRT[p.color] || "#4a78d6" }, o);
       if (k === "pm") Object.assign(L, { style: "slick", hair: "#2b1d14", skin: "#f1c27d", pants: "#3a2a5a", beard: false, shoes: "#2b2d36" });
-      if (k === "ceo") Object.assign(L, { style: "bald", hair: "#8a8f99", pants: "#2b2d36", beard: true, shoes: "#2b2d36" });
+      // El CEO es joven: pelo castaño corto, sin barba, con la misma piel que en la vista clásica.
+      if (k === "ceo") Object.assign(L, { style: "short", hair: "#5b3a20", skin: "#f6d5b8", pants: "#2b2d36", beard: false, shoes: "#2b2d36" });
       if (k === "courier") Object.assign(L, { style: "short", pants: "#2b2d36", beard: false, cap: "#cf4b47" });
       // Lo que le compraron: la prenda (y su color), y gorro, anteojos y collar.
       const w = (placed && placed.wear && placed.wear[p.id]) || {};
