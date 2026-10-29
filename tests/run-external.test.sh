@@ -13,6 +13,8 @@ FAILED=0
 # --- CLIs falsos --------------------------------------------------------------
 
 FAKE_BIN="$WORK/bin"
+# La configuración de Antigravity de estas pruebas (no la de quien las corre).
+export OFFICE_GEMINI_CONFIG="$WORK/gemini/config.json"
 mkdir -p "$FAKE_BIN"
 export FAKE_ARGS="$WORK/fake-args.txt"
 export FAKE_STDIN="$WORK/fake-stdin.txt"
@@ -365,6 +367,23 @@ new_project
 (cd "$PROJ" && FAKE_MODE=ok bash "$CACHE/office/9.0.0/skills/external-agents/run-external.sh" --role backend.developer --provider codex --run-dir .office/runs/r1) >"$WORK/out.txt" 2>&1
 expect "$FAKE_STDIN" "MARCA-VERSION-NUEVA" "caché: usa la versión más nueva del plugin (0.10.0 > 0.9.0)"
 expect_not "$FAKE_STDIN" "MARCA-VERSION-VIEJA" "caché: no usa la carpeta vieja aunque se haya modificado después"
+
+# --- Permisos de comandos de Gemini ---------------------------------------------------
+
+new_project
+FAKE_MODE=ok check 0 "gemini sin permisos de comandos" frontend.developer gemini
+expect "$FAKE_STDIN" "La corre la oficina" "gemini sin permisos: la verificación la corre la oficina"
+expect_not "$FAKE_STDIN" "Solo podés correr estos comandos" "gemini sin permisos: no le ofrece comandos"
+bash "$REPO/plugins/office/skills/office-agents/office-agents.sh" gemini-permissions on >/dev/null
+new_project
+FAKE_MODE=ok check 0 "gemini con permisos de comandos" frontend.developer gemini
+expect "$FAKE_STDIN" "Solo podés correr estos comandos, de a uno y sin encadenarlos" "gemini con permisos: sabe qué comandos puede correr"
+expect "$FAKE_STDIN" "poné el resultado real en tu reporte" "gemini con permisos: corre sus verificaciones"
+expect_not "$FAKE_STDIN" "La corre la oficina" "gemini con permisos: ya no dice que la corre la oficina"
+new_project
+FAKE_MODE=ok check 0 "codex con los permisos de Gemini activados" backend.developer codex
+expect_not "$FAKE_STDIN" "Solo podés correr estos comandos" "codex: los permisos de Gemini no le cambian nada"
+rm -rf "$WORK/gemini"
 
 if [ "$FAILED" -ne 0 ]; then
   echo "Hay pruebas que fallan."

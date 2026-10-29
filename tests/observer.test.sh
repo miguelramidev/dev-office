@@ -214,6 +214,7 @@ OFFICE_EVENT({"type":"delegate","t":6,"subagent_type":"dept-backend:tester","des
 OFFICE_EVENT({"type":"start","t":7,"agent":"a2","agent_type":"dept-backend:tester"});
 OFFICE_EVENT({"type":"stop","t":8,"agent":"a2","agent_type":"dept-backend:tester","usage":{"i":300,"o":4000,"cw":22000,"cr":99999},"verdict":"FALLA"});
 OFFICE_EVENT({"type":"stop","t":9,"agent":"a3","agent_type":"office:qa","usage":null,"verdict":"APROBADO"});
+OFFICE_EVENT({"type":"stop","t":9,"agent":"a4","agent_type":"office:pm","usage":null,"verdict":"LISTO"});
 OFFICE_EVENT({"type":"turn_end","t":10,"usage":{"i":5000,"o":12000,"cw":180000}});
 EVS
 OUT=$(cd "$TP" && bash "$REPORT")
@@ -222,6 +223,8 @@ RC=$?
 echo "$OUT" | grep -q '| Developer de backend | Codex (gpt-x) | Endpoints / pedidos | LISTO | Codex 120.5k + puente 18.5k |' && ok "resumen: tarea por el puente, con el proveedor y el puente separados" || { fail "resumen: tarea por el puente"; echo "$OUT"; }
 echo "$OUT" | grep -q '| Tester de backend | Claude | Tests | FALLA | 26.3k |' && ok "resumen: tarea de Claude, sin lecturas de caché" || fail "resumen: tarea de Claude, sin lecturas de caché"
 echo "$OUT" | grep -q '| QA | Claude | — | APROBADO | sin datos |' && ok "resumen: sin transcripción dice sin datos" || fail "resumen: sin transcripción dice sin datos"
+echo "$OUT" | grep -q '| PM (subagente) | Claude |' && ok "resumen: un subagente del PM no figura como asesor" || { fail "resumen: un subagente del PM no figura como asesor"; echo "$OUT"; }
+echo "$OUT" | grep -q 'Asesor del PM' && fail "resumen: no inventa asesores del PM" || ok "resumen: no inventa asesores del PM"
 echo "$OUT" | grep -q 'Claude 241.8k (PM 197k, agentes y puente 44.8k) · Codex 120.5k' && ok "resumen: total por proveedor con el PM aparte" || { fail "resumen: total por proveedor"; echo "$OUT" | tail -4; }
 # Modo equipos: Claude Code identifica al líder como "<área>-lead", no como "dept-<área>:lead".
 cat >"$TP/.office/observer/events.js" <<'EVS'

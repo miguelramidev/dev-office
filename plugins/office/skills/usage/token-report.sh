@@ -33,11 +33,11 @@ sed -n 's/^OFFICE_EVENT(\(.*\));[[:space:]]*$/\1/p' "$EVENTS" | tr -d '\r' | jq 
            elif . >= 1000 then ((. / 100 | floor) / 10 | tostring) + "k"
            else tostring end;
   # Claude Code identifica al líder como "<área>-lead" (en agent_type y from_type), no como "dept-<área>:lead".
-  def role_of(t): if t == "office:qa" then "qa" elif t == "office:pm" then "pm"
+  def role_of(t): if t == "office:qa" then "qa" elif t == "office:pm" then "pm.sub"
                   elif ((t // "") | test("^[a-z]+-lead$")) then (t | sub("-lead$"; ".lead"))
                   else ((t // "") | capture("^dept-(?<d>[a-z]+):(?<r>[a-z-]+)$") | .d + "." + .r) // (t // "?") end;
   def rname(r):
-    if r == "qa" then "QA" elif r == "pm" then "Asesor del PM"
+    if r == "qa" then "QA" elif r == "pm" then "Asesor del PM" elif r == "pm.sub" then "PM (subagente)"
     else (r | split(".")) as $p
       | if ($p | length) < 2 then r
         else ({"developer": "Developer", "tester": "Tester", "architect": "Arquitecto", "designer": "Designer", "lead": "Líder"}[$p[1]] // $p[1])

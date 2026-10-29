@@ -141,6 +141,25 @@ La primera vez que el puente corre Codex o Gemini, Claude Code te pide permiso p
 
 - **Codex y Gemini no pasan por los hooks de la oficina** (la protección de secretos y de ramas protegidas solo ve las herramientas de Claude). El puente no corre nada en una rama protegida y revisa todo después, pero **detecta, no impide**. Por eso el tester y QA no se saltean nunca.
 - **Gemini no corre comandos de la terminal** en este modo: edita archivos y el puente corre las verificaciones. Como developer funciona bien; como tester o QA rinde menos, porque no puede ejecutar sus pruebas. Para esos roles conviene Claude o Codex. El puente le pide que lea y busque en el proyecto con sus herramientas de archivos, porque en este modo cualquier comando se rechaza solo. También le pide que haga todo él, sin pasarle trabajo a subagentes: en este modo, el resultado de un subagente no le llega y el encargo se corta por tiempo. Usá Antigravity CLI 1.3.6 o más nuevo; `office-agents.sh check` avisa si tenés uno más viejo.
+
+### Permisos de comandos para Gemini (opcional)
+
+Por defecto, Gemini solo lee y edita archivos, y el puente corre el lint, el typecheck y los tests después de él. Si querés que Gemini también corra comandos (para que rinda como tester, o para que verifique su propio trabajo), activá los permisos:
+
+```bash
+bash .claude/office-agents.sh gemini-permissions on    # activar
+bash .claude/office-agents.sh gemini-permissions off   # desactivar
+bash .claude/office-agents.sh gemini-permissions       # ver el estado
+```
+
+- **Qué deja correr**, de a uno y sin encadenar (sin `;`, `&&`, `|`, `` ` ``, `$`, `<` ni `>`):
+  - git de lectura: `git status`, `git diff`, `git log`, `git show`, `git ls-files`, `git grep` y `git blame`;
+  - listar carpetas: `ls`, `dir` o `Get-ChildItem`;
+  - lint, typecheck y tests del proyecto: con `pnpm`, `npm`, `yarn` o `bun` (`pnpm test`, `npm run lint`, `pnpm test:unit`...) y con `npx tsc`, `eslint`, `jest` o `vitest`.
+- **Lo demás se sigue rechazando solo:** commits, push, cambios de rama, instalar paquetes, borrar, red y cualquier comando encadenado.
+- **Dónde quedan:** en `~/.gemini/config/config.json` (en Windows, `C:\Users\<usuario>\.gemini\config\config.json`), en `userSettings.globalPermissionGrants.allow`. Es el único lugar del que Antigravity, sin pantalla, lee permisos de comandos; los de `settings.json` los ignora. La primera vez se guarda una copia del archivo (`config.json.bak-dev-office`). `off` saca solo las reglas de la oficina y deja las tuyas.
+- **Valen para toda tu computadora,** no solo para un proyecto: Antigravity no permite guardar permisos dentro del repo. También aplican cuando usás `agy` por tu cuenta.
+- **Correr tests ejecuta código del proyecto,** igual que con Claude o Codex. No uses `--dangerously-skip-permissions`: aprueba cualquier comando.
 - **En Windows**, el puente prende el sandbox de Codex en modo `unelevated`; sin eso, Codex no puede ni leer el proyecto ("blocked by policy"). Si usás Codex por tu cuenta en Windows y te pasa lo mismo, agregá a `%USERPROFILE%\.codex\config.toml` la sección `[windows]` con `sandbox = "unelevated"`.
 - **Costo:** cada proveedor se paga con su cuenta, y el puente gasta un poco de Claude (Sonnet) por encargo para pasarlo y revisarlo.
 - **Encargos grandes:** cada encargo se corta a los 9 minutos, porque Claude Code espera como máximo 10 por comando.

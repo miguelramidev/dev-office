@@ -76,6 +76,7 @@ Los archivos `office-agents.sh` y `office-agents.cmd` están en la misma carpeta
    Antes de confirmar, contale lo que cambia:
    - Codex y Gemini **no pasan por los hooks de la oficina** (protección de secretos y de ramas). La oficina los corre con su sandbox y revisa todo después, pero la protección es más débil que con Claude.
    - **Gemini (Antigravity) corre en modo `accept-edits`:** edita archivos sin preguntar, pero no corre comandos de la terminal; la oficina corre las verificaciones después. Por eso como tester o QA rinde menos que Codex o Claude.
+   - **Si quiere que Gemini corra comandos** de lectura y de verificación (git de lectura, listar carpetas, lint, typecheck y tests), ofrecele `bash .claude/office-agents.sh gemini-permissions on`. Contale que agrega reglas a `~/.gemini/config/config.json`, que valen para toda su computadora, que lo demás (commits, push, instalar, borrar, red, comandos encadenados) se sigue rechazando y que se deshace con `off`. No le propongas `--dangerously-skip-permissions`.
    - Cada rol en Codex o Gemini sigue usando un poco de Claude (Sonnet) para el puente que le pasa el encargo y revisa el resultado.
 
 4. **Verificá los proveedores:** `bash .claude/office-agents.sh check`. Si algo falta, mostrale cómo arreglarlo según su sistema:

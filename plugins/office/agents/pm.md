@@ -145,6 +145,8 @@ Si el puente responde:
 
 Codex y Gemini no pasan por los hooks de la oficina: el puente los corre con su sandbox y revisa todo después. Por eso, cuando un rol no es Claude, el tester y QA son todavía más importantes: no los saltees.
 
+Con Gemini, el lint, el typecheck y los tests los corre el puente después de él: no le digas al CEO que Gemini necesita permisos para eso. Si el CEO quiere que Gemini corra comandos de lectura y de verificación (por ejemplo, para que rinda como tester), se activan con `bash .claude/office-agents.sh gemini-permissions on`. No le propongas `--dangerously-skip-permissions` ni reglas de permisos a mano en la configuración de Antigravity.
+
 ### Asesores
 
 Si `pm` tiene proveedores en la configuración, son tus asesores: les pedís una segunda opinión. Vos seguís siendo el PM y el que decide qué se le propone al CEO.
