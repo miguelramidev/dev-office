@@ -57,7 +57,7 @@ cat >"$FAKE_BIN/agy" <<'EOF'
 # La ayuda nombra --add-dir solo si FAKE_AGY_HELP lo trae (versiones nuevas de agy).
 [ "$1" = "--help" ] && { printf '%s\n' "${FAKE_AGY_HELP:-}"; exit 0; }
 printf '%s\n' "$*" >"$FAKE_ARGS"
-PROMPT_FILE=$(printf '%s' "$2" | grep -oE '\.office/[^ ]+prompt\.md')
+PROMPT_FILE=$(printf '%s' "$2" | grep -oE '\.office/[^ ]+prompt(-2)?\.md')
 [ -n "$PROMPT_FILE" ] && cp "$PROMPT_FILE" "$FAKE_STDIN"
 # Con --output-format stream-json, un evento JSON por línea (como Antigravity 1.3).
 step() { local err=""; [ -n "${5:-}" ] && err=',"error":{"type":"TOOL_ERROR","message":"'"$5"'"}'; printf '{"event":"step_update","step_update":{"conversation_id":"c1","step_index":%s,"state":"%s","step_type":"tool","tool_name":"%s","tool_info":{"name":"%s","parameters":%s%s}}}\n' "$1" "$2" "$3" "$3" "$4" "$err"; }
@@ -78,6 +78,14 @@ case "${FAKE_MODE:-ok}" in
     git rm -q src/util.ts
     step 2 DONE run_command '{"CommandLine":"git rm src/util.ts"}'
     result "Hecho: borré src/util.ts." ;;
+  denied-once)
+    if [ -f .office/runs/r1/.fake-denied ]; then
+      result "Hecho: listo en el segundo intento."
+    else
+      touch .office/runs/r1/.fake-denied
+      step 2 ERROR run_command '{"CommandLine":"pnpm format"}' 'permission check failed for unsandboxed \"pnpm format\": user denied permission to run command'
+      result ""
+    fi ;;
   silent) ;;
   auth) echo "Error: authentication required. Run agy to sign in." >&2; exit 1 ;;
   badmodel) echo "ERROR: unknown model 'gemini-4-argon'" >&2; exit 1 ;;
@@ -394,7 +402,9 @@ expect_not "$FAKE_STDIN" "Solo podés correr estos comandos" "gemini sin permiso
 bash "$REPO/plugins/office/skills/office-agents/office-agents.sh" gemini-permissions on >/dev/null
 new_project
 FAKE_MODE=ok check 0 "gemini con permisos de comandos" frontend.developer gemini
-expect "$FAKE_STDIN" "Solo podés correr estos comandos, de a uno y sin encadenarlos" "gemini con permisos: sabe qué comandos puede correr"
+expect "$FAKE_STDIN" "Solo podés correr estos comandos, tal cual, de a uno y sin encadenarlos" "gemini con permisos: sabe qué comandos puede correr"
+expect "$FAKE_STDIN" "corta todo el encargo" "gemini con permisos: sabe que un comando fuera de la lista corta el encargo"
+expect "$FAKE_STDIN" "grep_search" "gemini con permisos: busca con su herramienta, no con comandos"
 expect "$FAKE_STDIN" "poné el resultado real en tu reporte" "gemini con permisos: corre sus verificaciones"
 expect_not "$FAKE_STDIN" "La corre la oficina" "gemini con permisos: ya no dice que la corre la oficina"
 new_project
@@ -466,6 +476,23 @@ new_project
 rm "$PROJ/.office/runs/r1/task.md"
 check 1 "sin task.md" backend.developer codex
 [ "$(cat "$PROJ/.office/runs/r1/exit_code" 2>/dev/null)" = "1" ] && echo "ok    un error de uso también deja exit_code" || { echo "FALLA un error de uso también deja exit_code"; FAILED=1; }
+
+# --- Gemini: un comando rechazado corta la corrida; segundo intento ----------------------
+
+new_project
+FAKE_MODE=denied-once check 0 "gemini: segundo intento después de un comando rechazado" frontend.developer gemini
+expect "$PROJ/.office/runs/r1/output.md" "Hecho: listo en el segundo intento." "gemini: el reporte sale del segundo intento"
+expect "$PROJ/.office/runs/r1/prompt-2.md" "- \`pnpm format\`" "gemini: el segundo intento sabe qué comando se rechazó"
+expect "$PROJ/.office/runs/r1/prompt-2.md" "Objetivo: agregar el endpoint de pedidos." "gemini: el segundo intento lleva el encargo completo"
+expect "$WORK/out.txt" "Segundo intento" "gemini: el resumen dice que hubo un segundo intento"
+expect "$PROJ/.office/observer/events.js" '"tokens":13834' "gemini: suma los tokens de los dos intentos"
+new_project
+FAKE_MODE=denied check 3 "gemini: si el segundo intento también se corta" frontend.developer gemini
+expect "$WORK/out.txt" "Segundo intento" "gemini: hubo un solo reintento"
+[ "$(grep -c '^\$ agy' "$PROJ/.office/runs/r1/log.txt")" = "2" ] && echo "ok    gemini: no reintenta más de una vez" || { echo "FALLA gemini: no reintenta más de una vez"; FAILED=1; }
+new_project
+OFFICE_GEMINI_RETRY=0 FAKE_MODE=denied-once check 3 "gemini: OFFICE_GEMINI_RETRY=0 apaga el reintento" frontend.developer gemini
+expect_not "$WORK/out.txt" "Segundo intento" "gemini: sin reintento"
 
 if [ "$FAILED" -ne 0 ]; then
   echo "Hay pruebas que fallan."

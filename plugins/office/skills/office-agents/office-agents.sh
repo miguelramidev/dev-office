@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-agents-version: 6
+# office-agents-version: 7
 # Configura qué proveedor (Claude, Codex o Gemini) hace cada rol de la oficina dev-office.
 #
 # Uso (desde la carpeta del proyecto):
@@ -320,8 +320,9 @@ gemini_rules() {
   cat <<'RULES'
 command(regex:^git (status|diff|log|show|ls-files|grep|blame)( [^;&|`$<>]*)?$)
 command(regex:^git (rm|mv) [^;&|`$<>]+$)
-command(regex:^(pnpm|npm|yarn|bun) (run )?(lint|test|typecheck|type-check|tsc)(:[A-Za-z0-9:_-]+)?( [^;&|`$<>]*)?$)
+command(regex:^(pnpm|npm|yarn|bun) (run )?(lint|test|typecheck|type-check|tsc|format:check)(:[A-Za-z0-9:_-]+)?( [^;&|`$<>]*)?$)
 command(regex:^(npx |pnpm exec |bunx )?(tsc|eslint|jest|vitest)( [^;&|`$<>]*)?$)
+command(regex:^(npx |pnpm exec |bunx )?prettier (--check|-c)( [^;&|`$<>]*)?$)
 command(regex:^(ls|dir|Get-ChildItem)( [^;&|`$<>]*)?$)
 RULES
 }
@@ -351,7 +352,7 @@ cmd_gemini_permissions() {
           '.userSettings.globalPermissionGrants.allow = (reduce $rules[] as $r ((.userSettings.globalPermissionGrants.allow // []); if index($r) then . else . + [$r] end))' \
           "$GEMINI_CONFIG" >"$tmp" && mv "$tmp" "$GEMINI_CONFIG"
         echo "Permisos de Gemini activados en $GEMINI_CONFIG."
-        echo "Gemini puede correr, de a uno y sin encadenar: git status, diff, log, show, ls-files, grep y blame; borrar y mover archivos del repo con git rm y git mv; listar carpetas (ls, dir); y lint, typecheck y tests del proyecto (pnpm, npm, yarn o bun; npx tsc, eslint, jest o vitest)."
+        echo "Gemini puede correr, de a uno y sin encadenar: git status, diff, log, show, ls-files, grep y blame; borrar y mover archivos del repo con git rm y git mv; listar carpetas (ls, dir); y lint, typecheck, tests y chequeo de formato del proyecto (pnpm, npm, yarn o bun, con format:check; npx tsc, eslint, jest, vitest o prettier --check)."
         echo "Cualquier otro comando (commit, push, instalar, rm, del, red...) se sigue rechazando solo. Valen para toda la computadora."
       else
         jqc --indent 2 --argjson rules "$(gemini_rules_json)" \
