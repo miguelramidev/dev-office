@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.38.1] - 2026-10-29
+
+### Corregido
+
+- **Gemini no podía formatear lo que editaba** (`office` 0.36.1, script `office-agents.sh` versión 8). Antigravity le rechazaba `prettier --write`. Los permisos de Gemini ahora permiten `prettier --write` con archivos puntuales: rutas relativas que terminan en una extensión (`npx prettier --write src/app.ts src/util.ts`), sin `.`, carpetas, comodines, rutas absolutas, `..` al principio ni opciones extra. `pnpm format` y `prettier --write .` siguen afuera, porque formatean el repo entero. El encargo le dice cómo usarlo. Hay que correr `gemini-permissions on` otra vez.
+
 ## [0.38.0] - 2026-10-29
 
 ### Agregado
