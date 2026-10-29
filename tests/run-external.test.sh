@@ -45,6 +45,7 @@ case "${FAKE_MODE:-ok}" in
   auth) echo "Error: Not logged in. Run 'codex login'." >&2; exit 1 ;;
   crash) echo "panic: algo se rompió" >&2; exit 2 ;;
   sleep) sleep 10; report ;;
+  slow) sleep 4; echo "// cambio" >>src/app.ts; report ;;
   tokens) echo "// cambio" >>src/app.ts; echo "tokens used: 12,345" >&2; report ;;
 esac
 exit 0
@@ -306,7 +307,7 @@ FAKE_MODE=ok check 0 "gemini: developer" frontend.developer gemini
 expect "$FAKE_ARGS" "--mode accept-edits" "gemini: edita sin preguntar"
 expect "$FAKE_ARGS" "--model gemini-3.8-flash" "gemini: developer (nivel sonnet) usa gemini-3.8-flash"
 expect "$FAKE_ARGS" "--effort medium" "gemini: razonamiento medio"
-expect "$FAKE_ARGS" "--print-timeout 10m" "gemini: el tope de agy queda por encima del de la oficina"
+expect "$FAKE_ARGS" "--print-timeout 31m" "gemini: el tope de agy queda por encima del de la oficina (30 minutos)"
 expect "$FAKE_ARGS" ".office/runs/r1/prompt.md" "gemini: se le pide leer el encargo del archivo"
 expect "$FAKE_STDIN" "Sos el developer del departamento de frontend" "gemini: el archivo tiene las instrucciones del rol"
 expect "$FAKE_STDIN" "no correr comandos" "gemini: el prompt le avisa que no corre comandos"
@@ -429,6 +430,42 @@ FAKE_MODE=gitrm check 0 "gemini: borra con git rm" frontend.developer gemini
 expect "$WORK/out.txt" "src/util.ts" "gemini: el borrado aparece en los archivos cambiados"
 expect "$FAKE_STDIN" "borrar y mover archivos del repo con \`git rm\` y \`git mv\`" "gemini con permisos: sabe que borra con git rm"
 rm -rf "$WORK/gemini"
+
+# --- En segundo plano: lanzar y esperar con --wait -------------------------------------
+
+new_project
+FAKE_MODE=ok check 0 "el código de salida queda en la carpeta" backend.developer codex
+[ "$(cat "$PROJ/.office/runs/r1/exit_code" 2>/dev/null)" = "0" ] && echo "ok    exit_code guarda el resultado" || { echo "FALLA exit_code guarda el resultado"; FAILED=1; }
+[ -f "$PROJ/.office/runs/r1/started" ] && echo "ok    started marca que arrancó" || { echo "FALLA started marca que arrancó"; FAILED=1; }
+(cd "$PROJ" && bash "$RUNNER" --wait --run-dir .office/runs/r1) >"$WORK/out.txt" 2>&1
+RC=$?
+[ "$RC" -eq 0 ] && grep -q "Resultado: terminó bien" "$WORK/out.txt" && echo "ok    --wait de un encargo terminado: resumen y código" || { echo "FALLA --wait de un encargo terminado (salió $RC)"; FAILED=1; }
+
+new_project
+(cd "$PROJ" && FAKE_MODE=slow bash "$RUNNER" --role backend.developer --provider codex --run-dir .office/runs/r1 >/dev/null 2>&1 &)
+sleep 1
+(cd "$PROJ" && bash "$RUNNER" --wait --run-dir .office/runs/r1 --max 1) >"$WORK/out.txt" 2>&1
+RC=$?
+[ "$RC" -eq 10 ] && grep -q "Todavía trabaja" "$WORK/out.txt" && echo "ok    --wait mientras trabaja: sale con 10" || { echo "FALLA --wait mientras trabaja (salió $RC)"; sed 's/^/      /' "$WORK/out.txt"; FAILED=1; }
+(cd "$PROJ" && bash "$RUNNER" --wait --run-dir .office/runs/r1 --max 30) >"$WORK/out.txt" 2>&1
+RC=$?
+[ "$RC" -eq 0 ] && grep -q "src/app.ts" "$WORK/out.txt" && echo "ok    --wait hasta que termina: el resumen con los cambios" || { echo "FALLA --wait hasta que termina (salió $RC)"; sed 's/^/      /' "$WORK/out.txt"; FAILED=1; }
+
+new_project
+(cd "$PROJ" && bash "$RUNNER" --wait --run-dir .office/runs/r1 --max 1) >"$WORK/out.txt" 2>&1
+RC=$?
+[ "$RC" -eq 1 ] && grep -q "no arrancó" "$WORK/out.txt" && echo "ok    --wait de un encargo que nunca arrancó" || { echo "FALLA --wait de un encargo que nunca arrancó (salió $RC)"; FAILED=1; }
+
+new_project
+date -d '-3 hours' +%s >"$PROJ/.office/runs/r1/started" 2>/dev/null || echo $(( $(date +%s) - 10800 )) >"$PROJ/.office/runs/r1/started"
+(cd "$PROJ" && bash "$RUNNER" --wait --run-dir .office/runs/r1 --max 1) >"$WORK/out.txt" 2>&1
+RC=$?
+[ "$RC" -eq 5 ] && grep -q "dejó de responder" "$WORK/out.txt" && echo "ok    --wait de un encargo colgado más allá del tope" || { echo "FALLA --wait de un encargo colgado (salió $RC)"; FAILED=1; }
+
+new_project
+rm "$PROJ/.office/runs/r1/task.md"
+check 1 "sin task.md" backend.developer codex
+[ "$(cat "$PROJ/.office/runs/r1/exit_code" 2>/dev/null)" = "1" ] && echo "ok    un error de uso también deja exit_code" || { echo "FALLA un error de uso también deja exit_code"; FAILED=1; }
 
 if [ "$FAILED" -ne 0 ]; then
   echo "Hay pruebas que fallan."

@@ -11,11 +11,19 @@ El script `run-external.sh` está en la misma carpeta que este archivo. Corre un
 ## Cómo se usa
 
 1. Creá la carpeta del encargo en `.office/runs/<fecha>-<hora>-<rol>/` (por ejemplo `.office/runs/20261026-1530-backend.developer/`) y escribí el encargo completo del PM en `task.md` adentro.
-2. Corré, con un tope de 10 minutos en la herramienta Bash (600000 ms):
+2. Lanzalo **en segundo plano** (herramienta Bash con `run_in_background: true`), así no lo corta el límite de 10 minutos de la herramienta:
 
    ```bash
    bash <carpeta de esta skill>/run-external.sh --role backend.developer --provider codex --run-dir .office/runs/20261026-1530-backend.developer
    ```
+
+   Y esperá con `--wait`, en primer plano y con `timeout` 600000:
+
+   ```bash
+   bash <carpeta de esta skill>/run-external.sh --wait --run-dir .office/runs/20261026-1530-backend.developer
+   ```
+
+   Cada espera dura como máximo 8 minutos (`--max <segundos>` para cambiarlo). Si sale con 10, sigue trabajando: volvé a esperar. Con cualquier otro código terminó, e imprime el resumen. El código queda también en `exit_code`, en la carpeta del encargo.
 
    Sin `--model`, el script usa el modelo del **nivel del rol** (el modelo de Claude de su agente: opus o sonnet) en ese proveedor, con el razonamiento de la tabla (`office-agents.sh models`). Con `--model <modelo>`, el que trae el rol.
 
@@ -29,7 +37,7 @@ El script `run-external.sh` está en la misma carpeta que este archivo. Corre un
   - **Codex:** `codex -a never exec -s workspace-write` (sin red, sin pedir aprobación; `read-only` para el asesor del PM).
   - **Gemini, con Antigravity CLI:** `agy -p "<leé el encargo de prompt.md>" --mode accept-edits` (edita archivos sin preguntar, pero no corre comandos de la terminal; el asesor corre en el modo normal, donde todo lo que pide aprobación se niega). El encargo es largo, así que se le pide que lo lea del archivo.
   - Las dos con el modelo del nivel y el razonamiento de la tabla (`-m` y `-c model_reasoning_effort=...` en Codex, `--model` y `--effort` en Antigravity).
-  - Se corta a los `OFFICE_EXTERNAL_TIMEOUT` segundos (por defecto 540, para que entre en los 10 minutos de la herramienta Bash).
+  - Se corta a los `OFFICE_EXTERNAL_TIMEOUT` segundos (por defecto 1800, 30 minutos). Sin segundo plano, hay que bajarlo a 540 para que entre en los 10 minutos de la herramienta Bash.
 - **Después:** compara el repositorio antes y después y marca como problema:
   - tocar secretos (`.env`), claves privadas o lockfiles;
   - escribir fuera de lo que permite el rol: el QA solo `.qa/`, los arquitectos y el designer solo `docs/design/`, el asesor del PM nada;
@@ -45,6 +53,7 @@ El script `run-external.sh` está en la misma carpeta que este archivo. Corre un
 | 3 | El proveedor falló o no devolvió reporte | Lo reporta con el final del registro |
 | 4 | Se rompió una regla de la oficina, o la rama está protegida | Frena: **REGLAS ROTAS** |
 | 5 | Se agotó el tiempo | Reporta lo que alcanzó a cambiar y propone dividir el encargo |
+| 10 | Solo con `--wait`: todavía trabaja | Vuelve a esperar con el mismo `--wait` |
 
 ## Variables opcionales
 

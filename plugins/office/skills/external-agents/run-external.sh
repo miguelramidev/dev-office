@@ -5,6 +5,12 @@
 #
 # Uso:
 #   bash run-external.sh --role <rol> --provider codex|gemini [--model <modelo>] --run-dir <carpeta>
+#   bash run-external.sh --wait --run-dir <carpeta> [--max <segundos>]
+#
+#   El puente lo lanza en segundo plano (así no lo corta el límite de 10 minutos de la
+#   herramienta Bash) y espera con --wait: cada espera dura como máximo --max segundos (por
+#   defecto 480). Si el encargo terminó, imprime el resumen y sale con su código; si sigue
+#   trabajando, sale con 10 y hay que volver a esperar.
 #
 #   --role      el rol de la oficina: backend.developer, qa, pm (asesor), project.<nombre>...
 #   --model     opcional. Sin él, se usa el modelo del nivel del rol (el del modelo de Claude de
@@ -18,14 +24,14 @@
 #      (tomadas de los plugins de dev-office instalados) y el encargo.
 #   3. Corre el CLI en la carpeta del proyecto, con el modelo y el razonamiento de la tabla
 #      de office-agents.sh y con tope de tiempo
-#      (OFFICE_EXTERNAL_TIMEOUT, en segundos; por defecto 540).
+#      (OFFICE_EXTERNAL_TIMEOUT, en segundos; por defecto 1800).
 #   4. Revisa lo que cambió: archivos de secretos, claves o lockfiles, archivos fuera de lo
 #      que el rol puede tocar, commits y cambios de rama. No deshace nada: lo informa.
 #
 # Códigos de salida:
 #   0 terminó bien · 1 error de uso · 2 proveedor no disponible (no instalado, sin sesión,
 #   sin cuota) · 3 el proveedor falló · 4 se rompió una regla (o la rama está protegida)
-#   · 5 se agotó el tiempo.
+#   · 5 se agotó el tiempo · 10 (solo con --wait) todavía trabaja.
 #
 # Variables opcionales: OFFICE_CODEX_ARGS y OFFICE_GEMINI_ARGS (opciones extra para codex y agy),
 # OFFICE_PLUGINS_DIR (carpeta donde buscar los plugins de dev-office).
@@ -39,21 +45,79 @@ ROLE=""
 PROVIDER=""
 MODEL=""
 RUN_DIR=""
+WAIT=0
+WAIT_MAX=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --role) ROLE="$2"; shift 2 ;;
     --provider) PROVIDER="$2"; shift 2 ;;
     --model) MODEL="$2"; shift 2 ;;
     --run-dir) RUN_DIR="$2"; shift 2 ;;
+    --wait) WAIT=1; shift ;;
+    --max) WAIT_MAX="$2"; shift 2 ;;
     -h | --help) awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"; exit 0 ;;
     *) echo "run-external: opción desconocida: $1" >&2; exit 1 ;;
   esac
 done
 
+# El código de salida queda en exit_code, en la carpeta del encargo: así --wait sabe cuándo
+# terminó, aunque el script haya corrido en segundo plano.
+RUN_ABS=""
+mark_exit() { [ -n "$RUN_ABS" ] && [ -d "$RUN_ABS" ] && echo "$1" >"$RUN_ABS/exit_code" 2>/dev/null; return 0; }
+
 usage_error() {
   echo "run-external: $1" >&2
+  mark_exit 1
   exit 1
 }
+
+TIMEOUT="${OFFICE_EXTERNAL_TIMEOUT:-1800}"
+case "$TIMEOUT" in '' | *[!0-9]*) TIMEOUT=1800 ;; esac
+
+# --- Esperar un encargo lanzado en segundo plano --------------------------------------
+if [ "$WAIT" -eq 1 ]; then
+  [ -z "$RUN_DIR" ] && usage_error "falta --run-dir."
+  RUN_DIR="${RUN_DIR//\\//}"
+  case "$RUN_DIR" in
+    /* | [A-Za-z]:/*) ;;
+    *) WAIT_PROJECT=$(git rev-parse --show-toplevel 2>/dev/null | tr -d '\r'); [ -n "$WAIT_PROJECT" ] && RUN_DIR="$WAIT_PROJECT/$RUN_DIR" ;;
+  esac
+  [ -d "$RUN_DIR" ] || usage_error "no existe la carpeta del encargo: $RUN_DIR"
+  case "$WAIT_MAX" in '' | *[!0-9]*) WAIT_MAX=480 ;; esac
+  W0=$(date +%s)
+  while :; do
+    if [ -f "$RUN_DIR/exit_code" ]; then
+      CODE=$(tr -dc '0-9' <"$RUN_DIR/exit_code")
+      [ -f "$RUN_DIR/summary.txt" ] && cat "$RUN_DIR/summary.txt"
+      exit "${CODE:-3}"
+    fi
+    NOW=$(date +%s)
+    if [ ! -f "$RUN_DIR/started" ]; then
+      if [ $(( NOW - W0 )) -ge 60 ] || [ $(( NOW - W0 )) -ge "$WAIT_MAX" ]; then
+        echo "run-external: el encargo no arrancó (no hay $RUN_DIR/started). Revisá cómo se lanzó el script." >&2
+        exit 1
+      fi
+    else
+      STARTED=$(tr -dc '0-9' <"$RUN_DIR/started")
+      RUNNING=$(( NOW - ${STARTED:-NOW} ))
+      # Más allá del tope y de un margen para la revisión final: el proceso ya no responde.
+      if [ "$RUNNING" -gt $(( TIMEOUT + 300 )) ]; then
+        echo "run-external: el encargo lleva ${RUNNING}s sin terminar, más que el tope (${TIMEOUT}s): dejó de responder." >&2
+        echo "5" >"$RUN_DIR/exit_code"
+        exit 5
+      fi
+      if [ $(( NOW - W0 )) -ge "$WAIT_MAX" ]; then
+        echo "Todavía trabaja: lleva ${RUNNING}s (tope ${TIMEOUT}s). Volvé a esperar con --wait."
+        if [ -f "$RUN_DIR/log.txt" ]; then
+          echo "Lo último del registro:"
+          tail -n 3 "$RUN_DIR/log.txt" | sed 's/^/  /'
+        fi
+        exit 10
+      fi
+    fi
+    sleep 2
+  done
+fi
 
 [ -z "$ROLE" ] && usage_error "falta --role."
 [ -z "$RUN_DIR" ] && usage_error "falta --run-dir."
@@ -95,7 +159,10 @@ case "$RUN_DIR" in
   /* | [A-Za-z]:/*) ;;
   *) RUN_DIR="$PROJECT/$RUN_DIR" ;;
 esac
+RUN_ABS="$RUN_DIR"
 [ -f "$RUN_DIR/task.md" ] || usage_error "no existe $RUN_DIR/task.md con el encargo."
+rm -f "$RUN_DIR/exit_code"
+date +%s >"$RUN_DIR/started"
 
 # Eventos para el observer (.office/observer/events.js). Nunca falla ni imprime.
 obs_emit() {
@@ -178,6 +245,7 @@ finish() {
     --argjson code "$STATUS" --arg text "$STATUS_TEXT" --argjson dur "${DURATION:-0}" --arg tok "$tok" \
     '{type: "external", t: $t, role: $role, provider: $prov, model: $model, effort: $effort, code: $code, result: $text, duration: $dur, tokens: (if $tok == "" then null else ($tok | tonumber) end)}'
   write_summary
+  mark_exit "$STATUS"
   exit "$STATUS"
 }
 
@@ -333,9 +401,9 @@ EOF
       echo "- **Hacé todo vos.** No le pases trabajo a subagentes ni a otros agentes, y no esperes respuestas de nadie: en este modo su resultado no te llega y te quedás esperando hasta que se acaba el tiempo."
       echo "- No recorras \`node_modules\`, \`.git\` ni carpetas generadas (\`dist\`, \`build\`, \`.next\`, \`coverage\`...): son enormes y no hacen falta. Buscá solo en las carpetas que el encargo nombra o que necesitás."
       if [ "$SCOPE" != "none" ] && [ "$GEMINI_CMDS" -eq 1 ]; then
-        echo "- Corré el lint, el typecheck y los tests que pidan las instrucciones de tu rol, con los comandos permitidos, y poné el resultado real en tu reporte. El agente de la oficina los vuelve a correr después de vos."
+        echo "- Corré el lint, el typecheck y los tests que pidan las instrucciones de tu rol, con los comandos permitidos, y poné el resultado real en tu reporte. Después los vuelven a correr el tester y QA."
       elif [ "$SCOPE" != "none" ]; then
-        echo "- En este modo podés editar archivos, pero no correr comandos de la terminal. No corras tests, typecheck ni lint: el agente de la oficina los corre después de vos. En tu reporte, en la parte de verificación, poné \"La corre la oficina\"."
+        echo "- En este modo podés editar archivos, pero no correr comandos de la terminal. No corras tests, typecheck ni lint: los corren el tester y QA después de vos. En tu reporte, en la parte de verificación, poné \"La corre la oficina\"."
       fi
       ;;
     codex)
@@ -392,8 +460,6 @@ EOF
 
 # --- Correr el proveedor -----------------------------------------------------------
 
-TIMEOUT="${OFFICE_EXTERNAL_TIMEOUT:-540}"
-case "$TIMEOUT" in '' | *[!0-9]*) TIMEOUT=540 ;; esac
 
 STDOUT_FILE="$RUN_DIR/.stdout"
 STDIN_FILE="$PROMPT"

@@ -8,6 +8,15 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.37.0] - 2026-10-29
+
+### Cambiado
+
+- **Encargos de hasta 30 minutos** (`office` 0.35.0). Codex y Gemini se cortaban a los 9 minutos, porque el puente esperaba en un solo comando y la herramienta Bash de Claude Code corta a los 10. Ahora el puente lanza `run-external.sh` en segundo plano y espera con `run-external.sh --wait`, en tandas de hasta 8 minutos: si sale con 10, sigue trabajando. El tope por defecto es de 30 minutos (`OFFICE_EXTERNAL_TIMEOUT`). El script deja el código de salida en `exit_code` y la hora de inicio en `started`, en la carpeta del encargo; `--wait` detecta un encargo que nunca arrancó o que dejó de responder.
+- **Puente liviano.** Para que el trabajo pesado no gaste Claude, el puente ya no corre tests, lint ni typecheck ni le da vueltas de corrección al proveedor: lo verifican el developer (si puede), el tester y QA, que con un rol en otro proveedor no se saltean nunca. Sigue el control de reglas del script (secretos, lockfiles, alcance del rol, commits y rama), que no gasta tokens. El reporte del puente marca la verificación del proveedor como "sin confirmar". El puente sigue en Sonnet.
+- PM: un tester en Gemini sin permisos de comandos no puede correr tests, así que el PM le pasa ese trabajo a Claude o a Codex y avisa.
+- Pruebas nuevas en `tests/run-external.test.sh` para `--wait`, `exit_code` y `started`.
+
 ## [0.36.1] - 2026-10-28
 
 ### Corregido

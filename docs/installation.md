@@ -160,4 +160,4 @@ Para desactivarlo solo para vos, poné lo mismo en `.claude/settings.local.json`
 | Advertencia: "Permission allow rule ... has a wildcard before the rest of the command" | Una regla con `*` en el medio aprueba cualquier opción en esa posición | Usar el valor exacto (por ejemplo, el nombre del paquete) y el `*` solo al final |
 | El PM dice "PROVEEDOR NO DISPONIBLE" | El CLI de Codex o Gemini no está instalado, no tiene sesión o se quedó sin cuota | `bash .claude/office-agents.sh check` y seguir lo que indique |
 | El PM dice "REGLAS ROTAS" | Codex o Gemini tocó un archivo prohibido, commiteó o cambió de rama | Revisá `git status` y `.office/runs/` y decidí vos qué deshacer |
-| Codex o Gemini se cortan con "tiempo agotado" | El encargo tardó más de 540 segundos | Pedile al PM que lo divida, o subí `OFFICE_EXTERNAL_TIMEOUT` (sin pasar de 590) |
+| Codex o Gemini se cortan con "tiempo agotado" | El encargo tardó más de 30 minutos | Pedile al PM que lo divida, o subí `OFFICE_EXTERNAL_TIMEOUT` (en segundos) |
