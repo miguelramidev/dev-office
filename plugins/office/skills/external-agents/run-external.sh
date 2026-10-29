@@ -311,6 +311,8 @@ EOF
   case "$PROVIDER" in
     gemini)
       echo "- No corras comandos de la terminal, ni siquiera para listar o buscar archivos: acá se rechazan solos. Para leer, listar y buscar en el proyecto usá tus herramientas de archivos."
+      echo "- **Hacé todo vos.** No le pases trabajo a subagentes ni a otros agentes, y no esperes respuestas de nadie: en este modo su resultado no te llega y te quedás esperando hasta que se acaba el tiempo."
+      echo "- No recorras \`node_modules\`, \`.git\` ni carpetas generadas (\`dist\`, \`build\`, \`.next\`, \`coverage\`...): son enormes y no hacen falta. Buscá solo en las carpetas que el encargo nombra o que necesitás."
       [ "$SCOPE" != "none" ] && echo "- En este modo podés editar archivos, pero no correr comandos de la terminal. No corras tests, typecheck ni lint: el agente de la oficina los corre después de vos. En tu reporte, en la parte de verificación, poné \"La corre la oficina\"."
       ;;
     codex)

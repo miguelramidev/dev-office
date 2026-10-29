@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-agents-version: 3
+# office-agents-version: 4
 # Configura qué proveedor (Claude, Codex o Gemini) hace cada rol de la oficina dev-office.
 #
 # Uso (desde la carpeta del proyecto):
@@ -455,6 +455,13 @@ cmd_check() {
             continue
           fi
           echo "ok    gemini: Antigravity CLI instalado y con sesión"
+          # Antes de la 1.3.6, sin pantalla, un subagente que pregunta algo se queda esperando
+          # para siempre, y el encargo se corta por tiempo.
+          version=$(version_number "$(agy --version 2>/dev/null | tr -d '\r')")
+          if [ -n "$version" ] && [ "$version" -lt 1003006 ]; then
+            echo "AVISO gemini: Antigravity CLI 1.3.6 o más nuevo evita que los encargos se cuelguen esperando a un subagente. Actualizalo volviendo a correr el instalador: $(install_hint gemini | sed 's/^.*[Ii]nstalalo[^:]*: //; s/\. Después.*//')"
+            problems=$((problems + 1))
+          fi
           for tier in opus sonnet; do
             model=$(model_value gemini "$tier")
             if ! printf '%s\n' "$models_out" | grep -qiF -- "$model"; then

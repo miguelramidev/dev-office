@@ -8,6 +8,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.35.5] - 2026-10-28
+
+### Corregido
+
+- **Gemini se colgaba hasta cortarse por tiempo** (`office` 0.33.5). En modo sin pantalla, Antigravity a veces le pasa trabajo a un subagente y se queda esperando un resultado que nunca le llega (no hay forma de apagar los subagentes). El encargo ahora le pide hacer todo él, sin delegar ni esperar a otros agentes, y no recorrer `node_modules`, `.git` ni carpetas generadas.
+- `office-agents.sh check` (script versión 4) avisa si Antigravity CLI es anterior a la 1.3.6, que arregla los subagentes que se quedaban esperando para siempre, y dice cómo actualizarlo.
+- Pruebas nuevas en `tests/run-external.test.sh` y `tests/office-agents.test.sh`.
+
 ## [0.35.4] - 2026-10-28
 
 ### Corregido
