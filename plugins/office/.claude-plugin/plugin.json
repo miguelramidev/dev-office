@@ -1,6 +1,6 @@
 {
   "name": "office",
-  "version": "0.34.0",
+  "version": "0.34.1",
   "description": "Oficina base de dev-office: un PM que conversa con el CEO y coordina departamentos, un QA que intenta romper todo, hooks de protección y las skills office-setup, start-ticket, open-pr, review-fixes, handoff-ticket, office-agents, observer (la oficina en pixel art, en vivo), usage (resumen de tokens por tarea y por agente) y update (actualizar la oficina con un doble click), un puente para que Codex o Gemini hagan cualquier rol y un modo equipos opcional, con un líder por departamento.",
   "author": {
     "name": "Miguel Ramirez"
