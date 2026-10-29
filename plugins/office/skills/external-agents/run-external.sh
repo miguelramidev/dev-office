@@ -287,6 +287,10 @@ if [ -f "$AGENTS_SCRIPT" ]; then
   EFFORT=$(bash "$AGENTS_SCRIPT" --project "$PROJECT" effort "$PROVIDER" 2>>"$LOG" | tr -d '\r')
 fi
 case "$MODEL" in *[!A-Za-z0-9._-]*) usage_error "modelo inválido en la tabla: $MODEL" ;; esac
+# Si el CEO activó los permisos de comandos de Gemini (office-agents.sh gemini-permissions on),
+# Gemini puede correr comandos de lectura y de verificación; si no, ninguno.
+GEMINI_CMDS=0
+[ "$PROVIDER" = "gemini" ] && [ -f "$AGENTS_SCRIPT" ] && bash "$AGENTS_SCRIPT" --project "$PROJECT" gemini-permissions status >/dev/null 2>&1 && GEMINI_CMDS=1
 case "$EFFORT" in *[!a-z]*) EFFORT="" ;; esac
 
 provider_rules() {
@@ -310,10 +314,18 @@ EOF
   esac
   case "$PROVIDER" in
     gemini)
-      echo "- No corras comandos de la terminal, ni siquiera para listar o buscar archivos: acá se rechazan solos. Para leer, listar y buscar en el proyecto usá tus herramientas de archivos."
+      if [ "$GEMINI_CMDS" -eq 1 ]; then
+        echo "- Solo podés correr estos comandos, de a uno y sin encadenarlos (nada de \`;\`, \`&&\`, \`|\` ni redirecciones): \`git status\`, \`git diff\`, \`git log\`, \`git show\`, \`git ls-files\`, \`git grep\` y \`git blame\`; listar carpetas (\`ls\`, \`dir\`); y lint, typecheck y tests del proyecto (\`pnpm lint\`, \`pnpm test\`, \`npm run typecheck\`, \`npx tsc --noEmit\`, \`npx eslint\`, \`npx jest\`, \`npx vitest run\`...). Cualquier otro comando se rechaza solo: no insistas. Para leer archivos usá tus herramientas de archivos, no comandos."
+      else
+        echo "- No corras comandos de la terminal, ni siquiera para listar o buscar archivos: acá se rechazan solos. Para leer, listar y buscar en el proyecto usá tus herramientas de archivos."
+      fi
       echo "- **Hacé todo vos.** No le pases trabajo a subagentes ni a otros agentes, y no esperes respuestas de nadie: en este modo su resultado no te llega y te quedás esperando hasta que se acaba el tiempo."
       echo "- No recorras \`node_modules\`, \`.git\` ni carpetas generadas (\`dist\`, \`build\`, \`.next\`, \`coverage\`...): son enormes y no hacen falta. Buscá solo en las carpetas que el encargo nombra o que necesitás."
-      [ "$SCOPE" != "none" ] && echo "- En este modo podés editar archivos, pero no correr comandos de la terminal. No corras tests, typecheck ni lint: el agente de la oficina los corre después de vos. En tu reporte, en la parte de verificación, poné \"La corre la oficina\"."
+      if [ "$SCOPE" != "none" ] && [ "$GEMINI_CMDS" -eq 1 ]; then
+        echo "- Corré el lint, el typecheck y los tests que pidan las instrucciones de tu rol, con los comandos permitidos, y poné el resultado real en tu reporte. El agente de la oficina los vuelve a correr después de vos."
+      elif [ "$SCOPE" != "none" ]; then
+        echo "- En este modo podés editar archivos, pero no correr comandos de la terminal. No corras tests, typecheck ni lint: el agente de la oficina los corre después de vos. En tu reporte, en la parte de verificación, poné \"La corre la oficina\"."
+      fi
       ;;
     codex)
       echo "- Trabajás en un sandbox sin red. Si un comando falla por falta de red, no insistas: decilo en el reporte."

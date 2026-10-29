@@ -8,6 +8,19 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.36.0] - 2026-10-28
+
+### Agregado
+
+- **Permisos de comandos para Gemini** (`office` 0.34.0, script `office-agents.sh` versión 5): `office-agents.sh gemini-permissions on|off` agrega o saca, en `~/.gemini/config/config.json`, reglas que dejan a Gemini correr comandos de lectura y de verificación, de a uno y sin encadenar: git de lectura (`status`, `diff`, `log`, `show`, `ls-files`, `grep`, `blame`), listar carpetas y lint, typecheck y tests del proyecto. Lo demás (commits, push, instalar, borrar, red, comandos encadenados) se sigue rechazando solo. Es el único archivo del que Antigravity, sin pantalla, lee permisos de comandos. La primera vez guarda una copia del archivo, y `off` deja las reglas propias del usuario.
+- El puente detecta los permisos y le dice a Gemini qué comandos puede correr; con permisos, corre sus propias verificaciones (el puente las vuelve a correr igual).
+
+### Corregido
+
+- El resumen de tokens mostraba los subagentes del propio PM (`office:pm`) como "Asesor del PM". Ahora figuran como "PM (subagente)".
+- El PM ya no le dice al CEO que Gemini necesita permisos para lint y tests (los corre el puente), ni le propone `--dangerously-skip-permissions` o reglas a mano.
+- Pruebas nuevas en `tests/office-agents.test.sh` (qué comandos dejan pasar las reglas y cuáles no), `tests/run-external.test.sh` y `tests/observer.test.sh`.
+
 ## [0.35.5] - 2026-10-28
 
 ### Corregido

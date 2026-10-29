@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-agents-version: 4
+# office-agents-version: 5
 # Configura qué proveedor (Claude, Codex o Gemini) hace cada rol de la oficina dev-office.
 #
 # Uso (desde la carpeta del proyecto):
@@ -11,6 +11,7 @@
 #   bash .claude/office-agents.sh get <rol>        el proveedor efectivo, uno por línea
 #   bash .claude/office-agents.sh check            verifica que los CLIs estén instalados y con sesión
 #   bash .claude/office-agents.sh teams on|off     modo equipos: un líder por departamento (agent teams)
+#   bash .claude/office-agents.sh gemini-permissions on|off   deja que Gemini corra comandos seguros
 #   bash .claude/office-agents.sh models           muestra el modelo de cada proveedor por nivel
 #   bash .claude/office-agents.sh tier <proveedor> <opus|sonnet|haiku|effort> <valor>|default [--local]
 #   bash .claude/office-agents.sh model <proveedor> <nivel>    el modelo efectivo (lo usa la oficina)
@@ -307,6 +308,65 @@ teams_flag_on() {
   return 1
 }
 
+# --- Permisos de comandos para Gemini (Antigravity) --------------------------------
+# Sin pantalla, Antigravity niega solo cualquier comando que no tenga permiso, y solo lee los
+# permisos de comandos de ~/.gemini/config/config.json (los de settings.json los ignora).
+# Estas reglas dejan pasar solo comandos de lectura y de verificación, de a uno: ningún
+# comando encadenado (; & | ` $ < >). Valen para toda la computadora.
+GEMINI_CONFIG="${OFFICE_GEMINI_CONFIG:-$HOME/.gemini/config/config.json}"
+gemini_rules() {
+  cat <<'RULES'
+command(regex:^git (status|diff|log|show|ls-files|grep|blame)( [^;&|`$<>]*)?$)
+command(regex:^(pnpm|npm|yarn|bun) (run )?(lint|test|typecheck|type-check|tsc)(:[A-Za-z0-9:_-]+)?( [^;&|`$<>]*)?$)
+command(regex:^(npx |pnpm exec |bunx )?(tsc|eslint|jest|vitest)( [^;&|`$<>]*)?$)
+command(regex:^(ls|dir|Get-ChildItem)( [^;&|`$<>]*)?$)
+RULES
+}
+gemini_rules_json() { gemini_rules | jq -R -s -c 'split("\n") | map(select(length > 0))'; }
+
+# Cuántas de las reglas de la oficina tiene la configuración de Antigravity (0 si no hay).
+gemini_rules_present() {
+  [ -f "$GEMINI_CONFIG" ] || { echo 0; return; }
+  jqc -r --argjson rules "$(gemini_rules_json)" \
+    '(.userSettings.globalPermissionGrants.allow // []) as $a | [$rules[] | select(. as $r | $a | index($r))] | length' \
+    "$GEMINI_CONFIG" 2>/dev/null || echo 0
+}
+
+cmd_gemini_permissions() {
+  local action="${1:-status}" tmp total present
+  total=$(gemini_rules | grep -c .)
+  case "$action" in
+    on | off)
+      mkdir -p "$(dirname "$GEMINI_CONFIG")" || die "no pude crear la carpeta de $GEMINI_CONFIG."
+      [ -f "$GEMINI_CONFIG" ] || echo '{}' >"$GEMINI_CONFIG"
+      jq empty "$GEMINI_CONFIG" >/dev/null 2>&1 || die "$GEMINI_CONFIG no es un JSON válido: no lo toco."
+      # Una copia del archivo original, la primera vez que la oficina lo cambia.
+      [ -f "$GEMINI_CONFIG.bak-dev-office" ] || cp "$GEMINI_CONFIG" "$GEMINI_CONFIG.bak-dev-office"
+      tmp="$GEMINI_CONFIG.tmp"
+      if [ "$action" = on ]; then
+        jqc --indent 2 --argjson rules "$(gemini_rules_json)" \
+          '.userSettings.globalPermissionGrants.allow = (reduce $rules[] as $r ((.userSettings.globalPermissionGrants.allow // []); if index($r) then . else . + [$r] end))' \
+          "$GEMINI_CONFIG" >"$tmp" && mv "$tmp" "$GEMINI_CONFIG"
+        echo "Permisos de Gemini activados en $GEMINI_CONFIG."
+        echo "Gemini puede correr, de a uno y sin encadenar: git status, diff, log, show, ls-files, grep y blame; listar carpetas (ls, dir); y lint, typecheck y tests del proyecto (pnpm, npm, yarn o bun; npx tsc, eslint, jest o vitest)."
+        echo "Cualquier otro comando (commit, push, instalar, borrar, red...) se sigue rechazando solo. Valen para toda la computadora."
+      else
+        jqc --indent 2 --argjson rules "$(gemini_rules_json)" \
+          '.userSettings.globalPermissionGrants.allow = ((.userSettings.globalPermissionGrants.allow // []) - $rules)' \
+          "$GEMINI_CONFIG" >"$tmp" && mv "$tmp" "$GEMINI_CONFIG"
+        echo "Permisos de Gemini desactivados: saqué las reglas de la oficina de $GEMINI_CONFIG. Las tuyas quedan como estaban."
+      fi
+      ;;
+    status)
+      present=$(gemini_rules_present)
+      if [ "$present" -eq "$total" ]; then echo "Permisos de Gemini: activados ($GEMINI_CONFIG)."; return 0
+      elif [ "$present" -eq 0 ]; then echo "Permisos de Gemini: desactivados. Gemini solo lee y edita archivos; los comandos los corre la oficina."; return 1
+      else echo "Permisos de Gemini: incompletos ($present de $total reglas). Corré: gemini-permissions on"; return 1; fi
+      ;;
+    *) die "usá: gemini-permissions on, gemini-permissions off o gemini-permissions (para ver el estado)." ;;
+  esac
+}
+
 cmd_teams() {
   local action="${1:-status}" sf tmp
   case "$action" in
@@ -530,9 +590,10 @@ case "${1:-}" in
   get) shift; cmd_get "${1:-}" ;;
   check) cmd_check ;;
   teams) shift; cmd_teams "${1:-status}" ;;
+  gemini-permissions) shift; cmd_gemini_permissions "${1:-status}" ;;
   models) cmd_models ;;
   tier) shift; cmd_tier "${1:-}" "${2:-}" "${3:-}" ;;
   model) shift; cmd_model "${1:-}" "${2:-}" ;;
   effort) shift; cmd_effort "${1:-}" ;;
-  *) die "comando desconocido: '$1'. Usá: show, roles, set, reset, get, check, teams, models, tier, model o effort (o --help)." ;;
+  *) die "comando desconocido: '$1'. Usá: show, roles, set, reset, get, check, teams, gemini-permissions, models, tier, model o effort (o --help)." ;;
 esac

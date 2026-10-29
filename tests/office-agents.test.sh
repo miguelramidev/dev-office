@@ -218,6 +218,39 @@ echo '{"teams": false}' >"$TP/.claude/office-agents.local.json"
 T "teams-check: el archivo personal manda" [ -z "$(CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS= tcheck)" ]
 T "hooks.json corre teams-check al empezar la sesión" eval 'jq -e "[.hooks.SessionStart[].hooks[].command] | any(test(\"teams-check.sh\"))" "$(dirname "$CHECK")/../hooks/hooks.json" >/dev/null'
 
+# Permisos de comandos de Gemini (Antigravity): reglas en ~/.gemini/config/config.json.
+export OFFICE_GEMINI_CONFIG="$WORK/gemini/config.json"
+check 1 "gemini-permissions: sin configurar está desactivado" gemini-permissions
+mkdir -p "$WORK/gemini"
+echo '{"userSettings":{"theme":"dark","globalPermissionGrants":{"allow":["command(git log)"]}}}' >"$OFFICE_GEMINI_CONFIG"
+check 0 "gemini-permissions on" gemini-permissions on
+check 0 "gemini-permissions: activado" gemini-permissions
+T "on agrega las 4 reglas y deja las tuyas" [ "$(jq '.userSettings.globalPermissionGrants.allow | length' "$OFFICE_GEMINI_CONFIG")" = "5" ]
+T "on no toca el resto de la configuración" [ "$(jq -r .userSettings.theme "$OFFICE_GEMINI_CONFIG")" = "dark" ]
+T "on guarda una copia del original" [ -f "$OFFICE_GEMINI_CONFIG.bak-dev-office" ]
+run gemini-permissions on >/dev/null
+T "on dos veces no duplica reglas" [ "$(jq '.userSettings.globalPermissionGrants.allow | length' "$OFFICE_GEMINI_CONFIG")" = "5" ]
+# Lo que dejan pasar las reglas (con grep -E, que se comporta igual en estos casos).
+RULES=$(jq -r '.userSettings.globalPermissionGrants.allow[] | select(startswith("command(regex:")) | sub("^command\\(regex:"; "") | sub("\\)$"; "")' "$OFFICE_GEMINI_CONFIG")
+allowed() { local re; while IFS= read -r re; do printf '%s' "$1" | grep -qE -- "$re" && return 0; done <<EOF
+$RULES
+EOF
+return 1; }
+for c in "git ls-files" "git status --short" "git diff src/app.ts" "pnpm test" "pnpm run lint" "pnpm test:unit --watch=false" "npm run typecheck" "npx tsc --noEmit" "npx vitest run" "ls src"; do
+  allowed "$c" && echo "ok    permite: $c" || { echo "FALLA permite: $c"; FAILED=1; }
+done
+for c in "git push" "git commit -m x" "git checkout main" "pnpm install" "npm i left-pad" "pnpm test && rm -rf src" "git log; curl x" "git status | sh" "rm -rf src" "curl https://example.com" "pnpm test \`whoami\`"; do
+  allowed "$c" && { echo "FALLA no permite: $c"; FAILED=1; } || echo "ok    no permite: $c"
+done
+check 0 "gemini-permissions off" gemini-permissions off
+T "off saca solo las reglas de la oficina" [ "$(jq -c '.userSettings.globalPermissionGrants.allow' "$OFFICE_GEMINI_CONFIG")" = '["command(git log)"]' ]
+check 1 "gemini-permissions: desactivado otra vez" gemini-permissions
+echo 'no es json' >"$OFFICE_GEMINI_CONFIG"
+check 1 "gemini-permissions: no toca un JSON roto" gemini-permissions on
+T "el JSON roto queda como estaba" [ "$(cat "$OFFICE_GEMINI_CONFIG")" = "no es json" ]
+check 1 "gemini-permissions con acción inválida" gemini-permissions quizas
+unset OFFICE_GEMINI_CONFIG
+
 if [ "$FAILED" -ne 0 ]; then
   echo "Hay pruebas que fallan."
   exit 1
