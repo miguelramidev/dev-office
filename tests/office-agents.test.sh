@@ -120,12 +120,12 @@ fi
 FAKE_BIN="$WORK/fakebin"
 mkdir -p "$FAKE_BIN"
 printf '#!/usr/bin/env bash\ncase "$1" in\n  --version) echo "codex-cli 0.150.2" ;;\n  login) exit 0 ;;\nesac\n' >"$FAKE_BIN/codex"
-printf '#!/usr/bin/env bash\n[ "$1" = models ] && printf "gemini-3.8-flash\\ngemini-3.5-flash-lite\\n"\n' >"$FAKE_BIN/agy"
+printf '#!/usr/bin/env bash\n[ "$1" = --version ] && echo "agy ${FAKE_AGY_VERSION:-1.2.11}"\n[ "$1" = models ] && printf "gemini-3.8-flash\\ngemini-3.5-flash-lite\\n"\nexit 0\n' >"$FAKE_BIN/agy"
 chmod +x "$FAKE_BIN/codex" "$FAKE_BIN/agy"
 run set frontend.developer gemini >/dev/null
 (cd "$PROJ" && PATH="$FAKE_BIN:$EMPTY_PATH" "$BASH_BIN" "$SCRIPT" check) >"$WORK/out.txt" 2>&1
 CHECK_RC=$?
-for want in "ok    codex: instalado y con sesión" "necesita Codex CLI 0.153.0" "ok    gemini: Antigravity CLI instalado" "no tiene el modelo 'gemini-4-argon'"; do
+for want in "ok    codex: instalado y con sesión" "necesita Codex CLI 0.153.0" "ok    gemini: Antigravity CLI instalado" "no tiene el modelo 'gemini-4-argon'" "Antigravity CLI 1.3.6 o más nuevo" "volviendo a correr el instalador: curl -fsSL"; do
   if grep -qF "$want" "$WORK/out.txt"; then
     echo "ok    check: $want"
   else
@@ -141,6 +141,8 @@ if grep -qF "gemini-3.8-flash'" "$WORK/out.txt"; then
 else
   echo "ok    check: no avisa por los modelos que la cuenta tiene"
 fi
+(cd "$PROJ" && FAKE_AGY_VERSION=1.3.6 PATH="$FAKE_BIN:$EMPTY_PATH" "$BASH_BIN" "$SCRIPT" check) >"$WORK/out.txt" 2>&1
+grep -qF "1.3.6 o más nuevo" "$WORK/out.txt" && { echo "FALLA check: avisa con Antigravity 1.3.6"; FAILED=1; } || echo "ok    check: Antigravity 1.3.6 no lleva aviso"
 run reset --all >/dev/null
 
 # Tabla de modelos por nivel

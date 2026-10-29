@@ -338,6 +338,8 @@ new_project
 FAKE_MODE=ok check 0 "gemini: agy sin --add-dir" frontend.developer gemini
 expect_not "$FAKE_ARGS" "--add-dir" "gemini: si agy no lo tiene, no le pasa --add-dir"
 expect "$FAKE_STDIN" "ni siquiera para listar o buscar archivos" "gemini: el prompt le pide usar sus herramientas de archivos"
+expect "$FAKE_STDIN" "No le pases trabajo a subagentes" "gemini: el prompt le pide no delegar en subagentes"
+expect "$FAKE_STDIN" "No recorras \`node_modules\`" "gemini: el prompt le pide no recorrer node_modules"
 new_project
 FAKE_AGY_HELP="  --add-dir <dir>  Add a directory to the workspace" FAKE_MODE=ok check 0 "gemini: agy con --add-dir" frontend.developer gemini
 expect "$FAKE_ARGS" "--add-dir $PROJ" "gemini: le pasa la carpeta del proyecto actual"
