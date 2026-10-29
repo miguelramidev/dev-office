@@ -115,7 +115,7 @@ if [ "$WAIT" -eq 1 ]; then
         exit 10
       fi
     fi
-    sleep 5
+    sleep 2
   done
 fi
 
@@ -401,9 +401,9 @@ EOF
       echo "- **Hacé todo vos.** No le pases trabajo a subagentes ni a otros agentes, y no esperes respuestas de nadie: en este modo su resultado no te llega y te quedás esperando hasta que se acaba el tiempo."
       echo "- No recorras \`node_modules\`, \`.git\` ni carpetas generadas (\`dist\`, \`build\`, \`.next\`, \`coverage\`...): son enormes y no hacen falta. Buscá solo en las carpetas que el encargo nombra o que necesitás."
       if [ "$SCOPE" != "none" ] && [ "$GEMINI_CMDS" -eq 1 ]; then
-        echo "- Corré el lint, el typecheck y los tests que pidan las instrucciones de tu rol, con los comandos permitidos, y poné el resultado real en tu reporte. El agente de la oficina los vuelve a correr después de vos."
+        echo "- Corré el lint, el typecheck y los tests que pidan las instrucciones de tu rol, con los comandos permitidos, y poné el resultado real en tu reporte. Después los vuelven a correr el tester y QA."
       elif [ "$SCOPE" != "none" ]; then
-        echo "- En este modo podés editar archivos, pero no correr comandos de la terminal. No corras tests, typecheck ni lint: el agente de la oficina los corre después de vos. En tu reporte, en la parte de verificación, poné \"La corre la oficina\"."
+        echo "- En este modo podés editar archivos, pero no correr comandos de la terminal. No corras tests, typecheck ni lint: los corren el tester y QA después de vos. En tu reporte, en la parte de verificación, poné \"La corre la oficina\"."
       fi
       ;;
     codex)

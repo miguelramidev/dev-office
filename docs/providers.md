@@ -101,10 +101,11 @@ Los niveles son `opus`, `sonnet` y `haiku`, y `effort` es el razonamiento. Con `
 2. **Los roles en Claude** son los agentes de siempre.
 3. **Los roles en Codex o Gemini** los hace el **puente** (`office:external`, un agente de Claude en Sonnet):
    - le pasa al proveedor las instrucciones del rol, sus skills y el encargo completo;
-   - corre el CLI en la carpeta del proyecto, con un tope de 9 minutos;
-   - revisa lo que cambió y, en un developer, corre typecheck, lint y tests, con una vuelta de corrección como máximo; en un tester, confirma que el resultado que informa es el real;
+   - corre el CLI en la carpeta del proyecto, en segundo plano y con un tope de 30 minutos;
+   - controla que no haya roto las reglas de la oficina (secretos, lockfiles, alcance del rol, commits y rama). Es un control del script, que no gasta tokens;
+   - **no corre tests, lint ni typecheck:** es liviano a propósito, para que el trabajo pesado no gaste Claude. La verificación la hacen el developer (si puede), el tester y QA;
    - le devuelve al PM el reporte con el mismo formato del rol, así que el ciclo de calidad (tester → QA → informe) no cambia.
-4. **El informe** te dice qué proveedor hizo cada cosa y qué encontró el puente al verificar.
+4. **El informe** te dice qué proveedor hizo cada cosa. Como el puente no repite la verificación, con un rol en Codex o Gemini el tester y QA no se saltean nunca.
 
 Cada encargo deja su prompt, el reporte del proveedor y el registro del CLI en `.office/runs/` (ignorada por git), por si querés ver qué pasó.
 
@@ -133,18 +134,18 @@ Con `set pm codex` (o `gemini`, o los dos), antes de presentarte un plan que no 
 | --- | --- | --- |
 | **PROVEEDOR NO DISPONIBLE** | El CLI no está instalado, no tiene sesión, se quedó sin cuota o tu cuenta no tiene el modelo. | Corré `bash .claude/office-agents.sh check` y seguí lo que indique. El PM te pregunta si reintentar, hacer ese encargo con Claude o pausar: nunca cambia de proveedor solo. |
 | **REGLAS ROTAS** | Codex o Gemini tocó un archivo prohibido (secretos, claves, lockfiles), escribió fuera de su rol, commiteó o cambió de rama. | Revisá `git status` y `.office/runs/` y decidí vos qué deshacer. La oficina no deshace nada sola. |
-| **TIEMPO AGOTADO** | El encargo tardó más de 9 minutos. | Pedile al PM que lo divida, o subí `OFFICE_EXTERNAL_TIMEOUT` en `.claude/settings.json` (en segundos, sin pasar de 590). |
+| **TIEMPO AGOTADO** | El encargo tardó más de 30 minutos. | Pedile al PM que lo divida, o subí `OFFICE_EXTERNAL_TIMEOUT` en el `env` de `.claude/settings.local.json` (en segundos). |
 
 La primera vez que el puente corre Codex o Gemini, Claude Code te pide permiso para el comando: aprobalo para esa sesión.
 
 ## Límites que conviene conocer
 
 - **Codex y Gemini no pasan por los hooks de la oficina** (la protección de secretos y de ramas protegidas solo ve las herramientas de Claude). El puente no corre nada en una rama protegida y revisa todo después, pero **detecta, no impide**. Por eso el tester y QA no se saltean nunca.
-- **Gemini no corre comandos de la terminal** en este modo: edita archivos y el puente corre las verificaciones. Como developer funciona bien; como tester o QA rinde menos, porque no puede ejecutar sus pruebas. Para esos roles conviene Claude o Codex. El puente le pide que lea y busque en el proyecto con sus herramientas de archivos, porque en este modo cualquier comando se rechaza solo. También le pide que haga todo él, sin pasarle trabajo a subagentes: en este modo, el resultado de un subagente no le llega y el encargo se corta por tiempo. Usá Antigravity CLI 1.3.6 o más nuevo; `office-agents.sh check` avisa si tenés uno más viejo.
+- **Gemini no corre comandos de la terminal** en este modo: edita archivos y las verificaciones las corren el tester y QA después. Como developer funciona bien; como tester o QA rinde menos, porque no puede ejecutar sus pruebas. Para esos roles conviene Claude o Codex. El puente le pide que lea y busque en el proyecto con sus herramientas de archivos, porque en este modo cualquier comando se rechaza solo. También le pide que haga todo él, sin pasarle trabajo a subagentes: en este modo, el resultado de un subagente no le llega y el encargo se corta por tiempo. Usá Antigravity CLI 1.3.6 o más nuevo; `office-agents.sh check` avisa si tenés uno más viejo.
 
 ### Permisos de comandos para Gemini (opcional)
 
-Por defecto, Gemini solo lee y edita archivos, y el puente corre el lint, el typecheck y los tests después de él. Si querés que Gemini también corra comandos (para que rinda como tester, o para que verifique su propio trabajo), activá los permisos:
+Por defecto, Gemini solo lee y edita archivos, y el lint, el typecheck y los tests los corren el tester y QA después. Un tester en Gemini sin permisos no puede correr tests: en ese caso el PM le pasa el trabajo del tester a Claude o a Codex y te avisa. Si querés que Gemini también corra comandos (para que rinda como tester, o para que verifique su propio trabajo), activá los permisos:
 
 ```bash
 bash .claude/office-agents.sh gemini-permissions on    # activar
@@ -166,7 +167,7 @@ bash .claude/office-agents.sh gemini-permissions       # ver el estado
 - **Qué le rechazaron:** el puente corre a Gemini con `--output-format stream-json` y anota cada paso en el registro de la corrida (`.office/runs/<corrida>/log.txt`). Si Antigravity le rechaza un comando, el resumen dice cuál fue, exacto. El flujo completo queda en `stream.jsonl`.
 - **En Windows**, el puente prende el sandbox de Codex en modo `unelevated`; sin eso, Codex no puede ni leer el proyecto ("blocked by policy"). Si usás Codex por tu cuenta en Windows y te pasa lo mismo, agregá a `%USERPROFILE%\.codex\config.toml` la sección `[windows]` con `sandbox = "unelevated"`.
 - **Costo:** cada proveedor se paga con su cuenta, y el puente gasta un poco de Claude (Sonnet) por encargo para pasarlo y revisarlo.
-- **Encargos grandes:** cada encargo se corta a los 9 minutos, porque Claude Code espera como máximo 10 por comando.
+- **Encargos grandes:** el puente corre al proveedor en segundo plano y lo espera hasta 30 minutos (`OFFICE_EXTERNAL_TIMEOUT`). Si se pasa, conviene dividir el encargo.
 - **Si una versión nueva de un CLI cambia sus opciones,** se pueden agregar opciones extra con `OFFICE_CODEX_ARGS` y `OFFICE_GEMINI_ARGS` en `.claude/settings.json`, sin esperar una versión nueva de la oficina.
 
 Para el detalle técnico (cómo se arma el prompt, qué controla el runner, los códigos de salida), ver [Arquitectura](architecture.md#proveedores-por-rol) y la skill `external-agents`.
