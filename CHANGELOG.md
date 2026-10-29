@@ -8,6 +8,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.37.1] - 2026-10-29
+
+### Corregido
+
+- **Gemini perdía el encargo por un solo comando rechazado** (`office` 0.35.1). Sin pantalla, cuando Antigravity rechaza un comando, la corrida termina ahí, sin reporte: un QA leyó todo el cambio y se cortó en `pnpm format:check` y después en un `git grep` con un patrón largo.
+  - Los permisos de Gemini (script `office-agents.sh` versión 7) suman el chequeo de formato de solo lectura: `format:check` y `prettier --check`. `pnpm format` a secas sigue afuera, porque reescribe archivos. Hay que correr `gemini-permissions on` otra vez.
+  - El encargo le avisa que un comando fuera de la lista corta todo, y le pide buscar con su herramienta `grep_search` (y `find_by_name`) en lugar de `git grep`, cuyos patrones suelen tener `|` o `$`, que las reglas rechazan.
+  - Si igual se corta por un comando rechazado, el script le da **un segundo intento** con el aviso de qué se rechazó, si queda tiempo. Gasta tokens de Gemini, no de Claude, y se suman. `OFFICE_GEMINI_RETRY=0` lo apaga.
+  - El puente ya no repite la sugerencia genérica de Antigravity (`--dangerously-skip-permissions` o reglas a mano): informa qué comando se rechazó y, si faltan, cómo activar los permisos.
+
 ## [0.37.0] - 2026-10-29
 
 ### Cambiado

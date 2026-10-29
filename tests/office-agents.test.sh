@@ -225,21 +225,21 @@ mkdir -p "$WORK/gemini"
 echo '{"userSettings":{"theme":"dark","globalPermissionGrants":{"allow":["command(git log)"]}}}' >"$OFFICE_GEMINI_CONFIG"
 check 0 "gemini-permissions on" gemini-permissions on
 check 0 "gemini-permissions: activado" gemini-permissions
-T "on agrega las 5 reglas y deja las tuyas" [ "$(jq '.userSettings.globalPermissionGrants.allow | length' "$OFFICE_GEMINI_CONFIG")" = "6" ]
+T "on agrega las 6 reglas y deja las tuyas" [ "$(jq '.userSettings.globalPermissionGrants.allow | length' "$OFFICE_GEMINI_CONFIG")" = "7" ]
 T "on no toca el resto de la configuración" [ "$(jq -r .userSettings.theme "$OFFICE_GEMINI_CONFIG")" = "dark" ]
 T "on guarda una copia del original" [ -f "$OFFICE_GEMINI_CONFIG.bak-dev-office" ]
 run gemini-permissions on >/dev/null
-T "on dos veces no duplica reglas" [ "$(jq '.userSettings.globalPermissionGrants.allow | length' "$OFFICE_GEMINI_CONFIG")" = "6" ]
+T "on dos veces no duplica reglas" [ "$(jq '.userSettings.globalPermissionGrants.allow | length' "$OFFICE_GEMINI_CONFIG")" = "7" ]
 # Lo que dejan pasar las reglas (con grep -E, que se comporta igual en estos casos).
 RULES=$(jq -r '.userSettings.globalPermissionGrants.allow[] | select(startswith("command(regex:")) | sub("^command\\(regex:"; "") | sub("\\)$"; "")' "$OFFICE_GEMINI_CONFIG")
 allowed() { local re; while IFS= read -r re; do printf '%s' "$1" | grep -qE -- "$re" && return 0; done <<EOF
 $RULES
 EOF
 return 1; }
-for c in "git ls-files" "git status --short" "git diff src/app.ts" "pnpm test" "pnpm run lint" "pnpm test:unit --watch=false" "npm run typecheck" "npx tsc --noEmit" "npx vitest run" "ls src" "git rm src/old.ts" "git rm -r src/legacy" "git mv src/a.ts src/b.ts"; do
+for c in "git ls-files" "git status --short" "git diff src/app.ts" "pnpm test" "pnpm run lint" "pnpm test:unit --watch=false" "npm run typecheck" "npx tsc --noEmit" "npx vitest run" "ls src" "git rm src/old.ts" "git rm -r src/legacy" "git mv src/a.ts src/b.ts" "pnpm format:check" "npm run format:check" "npx prettier --check src" "pnpm exec prettier -c ."; do
   allowed "$c" && echo "ok    permite: $c" || { echo "FALLA permite: $c"; FAILED=1; }
 done
-for c in "git push" "git commit -m x" "git checkout main" "pnpm install" "npm i left-pad" "pnpm test && rm -rf src" "git log; curl x" "git status | sh" "rm -rf src" "curl https://example.com" "pnpm test \`whoami\`" "git rm" "git rm src/a.ts; rm -rf /" "git rm -r src && curl x" "Remove-Item -Path src/old.ts" "del src\\old.ts"; do
+for c in "git push" "git commit -m x" "git checkout main" "pnpm install" "npm i left-pad" "pnpm test && rm -rf src" "git log; curl x" "git status | sh" "rm -rf src" "curl https://example.com" "pnpm test \`whoami\`" "git rm" "git rm src/a.ts; rm -rf /" "git rm -r src && curl x" "Remove-Item -Path src/old.ts" "del src\\old.ts" "pnpm format" "npx prettier --write src"; do
   allowed "$c" && { echo "FALLA no permite: $c"; FAILED=1; } || echo "ok    no permite: $c"
 done
 check 0 "gemini-permissions off" gemini-permissions off

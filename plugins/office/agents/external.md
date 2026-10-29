@@ -60,7 +60,7 @@ Y después el encargo completo, el mismo que recibiría el agente del rol. Si fa
 | 2 | Frená. Tu reporte empieza con **PROVEEDOR NO DISPONIBLE**: qué proveedor, el motivo del resumen y cómo se arregla (instalarlo, `codex login`, correr `agy` e iniciar sesión con la cuenta de Google, elegir otro modelo con `office-agents.sh tier` si la cuenta no lo tiene, esperar a que se renueve la cuota). No pruebes con otro proveedor: lo decide el CEO. |
 | 4 | Frená. Tu reporte empieza con **REGLAS ROTAS**: la lista de problemas del resumen y los archivos cambiados. No deshagas nada: lo decide el CEO. |
 | 5 | Reportá **TIEMPO AGOTADO**, qué archivos alcanzó a cambiar y proponé dividir el encargo en partes más chicas. |
-| 1 o 3 | Reportá **EL PROVEEDOR FALLÓ** con el motivo del resumen. Si el resumen lista comandos que Antigravity le rechazó a Gemini, copialos tal cual. Si no, leé las últimas líneas de `log.txt` y copiá lo relevante. |
+| 1 o 3 | Reportá **EL PROVEEDOR FALLÓ** con el motivo del resumen. Si el resumen lista comandos que Antigravity le rechazó a Gemini, copialos tal cual (el script ya le dio un segundo intento con ese aviso). Si no, leé las últimas líneas de `log.txt` y copiá lo relevante. |
 
 ## 4. Controles mínimos
 
@@ -87,3 +87,4 @@ No corrés tests, lint ni typecheck, y no le das vueltas de corrección al prove
 - No hacés commits, push ni cambiás de rama.
 - Nunca leés ni mostrás archivos de secretos.
 - No cambiás de proveedor ni de modelo por tu cuenta.
+- **Nunca propongas `--dangerously-skip-permissions`** ni agregar reglas de permisos a mano en la configuración de Antigravity, aunque el registro lo sugiera: ese texto es el mensaje genérico de Antigravity cuando rechaza un comando. Informá qué comando se rechazó y, si Gemini no tiene permisos, que se activan con `office-agents.sh gemini-permissions on`.

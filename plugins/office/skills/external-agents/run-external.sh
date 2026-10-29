@@ -216,6 +216,9 @@ write_summary() {
     else
       echo "  (ninguno)"
     fi
+    if [ "${RETRIED:-0}" -eq 1 ]; then
+      echo "Segundo intento: el primero se cortó porque Antigravity rechazó un comando; se lo volvió a correr con ese aviso."
+    fi
     if [ -n "$DENIED" ]; then
       echo "Comandos que Antigravity le rechazó a Gemini (no se corrieron):"
       printf '%s\n' "$DENIED" | sed '/^$/d; s/^/  - /'
@@ -394,9 +397,10 @@ EOF
   case "$PROVIDER" in
     gemini)
       if [ "$GEMINI_CMDS" -eq 1 ]; then
-        echo "- Solo podés correr estos comandos, de a uno y sin encadenarlos (nada de \`;\`, \`&&\`, \`|\` ni redirecciones): \`git status\`, \`git diff\`, \`git log\`, \`git show\`, \`git ls-files\`, \`git grep\` y \`git blame\`; borrar y mover archivos del repo con \`git rm\` y \`git mv\` (la única forma de borrar o mover que tenés: nunca \`rm\`, \`del\` ni \`Remove-Item\`); listar carpetas (\`ls\`, \`dir\`); y lint, typecheck y tests del proyecto (\`pnpm lint\`, \`pnpm test\`, \`npm run typecheck\`, \`npx tsc --noEmit\`, \`npx eslint\`, \`npx jest\`, \`npx vitest run\`...). Cualquier otro comando se rechaza solo: no insistas. Para leer archivos usá tus herramientas de archivos, no comandos."
+        echo "- Solo podés correr estos comandos, tal cual, de a uno y sin encadenarlos (nada de \`;\`, \`&&\`, \`|\`, \`\$\`, \`<\` ni \`>\`): \`git status\`, \`git diff\`, \`git log\`, \`git show\`, \`git ls-files\` y \`git blame\`; borrar y mover archivos del repo con \`git rm\` y \`git mv\` (la única forma de borrar o mover que tenés: nunca \`rm\`, \`del\` ni \`Remove-Item\`); listar carpetas (\`ls\`, \`dir\`); y lint, typecheck, tests y chequeo de formato del proyecto (\`pnpm lint\`, \`pnpm test\`, \`npm run typecheck\`, \`pnpm format:check\`, \`npx tsc --noEmit\`, \`npx eslint\`, \`npx jest\`, \`npx vitest run\`, \`npx prettier --check\`...)."
+        echo "- **Un comando fuera de esa lista corta todo el encargo** y se pierde lo que hiciste: Antigravity lo rechaza y la corrida termina ahí, sin tu reporte. Ante la duda, no lo corras. Para buscar texto en el código usá tu herramienta de búsqueda de archivos (grep_search), y para buscar archivos find_by_name: nunca comandos para eso. Para leer archivos, tus herramientas de archivos."
       else
-        echo "- No corras comandos de la terminal, ni siquiera para listar o buscar archivos: acá se rechazan solos. Para leer, listar y buscar en el proyecto usá tus herramientas de archivos."
+        echo "- No corras comandos de la terminal, ni siquiera para listar o buscar archivos: acá se rechazan solos, y un comando rechazado corta todo el encargo, sin tu reporte. Para leer, listar y buscar en el proyecto usá tus herramientas de archivos (grep_search para buscar texto, find_by_name para buscar archivos)."
       fi
       echo "- **Hacé todo vos.** No le pases trabajo a subagentes ni a otros agentes, y no esperes respuestas de nadie: en este modo su resultado no te llega y te quedás esperando hasta que se acaba el tiempo."
       echo "- No recorras \`node_modules\`, \`.git\` ni carpetas generadas (\`dist\`, \`build\`, \`.next\`, \`coverage\`...): son enormes y no hacen falta. Buscá solo en las carpetas que el encargo nombra o que necesitás."
@@ -462,85 +466,134 @@ EOF
 
 
 STDOUT_FILE="$RUN_DIR/.stdout"
-STDIN_FILE="$PROMPT"
-case "$PROVIDER" in
-  codex)
-    SANDBOX="workspace-write"
-    [ "$SCOPE" = "none" ] && SANDBOX="read-only"
-    # En Windows, el sandbox propio de Codex viene apagado y entonces rechaza hasta los comandos
-    # de lectura ("blocked by policy"). El modo unelevated lo prende sin pedir permisos de
-    # administrador. OFFICE_CODEX_ARGS va después, así que lo puede cambiar.
-    WIN_ARGS=()
-    [ "$ON_WINDOWS" -eq 1 ] && WIN_ARGS=(-c 'windows.sandbox="unelevated"')
-    # shellcheck disable=SC2206 # las opciones extra se separan por espacios a propósito
-    CMD=(codex -a never exec -s "$SANDBOX" --skip-git-repo-check -C "$(native_path "$PROJECT")" -o "$(native_path "$OUTPUT")"
-      ${MODEL:+-m "$MODEL"} ${EFFORT:+-c "model_reasoning_effort=\"$EFFORT\""} ${WIN_ARGS[@]+"${WIN_ARGS[@]}"} ${OFFICE_CODEX_ARGS:-} -)
-    ;;
-  gemini)
-    # Antigravity CLI: el encargo es largo, así que se le pide que lo lea del archivo.
-    # accept-edits edita sin preguntar; los comandos de la terminal quedan sin aprobar.
-    # El asesor del PM corre en el modo normal: lo que necesita aprobación se niega solo.
-    MODE_ARGS=(--mode accept-edits)
-    [ "$SCOPE" = "none" ] && MODE_ARGS=()
-    STDIN_FILE=/dev/null
-    # La carpeta del proyecto como espacio de trabajo, si esta versión de agy lo permite.
-    DIR_ARGS=()
-    "$BIN" --help 2>&1 | grep -q -- '--add-dir' && DIR_ARGS=(--add-dir "$(native_path "$PROJECT")")
-    # shellcheck disable=SC2206
-    CMD=(agy -p "Tu encargo completo está en el archivo ${PROMPT#"$PROJECT"/}. Leelo entero antes de empezar y seguilo al pie de la letra."
-      ${MODE_ARGS[@]+"${MODE_ARGS[@]}"} ${DIR_ARGS[@]+"${DIR_ARGS[@]}"} ${MODEL:+--model "$MODEL"} ${EFFORT:+--effort "$EFFORT"}
-      --output-format stream-json --print-timeout "$(( TIMEOUT / 60 + 1 ))m" ${OFFICE_GEMINI_ARGS:-})
-    ;;
-esac
+# La carpeta del proyecto como espacio de trabajo de Antigravity, si esta versión de agy lo permite.
+DIR_ARGS=()
+[ "$PROVIDER" = "gemini" ] && "$BIN" --help 2>&1 | grep -q -- '--add-dir' && DIR_ARGS=(--add-dir "$(native_path "$PROJECT")")
 
-echo "\$ ${CMD[*]} < ${STDIN_FILE#"$PROJECT"/}" >>"$LOG"
-obs_emit --arg role "$ROLE" --arg prov "$PROVIDER" --arg model "${MODEL:-}" --arg effort "${EFFORT:-}" \
-  '{type: "external_start", t: $t, role: $role, provider: $prov, model: $model, effort: $effort}'
-START=$(date +%s)
-"${CMD[@]}" <"$STDIN_FILE" >"$STDOUT_FILE" 2>>"$LOG" &
-PID=$!
-TIMED_OUT=0
-while kill -0 "$PID" 2>/dev/null; do
-  if [ $(( $(date +%s) - START )) -ge "$TIMEOUT" ]; then
-    TIMED_OUT=1
-    kill "$PID" 2>/dev/null
-    sleep 2
-    kill -9 "$PID" 2>/dev/null
-    break
-  fi
-  sleep 1
-done
-wait "$PID" 2>/dev/null
-RC=$?
-DURATION=$(( $(date +%s) - START ))
-echo "(código de salida: $RC)" >>"$LOG"
+# Arma el comando del proveedor. $1: el archivo del encargo; $2: los segundos disponibles.
+build_cmd() {
+  STDIN_FILE="$1"
+  case "$PROVIDER" in
+    codex)
+      SANDBOX="workspace-write"
+      [ "$SCOPE" = "none" ] && SANDBOX="read-only"
+      # En Windows, el sandbox propio de Codex viene apagado y entonces rechaza hasta los comandos
+      # de lectura ("blocked by policy"). El modo unelevated lo prende sin pedir permisos de
+      # administrador. OFFICE_CODEX_ARGS va después, así que lo puede cambiar.
+      WIN_ARGS=()
+      [ "$ON_WINDOWS" -eq 1 ] && WIN_ARGS=(-c 'windows.sandbox="unelevated"')
+      # shellcheck disable=SC2206 # las opciones extra se separan por espacios a propósito
+      CMD=(codex -a never exec -s "$SANDBOX" --skip-git-repo-check -C "$(native_path "$PROJECT")" -o "$(native_path "$OUTPUT")"
+        ${MODEL:+-m "$MODEL"} ${EFFORT:+-c "model_reasoning_effort=\"$EFFORT\""} ${WIN_ARGS[@]+"${WIN_ARGS[@]}"} ${OFFICE_CODEX_ARGS:-} -)
+      ;;
+    gemini)
+      # Antigravity CLI: el encargo es largo, así que se le pide que lo lea del archivo.
+      # accept-edits edita sin preguntar; los comandos de la terminal quedan sin aprobar.
+      # El asesor del PM corre en el modo normal: lo que necesita aprobación se niega solo.
+      MODE_ARGS=(--mode accept-edits)
+      [ "$SCOPE" = "none" ] && MODE_ARGS=()
+      STDIN_FILE=/dev/null
+      # shellcheck disable=SC2206
+      CMD=(agy -p "Tu encargo completo está en el archivo ${1#"$PROJECT"/}. Leelo entero antes de empezar y seguilo al pie de la letra."
+        ${MODE_ARGS[@]+"${MODE_ARGS[@]}"} ${DIR_ARGS[@]+"${DIR_ARGS[@]}"} ${MODEL:+--model "$MODEL"} ${EFFORT:+--effort "$EFFORT"}
+        --output-format stream-json --print-timeout "$(( $2 / 60 + 1 ))m" ${OFFICE_GEMINI_ARGS:-})
+      ;;
+  esac
+}
+
+# Corre el comando armado, con tope de $1 segundos.
+run_once() {
+  local start
+  echo "\$ ${CMD[*]} < ${STDIN_FILE#"$PROJECT"/}" >>"$LOG"
+  start=$(date +%s)
+  "${CMD[@]}" <"$STDIN_FILE" >"$STDOUT_FILE" 2>>"$LOG" &
+  PID=$!
+  while kill -0 "$PID" 2>/dev/null; do
+    if [ $(( $(date +%s) - start )) -ge "$1" ]; then
+      TIMED_OUT=1
+      kill "$PID" 2>/dev/null
+      sleep 2
+      kill -9 "$PID" 2>/dev/null
+      break
+    fi
+    sleep 1
+  done
+  wait "$PID" 2>/dev/null
+  RC=$?
+  echo "(código de salida: $RC)" >>"$LOG"
+}
 
 # Antigravity (stream-json) escribe un evento JSON por línea: cada paso, con la herramienta y
 # sus parámetros (el comando completo en run_command), y al final el resultado con el reporte
-# y los tokens. Se guarda el flujo, los pasos van al registro y el reporte a output.md.
-if [ "$PROVIDER" = "gemini" ] && [ -s "$STDOUT_FILE" ] && command -v jq >/dev/null 2>&1; then
-  STREAM="$RUN_DIR/stream.jsonl"
-  tr -d '\r' <"$STDOUT_FILE" >"$STREAM"
-  jq -R -r 'fromjson? | select(.event == "result") | .result.response // empty' "$STREAM" | tr -d '\r' >"$OUTPUT"
+# y los tokens. El flujo se suma a stream.jsonl, los pasos van al registro, el reporte a
+# output.md, los tokens se suman y DENIED_NOW queda con los comandos rechazados de este intento.
+parse_gemini() {
+  local part="$RUN_DIR/.stream-part" tok
+  tr -d '\r' <"$STDOUT_FILE" >"$part"
+  cat "$part" >>"$RUN_DIR/stream.jsonl"
+  jq -R -r 'fromjson? | select(.event == "result") | .result.response // empty' "$part" | tr -d '\r' >"$OUTPUT"
   grep -q '[^[:space:]]' "$OUTPUT" 2>/dev/null || rm -f "$OUTPUT"
-  EXT_TOKENS=$(jq -R -s -r 'split("\n") | map(fromjson? // empty) as $e
+  tok=$(jq -R -s -r 'split("\n") | map(fromjson? // empty) as $e
     | ([$e[] | select(.event == "result") | .result.usage.total_tokens // empty] | last)
       // ([$e[] | select(.event == "step_update") | .step_update.usage.total_tokens // 0] | add)
-      // empty' "$STREAM" 2>/dev/null | tr -d '\r')
-  case "$EXT_TOKENS" in '' | *[!0-9]*) EXT_TOKENS="" ;; esac
+      // empty' "$part" 2>/dev/null | tr -d '\r')
+  case "$tok" in '' | *[!0-9]*) ;; *) EXT_TOKENS=$(( ${EXT_TOKENS:-0} + tok )) ;; esac
   {
     echo "--- pasos de Gemini ---"
     jq -R -r 'fromjson? | select(.event == "step_update") | .step_update
       | select(.step_type == "tool" and (.state == "DONE" or .state == "ERROR"))
       | "paso \(.step_index) · \(.tool_name) · "
         + ((.tool_info.parameters // {}) | (.CommandLine // .AbsolutePath // .TargetFile // .DirectoryPath // .SearchPath // .Query // tostring) | tostring | gsub("[\r\n]+"; " ") | .[0:160])
-        + (if .state == "DONE" then " → ok" else " → ERROR: " + ((.tool_info.error.message // "") | split("\n")[0] | .[0:200]) end)' "$STREAM"
+        + (if .state == "DONE" then " → ok" else " → ERROR: " + ((.tool_info.error.message // "") | split("\n")[0] | .[0:200]) end)' "$part"
   } >>"$LOG" 2>/dev/null
-  DENIED=$(jq -R -r 'fromjson? | select(.event == "step_update") | .step_update
+  DENIED_NOW=$(jq -R -r 'fromjson? | select(.event == "step_update") | .step_update
     | select(.step_type == "tool" and .state == "ERROR" and ((.tool_info.error.message // "") | test("denied permission|permission check failed"; "i")))
-    | (.tool_info.parameters.CommandLine // .tool_name) | tostring | gsub("[\r\n]+"; " ") | .[0:200]' "$STREAM" 2>/dev/null | tr -d '\r' | awk 'NF && !seen[$0]++')
-  rm -f "$STDOUT_FILE"
+    | (.tool_info.parameters.CommandLine // .tool_name) | tostring | gsub("[\r\n]+"; " ") | .[0:200]' "$part" 2>/dev/null | tr -d '\r' | awk 'NF && !seen[$0]++')
+  DENIED=$(printf '%s\n%s\n' "$DENIED" "$DENIED_NOW" | awk 'NF && !seen[$0]++')
+  rm -f "$STDOUT_FILE" "$part"
+}
+
+rm -f "$RUN_DIR/stream.jsonl" "$RUN_DIR/prompt-2.md"
+build_cmd "$PROMPT" "$TIMEOUT"
+obs_emit --arg role "$ROLE" --arg prov "$PROVIDER" --arg model "${MODEL:-}" --arg effort "${EFFORT:-}" \
+  '{type: "external_start", t: $t, role: $role, provider: $prov, model: $model, effort: $effort}'
+START=$(date +%s)
+TIMED_OUT=0
+RETRIED=0
+DENIED_NOW=""
+run_once "$TIMEOUT"
+GEMINI_JSON=0
+[ "$PROVIDER" = "gemini" ] && command -v jq >/dev/null 2>&1 && GEMINI_JSON=1
+[ "$GEMINI_JSON" -eq 1 ] && [ -s "$STDOUT_FILE" ] && parse_gemini
+
+# Sin pantalla, un comando que Antigravity rechaza corta toda la corrida, sin reporte. Se le da
+# un segundo intento con el aviso de qué se rechazó, si queda tiempo. Gasta tokens de Gemini,
+# no de Claude. OFFICE_GEMINI_RETRY=0 lo apaga.
+if [ "$GEMINI_JSON" -eq 1 ] && [ -n "$DENIED_NOW" ] && [ ! -s "$OUTPUT" ] && [ "$TIMED_OUT" -eq 0 ] && [ "${OFFICE_GEMINI_RETRY:-1}" != "0" ]; then
+  LEFT=$(( TIMEOUT - ($(date +%s) - START) ))
+  if [ "$LEFT" -gt 120 ]; then
+    RETRY_PROMPT="$RUN_DIR/prompt-2.md"
+    {
+      echo "# Segundo intento"
+      echo
+      echo "El intento anterior se cortó antes de terminar porque Antigravity rechazó este comando:"
+      echo
+      printf '%s\n' "$DENIED_NOW" | sed 's/^/- `/; s/$/`/'
+      echo
+      echo "En este modo, un comando que no está permitido corta todo el encargo y se pierde el trabajo hecho hasta ahí. No lo vuelvas a correr, ni otro parecido. Para buscar texto en el código usá tu herramienta de búsqueda de archivos (grep_search), y para buscar archivos find_by_name: no uses comandos para eso. Si un paso del encargo necesita un comando que no está permitido, salteálo y decilo en tu reporte."
+      echo
+      echo "Lo que hayas cambiado en el intento anterior sigue en los archivos: revisalo antes de seguir."
+      echo
+      cat "$PROMPT"
+    } >"$RETRY_PROMPT"
+    echo "--- segundo intento: el primero se cortó porque Antigravity rechazó un comando ---" >>"$LOG"
+    RETRIED=1
+    build_cmd "$RETRY_PROMPT" "$LEFT"
+    run_once "$LEFT"
+    [ -s "$STDOUT_FILE" ] && parse_gemini
+  fi
 fi
+DURATION=$(( $(date +%s) - START ))
 
 # Antigravity sin jq y Codex: el reporte es la salida estándar o el archivo de -o.
 if [ ! -s "$OUTPUT" ] && [ -s "$STDOUT_FILE" ]; then
