@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-agents-version: 5
+# office-agents-version: 6
 # Configura qué proveedor (Claude, Codex o Gemini) hace cada rol de la oficina dev-office.
 #
 # Uso (desde la carpeta del proyecto):
@@ -311,12 +311,15 @@ teams_flag_on() {
 # --- Permisos de comandos para Gemini (Antigravity) --------------------------------
 # Sin pantalla, Antigravity niega solo cualquier comando que no tenga permiso, y solo lee los
 # permisos de comandos de ~/.gemini/config/config.json (los de settings.json los ignora).
-# Estas reglas dejan pasar solo comandos de lectura y de verificación, de a uno: ningún
-# comando encadenado (; & | ` $ < >). Valen para toda la computadora.
+# Estas reglas dejan pasar solo comandos de lectura y de verificación, más borrar y mover con
+# git rm y git mv (Antigravity no tiene herramienta para borrar archivos; git solo actúa sobre
+# archivos que sigue dentro del repo, y se deshace con git restore). De a uno: ningún comando
+# encadenado (; & | ` $ < >). Valen para toda la computadora.
 GEMINI_CONFIG="${OFFICE_GEMINI_CONFIG:-$HOME/.gemini/config/config.json}"
 gemini_rules() {
   cat <<'RULES'
 command(regex:^git (status|diff|log|show|ls-files|grep|blame)( [^;&|`$<>]*)?$)
+command(regex:^git (rm|mv) [^;&|`$<>]+$)
 command(regex:^(pnpm|npm|yarn|bun) (run )?(lint|test|typecheck|type-check|tsc)(:[A-Za-z0-9:_-]+)?( [^;&|`$<>]*)?$)
 command(regex:^(npx |pnpm exec |bunx )?(tsc|eslint|jest|vitest)( [^;&|`$<>]*)?$)
 command(regex:^(ls|dir|Get-ChildItem)( [^;&|`$<>]*)?$)
@@ -348,8 +351,8 @@ cmd_gemini_permissions() {
           '.userSettings.globalPermissionGrants.allow = (reduce $rules[] as $r ((.userSettings.globalPermissionGrants.allow // []); if index($r) then . else . + [$r] end))' \
           "$GEMINI_CONFIG" >"$tmp" && mv "$tmp" "$GEMINI_CONFIG"
         echo "Permisos de Gemini activados en $GEMINI_CONFIG."
-        echo "Gemini puede correr, de a uno y sin encadenar: git status, diff, log, show, ls-files, grep y blame; listar carpetas (ls, dir); y lint, typecheck y tests del proyecto (pnpm, npm, yarn o bun; npx tsc, eslint, jest o vitest)."
-        echo "Cualquier otro comando (commit, push, instalar, borrar, red...) se sigue rechazando solo. Valen para toda la computadora."
+        echo "Gemini puede correr, de a uno y sin encadenar: git status, diff, log, show, ls-files, grep y blame; borrar y mover archivos del repo con git rm y git mv; listar carpetas (ls, dir); y lint, typecheck y tests del proyecto (pnpm, npm, yarn o bun; npx tsc, eslint, jest o vitest)."
+        echo "Cualquier otro comando (commit, push, instalar, rm, del, red...) se sigue rechazando solo. Valen para toda la computadora."
       else
         jqc --indent 2 --argjson rules "$(gemini_rules_json)" \
           '.userSettings.globalPermissionGrants.allow = ((.userSettings.globalPermissionGrants.allow // []) - $rules)' \

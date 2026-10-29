@@ -73,6 +73,10 @@ case "${FAKE_MODE:-ok}" in
     step 2 ERROR run_command '{"CommandLine":"Remove-Item -Path \"src/old.ts\""}' 'permission check failed for unsandboxed \"Remove-Item\": user denied permission to run command:\nRemove-Item -Path src/old.ts'
     echo 'jetski: no output produced — a tool required the "command" permission that headless mode cannot prompt for, so it was auto-denied.' >&2
     result "" ;;
+  gitrm)
+    git rm -q src/util.ts
+    step 2 DONE run_command '{"CommandLine":"git rm src/util.ts"}'
+    result "Hecho: borré src/util.ts." ;;
   silent) ;;
   auth) echo "Error: authentication required. Run agy to sign in." >&2; exit 1 ;;
   badmodel) echo "ERROR: unknown model 'gemini-4-argon'" >&2; exit 1 ;;
@@ -419,6 +423,11 @@ bash "$REPO/plugins/office/skills/office-agents/office-agents.sh" gemini-permiss
 new_project
 FAKE_MODE=denied check 3 "gemini con permisos: comando fuera de la lista" frontend.developer gemini
 expect "$WORK/out.txt" "No están entre los permitidos de gemini-permissions" "gemini con permisos: dice que el comando no está en la lista"
+expect "$WORK/out.txt" "tiene que usar git rm o git mv" "gemini con permisos: dice cómo borrar"
+new_project
+FAKE_MODE=gitrm check 0 "gemini: borra con git rm" frontend.developer gemini
+expect "$WORK/out.txt" "src/util.ts" "gemini: el borrado aparece en los archivos cambiados"
+expect "$FAKE_STDIN" "borrar y mover archivos del repo con \`git rm\` y \`git mv\`" "gemini con permisos: sabe que borra con git rm"
 rm -rf "$WORK/gemini"
 
 if [ "$FAILED" -ne 0 ]; then

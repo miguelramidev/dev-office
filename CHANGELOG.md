@@ -16,6 +16,8 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
   - el reporte sale del resultado final y los tokens de Gemini llegan al observer y al resumen de tokens (antes figuraban en 0);
   - cada paso queda en el registro de la corrida (`paso 3 · replace_file_content · src/app.ts → ok`) y el flujo completo en `stream.jsonl`;
   - si Antigravity le rechaza un comando, el resumen dice cuál fue, exacto (por ejemplo `Remove-Item -Path "src/old.ts"`), y si faltan los permisos o el comando no está en la lista. Antes decía "terminó sin devolver un reporte".
+- **Gemini puede borrar y mover archivos** (script `office-agents.sh` versión 6). Antigravity no tiene herramienta para borrar, así que `gemini-permissions on` ahora también permite `git rm` y `git mv`, que solo actúan sobre archivos que git sigue dentro del repo y se deshacen con `git restore`. `rm`, `del` y `Remove-Item` siguen rechazados. Si ya estaban activados, hay que correr `gemini-permissions on` otra vez.
+- El PM revisa el estado de los permisos antes de encargarle a Gemini algo que es sobre todo borrar o mover archivos; sin permisos, se lo pasa a Claude o a Codex y avisa.
 - Pruebas nuevas en `tests/run-external.test.sh`, con un `agy` falso que emite stream-json como Antigravity 1.3.
 
 ## [0.36.0] - 2026-10-28

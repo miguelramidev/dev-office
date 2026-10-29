@@ -153,9 +153,9 @@ write_summary() {
       echo "Comandos que Antigravity le rechazó a Gemini (no se corrieron):"
       printf '%s\n' "$DENIED" | sed '/^$/d; s/^/  - /'
       if [ "${GEMINI_CMDS:-0}" -eq 1 ]; then
-        echo "  No están entre los permitidos de gemini-permissions. Antigravity no tiene herramienta para borrar archivos: un borrado necesita otro rol."
+        echo "  No están entre los permitidos de gemini-permissions. Para borrar o mover archivos, Gemini tiene que usar git rm o git mv."
       else
-        echo "  Gemini no tiene permisos de comandos. Para lectura y verificación: bash .claude/office-agents.sh gemini-permissions on"
+        echo "  Gemini no tiene permisos de comandos (ni para borrar archivos: Antigravity no tiene herramienta para eso). Se activan con: bash .claude/office-agents.sh gemini-permissions on"
       fi
     fi
     if [ -n "$PROBLEMS" ]; then
@@ -326,7 +326,7 @@ EOF
   case "$PROVIDER" in
     gemini)
       if [ "$GEMINI_CMDS" -eq 1 ]; then
-        echo "- Solo podés correr estos comandos, de a uno y sin encadenarlos (nada de \`;\`, \`&&\`, \`|\` ni redirecciones): \`git status\`, \`git diff\`, \`git log\`, \`git show\`, \`git ls-files\`, \`git grep\` y \`git blame\`; listar carpetas (\`ls\`, \`dir\`); y lint, typecheck y tests del proyecto (\`pnpm lint\`, \`pnpm test\`, \`npm run typecheck\`, \`npx tsc --noEmit\`, \`npx eslint\`, \`npx jest\`, \`npx vitest run\`...). Cualquier otro comando se rechaza solo: no insistas. Para leer archivos usá tus herramientas de archivos, no comandos."
+        echo "- Solo podés correr estos comandos, de a uno y sin encadenarlos (nada de \`;\`, \`&&\`, \`|\` ni redirecciones): \`git status\`, \`git diff\`, \`git log\`, \`git show\`, \`git ls-files\`, \`git grep\` y \`git blame\`; borrar y mover archivos del repo con \`git rm\` y \`git mv\` (la única forma de borrar o mover que tenés: nunca \`rm\`, \`del\` ni \`Remove-Item\`); listar carpetas (\`ls\`, \`dir\`); y lint, typecheck y tests del proyecto (\`pnpm lint\`, \`pnpm test\`, \`npm run typecheck\`, \`npx tsc --noEmit\`, \`npx eslint\`, \`npx jest\`, \`npx vitest run\`...). Cualquier otro comando se rechaza solo: no insistas. Para leer archivos usá tus herramientas de archivos, no comandos."
       else
         echo "- No corras comandos de la terminal, ni siquiera para listar o buscar archivos: acá se rechazan solos. Para leer, listar y buscar en el proyecto usá tus herramientas de archivos."
       fi
