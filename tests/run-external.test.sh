@@ -58,9 +58,21 @@ cat >"$FAKE_BIN/agy" <<'EOF'
 printf '%s\n' "$*" >"$FAKE_ARGS"
 PROMPT_FILE=$(printf '%s' "$2" | grep -oE '\.office/[^ ]+prompt\.md')
 [ -n "$PROMPT_FILE" ] && cp "$PROMPT_FILE" "$FAKE_STDIN"
+# Con --output-format stream-json, un evento JSON por línea (como Antigravity 1.3).
+step() { local err=""; [ -n "${5:-}" ] && err=',"error":{"type":"TOOL_ERROR","message":"'"$5"'"}'; printf '{"event":"step_update","step_update":{"conversation_id":"c1","step_index":%s,"state":"%s","step_type":"tool","tool_name":"%s","tool_info":{"name":"%s","parameters":%s%s}}}\n' "$1" "$2" "$3" "$3" "$4" "$err"; }
+result() { printf '{"event":"result","result":{"conversation_id":"c1","status":"SUCCESS","response":"%s","num_turns":1,"usage":{"input_tokens":6802,"output_tokens":115,"thinking_tokens":55,"total_tokens":%s}}}\n' "$1" "${2:-6917}"; }
 case "${FAKE_MODE:-ok}" in
-  ok) echo "// cambio" >>src/app.ts; echo "Hecho: listo." ;;
-  noop) echo "Hecho: nada que cambiar." ;;
+  ok)
+    echo '{"event":"init","conversation_id":"c1","init":{"cwd":"x","tools":["view_file"]}}'
+    step 2 DONE view_file '{"AbsolutePath":"src/app.ts"}'
+    echo "// cambio" >>src/app.ts
+    step 3 DONE replace_file_content '{"TargetFile":"src/app.ts"}'
+    result "Hecho: listo." ;;
+  noop) result "Hecho: nada que cambiar." ;;
+  denied)
+    step 2 ERROR run_command '{"CommandLine":"Remove-Item -Path \"src/old.ts\""}' 'permission check failed for unsandboxed \"Remove-Item\": user denied permission to run command:\nRemove-Item -Path src/old.ts'
+    echo 'jetski: no output produced — a tool required the "command" permission that headless mode cannot prompt for, so it was auto-denied.' >&2
+    result "" ;;
   silent) ;;
   auth) echo "Error: authentication required. Run agy to sign in." >&2; exit 1 ;;
   badmodel) echo "ERROR: unknown model 'gemini-4-argon'" >&2; exit 1 ;;
@@ -383,6 +395,30 @@ expect_not "$FAKE_STDIN" "La corre la oficina" "gemini con permisos: ya no dice 
 new_project
 FAKE_MODE=ok check 0 "codex con los permisos de Gemini activados" backend.developer codex
 expect_not "$FAKE_STDIN" "Solo podés correr estos comandos" "codex: los permisos de Gemini no le cambian nada"
+rm -rf "$WORK/gemini"
+
+# --- Gemini con stream-json: pasos, tokens y comandos rechazados ------------------------
+
+new_project
+FAKE_MODE=ok check 0 "gemini: stream-json" frontend.developer gemini
+expect "$FAKE_ARGS" "--output-format stream-json" "gemini: pide la salida por pasos"
+expect "$PROJ/.office/runs/r1/output.md" "Hecho: listo." "gemini: el reporte sale del resultado final"
+expect_not "$PROJ/.office/runs/r1/output.md" '"event"' "gemini: el reporte no trae los eventos JSON"
+expect "$PROJ/.office/runs/r1/log.txt" "paso 3 · replace_file_content · src/app.ts → ok" "gemini: el registro cuenta cada paso"
+expect "$PROJ/.office/runs/r1/stream.jsonl" '"event":"result"' "gemini: guarda el flujo completo"
+expect "$PROJ/.office/observer/events.js" '"tokens":6917' "gemini: el observer recibe sus tokens"
+new_project
+FAKE_MODE=denied check 3 "gemini: comando rechazado" frontend.developer gemini
+expect "$WORK/out.txt" "Comandos que Antigravity le rechazó a Gemini" "gemini: el resumen dice que le rechazaron un comando"
+expect "$WORK/out.txt" 'Remove-Item -Path "src/old.ts"' "gemini: muestra el comando exacto"
+expect "$WORK/out.txt" "gemini-permissions on" "gemini sin permisos: dice cómo activarlos"
+expect "$WORK/out.txt" "se frenó porque Antigravity le rechazó un comando" "gemini: explica por qué no hay reporte"
+expect "$PROJ/.office/runs/r1/log.txt" "paso 2 · run_command · Remove-Item" "gemini: el rechazo queda en el registro"
+mkdir -p "$WORK/gemini"
+bash "$REPO/plugins/office/skills/office-agents/office-agents.sh" gemini-permissions on >/dev/null
+new_project
+FAKE_MODE=denied check 3 "gemini con permisos: comando fuera de la lista" frontend.developer gemini
+expect "$WORK/out.txt" "No están entre los permitidos de gemini-permissions" "gemini con permisos: dice que el comando no está en la lista"
 rm -rf "$WORK/gemini"
 
 if [ "$FAILED" -ne 0 ]; then

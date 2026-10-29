@@ -133,6 +133,8 @@ STATUS_TEXT=""
 DURATION=0
 CHANGES=""
 PROBLEMS=""
+DENIED=""      # comandos que Antigravity le rechazó a Gemini (no son reglas rotas: no se corrieron)
+EXT_TOKENS=""  # tokens que informa el proveedor
 
 add_problem() { PROBLEMS=$(printf '%s\n- %s' "$PROBLEMS" "$1"); }
 
@@ -146,6 +148,15 @@ write_summary() {
       printf '%s\n' "$CHANGES" | sed 's/^/  /'
     else
       echo "  (ninguno)"
+    fi
+    if [ -n "$DENIED" ]; then
+      echo "Comandos que Antigravity le rechazó a Gemini (no se corrieron):"
+      printf '%s\n' "$DENIED" | sed '/^$/d; s/^/  - /'
+      if [ "${GEMINI_CMDS:-0}" -eq 1 ]; then
+        echo "  No están entre los permitidos de gemini-permissions. Antigravity no tiene herramienta para borrar archivos: un borrado necesita otro rol."
+      else
+        echo "  Gemini no tiene permisos de comandos. Para lectura y verificación: bash .claude/office-agents.sh gemini-permissions on"
+      fi
     fi
     if [ -n "$PROBLEMS" ]; then
       echo "Problemas:"
@@ -161,8 +172,8 @@ finish() {
   STATUS="$1"
   STATUS_TEXT="$2"
   # Tokens: lo que informe el CLI en su salida, si lo informa (por ejemplo "tokens used: 12,345").
-  local tok=""
-  [ -f "$LOG" ] && tok=$(grep -oiE 'tokens used[^0-9]*[0-9][0-9,.]*' "$LOG" 2>/dev/null | tail -n1 | grep -oE '[0-9][0-9,.]*$' | tr -d ',.')
+  local tok="${EXT_TOKENS:-}"
+  [ -z "$tok" ] && [ -f "$LOG" ] && tok=$(grep -oiE 'tokens used[^0-9]*[0-9][0-9,.]*' "$LOG" 2>/dev/null | tail -n1 | grep -oE '[0-9][0-9,.]*$' | tr -d ',.')
   obs_emit --arg role "$ROLE" --arg prov "$PROVIDER" --arg model "${MODEL:-}" --arg effort "${EFFORT:-}" \
     --argjson code "$STATUS" --arg text "$STATUS_TEXT" --argjson dur "${DURATION:-0}" --arg tok "$tok" \
     '{type: "external", t: $t, role: $role, provider: $prov, model: $model, effort: $effort, code: $code, result: $text, duration: $dur, tokens: (if $tok == "" then null else ($tok | tonumber) end)}'
@@ -412,7 +423,7 @@ case "$PROVIDER" in
     # shellcheck disable=SC2206
     CMD=(agy -p "Tu encargo completo está en el archivo ${PROMPT#"$PROJECT"/}. Leelo entero antes de empezar y seguilo al pie de la letra."
       ${MODE_ARGS[@]+"${MODE_ARGS[@]}"} ${DIR_ARGS[@]+"${DIR_ARGS[@]}"} ${MODEL:+--model "$MODEL"} ${EFFORT:+--effort "$EFFORT"}
-      --output-format text --print-timeout "$(( TIMEOUT / 60 + 1 ))m" ${OFFICE_GEMINI_ARGS:-})
+      --output-format stream-json --print-timeout "$(( TIMEOUT / 60 + 1 ))m" ${OFFICE_GEMINI_ARGS:-})
     ;;
 esac
 
@@ -438,7 +449,34 @@ RC=$?
 DURATION=$(( $(date +%s) - START ))
 echo "(código de salida: $RC)" >>"$LOG"
 
-# Antigravity escribe el reporte en la salida estándar; Codex, en el archivo de -o.
+# Antigravity (stream-json) escribe un evento JSON por línea: cada paso, con la herramienta y
+# sus parámetros (el comando completo en run_command), y al final el resultado con el reporte
+# y los tokens. Se guarda el flujo, los pasos van al registro y el reporte a output.md.
+if [ "$PROVIDER" = "gemini" ] && [ -s "$STDOUT_FILE" ] && command -v jq >/dev/null 2>&1; then
+  STREAM="$RUN_DIR/stream.jsonl"
+  tr -d '\r' <"$STDOUT_FILE" >"$STREAM"
+  jq -R -r 'fromjson? | select(.event == "result") | .result.response // empty' "$STREAM" | tr -d '\r' >"$OUTPUT"
+  grep -q '[^[:space:]]' "$OUTPUT" 2>/dev/null || rm -f "$OUTPUT"
+  EXT_TOKENS=$(jq -R -s -r 'split("\n") | map(fromjson? // empty) as $e
+    | ([$e[] | select(.event == "result") | .result.usage.total_tokens // empty] | last)
+      // ([$e[] | select(.event == "step_update") | .step_update.usage.total_tokens // 0] | add)
+      // empty' "$STREAM" 2>/dev/null | tr -d '\r')
+  case "$EXT_TOKENS" in '' | *[!0-9]*) EXT_TOKENS="" ;; esac
+  {
+    echo "--- pasos de Gemini ---"
+    jq -R -r 'fromjson? | select(.event == "step_update") | .step_update
+      | select(.step_type == "tool" and (.state == "DONE" or .state == "ERROR"))
+      | "paso \(.step_index) · \(.tool_name) · "
+        + ((.tool_info.parameters // {}) | (.CommandLine // .AbsolutePath // .TargetFile // .DirectoryPath // .SearchPath // .Query // tostring) | tostring | gsub("[\r\n]+"; " ") | .[0:160])
+        + (if .state == "DONE" then " → ok" else " → ERROR: " + ((.tool_info.error.message // "") | split("\n")[0] | .[0:200]) end)' "$STREAM"
+  } >>"$LOG" 2>/dev/null
+  DENIED=$(jq -R -r 'fromjson? | select(.event == "step_update") | .step_update
+    | select(.step_type == "tool" and .state == "ERROR" and ((.tool_info.error.message // "") | test("denied permission|permission check failed"; "i")))
+    | (.tool_info.parameters.CommandLine // .tool_name) | tostring | gsub("[\r\n]+"; " ") | .[0:200]' "$STREAM" 2>/dev/null | tr -d '\r' | awk 'NF && !seen[$0]++')
+  rm -f "$STDOUT_FILE"
+fi
+
+# Antigravity sin jq y Codex: el reporte es la salida estándar o el archivo de -o.
 if [ ! -s "$OUTPUT" ] && [ -s "$STDOUT_FILE" ]; then
   tr -d '\r' <"$STDOUT_FILE" >"$OUTPUT"
 elif [ -s "$STDOUT_FILE" ]; then
@@ -542,7 +580,11 @@ if [ "$RC" -ne 0 ]; then
 fi
 
 if [ ! -s "$OUTPUT" ]; then
-  add_problem "$PROVIDER terminó sin devolver un reporte."
+  if [ -n "$DENIED" ]; then
+    add_problem "$PROVIDER terminó sin devolver un reporte: se frenó porque Antigravity le rechazó un comando (ver la lista de arriba)."
+  else
+    add_problem "$PROVIDER terminó sin devolver un reporte."
+  fi
   finish 3 "el proveedor falló"
 fi
 

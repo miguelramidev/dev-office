@@ -8,6 +8,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.36.1] - 2026-10-28
+
+### Corregido
+
+- **Gemini: tokens y comandos rechazados** (`office` 0.34.1). El puente corre a Antigravity con `--output-format stream-json`, que informa cada paso:
+  - el reporte sale del resultado final y los tokens de Gemini llegan al observer y al resumen de tokens (antes figuraban en 0);
+  - cada paso queda en el registro de la corrida (`paso 3 · replace_file_content · src/app.ts → ok`) y el flujo completo en `stream.jsonl`;
+  - si Antigravity le rechaza un comando, el resumen dice cuál fue, exacto (por ejemplo `Remove-Item -Path "src/old.ts"`), y si faltan los permisos o el comando no está en la lista. Antes decía "terminó sin devolver un reporte".
+- Pruebas nuevas en `tests/run-external.test.sh`, con un `agy` falso que emite stream-json como Antigravity 1.3.
+
 ## [0.36.0] - 2026-10-28
 
 ### Agregado
