@@ -62,6 +62,16 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/teams-check.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/telegram/office-telegram.sh\" hook context"
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/telegram/office-telegram.sh\" hook listen",
+            "asyncRewake": true,
+            "timeout": 86400
           }
         ]
       }
@@ -72,6 +82,12 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/observer.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/telegram/office-telegram.sh\" hook listen",
+            "asyncRewake": true,
+            "timeout": 86400
           }
         ]
       }
@@ -114,6 +130,17 @@
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/observer.sh\""
           }
         ]
+      },
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/telegram/office-telegram.sh\" hook listen",
+            "asyncRewake": true,
+            "timeout": 86400
+          }
+        ]
       }
     ],
     "Stop": [
@@ -122,6 +149,17 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/observer.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/telegram/office-telegram.sh\" hook send",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/telegram/office-telegram.sh\" hook listen",
+            "asyncRewake": true,
+            "timeout": 86400
           }
         ]
       }
@@ -133,6 +171,17 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/observer.sh\""
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/telegram/office-telegram.sh\" hook permission",
+            "timeout": 660
           }
         ]
       }

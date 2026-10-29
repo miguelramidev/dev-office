@@ -51,5 +51,8 @@ jobs:
       - name: Probar el hook del observer
         run: bash tests/observer.test.sh
 
+      - name: Probar la oficina remota por Telegram
+        run: bash tests/telegram.test.sh
+
       - name: Probar la actualización de la oficina
         run: bash tests/update-office.test.sh

@@ -215,6 +215,7 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 
 - **Los agentes no hablan entre ellos.** Todo pasa por el PM: cada agente le devuelve un reporte y el PM decide el siguiente paso. En el modo equipos, el developer y el tester le reportan a su líder, y el líder al PM.
 - **Los agentes arrancan sin contexto.** No ven la conversación entre el CEO y el PM, así que cada encargo incluye objetivo, archivos, decisiones tomadas, criterio de terminado y límites.
+- **Oficina remota.** Con el modo remoto de Telegram encendido, el último mensaje del PM le llega al CEO por un bot, lo que el CEO le escribe despierta la sesión (hook con `asyncRewake`) y los permisos se aprueban con botones (hook `PermissionRequest`). Detalle en [La oficina remota por Telegram](telegram.md).
 - **Aprobaciones.** Si un agente necesita algo que requiere aprobación (instalar dependencias, commits, costos, decisiones de diseño importantes), frena y termina su reporte con "Necesito aprobación". El PM se lo consulta al CEO.
 
 ## Departamentos

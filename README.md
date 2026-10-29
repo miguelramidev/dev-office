@@ -13,7 +13,8 @@ Si es la primera vez que usás la oficina, seguí estos pasos en orden:
 3. **Mirá la oficina en vivo:** `/office:observer`. → [Ver qué hace el equipo](docs/installation.md#5-ver-qué-hace-el-equipo)
 4. **Opcional, Codex o Gemini en algunos roles:** `/office:office-agents`. → [Claude, Codex o Gemini en cada rol](docs/providers.md)
 5. **Opcional, un líder por departamento:** `bash .claude/office-agents.sh teams on`. → [Modo equipos](docs/architecture.md#modo-equipos-un-líder-por-departamento)
-6. **Mantenela al día:** `/office:update` o la lista de comandos. → [Actualizar](docs/installation.md#6-actualizar)
+6. **Opcional, manejala desde el celular:** `/office:telegram`. → [La oficina remota por Telegram](docs/telegram.md)
+7. **Mantenela al día:** `/office:update` o la lista de comandos. → [Actualizar](docs/installation.md#6-actualizar)
 
 Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). Para entender cómo trabaja todo por dentro: [Arquitectura](docs/architecture.md).
 
@@ -29,6 +30,7 @@ Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). 
 | `/office:handoff-ticket` | Avisarle a otro equipo, en su ticket de Jira, de un cambio que lo afecta. |
 | `/office:office-agents` | Elegir Claude, Codex o Gemini para cada rol, y el modo equipos. |
 | `/office:observer` | Abrir la oficina en pixel art en el navegador. |
+| `/office:telegram` | Manejar la oficina desde Telegram: te llega el último mensaje del PM, le respondés desde el celular y aprobás los permisos con botones. |
 | `/office:usage` | Ver cuántos tokens gastó cada agente en cada tarea, por agente y por proveedor. El PM lo agrega al final de su informe. |
 | `/office:update` | Dejar el botón para actualizar la oficina en todos tus proyectos. |
 
@@ -61,6 +63,8 @@ Vos solo hablás con el PM.
 
 **La oficina en pixel art 3D.** Con `/office:observer` se abre en el navegador una página local donde ves la oficina trabajar en vivo, en pixel art 3D (con la vista clásica a un botón), con nombre para cada empleado y vos como CEO: el PM camina de oficina en oficina y va a buscar el reporte de cada departamento que termina, la gente se levanta a hablar con su líder, el tester le lleva la falla al developer, los QA debaten sus hallazgos y en los ratos libres alguien va por un café o a charlar con otro departamento, y el PM espera en la puerta de Reuniones hasta que lo llamás; cada empleado muestra qué está haciendo, con qué proveedor y cuántos tokens lleva, y con los botones de arriba a la derecha abrís el equipo, la actividad, los tokens por proveedor y la tienda, sin salir de la oficina. Cuando el PM te entrega un informe, al que más trabajó le llega una pizza de compensación. Cada sesión empieza con una oficina básica que se amuebla con los tokens que gasta el equipo: en la tienda comprás escritorios, plantas, cuadros, muebles, cosas para el pasillo y ropa, el nivel sube con los tokens y el catálogo cambia en cada sesión. Se arma con los hooks de la oficina, sin servidor y sin gastar tokens.
 
+**La oficina desde el celular (opcional).** Con `/office:telegram` conectás un bot de Telegram: el último mensaje del PM te llega al chat, le respondés desde el celular y la oficina sigue trabajando en tu computadora, aunque la sesión lleve horas quieta. Los permisos se aprueban con botones y `/estado` te dice en qué anda. Guía: [docs/telegram.md](docs/telegram.md).
+
 **Claude, Codex o Gemini en cada rol.** Cada rol de la oficina lo puede hacer el proveedor que elijas: por ejemplo, Codex como developer de backend, Gemini como developer de front y Claude en el resto. Lo configurás con `/office:office-agents` o con el script que queda en el proyecto (`bash .claude/office-agents.sh`, o `.claude\office-agents.cmd` en Windows). Cada rol usa el modelo del mismo nivel que tiene en Claude: los roles de Opus (PM, QA, arquitectos) van con GPT-6 Astra o Gemini 4 Argon, y los de Sonnet con GPT-6.1 Sol o Gemini 3.8 Flash, todos con razonamiento medio. Gemini se usa con Antigravity CLI y tu cuenta de Google. El PM es siempre Claude, pero puede consultar a Codex o Gemini como asesores antes de proponerte un plan. Si configurás más de un QA, cada uno revisa por separado y después validan lo que encontraron los otros: lo confirmado queda y lo que está en disputa te llega con los dos argumentos. Si no configurás nada, todo sigue en Claude como siempre. Guía completa: [docs/providers.md](docs/providers.md).
 
 **Ramas y tickets.** Nunca se trabaja sobre las ramas protegidas del proyecto (por ejemplo `main`, `dev` y las `epic/*`): un hook bloquea las ediciones, los commits y los pushes ahí. Si usás Jira, decile al PM "trabajemos en PROJ-123" (o usá `/office:start-ticket PROJ-123`). Según el tipo del ticket, su épica y sus etiquetas, crea la rama correcta (por ejemplo `feature/PROJ-123-<resumen>` desde la rama de su épica), pasa el ticket a "en curso" en Jira y te dice a qué rama va el PR.
@@ -80,7 +84,7 @@ Se actualizan cada vez que cambia un endpoint, así siempre tenés la API de tu 
 
 | Plugin         | Contiene                                                                  | Modelos       |
 | -------------- | ------------------------------------------------------------------------- | ------------- |
-| `office`       | PM, QA, puente a Codex y Gemini, hooks de protección y registro de actividad, observer en pixel art, skills `office-setup`, `start-ticket`, `open-pr`, `review-fixes`, `handoff-ticket`, `office-agents`, `observer`, `usage` y `update` | PM y QA: Opus; puente: Sonnet |
+| `office`       | PM, QA, puente a Codex y Gemini, hooks de protección y registro de actividad, observer en pixel art, skills `office-setup`, `start-ticket`, `open-pr`, `review-fixes`, `handoff-ticket`, `office-agents`, `observer`, `telegram`, `usage` y `update` | PM y QA: Opus; puente: Sonnet |
 | `dept-backend` | Arquitecto, developer y tester de backend, skills de backend sólido y de colección de Postman | Arquitecto: Opus; developer y tester: Sonnet |
 | `dept-frontend` | Arquitecto, designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skills de frontend sólido y de lectura de diseños entregados (imágenes o Figma) | Arquitecto: Opus; el resto: Sonnet |
 | `dept-database` | Developer (DB manager) y tester de Postgres y MongoDB, skill de base de datos sólida | Sonnet |

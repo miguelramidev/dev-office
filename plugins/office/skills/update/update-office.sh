@@ -6,7 +6,7 @@
 #   2. Actualiza cada plugin de dev-office instalado, en su scope: los de usuario una vez,
 #      y los de proyecto (o locales) en la carpeta de cada proyecto donde estén instalados.
 #   3. Refresca en cada proyecto los scripts que la oficina copió en .claude/
-#      (office-agents y estos lanzadores), si hay una versión más nueva.
+#      (office-agents, office-telegram y estos lanzadores), si hay una versión más nueva.
 #   4. Muestra las versiones antes y después.
 #
 # Uso: bash update-office.sh [--yes]
@@ -112,7 +112,7 @@ else
     [ -z "$project" ] && continue
     dir=$(to_bash_path "$project")
     [ -d "$dir/.claude" ] || continue
-    for pair in "office-agents/office-agents.sh" "office-agents/office-agents.cmd" "update/update-office.sh" "update/update-office.cmd" "update/update-office.command"; do
+    for pair in "office-agents/office-agents.sh" "office-agents/office-agents.cmd" "telegram/office-telegram.sh" "telegram/office-telegram.cmd" "update/update-office.sh" "update/update-office.cmd" "update/update-office.command"; do
       name="${pair##*/}"
       src="$OFFICE_DIR/skills/$pair"
       dst="$dir/.claude/$name"

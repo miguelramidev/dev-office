@@ -8,6 +8,19 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.38.0] - 2026-10-29
+
+### Agregado
+
+- **La oficina remota por Telegram** (`office` 0.36.0, skill `office:telegram`). Manejás la oficina desde el celular mientras la sesión de Claude Code sigue abierta en tu computadora.
+  - El último mensaje del PM te llega por un bot de Telegram. Le respondés desde el chat y la oficina sigue: tu mensaje despierta la sesión aunque lleve horas quieta, y el PM lo toma como si lo hubieras escrito en la terminal.
+  - Los permisos te llegan con los botones Permitir y Rechazar. Si no respondés en 10 minutos, el pedido pasa a la terminal.
+  - `/estado` y `/ayuda` en el chat. Solo se acepta tu chat.
+  - Se configura con `.claude/office-telegram.sh` (y `.claude\office-telegram.cmd` en Windows): `setup <token>` guarda el bot en tu usuario y toma el chat id del primer mensaje; `on` y `off` encienden y apagan el modo remoto en cada proyecto; también `status`, `test` y `forget`.
+  - Hooks nuevos del plugin: `PermissionRequest`, y la escucha con `asyncRewake` en `SessionStart`, `UserPromptSubmit`, `Notification` (`idle_prompt`) y `Stop`. Con el modo remoto apagado, terminan enseguida sin hacer nada.
+  - El PM sabe reconocer tus mensajes de Telegram y escribe su último mensaje para leer en el celular.
+  - `/office:update` también actualiza `office-telegram.sh` y `office-telegram.cmd` en cada proyecto. Guía: `docs/telegram.md`. Pruebas: `tests/telegram.test.sh`.
+
 ## [0.37.1] - 2026-10-29
 
 ### Corregido

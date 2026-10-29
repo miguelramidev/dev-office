@@ -110,6 +110,10 @@ Con `bash .claude/office-agents.sh teams on`, cada departamento tiene un líder 
 
 Por defecto todos los roles son Claude. Si querés que Codex o Gemini hagan algunos (por ejemplo, Codex como developer de backend o dos QA que se validan entre ellos), instalá su CLI, iniciá sesión y corré `/office:office-agents`. Todo el detalle está en la guía [Claude, Codex o Gemini en cada rol](providers.md).
 
+### La oficina desde el celular (opcional)
+
+Con `/office:telegram` conectás un bot de Telegram: el último mensaje del PM te llega al chat, le respondés desde el celular y la oficina sigue trabajando en tu computadora, y los permisos se aprueban con botones. La sesión de Claude Code tiene que quedar abierta. Todo el detalle está en la guía [La oficina remota por Telegram](telegram.md).
+
 ## 6. Actualizar
 
 **Con un doble click.** Corré `/office:update` una vez: deja en `.claude/` del proyecto (y, si querés, en el Escritorio) un script para actualizar la oficina:
