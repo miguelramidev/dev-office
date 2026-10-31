@@ -70,7 +70,7 @@ Cada rol lo puede hacer Claude, Codex o Gemini. Se configura por proyecto con la
 
 Si `qa` tiene varios proveedores, el PM los coordina en tres pasos:
 
-1. **Revisión independiente:** cada QA revisa sin ver lo de los otros, uno después del otro.
+1. **Revisión independiente, en paralelo:** cada QA revisa sin ver lo de los otros, todos a la vez, cada uno con su carpeta de ataques (`.qa/claude/`, `.qa/codex/`, `.qa/gemini/`). Van uno después del otro solo si el `CLAUDE.md` del proyecto dice que sus tests no pueden correr a la vez.
 2. **Validación cruzada:** una sola ronda. Cada QA recibe los hallazgos de los demás y los marca como confirmado (lo reprodujo), refutado (con pruebas) o sin verificar.
 3. **Consolidación:** lo confirmado queda con su clasificación; lo de uno solo queda si tiene reproducción; lo refutado con pruebas queda en disputa y va al CEO como importante, con los dos argumentos. Un hallazgo en disputa nunca es bloqueante.
 
@@ -138,7 +138,7 @@ La oficina en pixel art, en vivo, para ver qué pasa sin leer registros.
   - **Cierre del día:** el botón abre un resumen de la sesión (duración, tokens, nivel, compras, fallas, PR, empleado del mes, pizzas y logros) con la foto de la oficina, que se puede descargar como imagen.
 - **Leer en grande.** En la ficha de cada empleado están su encargo y su última respuesta, y debajo, los textos anteriores. Al tocarlos, o al tocar un ítem de la actividad, el texto se abre en grande en la página, con formato: títulos, listas, tablas y código. Nada de lo que escribe un agente se interpreta como HTML.
 - **Animaciones.** Al final del pasillo hay un baño con dos cubículos y un lavamanos: en los ratos libres alguien entra a uno libre (la puerta se cierra y el cartelito pasa a rojo), sale, se lava las manos y vuelve; si están los dos ocupados, espera un momento en la puerta y se vuelve. Si lo llaman a trabajar mientras está adentro, el cubículo queda libre. En los ratos libres, además del café y las charlas, la gente va al dispensador de agua (a veces de a dos, a charlar), mira por la ventana, busca algo en la impresora o riega las plantas, cada uno con sus frases. El PM va a buscar el reporte a cada departamento que termina. En el modo equipos, el líder se levanta a pasarle el encargo a su developer o tester, quien termina le lleva el resultado al líder y el tester le lleva la falla al developer. Con dos QA o más, en la validación cruzada se juntan en la pizarra a debatir. El PM espera en el pasillo, al lado de la puerta de Reuniones, y entra cuando el CEO le escribe. Quien está libre a veces va por un café, se estira o charla con alguien libre, de su departamento o de otro. Cuando el PM le entrega un informe al CEO, el empleado que más tokens gastó en ese encargo (nunca el PM ni el CEO) recibe una pizza de compensación: entra un repartidor por el pasillo, se la lleva al escritorio y la pizza queda ahí un rato, como esos jefes que pagan el trabajo extra con pizza. Las animaciones salen solo de los eventos nuevos: al abrir la página no se repite la historia.
-- **Consumo de tokens.** La skill `usage` arma, con el mismo registro, una tabla de tokens por tarea de cada agente, el total por agente (separando lo que gasta el puente de lo que gasta Codex o Gemini) y por proveedor, con el PM aparte. El PM la pega al final de su informe. Tampoco llama a ningún modelo.
+- **Consumo de tokens y tiempo.** La skill `usage` arma, con el mismo registro, una tabla de tokens y de duración por tarea de cada agente (en los roles por el puente, también lo que tardó Codex o Gemini), el total por agente (separando lo que gasta el puente de lo que gasta Codex o Gemini) y por proveedor, con el PM aparte. El PM la pega al final de su informe. Tampoco llama a ningún modelo.
 - **Privacidad.** No se guarda lo que escribe el CEO ni el contenido de los archivos. Sí se guardan los encargos y las respuestas completas, que pueden citar lo que pidió el CEO o fragmentos de código. Todo queda en `.office/`, que no va en git. Las compras de la tienda quedan solo en la pestaña del navegador.
 - **Apagarlo:** `OFFICE_OBSERVER=off` en el `env` del proyecto.
 
@@ -146,6 +146,11 @@ La oficina en pixel art, en vivo, para ver qué pasa sin leer registros.
 
 1. **Reunión:** el CEO y el PM discuten qué cambiar o mejorar. El PM opina con hechos (lee el proyecto antes), señala riesgos y costos y presenta opciones con su recomendación. No activa a nadie hasta que el CEO decida.
 2. **Ejecución:** con la decisión tomada, el PM presenta un plan, el CEO lo aprueba y el PM activa a los departamentos necesarios.
+
+**Tamaño de la tarea.** Cada agente arranca de cero y tarda, aunque el cambio sea mínimo, así que el PM clasifica cada tarea y se lo dice al CEO en una línea:
+
+- **Chica:** un solo departamento, un cambio acotado que sigue un patrón existente y que no toca contratos de API, modelo de datos, migraciones, pagos, autenticación, permisos, secretos ni datos personales. Sin asesores ni diseño, el plan va en una línea sin esperar aprobación, y el ciclo es developer → tester → un solo QA (el primero de `qa`), sin validación cruzada. Si aparece algo serio, pasa a normal.
+- **Normal:** todo lo demás, con el camino completo. Ante la duda, normal. El CEO puede pedir "hacelo completo" o "rápido".
 
 ## Fase de diseño
 

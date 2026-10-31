@@ -10,17 +10,17 @@ El script `run-external.sh` está en la misma carpeta que este archivo. Corre un
 
 ## Cómo se usa
 
-1. Creá la carpeta del encargo en `.office/runs/<fecha>-<hora>-<rol>/` (por ejemplo `.office/runs/20261026-1530-backend.developer/`) y escribí el encargo completo del PM en `task.md` adentro.
+1. Creá la carpeta del encargo en `.office/runs/<fecha>-<hora>-<rol>-<proveedor>/` (por ejemplo `.office/runs/20261026-153012-backend.developer-codex/`; con el proveedor, porque dos QA en paralelo pueden arrancar en el mismo segundo) y escribí el encargo completo del PM en `task.md` adentro.
 2. Lanzalo **en segundo plano** (herramienta Bash con `run_in_background: true`), así no lo corta el límite de 10 minutos de la herramienta:
 
    ```bash
-   bash <carpeta de esta skill>/run-external.sh --role backend.developer --provider codex --run-dir .office/runs/20261026-1530-backend.developer
+   bash <carpeta de esta skill>/run-external.sh --role backend.developer --provider codex --run-dir .office/runs/20261026-153012-backend.developer-codex
    ```
 
    Y esperá con `--wait`, en primer plano y con `timeout` 600000:
 
    ```bash
-   bash <carpeta de esta skill>/run-external.sh --wait --run-dir .office/runs/20261026-1530-backend.developer
+   bash <carpeta de esta skill>/run-external.sh --wait --run-dir .office/runs/20261026-153012-backend.developer-codex
    ```
 
    Cada espera dura como máximo 8 minutos (`--max <segundos>` para cambiarlo). Si sale con 10, sigue trabajando: volvé a esperar. Con cualquier otro código terminó, e imprime el resumen. El código queda también en `exit_code`, en la carpeta del encargo.

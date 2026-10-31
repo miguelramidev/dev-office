@@ -391,7 +391,7 @@ Trabajás para la oficina de desarrollo dev-office, en lugar de un agente de Cla
 EOF
   case "$SCOPE" in
     none) echo "- **Solo leés.** No crees, edites ni borres archivos, y no corras comandos que cambien algo." ;;
-    qa) echo "- Solo podés escribir dentro de \`.qa/\`." ;;
+    qa) echo "- Solo podés escribir dentro de tu carpeta, \`.qa/$PROVIDER/\`. Puede haber otro QA trabajando al mismo tiempo en otra carpeta de \`.qa/\`: no toques la suya ni borres \`.qa/\`." ;;
     design) echo "- Solo podés escribir dentro de \`docs/design/\`." ;;
   esac
   case "$PROVIDER" in

@@ -198,6 +198,7 @@ expect "$WORK/out.txt" "(nivel sonnet)" "el resumen dice el nivel"
 new_project
 FAKE_MODE=qa-ok check 0 "codex: QA (nivel opus)" qa codex
 expect "$FAKE_ARGS" "-m gpt-6-astra" "codex: QA usa gpt-6-astra"
+expect "$FAKE_STDIN" "Solo podés escribir dentro de tu carpeta, \`.qa/codex/\`" "QA: escribe en su propia carpeta, por si hay otro QA en paralelo"
 
 new_project
 FAKE_MODE=design check 0 "codex: arquitecto (nivel opus)" backend.architect codex
