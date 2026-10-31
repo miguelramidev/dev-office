@@ -8,6 +8,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.39.0] - 2026-10-31
+
+### Agregado
+
+- **Tiempo en el resumen del informe** (`office` 0.37.0, skill `usage`): el resumen pasa a ser "Consumo de tokens y tiempo". Suma la duración de cada tarea (y, en los roles por el puente, entre paréntesis lo que tardó Codex o Gemini), el tiempo total por agente y una línea con la duración de la sesión, el trabajo de los agentes y el tiempo de cada proveedor. Sirve para ver dónde se va el tiempo antes de cambiar algo.
+- **Camino corto para tareas chicas.** El PM clasifica cada tarea y se lo dice al CEO en una línea. Una tarea **chica** (un solo departamento, un cambio acotado que sigue un patrón existente, sin contratos de API, modelo de datos, migraciones, pagos, autenticación, permisos, secretos ni datos personales) va sin asesores ni diseño, con el plan en una línea sin esperar aprobación, y con developer → tester → un solo QA (el primero de `qa`), sin validación cruzada. Si aparece algo serio, pasa a normal. Ante la duda, normal; el CEO puede pedir "hacelo completo" o "rápido".
+
+### Cambiado
+
+- **Varios QA en paralelo.** En las tareas normales, el PM lanza a todos los QA en el mismo mensaje, y la revisión tarda lo que tarda el más lento. Cada QA escribe sus ataques en su propia carpeta (`.qa/claude/`, `.qa/codex/`, `.qa/gemini/`) y al terminar borra solo la suya. La validación cruzada también va en paralelo. Van uno después del otro solo si el `CLAUDE.md` del proyecto dice que sus tests no pueden correr a la vez.
+- El puente nombra la carpeta de cada encargo con el proveedor (`<fecha>-<rol>-<proveedor>`), para que dos QA que arrancan en el mismo segundo no la compartan.
+
 ## [0.38.1] - 2026-10-29
 
 ### Corregido

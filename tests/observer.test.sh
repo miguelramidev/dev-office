@@ -208,7 +208,7 @@ cat >"$TP/.office/observer/events.js" <<'EVS'
 OFFICE_EVENT({"type":"session","t":1,"source":"startup"});
 OFFICE_EVENT({"type":"delegate","t":2,"subagent_type":"office:external","description":"[backend-developer · codex] Endpoints | pedidos","role":"backend.developer","provider":"codex","xmodel":"gpt-x"});
 OFFICE_EVENT({"type":"start","t":3,"agent":"a1","agent_type":"office:external"});
-OFFICE_EVENT({"type":"external","t":4,"role":"backend.developer","provider":"codex","model":"gpt-x","tokens":120500,"code":0});
+OFFICE_EVENT({"type":"external","t":4,"role":"backend.developer","provider":"codex","model":"gpt-x","tokens":120500,"code":0,"duration":200});
 OFFICE_EVENT({"type":"stop","t":5,"agent":"a1","agent_type":"office:external","usage":{"i":500,"o":3000,"cw":15000},"verdict":"LISTO"});
 OFFICE_EVENT({"type":"delegate","t":6,"subagent_type":"dept-backend:tester","description":"[backend-tester] Tests"});
 OFFICE_EVENT({"type":"start","t":7,"agent":"a2","agent_type":"dept-backend:tester"});
@@ -225,6 +225,9 @@ echo "$OUT" | grep -q '| Tester de backend | Claude | Tests | FALLA | 26.3k |' &
 echo "$OUT" | grep -q '| QA | Claude | — | APROBADO | sin datos |' && ok "resumen: sin transcripción dice sin datos" || fail "resumen: sin transcripción dice sin datos"
 echo "$OUT" | grep -q '| PM (subagente) | Claude |' && ok "resumen: un subagente del PM no figura como asesor" || { fail "resumen: un subagente del PM no figura como asesor"; echo "$OUT"; }
 echo "$OUT" | grep -q 'Asesor del PM' && fail "resumen: no inventa asesores del PM" || ok "resumen: no inventa asesores del PM"
+echo "$OUT" | grep -q '| Tester de backend | Claude | Tests | FALLA | 26.3k | 1s |' && ok "resumen: la duración de cada tarea" || { fail "resumen: la duración de cada tarea"; echo "$OUT"; }
+echo "$OUT" | grep -q 'puente 18.5k | 2s (Codex 3m 20s) |' && ok "resumen: el tiempo del puente y, entre paréntesis, el del proveedor" || { fail "resumen: el tiempo del puente y del proveedor"; echo "$OUT"; }
+echo "$OUT" | grep -q '^\*\*Tiempo:\*\* sesión 9s · trabajo de los agentes 3s · Codex 3m 20s en 1 encargo' && ok "resumen: tiempo de la sesión y por proveedor" || { fail "resumen: tiempo de la sesión y por proveedor"; echo "$OUT" | grep Tiempo; }
 echo "$OUT" | grep -q 'Claude 241.8k (PM 197k, agentes y puente 44.8k) · Codex 120.5k' && ok "resumen: total por proveedor con el PM aparte" || { fail "resumen: total por proveedor"; echo "$OUT" | tail -4; }
 # Modo equipos: Claude Code identifica al líder como "<área>-lead", no como "dept-<área>:lead".
 cat >"$TP/.office/observer/events.js" <<'EVS'

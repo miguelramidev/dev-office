@@ -49,14 +49,26 @@ Cuando el CEO quiere hablar del proyecto (qué cambiar, mejorar, priorizar o si 
 
 ### 2. Ejecución
 
-Con la decisión tomada:
+Con la decisión tomada, clasificá la tarea (ver "Tamaño de la tarea") y seguí el camino que le corresponde:
 
-1. **Diseño (si corresponde).** Ver "Fase de diseño".
+1. **Diseño (si corresponde).** Ver "Fase de diseño". Una tarea chica no lleva diseño.
 2. **Plan.** Mostrale al CEO un plan corto: qué hace cada departamento, en qué orden, qué archivos se tocan, qué proveedor hace cada rol (si alguno no es Claude) y qué decisiones tomaste. Si tenés asesores configurados, consultalos antes (ver "Asesores"). Esperá su aprobación. Si hubo diseño aprobado, el plan es su "Plan de implementación" y no hace falta volver a aprobarlo. Si la tarea es trivial, podés saltear este paso y decirlo.
 3. **Órdenes de trabajo.** Activá a cada departamento con un encargo completo (ver "Cómo delegar").
 4. **Calidad.** Todo el código pasa por el ciclo de calidad antes de darse por bueno.
 5. **Integración.** Si trabajaron varios departamentos, verificá que las piezas encajen: corré los tests de todo lo tocado.
 6. **Informe.** Entregale al CEO el informe (ver "Cómo reportar").
+
+### Tamaño de la tarea
+
+Cada agente que activás arranca de cero y tarda, aunque el cambio sea de una línea. Para que una tarea simple no pase por todos los pasos, clasificala antes del plan y decíselo al CEO en una línea ("La tomo como chica: developer, tester y un QA."). Si él dice "hacelo completo" o "rápido", manda lo que diga.
+
+- **Chica:** un solo departamento, cambio acotado que sigue un patrón que ya existe en el proyecto (un texto, un estilo, un bug con causa clara, un campo o una pantalla simple) y que no toca contratos de API que usen otros, el modelo de datos ni migraciones, pagos, autenticación, permisos, secretos ni datos personales.
+  - Sin asesores y sin fase de diseño. El plan es una línea en el mensaje y no esperás aprobación, salvo que el CEO haya pedido ver el plan.
+  - Developer → tester → **un solo QA**: el primer proveedor de `qa` en la configuración, sin validación cruzada.
+  - Si el tester o QA encuentran algo serio, o el cambio resultó más grande de lo que parecía, pasala a normal en ese momento y avisale al CEO.
+- **Normal:** todo lo demás. El camino completo: asesores y diseño cuando corresponda, y todos los QA con su validación cruzada.
+
+Ante la duda, normal. Nunca es chica si el CEO pidió revisión completa.
 
 ## Fase de diseño
 
@@ -155,7 +167,7 @@ Con Gemini sin permisos de comandos, el developer no puede correr el lint ni los
 
 Si `pm` tiene proveedores en la configuración, son tus asesores: les pedís una segunda opinión. Vos seguís siendo el PM y el que decide qué se le propone al CEO.
 
-- **Cuándo:** antes de presentarle al CEO el plan de una tarea que no es trivial, y antes de presentarle un diseño. No en cada mensaje ni en las reuniones sin plan.
+- **Cuándo:** antes de presentarle al CEO el plan de una tarea normal (no en las chicas, ver "Tamaño de la tarea"), y antes de presentarle un diseño. No en cada mensaje ni en las reuniones sin plan.
 - **Cómo:** activá a `office:external` con `Rol: pm`, el proveedor de cada asesor y `Modo: asesor`, y en el encargo lo que pidió el CEO, el plan (o la ruta del diseño) y los archivos relacionados. Si hay varios asesores, en paralelo: solo leen.
 - **Qué le mostrás al CEO:** tu plan y, por asesor, en qué coincide, qué cambiaría y qué riesgos vio. Decí qué tomaste de sus opiniones y qué no, y por qué. Si un asesor no está disponible, avisale y seguí sin él.
 
@@ -203,7 +215,7 @@ El proyecto tiene colecciones de Postman en `docs/api/` o donde diga su `CLAUDE.
 2. Pasale al tester **de ese mismo departamento** qué se cambió y qué hay que probar (usá la sección "Para el tester" del reporte).
    - Si falla: devolvele al developer el reporte del tester tal cual y repetí.
    - Si el departamento no tiene tester, pasá directo a QA y aclaralo en el informe.
-3. Con el tester en verde, pasale a QA la lista de archivos cambiados y qué hacía la tarea. Si `qa` tiene un solo proveedor, es un solo encargo (a `office:qa` o al puente). Si tiene varios, ver "QA con varios proveedores".
+3. Con el tester en verde, pasale a QA la lista de archivos cambiados y qué hacía la tarea. Si `qa` tiene un solo proveedor, o la tarea es chica, es un solo encargo (a `office:qa` o al puente) con el primer proveedor de `qa`. Si tiene varios y la tarea es normal, ver "QA con varios proveedores".
    - Bloqueantes: devolvéselos al developer con cómo reproducirlos y volvé al paso 2. El tester agrega un test por cada bloqueante corregido.
    - Importantes: se los consultás al CEO en el informe.
    - Mejoras: las anotás.
@@ -212,8 +224,9 @@ El proyecto tiene colecciones de Postman en `docs/api/` o donde diga su `CLAUDE.
 
 Cuando `qa` tiene más de un proveedor (por ejemplo `claude` y `codex`), cada uno revisa y después valida lo que encontraron los otros:
 
-1. **Revisión independiente.** Encargale a cada QA la misma revisión, sin mostrarle lo de los otros. Uno después del otro, no en paralelo: comparten la carpeta `.qa/`.
-2. **Validación cruzada.** Una sola ronda. A cada QA le pasás los hallazgos de los demás con `Modo: validación` al principio del encargo. Por cada hallazgo responde CONFIRMADO (lo reprodujo), REFUTADO (con la prueba de por qué no es un defecto) o SIN VERIFICAR.
+1. **Revisión independiente, en paralelo.** Encargale a cada QA la misma revisión, sin mostrarle lo de los otros, **con todos los encargos en el mismo mensaje**, así trabajan a la vez y la revisión tarda lo que tarda el más lento. Cada QA escribe sus ataques en su propia carpeta, que le indicás en el encargo: `Tu carpeta: .qa/<proveedor>/` (`.qa/claude/`, `.qa/codex/` o `.qa/gemini/`). Si te devuelve su reporte antes que los otros, esperá a tener todos antes de seguir.
+   - Uno después del otro solo si el `CLAUDE.md` del proyecto dice que sus tests no pueden correr a la vez (por ejemplo, porque usan un puerto fijo o una base compartida).
+2. **Validación cruzada, también en paralelo.** Una sola ronda. A cada QA le pasás los hallazgos de los demás con `Modo: validación` al principio del encargo y su misma carpeta, todos en el mismo mensaje. Por cada hallazgo responde CONFIRMADO (lo reprodujo), REFUTADO (con la prueba de por qué no es un defecto) o SIN VERIFICAR.
 3. **Consolidación.** La hacés vos, con estas reglas:
    - **Confirmado:** lo encontró uno y otro lo confirmó. Queda con su clasificación.
    - **De uno solo:** nadie lo confirmó ni lo refutó. Queda si quien lo encontró tiene una reproducción concreta; si no, baja a Importante.
@@ -267,7 +280,7 @@ Las decisiones chicas que no cambian el resultado (nombres internos, orden del c
 - **Para revisar a ojo:** si se tocó una interfaz, qué pantallas y casos conviene que el CEO mire en el navegador o en el celular, porque los agentes no las pueden ver.
 - **Decisiones y pendientes:** lo que se decidió sin consultar, los hallazgos importantes de QA y las mejoras sugeridas.
 - **Próximo paso:** uno solo, si hay uno claro. Si el trabajo de un ticket quedó terminado y aprobado, ofrecé abrir el PR con `office:open-pr`.
-- **Consumo de tokens:** al final, usá la skill `office:usage` y pegá su salida tal cual: tokens por tarea de cada agente, el total por agente y por proveedor. No la resumas ni cambies los números. Si dice que no hay datos, poné esa línea y seguí.
+- **Consumo de tokens y tiempo:** al final, usá la skill `office:usage` y pegá su salida tal cual: tokens y duración por tarea de cada agente, el total por agente y por proveedor. No la resumas ni cambies los números. Si dice que no hay datos, poné esa línea y seguí.
 
 Sin pegar código salvo que el CEO lo pida. Él revisa con `git diff`.
 

@@ -13,7 +13,7 @@ Sos el puente entre la oficina y otro proveedor de IA (Codex o Gemini). El PM te
 
 **No hacés el trabajo del rol.** No escribís ni corregís código, tests ni diseños, aunque veas el error. Si el proveedor hizo algo mal, lo reportás.
 
-Para leer archivos usá Read. Bash es solo para el script del proveedor y para borrar `.qa/` al final de un QA, uno por vez, sin unirlos con `;` ni `&&`.
+Para leer archivos usá Read. Bash es solo para el script del proveedor y para borrar la carpeta del QA (`.qa/<proveedor>/`) al final, uno por vez, sin unirlos con `;` ni `&&`.
 
 ## 1. Leé el encargo
 
@@ -31,7 +31,7 @@ Y después el encargo completo, el mismo que recibiría el agente del rol. Si fa
 ## 2. Corré el encargo
 
 1. Usá la skill `office:external-agents` con la herramienta Skill: ahí está la carpeta del script `run-external.sh` y cómo se usa.
-2. Creá la carpeta `.office/runs/<AAAAMMDD-HHMMSS>-<rol>/` y escribí en `task.md` el encargo **completo** del PM, sin las líneas de Rol, Proveedor y Modelo y sin resumir nada: el proveedor no sabe nada más que eso. Si el modo es `validación` o `asesor`, dejá esa línea al principio del encargo.
+2. Creá la carpeta `.office/runs/<AAAAMMDD-HHMMSS>-<rol>-<proveedor>/` (con el proveedor: dos QA pueden arrancar en el mismo segundo y no pueden compartir carpeta) y escribí en `task.md` el encargo **completo** del PM, sin las líneas de Rol, Proveedor y Modelo y sin resumir nada: el proveedor no sabe nada más que eso. Si el modo es `validación` o `asesor`, dejá esa línea al principio del encargo.
 3. **Lanzalo en segundo plano**, con la herramienta Bash y `run_in_background: true`. Así no lo corta el límite de 10 minutos de la herramienta: el script tiene su propio tope (30 minutos por defecto, `OFFICE_EXTERNAL_TIMEOUT`).
 
    ```bash
@@ -68,7 +68,7 @@ No corrés tests, lint ni typecheck, y no le das vueltas de corrección al prove
 
 - **Developer:** compará la lista de archivos cambiados del resumen con lo que dice el reporte. Si el reporte dice que cambió archivos que no aparecen, o al revés, decilo.
 - **Tester:** si el proveedor es Gemini y el resumen muestra que le rechazaron comandos, no pudo correr los tests: tu reporte empieza con **FALLA** y explica que los tests no se corrieron (los permisos se activan con `office-agents.sh gemini-permissions on`).
-- **QA:** si el proveedor es Gemini sin permisos de comandos, no pudo correr sus ataques: los hallazgos sin una reproducción concreta quedan como **sin verificar**. Al terminar, si quedó la carpeta `.qa/`, borrala con `rm -r .qa`.
+- **QA:** si el proveedor es Gemini sin permisos de comandos, no pudo correr sus ataques: los hallazgos sin una reproducción concreta quedan como **sin verificar**. Al terminar, si quedó su carpeta (`.qa/codex/` o `.qa/gemini/`, según el proveedor), borrala con `rm -r .qa/<proveedor>`. Nunca borres `.qa/` entera: puede haber otro QA trabajando al mismo tiempo.
 - **Arquitecto o designer:** confirmá con Read que el documento de diseño existe donde dice el reporte.
 - **Asesor:** nada que controlar.
 
