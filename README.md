@@ -31,7 +31,7 @@ Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). 
 | `/office:office-agents` | Elegir Claude, Codex o Gemini para cada rol, y el modo equipos. |
 | `/office:observer` | Abrir la oficina en pixel art en el navegador. |
 | `/office:telegram` | Manejar la oficina desde Telegram: te llega el último mensaje del PM, le respondés desde el celular y aprobás los permisos con botones. |
-| `/office:usage` | Ver cuántos tokens gastó cada agente en cada tarea, por agente y por proveedor. El PM lo agrega al final de su informe. |
+| `/office:usage` | Ver cuántos tokens y cuánto tiempo gastó cada agente en cada tarea, por agente y por proveedor. |
 | `/office:update` | Dejar el botón para actualizar la oficina en todos tus proyectos. |
 
 ## Cómo funciona
@@ -55,7 +55,7 @@ Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). 
 2. **Diseño.** Para funciones nuevas o cambios grandes, los roles de diseño (el arquitecto de backend y el designer de frontend) escriben una propuesta en `docs/design/` y vos la aprobás antes de que se programe. Los bugs y ajustes chicos se saltean este paso.
 3. **Ejecución.** Con tu decisión, el PM arma un plan, lo aprobás y activa solo a los departamentos que hacen falta. El resto no trabaja ni gasta tokens.
 4. **Calidad.** Todo el código pasa por el tester del departamento y después por QA. Si algo falla, vuelve al departamento, con un máximo de 3 vueltas.
-5. **Informe.** El PM te entrega un resumen por departamento: qué se hizo, qué archivos cambiaron, resultados de calidad y decisiones pendientes. Al final, el consumo de tokens y el tiempo de cada agente por tarea, y el total por agente y por proveedor, para que veas qué conviene mover a Codex o Gemini, o desactivar.
+5. **Informe.** El PM te entrega un resumen por departamento: qué se hizo, qué archivos cambiaron, resultados de calidad y decisiones pendientes. Si querés ver cuántos tokens y cuánto tiempo gastó cada agente, pedilo con `/office:usage`.
 
 Las tareas chicas (un cambio acotado en un solo departamento) van por un camino corto: sin asesores ni diseño, y con un solo QA. Si configurás varios QA, en las tareas normales trabajan en paralelo.
 

@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.39.1] - 2026-10-31
+
+### Cambiado
+
+- **El informe del PM ya no termina con el resumen de tokens y tiempo** (`office` 0.37.1): llenaba mucho la consola. Sigue disponible a pedido, con `/office:usage`.
+
 ## [0.39.0] - 2026-10-31
 
 ### Agregado
