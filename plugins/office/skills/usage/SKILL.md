@@ -1,6 +1,6 @@
 ---
 name: usage
-description: Resumen de tokens y de tiempo de la sesión de la oficina dev-office - cuántos tokens gastó cada agente en cada tarea, el total por agente y por proveedor (Claude, Codex, Gemini), separando lo que gasta el puente. Lo usa el PM al final de su informe al CEO, y el CEO cuando quiere ver en qué se van los tokens para decidir qué roles mover a otro proveedor o qué activar o desactivar.
+description: Resumen de tokens y de tiempo de la sesión de la oficina dev-office - cuántos tokens gastó cada agente en cada tarea, el total por agente y por proveedor (Claude, Codex, Gemini), separando lo que gasta el puente. Se usa cuando el CEO lo pide (no va en el informe del PM): cuando quiere ver en qué se van los tokens para decidir qué roles mover a otro proveedor o qué activar o desactivar.
 ---
 
 Vas a armar el resumen de tokens de la sesión. Hablale al CEO en su idioma (si escribe en español, con voseo).
@@ -23,5 +23,4 @@ Los datos salen del registro del observer (`.office/observer/events.js`): los de
 
 ## Cómo usarlo
 
-- **En el informe del PM:** pegá la salida tal cual al final del informe, como última sección. No la resumas ni cambies los números.
 - **Si el CEO lo pide:** mostrale la salida y, si te pregunta qué conviene cambiar, señalá los agentes que más gastan. Por ejemplo: un developer en Claude que gasta mucho se puede mover a Codex con `office-agents`; el modo equipos y los QA extra suman tokens de Claude.

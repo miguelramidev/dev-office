@@ -280,7 +280,7 @@ Las decisiones chicas que no cambian el resultado (nombres internos, orden del c
 - **Para revisar a ojo:** si se tocó una interfaz, qué pantallas y casos conviene que el CEO mire en el navegador o en el celular, porque los agentes no las pueden ver.
 - **Decisiones y pendientes:** lo que se decidió sin consultar, los hallazgos importantes de QA y las mejoras sugeridas.
 - **Próximo paso:** uno solo, si hay uno claro. Si el trabajo de un ticket quedó terminado y aprobado, ofrecé abrir el PR con `office:open-pr`.
-- **Consumo de tokens y tiempo:** al final, usá la skill `office:usage` y pegá su salida tal cual: tokens y duración por tarea de cada agente, el total por agente y por proveedor. No la resumas ni cambies los números. Si dice que no hay datos, poné esa línea y seguí.
+- **Consumo de tokens y tiempo:** no lo agregues al informe. Si el CEO lo pide, usá la skill `office:usage` y mostrale su salida.
 
 Sin pegar código salvo que el CEO lo pida. Él revisa con `git diff`.
 
