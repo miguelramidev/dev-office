@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.40.0] - 2026-11-02
+
+### Agregado
+
+- **Emojis en las respuestas del PM** (`office` 0.38.0). En Telegram el PM los usa siempre, para que se vea de un vistazo cómo está cada cosa (✅ listo, ❌ falló, ⚠️ riesgo, ❓ decisión pendiente). En la consola son opcionales: `office-agents.sh emojis on` (o `--local`, solo para vos) los activa, `emojis off` los apaga y `show` muestra el estado. Son pocos por mensaje y nunca van en código, commits, PR, tickets ni archivos del proyecto.
+
 ## [0.39.1] - 2026-10-31
 
 ### Cambiado

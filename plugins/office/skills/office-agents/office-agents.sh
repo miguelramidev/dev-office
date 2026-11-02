@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-agents-version: 8
+# office-agents-version: 9
 # Configura qué proveedor (Claude, Codex o Gemini) hace cada rol de la oficina dev-office.
 #
 # Uso (desde la carpeta del proyecto):
@@ -11,6 +11,7 @@
 #   bash .claude/office-agents.sh get <rol>        el proveedor efectivo, uno por línea
 #   bash .claude/office-agents.sh check            verifica que los CLIs estén instalados y con sesión
 #   bash .claude/office-agents.sh teams on|off     modo equipos: un líder por departamento (agent teams)
+#   bash .claude/office-agents.sh emojis on|off [--local]   el PM también usa emojis en la consola (en Telegram, siempre)
 #   bash .claude/office-agents.sh gemini-permissions on|off   deja que Gemini corra comandos seguros
 #   bash .claude/office-agents.sh models           muestra el modelo de cada proveedor por nivel
 #   bash .claude/office-agents.sh tier <proveedor> <opus|sonnet|haiku|effort> <valor>|default [--local]
@@ -286,16 +287,17 @@ cmd_get() {
   effective "$role"
 }
 
-# Modo equipos: "teams" en la configuración (el archivo local manda).
-teams_value() {
-  local v=""
+# Un interruptor de la configuración ("teams", "emojis"); el archivo local manda.
+flag_value() {
+  local key="$1" v="" f
   for f in "$LOCAL_FILE" "$SHARED"; do
     [ -f "$f" ] || continue
-    v=$(jqc -r 'if has("teams") then (.teams | tostring) else empty end' "$f")
+    v=$(jqc -r --arg k "$key" 'if has($k) then (.[$k] | tostring) else empty end' "$f")
     [ -n "$v" ] && { echo "$v"; return 0; }
   done
   echo "false"
 }
+teams_value() { flag_value teams; }
 
 # El flag de agent teams de Claude Code, en el settings del proyecto que corresponde.
 settings_file() { if [ "$LOCAL" -eq 1 ]; then echo "$PROJECT/.claude/settings.local.json"; else echo "$PROJECT/.claude/settings.json"; fi; }
@@ -405,6 +407,32 @@ cmd_teams() {
   esac
 }
 
+# Emojis en las respuestas del PM en la consola. En Telegram los usa siempre.
+cmd_emojis() {
+  local action="${1:-status}" tmp
+  case "$action" in
+    on | off)
+      mkdir -p "$PROJECT/.claude"
+      [ -f "$TARGET" ] || echo '{}' >"$TARGET"
+      jq empty "$TARGET" >/dev/null 2>&1 || die "$TARGET no es un JSON válido."
+      tmp="$TARGET.tmp"
+      jqc -S --indent 2 --argjson v "$([ "$action" = on ] && echo true || echo false)" '.emojis = $v' "$TARGET" >"$tmp" && mv "$tmp" "$TARGET"
+      if [ "$action" = on ]; then
+        echo "Emojis en la consola activados$( [ "$LOCAL" -eq 1 ] && echo ' (solo para vos)'): el PM los usa en sus respuestas, como en Telegram."
+        echo "Si tu terminal muestra cuadraditos en vez de emojis (pasa en consolas viejas de Windows), usá Windows Terminal o apagalos con: emojis off"
+      else
+        echo "Emojis en la consola desactivados$( [ "$LOCAL" -eq 1 ] && echo ' (solo para vos)'). En Telegram el PM los sigue usando."
+      fi
+      echo "El PM lo toma al empezar la próxima sesión, o enseguida si se lo pedís a él."
+      ;;
+    status)
+      if [ "$(flag_value emojis)" = "true" ]; then echo "Emojis en la consola: activados."
+      else echo "Emojis en la consola: desactivados (en Telegram, siempre)."; fi
+      ;;
+    *) die "usá: emojis on, emojis off o emojis (para ver el estado)." ;;
+  esac
+}
+
 cmd_show() {
   printf '%-22s %-28s %s\n' "ROL" "PROVEEDOR" "ORIGEN"
   local role value
@@ -419,6 +447,7 @@ $(all_roles)
 EOF
   echo
   cmd_teams status
+  cmd_emojis status
 }
 
 cmd_roles() {
@@ -595,10 +624,11 @@ case "${1:-}" in
   get) shift; cmd_get "${1:-}" ;;
   check) cmd_check ;;
   teams) shift; cmd_teams "${1:-status}" ;;
+  emojis) shift; cmd_emojis "${1:-status}" ;;
   gemini-permissions) shift; cmd_gemini_permissions "${1:-status}" ;;
   models) cmd_models ;;
   tier) shift; cmd_tier "${1:-}" "${2:-}" "${3:-}" ;;
   model) shift; cmd_model "${1:-}" "${2:-}" ;;
   effort) shift; cmd_effort "${1:-}" ;;
-  *) die "comando desconocido: '$1'. Usá: show, roles, set, reset, get, check, teams, gemini-permissions, models, tier, model o effort (o --help)." ;;
+  *) die "comando desconocido: '$1'. Usá: show, roles, set, reset, get, check, teams, emojis, gemini-permissions, models, tier, model o effort (o --help)." ;;
 esac

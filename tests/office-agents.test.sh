@@ -202,6 +202,17 @@ check 0 "teams off --local" teams off --local
 check 1 "teams con acción inválida" teams quizas
 same "claude" "teams no toca los roles" get backend.developer
 
+# Emojis en la consola.
+run emojis | grep -q "desactivados" && echo "ok    emojis: desactivados por defecto" || { echo "FALLA emojis: desactivados por defecto"; FAILED=1; }
+check 0 "emojis on --local" emojis on --local
+T "emojis --local va a office-agents.local.json" [ "$(jq -r .emojis "$PROJ/.claude/office-agents.local.json")" = "true" ]
+run emojis | grep -q "activados\." && echo "ok    emojis: muestra activados" || { echo "FALLA emojis: muestra activados"; FAILED=1; }
+run show | grep -q "Emojis en la consola: activados" && echo "ok    show muestra los emojis" || { echo "FALLA show muestra los emojis"; FAILED=1; }
+check 0 "emojis off --local" emojis off --local
+T "emojis off lo apaga" [ "$(jq -r .emojis "$PROJ/.claude/office-agents.local.json")" = "false" ]
+check 1 "emojis con acción inválida" emojis quizas
+same "claude" "emojis no toca los roles" get backend.developer
+
 # Hook SessionStart que confirma que el modo equipos quedó activo de verdad.
 CHECK="$(cd "$(dirname "$0")/.." && pwd)/plugins/office/scripts/teams-check.sh"
 TP="$WORK/teamsproj"; mkdir -p "$TP/.claude" "$WORK/home"
