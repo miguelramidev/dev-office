@@ -73,6 +73,16 @@ Los archivos `office-agents.sh` y `office-agents.cmd` están en la misma carpeta
 
    Con `--local` queda solo para él. Activa los agent teams de Claude Code (experimentales) en el `env` de `.claude/settings.json` (o `settings.local.json`). Avisale que cada líder es una sesión más de Claude (Sonnet), así que gasta más tokens, y que tiene que reiniciar Claude Code. Los líderes son siempre Claude: no se configuran con `set`.
 
+   **Emojis en la consola** (en Telegram el PM los usa siempre):
+
+   ```bash
+   bash .claude/office-agents.sh emojis on --local
+   bash .claude/office-agents.sh emojis off --local
+   bash .claude/office-agents.sh emojis
+   ```
+
+   Sin `--local` queda para todo el equipo. Desde ese momento usá emojis en tus respuestas en la consola (ver "Emojis en tus respuestas" en tus instrucciones). Si su terminal muestra cuadraditos (consolas viejas de Windows), sugerile Windows Terminal o apagarlos.
+
    Antes de confirmar, contale lo que cambia:
    - Codex y Gemini **no pasan por los hooks de la oficina** (protección de secretos y de ramas). La oficina los corre con su sandbox y revisa todo después, pero la protección es más débil que con Claude.
    - **Gemini (Antigravity) corre en modo `accept-edits`:** edita archivos sin preguntar, pero no corre comandos de la terminal; la oficina corre las verificaciones después. Por eso como tester o QA rinde menos que Codex o Claude.

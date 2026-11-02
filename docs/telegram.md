@@ -46,7 +46,7 @@ Otros comandos: `status` (bot, chat, modo remoto y si la sesión está escuchand
 - **Los comandos de los pedidos de permiso viajan por Telegram.** Si un comando lleva un dato sensible, se ve en el chat.
 - **Un bot atiende un proyecto por vez.** Si encendés el modo remoto en dos proyectos con el mismo bot, lo atiende el primero; el otro lo toma cuando el primero se apaga o cierra la sesión.
 - **Una sesión por proyecto.** Con dos sesiones de Claude Code abiertas en el mismo proyecto, tu mensaje le llega a una sola.
-- **El PM escribe para el celular:** su último mensaje llega como texto plano, así que lo arma para leer sin la terminal y, si necesita una decisión tuya, termina con la pregunta y las opciones.
+- **El PM escribe para el celular:** su último mensaje llega como texto plano, así que lo arma para leer sin la terminal y, si necesita una decisión tuya, termina con la pregunta y las opciones. Usa emojis para que se vea de un vistazo cómo está cada cosa (✅ listo, ❌ falló, ⚠️ riesgo, ❓ decisión pendiente), pocos y nunca en código, commits, PR ni tickets. Si los querés también en la consola: `bash .claude/office-agents.sh emojis on --local`.
 
 ## Cómo funciona
 

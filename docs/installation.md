@@ -106,6 +106,10 @@ alias oficina='claude --agent office:pm'
 
 Con `bash .claude/office-agents.sh teams on`, cada departamento tiene un líder que reparte el trabajo entre su developer y su tester y le entrega al PM un reporte con las acciones requeridas. Usa los agent teams de Claude Code (experimentales) y gasta más tokens. Se desactiva con `teams off`. Detalle en [Arquitectura: modo equipos](architecture.md#modo-equipos-un-líder-por-departamento).
 
+### Emojis en la consola (opcional)
+
+Con `bash .claude/office-agents.sh emojis on --local`, el PM usa emojis en sus respuestas también en la consola (✅ listo, ❌ falló, ⚠️ riesgo, ❓ decisión pendiente), como hace siempre en Telegram. Son pocos y nunca van en código, commits, PR ni tickets. Si tu terminal muestra cuadraditos (pasa en consolas viejas de Windows), usá Windows Terminal o apagalos con `emojis off --local`.
+
 ### Codex y Gemini en algunos roles (opcional)
 
 Por defecto todos los roles son Claude. Si querés que Codex o Gemini hagan algunos (por ejemplo, Codex como developer de backend o dos QA que se validan entre ellos), instalá su CLI, iniciá sesión y corré `/office:office-agents`. Todo el detalle está en la guía [Claude, Codex o Gemini en cada rol](providers.md).

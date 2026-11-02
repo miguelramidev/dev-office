@@ -89,6 +89,7 @@ expect "on avisa en el chat con el proyecto y la rama" 'calls | grep -q "^sendMe
 # --- hook context ----------------------------------------------------------------------
 out=$(hook context)
 expect "hook context le explica a Claude el puente" 'printf "%s" "$out" | jq -e ".hookSpecificOutput.additionalContext | contains(\"[Telegram · CEO]\")" >/dev/null'
+expect "hook context le pide emojis al PM" 'printf "%s" "$out" | jq -e ".hookSpecificOutput.additionalContext | contains(\"emojis\")" >/dev/null'
 
 # --- hook send -------------------------------------------------------------------------
 reset_calls
