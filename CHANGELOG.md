@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.40.1] - 2026-11-02
+
+### Corregido
+
+- **La oficina remota por Telegram vuelve a recibir mensajes y botones en Windows** (`office` 0.38.1, script `office-telegram` versión 3). El lector del bot se apagaba en el mismo segundo en que arrancaba, cada ~30 s: anotaba su proyecto en `poll.json` pasándole la ruta a `jq` como argumento, el bash de Git for Windows la convertía (`/c/dev/app` → `C:/dev/app`) y el lector ya no se reconocía como dueño. Ahora la ruta va por stdin y lo que se lee de `poll.json` se normaliza, así que también sirven los `poll.json` viejos. Para tomar el arreglo, volvé a correr `office:telegram` en el proyecto, que copia el script nuevo a `.claude/`.
+
 ## [0.40.0] - 2026-11-02
 
 ### Agregado
