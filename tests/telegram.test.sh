@@ -168,6 +168,17 @@ expect "un botón de un pedido que ya no está pendiente no aprueba nada" '[ ! -
 expect "el lector guarda por dónde va" '[ "$(cat "$WORK/home/offset")" = 26 ]'
 expect "el lector se suelta al terminar" '[ ! -f "$WORK/home/poll.json" ]'
 
+# Un poll.json escrito en Windows con la ruta convertida (C:/dev/x) es del mismo proyecto que /c/dev/x.
+sleep 30 &
+spid=$!
+printf '{"pid": %s, "project": "C:/dev/x"}\n' "$spid" >"$WORK/home/poll.json"
+out=$(cd "$PROJ" && CLAUDE_PROJECT_DIR=/c/dev/x bash "$SCRIPT" status 2>&1)
+expect "status muestra la ruta de un poll.json viejo normalizada" 'printf "%s" "$out" | grep -q "activo para /c/dev/x$"'
+out=$(cd "$PROJ" && CLAUDE_PROJECT_DIR=/c/dev/x bash "$SCRIPT" off 2>&1)
+expect "off reconoce como suyo un poll.json con C:/dev/x" '[ ! -f "$WORK/home/poll.json" ] && ! kill -0 "$spid" 2>/dev/null'
+kill "$spid" 2>/dev/null; wait "$spid" 2>/dev/null
+reset_calls
+
 # --- status, test y off ----------------------------------------------------------------------
 out=$(run status 2>&1)
 expect "status muestra el bot, el chat y el modo remoto" 'printf "%s" "$out" | grep -q "@oficina_bot · chat 999" && printf "%s" "$out" | grep -q "encendido"'

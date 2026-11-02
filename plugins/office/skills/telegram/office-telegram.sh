@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-telegram-version: 2
+# office-telegram-version: 3
 # La oficina remota por Telegram: el último mensaje del PM te llega al chat, le respondés
 # desde el celular y la oficina sigue; los permisos se aprueban con botones.
 #
@@ -111,7 +111,13 @@ beat() { now >"$STATE/alive" 2>/dev/null; }
 # llega: los textos van a .office/telegram/inbox.jsonl (la escucha despierta a la sesión) y
 # los botones, a los permisos que esperan respuesta.
 
-poll_owner() { jqr -r '"\(.pid) \(.project)"' "$CFG_DIR/poll.json" 2>/dev/null; }
+# poll_owner imprime "<pid> <proyecto>" con la ruta normalizada: en Windows, un poll.json
+# escrito por una versión anterior puede traer "C:/dev/app" en lugar de "/c/dev/app".
+poll_owner() {
+  local o
+  o=$(jqr -r '"\(.pid) \(.project)"' "$CFG_DIR/poll.json" 2>/dev/null)
+  [ -n "$o" ] && printf '%s %s' "${o%% *}" "$(norm_path "${o#* }")"
+}
 
 ensure_poller() {
   [ -n "${OFFICE_TELEGRAM_NO_POLLER:-}" ] && return 0 # las pruebas lo corren a mano
@@ -180,7 +186,9 @@ poll_loop() {
   local owner pid offset r ok last lpid
   owner=$(poll_owner); pid=${owner%% *}
   if alive "$pid" && [ "$pid" != "$$" ]; then exit 0; fi
-  jq -cn --argjson pid "$$" --arg p "$PROJECT" '{pid: $pid, project: $p}' >"$CFG_DIR/poll.json"
+  # La ruta va por stdin: el MSYS de Git for Windows convierte los argumentos y las variables
+  # de entorno con forma de ruta (/c/dev/app → C:/dev/app) al llamar a un jq nativo.
+  printf '%s' "$PROJECT" | jq -Rc --argjson pid "$$" '{pid: $pid, project: .}' >"$CFG_DIR/poll.json"
   log "lector del bot encendido"
   while is_on; do
     [ "$(poll_owner)" = "$$ $PROJECT" ] || break
