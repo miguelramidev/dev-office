@@ -102,6 +102,14 @@ PM ──encargo──→ líder ──→ developer ──→ tester ──fall
 - **Si no está disponible** (Claude Code sin agent teams, o el flag sin activar), el PM trabaja como siempre. Al empezar la sesión lo confirma: si la configuración tiene `"teams": true` pero la sesión arrancó sin `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, el hook `teams-check.sh` se lo avisa (con qué falta: correr `teams on` o reiniciar Claude Code), y el PM se lo dice al CEO en su primera respuesta. Si la configuración no lo pide o todo está bien, el hook no imprime nada.
 - **Los líderes son siempre Claude**, como el PM: no se configuran con `set`.
 
+## Memoria del proyecto
+
+La skill `decisions` le da memoria a la oficina sin gastar tokens de más. Las notas viven en `docs/decisions/` del proyecto (o donde diga su `CLAUDE.md`): una por ticket que dejó algo que `git log` no cuenta (una decisión con su motivo, una sorpresa, una regla dicha de palabra). Un índice (`README.md`, una línea por nota, la más nueva arriba) es lo único que el PM lee al empezar; abre solo las notas que vienen al caso. El PM no escribe archivos: las guarda con `decisions.sh add`, que solo escribe dentro del proyecto y no pisa notas. Las notas se commitean (o se ignoran) como decida el CEO; son una pista, y si el código dice otra cosa, manda el código.
+
+## Pruebas visuales y de accesibilidad
+
+La skill `dept-frontend:ui-checks` guía al tester de frontend cuando un cambio se ve. **Visual:** compara capturas contra referencias aprobadas con la herramienta que el proyecto ya tenga (Playwright, Storybook, Chromatic...); el tester nunca actualiza una referencia por su cuenta: una diferencia es un hallazgo hasta que el CEO dice que fue a propósito. **Accesibilidad:** corre axe o la herramienta equivalente (las críticas y serias bloquean) y revisa a mano lo que ninguna herramienta cubre (teclado, foco, etiquetas, tamaño de toque). QA suma al usuario que no ve, no oye o no puede usar las manos a sus ataques. Sin herramientas en el proyecto, el tester no instala nada: las propone. Costo: el modelo solo lee lo que falla.
+
 ## Tope de tokens
 
 Opcional. `office-agents.sh budget <valor>` guarda `"budget"` en la configuración (el archivo local manda). El hook `budget.sh` corre antes de cada encargo a un agente (PreToolUse de `Agent` y `Task`), suma los tokens de la sesión del registro del observer (el último turno del PM, lo que informó cada agente al terminar y lo que informaron Codex y Gemini) y compara:
