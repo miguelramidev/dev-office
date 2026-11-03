@@ -47,6 +47,11 @@ same "" "sin configurar, el PM no tiene asesores" get pm
 
 # set y get
 check 0 "set de un developer" set backend.developer codex
+check 0 "set del redactor de documentación" set docs.developer codex
+check 0 "set del revisor de documentación" set docs.tester gemini
+check 1 "docs.lead no se configura (los líderes son siempre Claude)" set docs.lead codex
+check 0 "reset del redactor" reset docs.developer
+check 0 "reset del revisor" reset docs.tester
 same "codex" "get devuelve lo configurado" get backend.developer
 check 0 "set con modelo" set frontend.developer gemini:pro
 same "gemini:pro" "get con modelo" get frontend.developer

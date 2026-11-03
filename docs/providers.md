@@ -14,7 +14,7 @@ Para volver a ese estado en cualquier momento: `bash .claude/office-agents.sh re
 | --- | --- | --- |
 | PM | `pm` | El PM es **siempre Claude**: es la sesión de Claude Code. Lo que se elige son sus **asesores** (Codex, Gemini o los dos), a los que les pide una segunda opinión antes de proponerte un plan o un diseño. |
 | QA | `qa` | Uno o varios. Con varios, revisan por separado y después se validan entre ellos (ver "QA con varios proveedores"). |
-| Departamentos | `backend.architect`, `backend.developer`, `backend.tester`, `frontend.architect`, `frontend.designer`, `frontend.developer`, `frontend.tester`, `database.developer`, `database.tester`, `scraper.developer`, `scraper.tester`, `devops.architect`, `devops.developer`, `devops.tester` | Un proveedor por rol. |
+| Departamentos | `backend.architect`, `backend.developer`, `backend.tester`, `frontend.architect`, `frontend.designer`, `frontend.developer`, `frontend.tester`, `database.developer`, `database.tester`, `scraper.developer`, `scraper.tester`, `devops.architect`, `devops.developer`, `devops.tester`, `docs.developer`, `docs.tester` | Un proveedor por rol. |
 | Agentes propios del proyecto | `project.<nombre>` (el agente `.claude/agents/<nombre>.md`) | Un proveedor por rol. |
 
 `bash .claude/office-agents.sh roles` muestra la lista.

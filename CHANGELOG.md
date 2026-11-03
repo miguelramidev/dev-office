@@ -8,6 +8,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.45.0] - 2026-11-03
+
+### Agregado
+
+- **Departamento de documentación** (`dept-docs` 0.1.0). Un redactor (`developer`) que escribe y actualiza README, guías, referencia y changelog verificando cada dato contra el código, un revisor (`tester`) que comprueba que los comandos, ejemplos y enlaces funcionan y que no se filtra nada sensible, y un líder para el modo equipos. La skill `solid-docs` reúne las reglas. El redactor solo toca documentación (no `docs/design/`, `docs/decisions/` ni las colecciones de la API) y el revisor no edita nada. El PM lo activa solo si el cambio altera algo que el proyecto documenta, o si se lo pedís: no va en cada ticket. Roles nuevos en `office-agents.sh` (`docs.developer`, `docs.tester`; versión 11) y en el resumen de tokens (`token-report` versión 4). Se instala con `claude plugin install dept-docs@dev-office`.
+
+### Cambiado
+
+- **El observer muestra solo los departamentos instalados** (`office` 0.43.0). Las oficinas sin instalar ya no aparecen oscurecidas con "SIN INSTALAR": desaparecen, con su gente y sus compras, y las demás se juntan sin huecos, en la vista clásica y en la 3D. Cada sala conserva su fila de siempre, así que con los cinco departamentos de antes el diseño es idéntico; con documentación instalada, la fila de abajo tiene una sala más y el edificio se ensancha. Sala nueva "Documentación", con biblioteca y corcho. El modo demo las muestra todas.
+
 ## [0.44.0] - 2026-11-03
 
 ### Agregado

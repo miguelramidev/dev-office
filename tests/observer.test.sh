@@ -268,7 +268,7 @@ const fs = require("fs");
 const html = fs.readFileSync(process.argv[2], "utf8");
 let code = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</script>"));
 const end = code.lastIndexOf("})();");
-code = code.slice(0, end) + "\nglobal.T = { resolveSpot, idleLife, cancelIdle, view3d, KINDS, VARIANTS, itemOf, buildShop, canBuy, targetOf, SLOTS, roomOf, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, live: evs => { liveEvents = evs; liveAnimFrom = -1; liveProc = null; mode = 'live'; liveRebuild(); }, more: evs => { liveEvents = evs; liveRebuild(); } };\n" + code.slice(end);
+code = code.slice(0, end) + "\nglobal.T = { ROOMS, RW, layoutRooms, shopRooms, doorX, get W() { return W; }, get HALL_DX() { return HALL_DX; }, resolveSpot, idleLife, cancelIdle, view3d, KINDS, VARIANTS, itemOf, buildShop, canBuy, targetOf, SLOTS, roomOf, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, live: evs => { liveEvents = evs; liveAnimFrom = -1; liveProc = null; mode = 'live'; liveRebuild(); }, more: evs => { liveEvents = evs; liveRebuild(); } };\n" + code.slice(end);
 const stub = () => new Proxy(function () {}, { get: (t, k) => k === Symbol.toPrimitive ? () => 0 : k === "length" ? 0 : stub(), apply: () => stub(), construct: () => stub(), set: () => true });
 Object.assign(global, { document: stub(), window: stub(), requestAnimationFrame: () => 0, setInterval: () => 0, matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} },
   getComputedStyle: () => ({ paddingLeft: "0", paddingRight: "0", paddingBottom: "0" }) });
@@ -294,8 +294,11 @@ T.render(1);
 say(T.game.buys.length > 0 && Object.keys(store).length === 1, "tienda: en la demo el CEO compra solo y la partida se guarda en la pestaña");
 // Se sigue la demo hasta el informe: ahí llega la pizza.
 for (let i = 0; i < 6000 && !T.state.feed.some(e => /Llega la pizza para/.test(e.text)); i++) T.update(0.1);
+// Quién gastó más se mira en el momento del reparto: la demo sigue y vuelve a empezar, y los
+// tokens de quien trabaja de nuevo (el asesor, por ejemplo) pueden pasar al ganador.
+const top = T.state.agents.filter(a => a.provider).sort((p, q) => q.tokens - p.tokens)[0];
 for (let i = 0; i < 400 && T.state.courier; i++) T.update(0.1); // el repartidor la entrega
-const pizza = T.state.feed.find(e => /Llega la pizza para/.test(e.text)), top = T.state.agents.filter(a => a.provider).sort((p, q) => q.tokens - p.tokens)[0];
+const pizza = T.state.feed.find(e => /Llega la pizza para/.test(e.text));
 say(pizza && Object.keys(T.state.pizza).includes(top.id) && pizza.text.includes(top.label), "pizza: al final del encargo la recibe el que más tokens gastó (" + (top && top.label) + ")");
 say(T.employeeOfMonth() === top && T.summaryLines().some(l => l.includes(top.label + ", con 1 pizza")), "empleado del mes: el que más pizzas ganó, también en el cierre del día");
 for (let i = 0; i < 40; i++) T.lifeTick(0.1);
@@ -398,6 +401,36 @@ const ms = Date.now() - t1;
 const parts = JSON.stringify([T.state.tokens, T.state.feed.filter(f => !f.stuckKey).map(f => f.text), T.state.agents.map(a => [a.id, a.tokens, a.status])]);
 say(whole === parts, "en vivo: procesar solo lo nuevo da lo mismo que procesar todo");
 say(ms < 3000, "en vivo: 3000 eventos llegando de a diez se procesan en " + ms + " ms");
+
+// Solo se muestran los departamentos instalados: las oficinas visibles se juntan en su fila.
+const sess = depts => [{ type: "session", t: Math.floor(Date.now() / 1000) - 60, source: "startup", departments: depts }];
+const visible = () => T.ROOMS.filter(r => !r.off);
+const cells = () => visible().map(r => r.x + "," + r.y);
+const ALL = ["backend", "frontend", "database", "scraper", "devops", "docs"];
+T.live(sess(ALL));
+say(visible().length === 9 && T.W === 960 && T.HALL_DX === 192, "oficinas: con los seis departamentos hay nueve oficinas y el mundo se ensancha (" + T.W + " px)");
+say(new Set(cells()).size === 9 && visible().every(r => r.x % T.RW === 0 && r.x >= 0 && r.x + T.RW <= T.W), "oficinas: ninguna se pisa y todas caben en el mundo");
+say(["wdev", "wtest"].every(id => T.state.agents.find(a => a.id === id).present), "oficinas: con documentación instalada, su redactor y su revisor están");
+T.live(sess(ALL.filter(d => d !== "docs")));
+const grid8 = visible().map(r => r.id + "@" + r.x + "," + r.y).join(" ");
+say(visible().length === 8 && T.W === 768 && T.HALL_DX === 0 && grid8 === "meet@0,4 design@192,4 back@384,4 front@576,4 db@0,264 scrap@192,264 ops@384,264 qa@576,264", "oficinas: sin documentación el acomodo es el de siempre (4×2) · " + grid8);
+say(!T.state.agents.find(a => a.id === "wdev").present && !T.state.agents.find(a => a.id === "wlead").present, "oficinas: sin documentación, su gente no aparece");
+T.live(sess(["backend"]));
+say(visible().map(r => r.id).join() === "meet,design,back,qa" && T.W === 768, "oficinas: solo backend instalado → reuniones, diseño, backend y QA (" + visible().map(r => r.id).join() + ")");
+say(visible().find(r => r.id === "qa").x === 0 && visible().find(r => r.id === "qa").y === 264 && new Set(cells()).size === 4, "oficinas: las de abajo se juntan a la izquierda, sin huecos");
+say(T.ROOMS.filter(r => r.off).every(r => T.state.agents.filter(a => a.room === r.id).every(a => !a.present)), "oficinas: la gente de un departamento sin instalar no aparece");
+say(!T.shopRooms().some(id => T.ROOMS.find(r => r.id === id && r.off)) && T.shopRooms().includes("back") && !T.shopRooms().includes("front"), "oficinas: la tienda solo ofrece las instaladas");
+const hidden = T.ROOMS.find(r => r.id === "front"), qaR = T.ROOMS.find(r => r.id === "qa");
+say(T.canBuy(T.itemOf(T.KINDS.find(k => k.slot === "small").k + ".0".repeat(T.KINDS.find(k => k.slot === "small").vars.length)), "front").label === "No instalada", "oficinas: no se puede comprar para una oficina sin instalar");
+say(Math.abs(T.state.pm.x - (T.doorX(T.ROOMS.find(r => r.id === "meet")) + 26)) < 1, "oficinas: al cambiar el acomodo, el PM vuelve a la puerta de reuniones");
+const stallSix = (T.live(sess(ALL)), T.resolveSpot(T.state.agents[0], { spot: "stall0" }).x);
+const stallFour = (T.live(sess(ALL.filter(d => d !== "docs"))), T.resolveSpot(T.state.agents[0], { spot: "stall0" }).x);
+say(stallSix - stallFour === 192, "oficinas: con nueve oficinas el baño y la cafetera se corren con el final del pasillo");
+let threw = null;
+try { T.live([...sess(ALL.filter(d => d !== "docs")), { type: "delegate", t: Math.floor(Date.now() / 1000) - 50, subagent_type: "dept-docs:developer", description: "[docs-developer] README" }, { type: "start", t: Math.floor(Date.now() / 1000) - 49, agent: "W1", agent_type: "dept-docs:developer" }]); } catch (e) { threw = e; }
+say(!threw, "oficinas: un encargo a un departamento sin instalar no rompe la página" + (threw ? " (" + threw.message + ")" : ""));
+T.render(2);
+say(true, "oficinas: se dibuja con el acomodo nuevo");
 NODE
   OUT=$(node "$WORK/tienda.js" "$REPO/plugins/office/observer/index.html" 2>&1)
   echo "$OUT"
