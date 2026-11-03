@@ -102,6 +102,15 @@ PM ──encargo──→ líder ──→ developer ──→ tester ──fall
 - **Si no está disponible** (Claude Code sin agent teams, o el flag sin activar), el PM trabaja como siempre. Al empezar la sesión lo confirma: si la configuración tiene `"teams": true` pero la sesión arrancó sin `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, el hook `teams-check.sh` se lo avisa (con qué falta: correr `teams on` o reiniciar Claude Code), y el PM se lo dice al CEO en su primera respuesta. Si la configuración no lo pide o todo está bien, el hook no imprime nada.
 - **Los líderes son siempre Claude**, como el PM: no se configuran con `set`.
 
+## Tope de tokens
+
+Opcional. `office-agents.sh budget <valor>` guarda `"budget"` en la configuración (el archivo local manda). El hook `budget.sh` corre antes de cada encargo a un agente (PreToolUse de `Agent` y `Task`), suma los tokens de la sesión del registro del observer (el último turno del PM, lo que informó cada agente al terminar y lo que informaron Codex y Gemini) y compara:
+
+- **80%:** una sola vez por sesión, le avisa al PM (contexto adicional, sin bloquear).
+- **100%:** rechaza el encargo con la explicación: el PM frena, resume y le pregunta al CEO. Solo el CEO sube el tope.
+
+No llama a ningún modelo. Límites: depende del observer, cuenta la sesión actual (el registro se reinicia en cada sesión nueva) y va un paso atrás, porque el PM informa sus tokens al terminar cada respuesta. Frena encargos nuevos, no corta lo que un agente ya está haciendo.
+
 ## Observer
 
 La oficina en pixel art, en vivo, para ver qué pasa sin leer registros.

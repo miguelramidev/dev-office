@@ -210,6 +210,18 @@ run emojis | grep -q "activados\." && echo "ok    emojis: muestra activados" || 
 run show | grep -q "Emojis en la consola: activados" && echo "ok    show muestra los emojis" || { echo "FALLA show muestra los emojis"; FAILED=1; }
 check 0 "emojis off --local" emojis off --local
 T "emojis off lo apaga" [ "$(jq -r .emojis "$PROJ/.claude/office-agents.local.json")" = "false" ]
+check 0 "budget 2M" budget 2M
+T "budget guarda el número de tokens" [ "$(jq -r .budget "$PROJ/.claude/office-agents.json")" = "2000000" ]
+run budget | grep -q "2000000" && echo "ok    budget: muestra el tope" || { echo "FALLA budget: muestra el tope"; FAILED=1; }
+run show | grep -q "Tope de tokens por sesión: 2000000" && echo "ok    show muestra el tope" || { echo "FALLA show muestra el tope"; FAILED=1; }
+check 0 "budget 500k --local" budget 500k --local
+T "budget --local va a office-agents.local.json" [ "$(jq -r .budget "$PROJ/.claude/office-agents.local.json")" = "500000" ]
+check 1 "budget con un valor inválido" budget mucho
+check 1 "budget con cero" budget 0
+check 0 "budget off --local" budget off --local
+T "budget off saca el tope del archivo" [ "$(jq -r 'has("budget")' "$PROJ/.claude/office-agents.local.json")" = "false" ]
+check 0 "budget off" budget off
+run budget | grep -q "sin tope" && echo "ok    budget off: sin tope" || { echo "FALLA budget off: sin tope"; FAILED=1; }
 check 1 "emojis con acción inválida" emojis quizas
 same "claude" "emojis no toca los roles" get backend.developer
 

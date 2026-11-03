@@ -110,6 +110,10 @@ Con `bash .claude/office-agents.sh teams on`, cada departamento tiene un líder 
 
 Con `bash .claude/office-agents.sh emojis on --local`, el PM usa emojis en sus respuestas también en la consola (✅ listo, ❌ falló, ⚠️ riesgo, ❓ decisión pendiente), como hace siempre en Telegram. Son pocos y nunca van en código, commits, PR ni tickets. Si tu terminal muestra cuadraditos (pasa en consolas viejas de Windows), usá Windows Terminal o apagalos con `emojis off --local`.
 
+### Tope de tokens por sesión (opcional)
+
+Con `bash .claude/office-agents.sh budget 2M` la oficina cuenta los tokens de la sesión (los que anota el observer) y frena antes de gastar de más: al 80% el PM avisa y prioriza, y al 100% se rechazan los encargos nuevos hasta que decidas subir el tope (`budget 4M`) o apagarlo (`budget off`). Con `--local` el tope es solo tuyo. Necesita el observer encendido; el conteo va un paso atrás porque los tokens del PM se suman al terminar cada respuesta.
+
 ### Codex y Gemini en algunos roles (opcional)
 
 Por defecto todos los roles son Claude. Si querés que Codex o Gemini hagan algunos (por ejemplo, Codex como developer de backend o dos QA que se validan entre ellos), instalá su CLI, iniciá sesión y corré `/office:office-agents`. Todo el detalle está en la guía [Claude, Codex o Gemini en cada rol](providers.md).

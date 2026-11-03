@@ -6,7 +6,8 @@ Con el modo remoto encendido, manejás la oficina desde el celular mientras la s
 - **Le respondés desde el chat y la oficina sigue.** Tu mensaje despierta la sesión aunque lleve horas quieta, y el PM lo toma como si lo hubieras escrito en la terminal. Así también la ponés a trabajar de cero: "arrancá con PROJ-123".
 - **Los permisos se aprueban con botones.** Cuando un agente pide permiso, te llega qué quiere hacer con los botones **Permitir** y **Rechazar**. Si no respondés en 10 minutos, el pedido pasa a la terminal como siempre.
 - **Te llega una captura de lo que se ve.** Si el cambio es visible (una pantalla, estilos, un componente), el PM le pide a un agente de frontend que la saque —del navegador si es web, del emulador o simulador si es móvil— y te la manda al chat con el texto de qué pantalla es. Así ves cómo quedó sin estar frente a la computadora.
-- **`/estado`** te dice en qué está la oficina sin despertarla, y **`/ayuda`** muestra qué podés hacer.
+- **`/estado`** te dice en qué está la oficina sin despertarla, **`/uso`** cuántos tokens lleva la sesión (y cuánto falta para el tope, si lo pusiste) y **`/ayuda`** muestra qué podés hacer. Los contesta el script: no gastan tokens.
+- **Un recordatorio si no respondés.** Si el PM te dejó una pregunta y pasan 30 minutos sin respuesta, te llega un solo aviso con esa pregunta (se cambia con `OFFICE_TELEGRAM_REMIND`, en segundos; `0` lo apaga). Si respondés, desde el chat o desde la terminal, no llega.
 
 Es opcional: si no lo configurás, la oficina funciona igual que siempre.
 

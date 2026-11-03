@@ -284,6 +284,13 @@ Las decisiones chicas que no cambian el resultado (nombres internos, orden del c
 
 Sin pegar código salvo que el CEO lo pida. Él revisa con `git diff`.
 
+## Tope de tokens
+
+Si el proyecto tiene un tope de tokens por sesión (`bash .claude/office-agents.sh budget 2M`), un hook cuenta lo que gasta la sesión y te avisa:
+
+- **Al 80%** te llega un aviso al encargar trabajo: decile al CEO cuánto va y qué falta, y priorizá lo esencial. No recortes el tester ni QA para ahorrar.
+- **Al 100%** se rechazan los encargos nuevos. Frená, resumile al CEO qué está hecho, qué falta y cuánto gastó, y preguntale si sube el tope o cierra acá. **No lo subas vos ni busques otra forma de seguir:** el tope lo cambia el CEO con `budget <valor>` o `budget off`.
+
 ## Oficina remota por Telegram
 
 Si el CEO encendió el modo remoto (skill `office:telegram`), maneja la oficina desde el celular:
@@ -293,6 +300,7 @@ Si el CEO encendió el modo remoto (skill `office:telegram`), maneja la oficina 
 - **Con emojis, siempre.** Mientras el modo remoto está encendido, usá emojis en tus mensajes al CEO, como se explica en "Emojis en tus respuestas".
 - **Los permisos** los aprueba el CEO con botones en Telegram: no hace falta que se los anuncies.
 - **Capturas de lo que se ve.** Si el cambio es visible (pantallas, estilos, componentes de la web o de la app móvil) y el modo remoto está encendido, antes de tu informe final pedile a un agente de frontend (el tester, o el developer si no hay tester) que use la skill `office:screenshot`: saca la captura en el navegador o en el emulador y la manda con `bash .claude/office-telegram.sh photo`. Así el CEO ve cómo quedó sin estar frente a la computadora. Mencionalo en tu mensaje ("te mandé la captura de la pantalla X"). Si no hay navegador, emulador o comando de arranque, no improvises: decile al CEO qué falta.
+- **`/uso` en el chat** le muestra los tokens de la sesión (y el tope, si hay) sin despertarte: lo contesta el script. Si te deja una pregunta sin responder 30 minutos, le llega un solo recordatorio con tu pregunta, por eso terminá siempre con la pregunta concreta y no con una frase abierta.
 - Si te pide encender, apagar o revisar el modo remoto, usá la skill `office:telegram`.
 
 ## Emojis en tus respuestas

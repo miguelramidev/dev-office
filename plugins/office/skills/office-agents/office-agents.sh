@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-agents-version: 9
+# office-agents-version: 10
 # Configura qué proveedor (Claude, Codex o Gemini) hace cada rol de la oficina dev-office.
 #
 # Uso (desde la carpeta del proyecto):
@@ -12,6 +12,7 @@
 #   bash .claude/office-agents.sh check            verifica que los CLIs estén instalados y con sesión
 #   bash .claude/office-agents.sh teams on|off     modo equipos: un líder por departamento (agent teams)
 #   bash .claude/office-agents.sh emojis on|off [--local]   el PM también usa emojis en la consola (en Telegram, siempre)
+#   bash .claude/office-agents.sh budget <tokens|off> [--local]   tope de tokens por sesión (por ejemplo 2M o 500k)
 #   bash .claude/office-agents.sh gemini-permissions on|off   deja que Gemini corra comandos seguros
 #   bash .claude/office-agents.sh models           muestra el modelo de cada proveedor por nivel
 #   bash .claude/office-agents.sh tier <proveedor> <opus|sonnet|haiku|effort> <valor>|default [--local]
@@ -433,6 +434,57 @@ cmd_emojis() {
   esac
 }
 
+# Convierte "500k", "2M" o "1500000" en un número de tokens (vacío si no es válido).
+parse_tokens() {
+  local v
+  v=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d ' _,')
+  case "$v" in
+    *[!0-9.kmb]* | "" | *.*.* | k* | m* | b*) return 1 ;;
+  esac
+  case "$v" in
+    *k) awk -v n="${v%k}" 'BEGIN { printf "%d", n * 1000 }' ;;
+    *m) awk -v n="${v%m}" 'BEGIN { printf "%d", n * 1000000 }' ;;
+    *b) return 1 ;;
+    *.*) return 1 ;;
+    *) printf '%d' "$v" ;;
+  esac
+}
+
+# Tope de tokens por sesión: al llegar al 80% el PM recibe un aviso y al llegar al 100% el hook
+# budget.sh frena los encargos nuevos hasta que el CEO suba el tope o lo apague.
+cmd_budget() {
+  local action="${1:-status}" tmp n cur
+  case "$action" in
+    status)
+      cur=$(flag_value budget)
+      if [ "$cur" = "false" ] || [ "$cur" = "0" ]; then echo "Tope de tokens por sesión: sin tope."
+      else echo "Tope de tokens por sesión: $cur."; fi
+      ;;
+    off)
+      [ -f "$TARGET" ] && jq empty "$TARGET" >/dev/null 2>&1 && {
+        tmp="$TARGET.tmp"
+        jqc -S --indent 2 'del(.budget)' "$TARGET" >"$tmp" && mv "$tmp" "$TARGET"
+      }
+      echo "Tope de tokens apagado$( [ "$LOCAL" -eq 1 ] && echo ' (en tu archivo personal)')."
+      if [ "$LOCAL" -eq 1 ] && [ "$(flag_value budget)" != "false" ]; then
+        echo "Ojo: el archivo del equipo todavía tiene un tope ($(flag_value budget))."
+      fi
+      ;;
+    *)
+      n=$(parse_tokens "$action") || die "tope inválido: '$action'. Usá un número de tokens (500k, 2M, 1500000), off o status."
+      [ "$n" -gt 0 ] 2>/dev/null || die "el tope tiene que ser mayor que cero."
+      mkdir -p "$PROJECT/.claude"
+      [ -f "$TARGET" ] || echo '{}' >"$TARGET"
+      jq empty "$TARGET" >/dev/null 2>&1 || die "$TARGET no es un JSON válido."
+      tmp="$TARGET.tmp"
+      jqc -S --indent 2 --argjson v "$n" '.budget = $v' "$TARGET" >"$tmp" && mv "$tmp" "$TARGET"
+      echo "Tope de tokens por sesión: $n$( [ "$LOCAL" -eq 1 ] && echo ' (solo para vos)')."
+      echo "Al 80% el PM recibe un aviso; al 100% se frenan los encargos nuevos y el PM te pregunta. Para seguir, subí el tope con: budget <valor>."
+      echo "Cuenta los tokens que registra el observer (entrada, salida y caché escrita); el PM se suma al terminar cada respuesta."
+      ;;
+  esac
+}
+
 cmd_show() {
   printf '%-22s %-28s %s\n' "ROL" "PROVEEDOR" "ORIGEN"
   local role value
@@ -448,6 +500,7 @@ EOF
   echo
   cmd_teams status
   cmd_emojis status
+  cmd_budget status
 }
 
 cmd_roles() {
@@ -625,10 +678,11 @@ case "${1:-}" in
   check) cmd_check ;;
   teams) shift; cmd_teams "${1:-status}" ;;
   emojis) shift; cmd_emojis "${1:-status}" ;;
+  budget) shift; cmd_budget "${1:-status}" ;;
   gemini-permissions) shift; cmd_gemini_permissions "${1:-status}" ;;
   models) cmd_models ;;
   tier) shift; cmd_tier "${1:-}" "${2:-}" "${3:-}" ;;
   model) shift; cmd_model "${1:-}" "${2:-}" ;;
   effort) shift; cmd_effort "${1:-}" ;;
-  *) die "comando desconocido: '$1'. Usá: show, roles, set, reset, get, check, teams, emojis, gemini-permissions, models, tier, model o effort (o --help)." ;;
+  *) die "comando desconocido: '$1'. Usá: show, roles, set, reset, get, check, teams, emojis, budget, gemini-permissions, models, tier, model o effort (o --help)." ;;
 esac
