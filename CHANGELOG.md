@@ -8,6 +8,13 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.44.0] - 2026-11-03
+
+### Agregado
+
+- **Memoria del proyecto** (`office` 0.42.0). La skill `office:decisions` deja notas cortas en `docs/decisions/` al cerrar un ticket que dejó una decisión, una sorpresa o una regla dicha de palabra, con un índice de una línea por nota. Al empezar una tarea, el PM lee solo el índice y abre las notas que vienen al caso. El script `decisions.sh` solo escribe dentro del proyecto, no pisa notas y no gasta tokens. Prueba nueva: `tests/decisions.test.sh`.
+- **Pruebas visuales y de accesibilidad** (`dept-frontend` 0.5.0). La skill `dept-frontend:ui-checks` guía al tester cuando el cambio se ve: regresión visual contra referencias aprobadas (nunca las actualiza solo; una diferencia es un hallazgo hasta que el CEO dice que fue a propósito) y accesibilidad con axe o equivalente (críticas y serias bloquean), más una lista de lo que ninguna herramienta cubre. Usa las herramientas que el proyecto ya tenga: sin ellas, propone y no instala. QA suma ataques de accesibilidad y el PM sabe qué hacer con una diferencia visual.
+
 ## [0.43.0] - 2026-11-03
 
 ### Agregado
