@@ -22,7 +22,9 @@ url=""; form=0; for a in "$@"; do case "$a" in http*) url="$a" ;; -F) form=1 ;; 
 method="${url##*/}"
 if [ "$form" = 1 ]; then body="$*"; else body=$(cat); fi
 printf '%s %s\n' "$method" "$(printf '%s' "$body" | tr '\n' ' ')" >>"$FAKE/calls"
-if [ -f "$FAKE/resp/$method" ]; then
+if [ -f "$FAKE/reject_html" ] && [ "$method" = sendMessage ] && printf '%s' "$body" | grep -q '"parse_mode"'; then
+  echo '{"ok":false,"description":"Bad Request: can'"'"'t parse entities"}'
+elif [ -f "$FAKE/resp/$method" ]; then
   cat "$FAKE/resp/$method"
   [ "$method" = getUpdates ] && rm -f "$FAKE/resp/$method"
 elif [ "$method" = getUpdates ]; then
@@ -106,6 +108,26 @@ reset_calls
 hook send '{"last_assistant_message":""}' >/dev/null
 expect "hook send sin texto no manda nada" '[ -z "$(calls)" ]'
 
+# --- Formato de Telegram: la consola no se toca, el chat no muestra los símbolos ----------
+reset_calls
+hook send "$(jq -cn --arg m $'## Listo\nCorrí `npm test`: **todo en verde**. Usá a < b & c.\n\n```bash\nnpm run build\n```\nFin.' '{last_assistant_message: $m}')" >/dev/null
+body=$(calls | grep '^sendMessage ' | sed 's/^sendMessage //' | tail -1)
+expect "el código en línea sale como <code>" 'printf "%s" "$body" | jq -e ".text | contains(\"<code>npm test</code>\")" >/dev/null'
+expect "la negrita y los títulos salen como <b>" 'printf "%s" "$body" | jq -e ".text | contains(\"<b>todo en verde</b>\") and contains(\"<b>Listo</b>\")" >/dev/null'
+expect "un bloque de código sale como <pre> sin las comillas" 'printf "%s" "$body" | jq -e ".text | contains(\"<pre>npm run build</pre>\") and (contains(\"\\u0060\\u0060\\u0060\") | not)" >/dev/null'
+expect "el texto se escapa: un < no se toma por una etiqueta" 'printf "%s" "$body" | jq -e ".text | contains(\"a &lt; b &amp; c\")" >/dev/null'
+expect "el mensaje pide parse_mode HTML" '[ "$(printf "%s" "$body" | jq -r .parse_mode)" = HTML ]'
+reset_calls
+hook send "$(jq -cn --arg m $'Mirá:\n```\nsin cerrar' '{last_assistant_message: $m}')" >/dev/null
+body=$(calls | grep '^sendMessage ' | sed 's/^sendMessage //' | tail -1)
+expect "un bloque sin cerrar no deja las comillas ni etiquetas rotas" '! printf "%s" "$body" | jq -r .text | grep -q "\`\`\`" && ! printf "%s" "$body" | jq -r .text | grep -q "<pre>"'
+touch "$FAKE/reject_html"
+reset_calls
+hook send "$(jq -cn --arg m 'Corrí `npm test`: **ok**' '{last_assistant_message: $m}')" >/dev/null
+expect "si Telegram rechaza el formato, reintenta sin formato y sin símbolos" '[ "$(calls | grep -c "^sendMessage ")" -eq 2 ] && calls | grep "^sendMessage " | tail -1 | grep -q "Corrí npm test: ok" && ! calls | grep "^sendMessage " | tail -1 | grep -q parse_mode'
+rm -f "$FAKE/reject_html"
+reset_calls
+
 # --- hook listen -------------------------------------------------------------------------
 jq -cn '{at: 1, text: "arrancá con PROJ-123"}' >>"$STATE/inbox.jsonl"
 jq -cn '{at: 2, text: "y avisame al terminar"}' >>"$STATE/inbox.jsonl"
@@ -133,6 +155,7 @@ answer allow &
 out=$(hook permission "$PERM"); wait
 expect "permiso aprobado por Telegram: allow" '[ "$(printf "%s" "$out" | jq -r .hookSpecificOutput.decision.behavior)" = allow ]'
 expect "el pedido muestra quién pide, la herramienta y el comando, con botones" 'calls | grep -q "^sendMessage .*backend.developer pide permiso · Bash.*npm run migrate.*inline_keyboard"'
+expect "el pedido de permiso va sin formato: el comando se ve exacto" '! calls | grep "^sendMessage .*pide permiso" | grep -q parse_mode'
 expect "después de responder, el mensaje queda marcado como permitido" 'calls | grep -q "^editMessageText .*Permitido"'
 expect "no quedan permisos pendientes" '[ -z "$(ls "$STATE/perm")" ]'
 answer deny &

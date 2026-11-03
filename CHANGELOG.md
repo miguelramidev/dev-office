@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.46.0] - 2026-11-03
+
+### Cambiado
+
+- **Los mensajes de Telegram ya no muestran los símbolos de Markdown** (`office` 0.44.0, `office-telegram` versión 7). El PM escribe con `` `código` ``, bloques, **negrita** y títulos, que en la consola se ven bien pero en Telegram aparecían como símbolos sueltos. Ahora, al mandarlos, se convierten al formato de Telegram: el código en línea y los bloques se ven como código (monoespaciado, fácil de copiar), y la negrita y los títulos, como negrita. La consola no cambia. Todo lo demás se escapa, así que un `<` del texto nunca se toma por una etiqueta; si Telegram rechaza el formato, el trozo se reenvía en texto plano y sin los símbolos. Los pedidos de permiso siguen sin formato, para que el comando se vea exacto. Para tomarlo, volvé a correr `office:telegram` en el proyecto, que copia el script nuevo a `.claude/`.
+
 ## [0.45.0] - 2026-11-03
 
 ### Agregado
