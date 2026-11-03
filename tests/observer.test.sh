@@ -294,8 +294,11 @@ T.render(1);
 say(T.game.buys.length > 0 && Object.keys(store).length === 1, "tienda: en la demo el CEO compra solo y la partida se guarda en la pestaña");
 // Se sigue la demo hasta el informe: ahí llega la pizza.
 for (let i = 0; i < 6000 && !T.state.feed.some(e => /Llega la pizza para/.test(e.text)); i++) T.update(0.1);
+// Quién gastó más se mira en el momento del reparto: la demo sigue y vuelve a empezar, y los
+// tokens de quien trabaja de nuevo (el asesor, por ejemplo) pueden pasar al ganador.
+const top = T.state.agents.filter(a => a.provider).sort((p, q) => q.tokens - p.tokens)[0];
 for (let i = 0; i < 400 && T.state.courier; i++) T.update(0.1); // el repartidor la entrega
-const pizza = T.state.feed.find(e => /Llega la pizza para/.test(e.text)), top = T.state.agents.filter(a => a.provider).sort((p, q) => q.tokens - p.tokens)[0];
+const pizza = T.state.feed.find(e => /Llega la pizza para/.test(e.text));
 say(pizza && Object.keys(T.state.pizza).includes(top.id) && pizza.text.includes(top.label), "pizza: al final del encargo la recibe el que más tokens gastó (" + (top && top.label) + ")");
 say(T.employeeOfMonth() === top && T.summaryLines().some(l => l.includes(top.label + ", con 1 pizza")), "empleado del mes: el que más pizzas ganó, también en el cierre del día");
 for (let i = 0; i < 40; i++) T.lifeTick(0.1);
