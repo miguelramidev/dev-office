@@ -12,6 +12,7 @@
 | Designer  | `dept-frontend:designer` | Sonnet | Diseña flujos, pantallas, estados y textos de la web y la app móvil antes de programar. Escribe en `docs/design/`. No escribe código. |
 | Developer | `dept-<área>:developer` | Sonnet | Escribe el código de su área siguiendo las reglas del proyecto y el diseño aprobado. No escribe tests.                     |
 | Tester    | `dept-<área>:tester`    | Sonnet | Escribe y corre los tests de su área. No toca código de producción.                                                         |
+| Redactor y revisor de documentación | `dept-docs:developer` y `dept-docs:tester` | Sonnet | El redactor escribe y actualiza README, guías, referencia y changelog verificando cada dato contra el código; el revisor comprueba que los comandos, ejemplos y enlaces funcionan y que nada sensible se filtra. Solo tocan documentación: el revisor ni eso, solo reporta. |
 | Líder de departamento | `dept-<área>:lead` | Sonnet | Solo en el modo equipos: recibe el encargo del PM, lo reparte entre el developer y el tester de su departamento, coordina las vueltas entre ellos y le entrega al PM el reporte del departamento con las acciones requeridas. No escribe código. |
 | QA        | `office:qa`             | Opus   | El enemigo de la app: busca cómo romper el trabajo de cualquier departamento y verifica las reglas. No corrige.             |
 | Puente    | `office:external`       | Sonnet | Le pasa a Codex o Gemini el encargo de un rol, revisa lo que hicieron, corre las verificaciones y devuelve el reporte del rol. No escribe código. |

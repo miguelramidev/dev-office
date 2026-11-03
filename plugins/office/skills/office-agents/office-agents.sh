@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-agents-version: 10
+# office-agents-version: 11
 # Configura qué proveedor (Claude, Codex o Gemini) hace cada rol de la oficina dev-office.
 #
 # Uso (desde la carpeta del proyecto):
@@ -51,7 +51,8 @@ backend.architect backend.developer backend.tester
 frontend.architect frontend.designer frontend.developer frontend.tester
 database.developer database.tester
 scraper.developer scraper.tester
-devops.architect devops.developer devops.tester"
+devops.architect devops.developer devops.tester
+docs.developer docs.tester"
 
 # Modelos de cada proveedor por nivel, a la par de los de Claude (octubre de 2026). Se pueden
 # cambiar por proyecto con "tier". effort: razonamiento (medio para todos, para no gastar de más).

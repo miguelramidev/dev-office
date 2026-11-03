@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# token-report-version: 3
+# token-report-version: 4
 # Resumen de tokens y de tiempo de la sesión de la oficina, para el informe del PM al CEO.
 #
 # Lee el registro del observer (.office/observer/events.js), que tiene los tokens exactos
@@ -41,8 +41,9 @@ sed -n 's/^OFFICE_EVENT(\(.*\));[[:space:]]*$/\1/p' "$EVENTS" | tr -d '\r' | jq 
     if r == "qa" then "QA" elif r == "pm" then "Asesor del PM" elif r == "pm.sub" then "PM (subagente)"
     else (r | split(".")) as $p
       | if ($p | length) < 2 then r
+        elif $p[0] == "docs" then ({"developer": "Redactor", "tester": "Revisor", "lead": "Líder"}[$p[1]] // $p[1]) + " de documentación"
         else ({"developer": "Developer", "tester": "Tester", "architect": "Arquitecto", "designer": "Designer", "lead": "Líder"}[$p[1]] // $p[1])
-             + " de " + ({"backend": "backend", "frontend": "frontend", "database": "base de datos", "scraper": "scraping", "devops": "DevOps", "project": "proyecto"}[$p[0]] // $p[0]) end end;
+             + " de " + ({"backend": "backend", "frontend": "frontend", "database": "base de datos", "scraper": "scraping", "devops": "DevOps", "docs": "documentación", "project": "proyecto"}[$p[0]] // $p[0]) end end;
   def prov(p): {"claude": "Claude", "codex": "Codex", "gemini": "Gemini"}[p] // p;
   def verdict(v): {"APROBACION": "pide aprobación", "VALIDACION": "VALIDÓ", "FALLO": "FALLÓ"}[v] // v;
   def amount: if . == null then "sin datos" else num end;
