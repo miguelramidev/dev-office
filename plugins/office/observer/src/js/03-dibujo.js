@@ -451,6 +451,9 @@
       px(cx + 22, y + 4, 2, 1, "#47a865"); px(cx + 22, y + 6, 2, 1, a.status === "fail" ? "#cf4b47" : "#47a865"); px(cx + 25, y + 4, 3, 1, "#98a1b3"); px(cx + 25, y + 6, 3, 1, "#98a1b3");
     } else if (a.role === "qa") { // lupa
       px(cx + 19, y + 1, 7, 7, OUT); px(cx + 20, y + 2, 5, 5, "#9ad3ef"); px(cx + 21, y + 3, 1, 1, "#ffffff"); px(cx + 25, y + 7, 4, 2, "#5e4229");
+    } else if (dept === "docs") { // libreta abierta con lápiz
+      px(cx + 18, y + 1, 13, 8, OUT); px(cx + 19, y + 2, 5, 6, "#f6f2e7"); px(cx + 25, y + 2, 5, 6, "#efe9dd"); px(cx + 24, y + 2, 1, 6, "#98a1b3");
+      px(cx + 20, y + 4, 3, 1, "#98a1b3"); px(cx + 20, y + 6, 3, 1, "#98a1b3"); px(cx + 26, y + 4, 3, 1, "#98a1b3"); px(cx + 29, y - 1, 1, 6, "#f2c14e");
     } else if (dept === "database") { // base de datos de juguete
       px(cx + 20, y - 4, 9, 11, OUT); for (let i = 0; i < 3; i++) { px(cx + 21, y - 3 + i * 3, 7, 3, "#d4a933"); px(cx + 21, y - 3 + i * 3, 7, 1, "#ecc95a"); }
     } else if (job === "designer") { // tableta con lápiz
@@ -504,11 +507,13 @@
     const hallR = roomOf("hall");
     if (hallR.water) hallR.water.kind.draw(18, 216, hallR.water.v, now);
     else { px(10, 188, 16, 28, OUT); px(11, 189, 14, 26, "#d4dbe5"); px(13, 190, 10, 9, "#7fb6e6"); px(14, 191, 3, 6, "#a9d1f2"); px(16, 202, 4, 3, "#3a3f4a"); }
+    g.save(); g.translate(HALL_DX, 0); // la cafetera va al final del pasillo
     if (hallR.coffee) hallR.coffee.kind.draw(733, 216, hallR.coffee.v, now);
     else {
       px(722, 188, 22, 28, OUT); px(723, 189, 20, 26, "#3a3f4a"); px(726, 192, 14, 7, "#1d2028"); px(728, 194, 4, 2, "#ef6b5b"); px(729, 204, 8, 6, "#1d2028");
       if (Math.floor(now * 1.5) % 2) px(732, 199, 2, 3, "rgba(255,255,255,0.3)");
     }
+    g.restore();
     drawHallItems(now);
     // Tablero del ticket: el texto lo escribe drawLabels; acá, el pizarrón y las luces de estado.
     const { x: bx, y: by, w: bw, h: bh } = BOARD, b = boardInfo();
@@ -581,6 +586,17 @@
       px(x + 10, y + 5, 66, 18, OUT); px(x + 11, y + 6, 64, 16, "#1b2230");
       ["#5cc98a", "#5cc98a", "#f2c14e", "#3a4152"].forEach((c, i) => { px(x + 14 + i * 16, y + 11, 10, 6, (i === 2 && blink % 2) ? "#3a3220" : c); if (i < 3) px(x + 24 + i * 16, y + 13, 6, 2, "#98a1b3"); });
       px(x + 130, y + 2, 14, 26, OUT); px(x + 131, y + 3, 12, 24, "#20242e"); px(x + 134, y + 6, 6, 2, blink % 2 ? "#5cc98a" : "#1d3a2a"); px(x + 134, y + 12, 6, 2, "#2c3240"); px(x + 134, y + 18, 6, 2, "#2c3240");
+    } else if (r.deco === "docs") {
+      // Biblioteca con libros de colores, y un corcho con hojas clavadas.
+      px(x + 10, y + 3, 56, 25, OUT); px(x + 11, y + 4, 54, 23, "#5e4229");
+      const books = ["#cf4b47", "#4a78d6", "#f2c14e", "#47a865", "#8b6cd6", "#e08a3a", "#36a9bb"];
+      for (let row = 0; row < 2; row++) {
+        const sy = y + 5 + row * 11;
+        px(x + 12, sy + 9, 52, 2, "#3f2c1a");
+        for (let i = 0, bx = x + 13; bx < x + 62; i++) { const bw = 3 + ((i * 5 + row * 3) % 3), bh = 6 + ((i * 7 + row) % 4); px(bx, sy + 9 - bh, bw, bh, books[(i + row * 3) % books.length]); px(bx, sy + 9 - bh, 1, bh, shade(books[(i + row * 3) % books.length], 0.3)); bx += bw + 1; }
+      }
+      px(x + 124, y + 4, 44, 22, OUT); px(x + 125, y + 5, 42, 20, "#b98a5a");
+      [[128, 8, "#f6f2e7"], [142, 7, "#f2e6c9"], [154, 10, "#f6f2e7"], [132, 16, "#e9f1f6"], [148, 17, "#f6f2e7"]].forEach(([dx, dy, c], i) => { px(x + dx, y + dy, 9, 7, c); px(x + dx + 1, y + dy + 2, 6, 1, "#98a1b3"); px(x + dx + 1, y + dy + 4, 4, 1, "#98a1b3"); px(x + dx + 3, y + dy - 1, 2, 2, i % 2 ? "#cf4b47" : "#4a78d6"); });
     } else if (r.deco === "qa") {
       px(x + 12, y + 3, 24, 24, OUT); px(x + 13, y + 4, 22, 22, "#ebe5d8");
       px(x + 19, y + 9, 10, 12, "#cf4b47"); px(x + 21, y + 7, 6, 3, OUT); px(x + 23, y + 9, 2, 12, OUT);
@@ -613,13 +629,12 @@
   function render(now) {
     px(0, 0, W, H, "#0b0e14");
     drawHall(now);
-    ROOMS.forEach(r => drawRoom(r, now));
+    ROOMS.forEach(r => { if (!r.off) drawRoom(r, now); });
     state.agents.forEach(a => {
       if (!a.present) return;
       if (a.room === "meet") drawSeatedMeeting(a, now);
       else drawSeated(a, now);
     });
-    ROOMS.forEach(r => { if (r.off) px(r.x, r.y, RW, RH, "rgba(11,14,20,0.62)"); });
     drawMeetingTable();
     drawSelection(now);
     // La gente de pie y el PM, de atrás hacia adelante.
@@ -673,13 +688,13 @@
 
   function drawLabels() {
     ROOMS.forEach(r => {
+      if (r.off) return;
       const busy = state.agents.some(a => a.room === r.id && a.status === "working") || (r.id === "meet" && state.pm.room === "meet" && state.pm.status === "working" && !state.pm.walking);
       const ly = r.top ? 190 : 251;
       text(r.name.toUpperCase(), doorX(r), ly, { size: 7, align: "center", color: busy ? "#f2c14e" : "#a9b1c2", bg: "rgba(11,14,20,0.85)", border: busy ? "#7a6326" : "#313b52" });
     });
     drawBoardText();
     text("EMPLEADO DEL MES", room("meet").x + 85, room("meet").y + 27.5, { size: 3.5, align: "center", color: "#1a1406", bg: "#d4a933" });
-    ROOMS.forEach(r => { if (r.off) text("SIN INSTALAR", r.x + RW / 2, r.y + RH / 2 - 4, { size: 7, align: "center", color: "#98a1b3", bg: "rgba(11,14,20,0.9)", border: "#313b52" }); });
     state.agents.forEach(a => {
       if (!a.present) return;
       const st = !!a.pos, s = st ? a.pos : seatOf(a);
