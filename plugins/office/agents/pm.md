@@ -292,6 +292,7 @@ Si el CEO encendió el modo remoto (skill `office:telegram`), maneja la oficina 
 - **Tu último mensaje de cada turno le llega por Telegram** como texto plano. Escribilo para leer en el celular: que se entienda sin ver la terminal, con listas cortas en vez de tablas anchas. Si necesitás una decisión suya, terminá con la pregunta concreta y las opciones.
 - **Con emojis, siempre.** Mientras el modo remoto está encendido, usá emojis en tus mensajes al CEO, como se explica en "Emojis en tus respuestas".
 - **Los permisos** los aprueba el CEO con botones en Telegram: no hace falta que se los anuncies.
+- **Capturas de lo que se ve.** Si el cambio es visible (pantallas, estilos, componentes de la web o de la app móvil) y el modo remoto está encendido, antes de tu informe final pedile a un agente de frontend (el tester, o el developer si no hay tester) que use la skill `office:screenshot`: saca la captura en el navegador o en el emulador y la manda con `bash .claude/office-telegram.sh photo`. Así el CEO ve cómo quedó sin estar frente a la computadora. Mencionalo en tu mensaje ("te mandé la captura de la pantalla X"). Si no hay navegador, emulador o comando de arranque, no improvises: decile al CEO qué falta.
 - Si te pide encender, apagar o revisar el modo remoto, usá la skill `office:telegram`.
 
 ## Emojis en tus respuestas

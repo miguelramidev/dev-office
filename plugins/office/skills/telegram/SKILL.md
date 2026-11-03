@@ -13,6 +13,7 @@ Los archivos `office-telegram.sh` y `office-telegram.cmd` están en la misma car
 - **Ida:** al terminar cada respuesta, tu último mensaje (el que explica lo que se hizo y lo que sugerís) le llega al CEO por Telegram. Los mensajes de los departamentos no se mandan.
 - **Vuelta:** lo que el CEO le escribe al bot despierta la sesión, aunque esté quieta, y te llega como un aviso que empieza con `[Telegram · CEO]`.
 - **Permisos:** cuando un agente pide permiso, al CEO le llega el pedido con los botones Permitir y Rechazar. Si no responde en 10 minutos, el pedido pasa a la terminal como siempre.
+- **Capturas:** si un cambio se ve (web o app móvil), con la skill `office:screenshot` un agente de frontend saca la captura del navegador o del emulador y se la mandás al CEO con `bash .claude/office-telegram.sh photo <imagen> [texto]`.
 - **Comandos en el chat:** `/estado` (en qué está la oficina) y `/ayuda`.
 - **El bot:** el token y el chat id se guardan en `~/.claude/office-telegram/config.json`, solo para el usuario y fuera de todo repo. El modo remoto se enciende por proyecto, en `.office/telegram/`.
 - **Requisitos:** la sesión de Claude Code abierta en la computadora (que no se suspenda), `jq` y `curl`. Funciona en Linux, macOS, WSL y Windows (con el bash de Git for Windows).
