@@ -15,6 +15,15 @@
         ]
       },
       {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/budget.sh\""
+          }
+        ]
+      },
+      {
         "matcher": "*",
         "hooks": [
           {

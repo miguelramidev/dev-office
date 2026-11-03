@@ -83,6 +83,17 @@ Los archivos `office-agents.sh` y `office-agents.cmd` están en la misma carpeta
 
    Sin `--local` queda para todo el equipo. Desde ese momento usá emojis en tus respuestas en la consola (ver "Emojis en tus respuestas" en tus instrucciones). Si su terminal muestra cuadraditos (consolas viejas de Windows), sugerile Windows Terminal o apagarlos.
 
+   **Tope de tokens por sesión** (opcional):
+
+   ```bash
+   bash .claude/office-agents.sh budget 2M          # 500k, 2M, 1500000...
+   bash .claude/office-agents.sh budget 2M --local  # solo para él
+   bash .claude/office-agents.sh budget off
+   bash .claude/office-agents.sh budget             # ver el tope
+   ```
+
+   Un hook cuenta los tokens que anota el observer (entrada, salida y caché escrita): al 80% le avisa al PM y al 100% rechaza los encargos nuevos hasta que el CEO suba el tope. Sin tope, no hace nada. Necesita el observer encendido, y cuenta la sesión actual (el registro empieza de cero en cada sesión nueva). Los tokens del PM se suman al terminar cada respuesta, así que el conteo va un paso atrás. `/uso` en Telegram muestra el total.
+
    Antes de confirmar, contale lo que cambia:
    - Codex y Gemini **no pasan por los hooks de la oficina** (protección de secretos y de ramas). La oficina los corre con su sandbox y revisa todo después, pero la protección es más débil que con Claude.
    - **Gemini (Antigravity) corre en modo `accept-edits`:** edita archivos sin preguntar, pero no corre comandos de la terminal; la oficina corre las verificaciones después. Por eso como tester o QA rinde menos que Codex o Claude.

@@ -168,6 +168,43 @@ expect "un botón de un pedido que ya no está pendiente no aprueba nada" '[ ! -
 expect "el lector guarda por dónde va" '[ "$(cat "$WORK/home/offset")" = 26 ]'
 expect "el lector se suelta al terminar" '[ ! -f "$WORK/home/poll.json" ]'
 
+# --- /uso y recordatorio de una pregunta pendiente -----------------------------------------
+mkdir -p "$PROJ/.office/observer" "$PROJ/.claude"
+cat >"$PROJ/.office/observer/events.js" <<'EVT'
+OFFICE_EVENT({"type":"session","t":100});
+OFFICE_EVENT({"type":"stop","t":110,"agent":"a1","agent_type":"dept-backend:developer","usage":{"i":200000,"o":50000,"cw":150000,"cr":9}});
+OFFICE_EVENT({"type":"external","t":115,"provider":"codex","tokens":40000});
+OFFICE_EVENT({"type":"turn_end","t":120,"usage":{"i":50000,"o":10000,"cw":10000}});
+EVT
+echo '{"budget":1000000}' >"$PROJ/.claude/office-agents.json"
+echo '{"ok":true,"result":[{"update_id":30,"message":{"chat":{"id":999,"type":"private"},"text":"/uso"}}]}' >"$FAKE/resp/getUpdates"
+reset_calls
+OFFICE_TELEGRAM_POLL_ONCE=1 run _poll
+expect "/uso muestra el total, el tope y el desglose" 'calls | grep -q "^sendMessage .*Total: 510k de 1M (51%).*PM: 70k.*developer: 400k.*codex (puente): 40k"'
+rm -f "$PROJ/.claude/office-agents.json" "$PROJ/.office/observer/events.js"
+echo '{"ok":true,"result":[{"update_id":31,"message":{"chat":{"id":999,"type":"private"},"text":"/uso"}}]}' >"$FAKE/resp/getUpdates"
+reset_calls
+OFFICE_TELEGRAM_POLL_ONCE=1 run _poll
+expect "/uso sin registro avisa que no hay datos" 'calls | grep -q "^sendMessage .*no hay datos de tokens"'
+
+hook send '{"last_assistant_message":"Terminé el login.\n\n❓ ¿Lo mergeo a dev o abro el PR?"}' >/dev/null
+expect "una respuesta del PM con pregunta queda esperando al CEO" '[ -f "$STATE/awaiting" ] && grep -q "Lo mergeo a dev" "$STATE/awaiting"'
+reset_calls
+OFFICE_TELEGRAM_REMIND=1800 OFFICE_TELEGRAM_POLL_ONCE=1 run _poll
+expect "antes de tiempo no manda recordatorio" '! calls | grep -q "te espera"'
+printf '%s\n%s\n' "$(( $(date +%s) - 4000 ))" "¿Lo mergeo a dev o abro el PR?" >"$STATE/awaiting"
+reset_calls
+OFFICE_TELEGRAM_REMIND=1800 OFFICE_TELEGRAM_POLL_ONCE=1 run _poll
+expect "pasado el tiempo, un recordatorio con la pregunta" 'calls | grep -q "^sendMessage .*te espera desde hace 30 min.*Lo mergeo a dev"'
+expect "el recordatorio se manda una sola vez" '[ ! -f "$STATE/awaiting" ]'
+hook send '{"last_assistant_message":"Listo, todo en verde."}' >/dev/null
+expect "una respuesta sin pregunta no deja recordatorio" '[ ! -f "$STATE/awaiting" ]'
+hook send '{"last_assistant_message":"¿Seguimos?"}' >/dev/null
+hook listen '{"hook_event_name":"UserPromptSubmit"}' >/dev/null 2>&1 &
+sleep 1; kill $! 2>/dev/null; wait $! 2>/dev/null
+expect "si respondés desde la terminal, se borra la pregunta pendiente" '[ ! -f "$STATE/awaiting" ]'
+reset_calls
+
 # Un poll.json escrito en Windows con la ruta convertida (C:/dev/x) es del mismo proyecto que /c/dev/x.
 sleep 30 &
 spid=$!

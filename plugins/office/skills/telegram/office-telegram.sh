@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-telegram-version: 4
+# office-telegram-version: 5
 # La oficina remota por Telegram: el último mensaje del PM te llega al chat, le respondés
 # desde el celular y la oficina sigue; los permisos se aprueban con botones.
 #
@@ -20,6 +20,10 @@
 #   - El estado de cada proyecto: .office/telegram/ (el modo remoto, los mensajes recibidos y
 #     los permisos pendientes). La oficina ya deja .office/ fuera de git.
 #
+# En el chat (sin gastar tokens, los contesta el script): /estado, /uso (tokens de la sesión y
+# tope) y /ayuda. Si el PM te dejó una pregunta y pasan 30 minutos sin respuesta, te llega un
+# recordatorio (OFFICE_TELEGRAM_REMIND, en segundos; 0 lo apaga).
+#
 # Los hooks (hook context|listen|send|permission) no hacen nada si el modo remoto está apagado.
 
 API="${OFFICE_TELEGRAM_API:-https://api.telegram.org}"
@@ -30,6 +34,8 @@ SELF="${BASH_SOURCE[0]//\\//}"
 PERM_WAIT="${OFFICE_TELEGRAM_PERM_WAIT:-600}"
 # Sin escucha ni permisos esperando por este tiempo, el lector del bot se apaga (la sesión cerró).
 IDLE_LIMIT="${OFFICE_TELEGRAM_IDLE_LIMIT:-900}"
+# Si el PM dejó una pregunta sin responder por este tiempo, un solo recordatorio (segundos; 0 lo apaga).
+REMIND_AFTER="${OFFICE_TELEGRAM_REMIND:-1800}"
 # Telegram admite 4096 caracteres por mensaje: los largos se parten en trozos.
 CHUNK=3900
 
@@ -136,7 +142,7 @@ help_text() {
   printf '%s\n' "Oficina remota de dev-office ($(project_label))." "" \
     "Lo que me escribas le llega al PM, como si lo escribieras en la terminal: por ejemplo «arrancá con PROJ-123» o la respuesta a sus sugerencias." \
     "Cuando la oficina pide un permiso, te llega con botones para permitir o rechazar." "" \
-    "/estado: en qué está la oficina" "/ayuda: este mensaje"
+    "/estado: en qué está la oficina" "/uso: tokens gastados en la sesión" "/ayuda: este mensaje"
 }
 
 status_text() {
@@ -145,6 +151,36 @@ status_text() {
   if alive "$lpid"; then busy="quieta, esperando tu mensaje"; else busy="trabajando (tu mensaje le llega al PM cuando termine)"; fi
   printf '%s\n' "🏢 $(project_label)" "La oficina está $busy." \
     "Permisos esperando respuesta: $(ls "$STATE/perm" 2>/dev/null | grep -vc '\.answer$')"
+}
+
+# Tokens de la sesión, del registro del observer: el PM (el último turno que informó), los
+# agentes y lo que informaron Codex y Gemini. Entrada + salida + caché escrita, como el resumen
+# de office:usage. No llama a ningún modelo.
+usage_text() {
+  local ev="$PROJECT/.office/observer/events.js" lim f v
+  if [ ! -s "$ev" ]; then
+    printf '%s\n' "📊 $(project_label)" "Todavía no hay datos de tokens: no hubo actividad o el observer está apagado."
+    return
+  fi
+  lim=""
+  for f in "$PROJECT/.claude/office-agents.json" "$PROJECT/.claude/office-agents.local.json"; do
+    [ -f "$f" ] || continue
+    v=$(jqr -r 'if (.budget | type) == "number" and .budget > 0 then (.budget | floor) else empty end' "$f" 2>/dev/null)
+    [ -n "$v" ] && lim="$v"
+  done
+  sed -n 's/^OFFICE_EVENT(\(.*\));[[:space:]]*$/\1/p' "$ev" | tr -d '\r' | jq -rs --arg proj "$(project_label)" --argjson lim "${lim:-0}" '
+    def tok(u): if u then ((u.i // 0) + (u.o // 0) + (u.cw // 0)) else 0 end;
+    def num: if . >= 1000000 then ((. / 100000 | floor) / 10 | tostring) + "M"
+             elif . >= 1000 then ((. / 100 | floor) / 10 | tostring) + "k" else tostring end;
+    ([.[] | select(.type == "turn_end") | tok(.usage) | select(. > 0)] | last // 0) as $pm
+    | ([.[] | select(.type == "stop")] | group_by(.agent_type) | map({n: (.[0].agent_type // "?"), t: (map(tok(.usage)) | add)}) | sort_by(-.t)) as $ag
+    | ([.[] | select(.type == "external")] | group_by(.provider) | map({n: .[0].provider, t: (map(.tokens // 0) | add)})) as $ex
+    | ($pm + ($ag | map(.t) | add // 0) + ($ex | map(.t) | add // 0)) as $total
+    | "📊 Tokens de la sesión · \($proj)",
+      "Total: \($total | num)" + (if $lim > 0 then " de \($lim | num) (\($total * 100 / $lim | floor)%)" + (if $total >= $lim then " ⚠️ tope alcanzado" else "" end) else " (sin tope)" end),
+      "PM: \($pm | num)",
+      ($ag[:5][] | "• \(.n | sub("^dept-"; "") | sub("^office:"; "")): \(.t | num)"),
+      ($ex[] | "• \(.n) (puente): \(.t | num)")'
 }
 
 handle_update() {
@@ -174,11 +210,30 @@ handle_update() {
   case "$text" in
     /start* | /ayuda* | /help*) send_text "$(help_text)" >/dev/null ;;
     /estado* | /status*) send_text "$(status_text)" >/dev/null ;;
+    /uso* | /usage* | /tokens*) send_text "$(usage_text)" >/dev/null ;;
     *)
+      rm -f "$STATE/awaiting"
       jq -cn --arg t "$text" --argjson at "$(now)" '{at: $at, text: $t}' >>"$STATE/inbox.jsonl"
       log "mensaje recibido"
       ;;
   esac
+}
+
+# Un solo recordatorio si el PM dejó una pregunta y pasó el tiempo sin que respondas.
+# hook_send deja .office/telegram/awaiting: la hora en la primera línea y la pregunta en la segunda.
+remind_check() {
+  [ "${REMIND_AFTER:-0}" -gt 0 ] 2>/dev/null && [ -f "$STATE/awaiting" ] || return 0
+  local at q mins
+  at=$(sed -n 1p "$STATE/awaiting" 2>/dev/null | tr -d '\r')
+  [ -n "$at" ] || return 0
+  [ $(($(now) - at)) -ge "$REMIND_AFTER" ] || return 0
+  q=$(sed -n 2p "$STATE/awaiting" 2>/dev/null)
+  rm -f "$STATE/awaiting"
+  mins=$((REMIND_AFTER / 60))
+  send_text "⏰ La oficina te espera desde hace $mins min ($(project_label)).${q:+
+
+❓ $q}" >/dev/null
+  log "recordatorio enviado"
 }
 
 poll_loop() {
@@ -196,6 +251,7 @@ poll_loop() {
     last=$(cat "$STATE/alive" 2>/dev/null || echo 0)
     lpid=$(cat "$STATE/listen.pid" 2>/dev/null)
     if [ $(($(now) - ${last:-0})) -gt "$IDLE_LIMIT" ] && ! alive "$lpid"; then break; fi
+    remind_check
     offset=$(cat "$CFG_DIR/offset" 2>/dev/null || echo 0)
     r=$(printf '{"offset": %s, "timeout": 25, "allowed_updates": ["message", "callback_query"]}' "${offset:-0}" | api getUpdates 35)
     ok=$(printf '%s' "$r" | jqr -r '.ok // false' 2>/dev/null)
@@ -229,8 +285,11 @@ hook_context() {
 # SessionStart, UserPromptSubmit, Notification (idle_prompt) y Stop, con asyncRewake: espera
 # tus mensajes y despierta a la sesión (código 2). Queda una sola escucha por proyecto.
 hook_listen() {
-  cat >/dev/null
+  local ev
+  ev=$(cat | jqr -r '.hook_event_name // empty' 2>/dev/null)
   is_on || exit 0
+  # Si respondés desde la terminal, ya no hay nada que recordarte.
+  [ "$ev" = UserPromptSubmit ] && rm -f "$STATE/awaiting"
   mkdir -p "$STATE" || exit 0
   local old seen n msg i=0
   old=$(cat "$STATE/listen.pid" 2>/dev/null)
@@ -257,7 +316,7 @@ hook_listen() {
 
 # Stop: manda el último mensaje del PM.
 hook_send() {
-  local input msg
+  local input msg q
   input=$(cat)
   is_on || exit 0
   msg=$(printf '%s' "$input" | jqr -r '.last_assistant_message // empty')
@@ -265,6 +324,13 @@ hook_send() {
   send_text "🧑‍💼 PM · $(project_label)
 
 $msg" >/dev/null
+  # ¿Quedó una pregunta para el CEO? Si sí, se anota para el recordatorio.
+  q=$(printf '%s' "$msg" | tail -n 12 | grep -E '\?|❓' | tail -n 1 | cut -c1-300)
+  if [ -n "$q" ]; then
+    printf '%s\n%s\n' "$(now)" "$q" >"$STATE/awaiting"
+  else
+    rm -f "$STATE/awaiting"
+  fi
   exit 0
 }
 

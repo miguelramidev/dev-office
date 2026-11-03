@@ -7,7 +7,13 @@ on:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    # macOS trae el bash 3.2 de siempre y rutas con enlaces (/var → /private/var): ahí se rompen
+    # cosas que en Linux andan.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -44,6 +50,9 @@ jobs:
 
       - name: Probar la configuración de proveedores
         run: bash tests/office-agents.test.sh
+
+      - name: Probar el presupuesto de tokens
+        run: bash tests/budget.test.sh
 
       - name: Probar el puente a Codex y Gemini
         run: bash tests/run-external.test.sh

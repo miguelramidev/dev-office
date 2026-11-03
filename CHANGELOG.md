@@ -8,6 +8,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.42.0] - 2026-11-03
+
+### Agregado
+
+- **Tope de tokens por sesión** (`office` 0.40.0, `office-agents` versión 10). `office-agents.sh budget 2M` (o `--local`, `off`, y sin argumentos para ver el tope) pone un límite. El hook nuevo `budget.sh` cuenta los tokens que anota el observer antes de cada encargo a un agente: al 80% avisa al PM, una sola vez por sesión, y al 100% rechaza los encargos nuevos para que el PM frene, resuma y te pregunte. No gasta tokens. El PM nunca lo sube solo.
+- **`/uso` en Telegram** (`office-telegram` versión 5): total de tokens de la sesión, PM, los agentes con más gasto y los de Codex o Gemini, con el tope si hay. Lo contesta el script, sin despertar al PM.
+- **Recordatorio de decisión pendiente** (`office-telegram` versión 5): si el PM te deja una pregunta y pasan 30 minutos sin respuesta, un solo aviso con la pregunta. No llega si respondés, desde el chat o desde la terminal. `OFFICE_TELEGRAM_REMIND` (segundos) lo cambia y `0` lo apaga.
+- **El CI también corre en macOS** (`.github/workflows/validate.yml`), con el bash 3.2 del sistema. Nueva prueba: `tests/budget.test.sh`.
+
+Para tomar el script de Telegram y `office-agents.sh` nuevos, volvé a correr `office:telegram` y `office:office-agents` en el proyecto.
+
 ## [0.41.0] - 2026-11-03
 
 ### Agregado
