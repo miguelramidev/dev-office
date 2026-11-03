@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.41.0] - 2026-11-03
+
+### Agregado
+
+- **Capturas de los cambios visibles al celular** (`office` 0.39.0, script `office-telegram` versión 4). Con el modo remoto de Telegram encendido, cuando un cambio se ve (pantallas, estilos, componentes), el PM le pide a un agente de frontend que saque una captura y se la manda al CEO: del navegador si es web o del emulador o simulador si es móvil (iOS con `xcrun simctl`, Android con `adb`). Es la skill nueva `office:screenshot`, que guarda las capturas en `.office/screenshots/` y las manda con `office-telegram.sh photo <imagen> [texto]`. El comando solo manda imágenes (png, jpg, gif o webp) de dentro del proyecto, las manda como archivo si pesan más de 10 MB o Telegram no las acepta como foto, y no hace nada con el modo remoto apagado. Para tomarlo, volvé a correr `office:telegram` en el proyecto, que copia el script nuevo a `.claude/`.
+
 ## [0.40.1] - 2026-11-02
 
 ### Corregido

@@ -5,6 +5,7 @@ Con el modo remoto encendido, manejás la oficina desde el celular mientras la s
 - **El último mensaje del PM te llega por Telegram:** el que explica lo que se hizo y lo que sugiere. Los mensajes de los departamentos no se mandan.
 - **Le respondés desde el chat y la oficina sigue.** Tu mensaje despierta la sesión aunque lleve horas quieta, y el PM lo toma como si lo hubieras escrito en la terminal. Así también la ponés a trabajar de cero: "arrancá con PROJ-123".
 - **Los permisos se aprueban con botones.** Cuando un agente pide permiso, te llega qué quiere hacer con los botones **Permitir** y **Rechazar**. Si no respondés en 10 minutos, el pedido pasa a la terminal como siempre.
+- **Te llega una captura de lo que se ve.** Si el cambio es visible (una pantalla, estilos, un componente), el PM le pide a un agente de frontend que la saque —del navegador si es web, del emulador o simulador si es móvil— y te la manda al chat con el texto de qué pantalla es. Así ves cómo quedó sin estar frente a la computadora.
 - **`/estado`** te dice en qué está la oficina sin despertarla, y **`/ayuda`** muestra qué podés hacer.
 
 Es opcional: si no lo configurás, la oficina funciona igual que siempre.
@@ -36,7 +37,7 @@ Pedíselo al PM con `/office:telegram`, o seguí estos pasos:
 
 5. **Cuando vuelvas, apagalo:** `bash .claude/office-telegram.sh off`.
 
-Otros comandos: `status` (bot, chat, modo remoto y si la sesión está escuchando), `test` (manda un mensaje de prueba) y `forget` (borra el bot guardado).
+Otros comandos: `photo <imagen> [texto]` (manda una captura del proyecto al chat; solo con el modo remoto encendido), `status` (bot, chat, modo remoto y si la sesión está escuchando), `test` (manda un mensaje de prueba) y `forget` (borra el bot guardado).
 
 ## Lo que tenés que saber
 
@@ -47,6 +48,16 @@ Otros comandos: `status` (bot, chat, modo remoto y si la sesión está escuchand
 - **Un bot atiende un proyecto por vez.** Si encendés el modo remoto en dos proyectos con el mismo bot, lo atiende el primero; el otro lo toma cuando el primero se apaga o cierra la sesión.
 - **Una sesión por proyecto.** Con dos sesiones de Claude Code abiertas en el mismo proyecto, tu mensaje le llega a una sola.
 - **El PM escribe para el celular:** su último mensaje llega como texto plano, así que lo arma para leer sin la terminal y, si necesita una decisión tuya, termina con la pregunta y las opciones. Usa emojis para que se vea de un vistazo cómo está cada cosa (✅ listo, ❌ falló, ⚠️ riesgo, ❓ decisión pendiente), pocos y nunca en código, commits, PR ni tickets. Si los querés también en la consola: `bash .claude/office-agents.sh emojis on --local`.
+
+## Capturas de pantalla
+
+La skill `office:screenshot` la usa el PM cuando un cambio se ve y el modo remoto está encendido, o cuando se lo pedís ("mostrame cómo quedó"):
+
+- **Web:** con el navegador que tenga la sesión conectado o con Playwright, si el proyecto lo usa (`npx playwright screenshot`).
+- **Móvil:** del simulador de iOS (`xcrun simctl io booted screenshot`) o del emulador o dispositivo Android (`adb exec-out screencap -p`), con la app ya corriendo.
+- **Qué necesita:** el servidor de desarrollo o el emulador y cómo arrancarlos, que son del proyecto: van en su `CLAUDE.md`. Si falta algo, el PM te dice qué en lugar de improvisar.
+- **Qué pasa con tus datos:** las capturas se guardan en `.office/screenshots/` (fuera de git) y viajan por Telegram. La skill pide usar datos de prueba y revisar la imagen antes de mandarla, pero si tu pantalla muestra datos reales, se ven en el chat.
+- **Límites:** hasta 4 capturas por entrega; solo imágenes de dentro del proyecto.
 
 ## Cómo funciona
 

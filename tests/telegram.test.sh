@@ -18,9 +18,9 @@ mkdir -p "$PROJ" "$FAKE/bin" "$FAKE/resp"
 # $FAKE/resp/<método> (getUpdates responde una sola vez); si no hay nada, un ok genérico.
 cat >"$FAKE/bin/curl" <<'EOF'
 #!/usr/bin/env bash
-url=""; for a in "$@"; do case "$a" in http*) url="$a" ;; esac; done
+url=""; form=0; for a in "$@"; do case "$a" in http*) url="$a" ;; -F) form=1 ;; esac; done
 method="${url##*/}"
-body=$(cat)
+if [ "$form" = 1 ]; then body="$*"; else body=$(cat); fi
 printf '%s %s\n' "$method" "$(printf '%s' "$body" | tr '\n' ' ')" >>"$FAKE/calls"
 if [ -f "$FAKE/resp/$method" ]; then
   cat "$FAKE/resp/$method"
@@ -179,6 +179,27 @@ expect "off reconoce como suyo un poll.json con C:/dev/x" '[ ! -f "$WORK/home/po
 kill "$spid" 2>/dev/null; wait "$spid" 2>/dev/null
 reset_calls
 
+# --- photo -------------------------------------------------------------------------------
+mkdir -p "$PROJ/.office/screenshots"
+printf 'png' >"$PROJ/.office/screenshots/home.png"
+printf 'txt' >"$PROJ/notas.txt"
+printf 'png' >"$WORK/afuera.png"
+reset_calls
+out=$(run photo .office/screenshots/home.png "Pantalla de inicio" 2>&1); code=$?
+expect "photo manda la captura como foto con el proyecto y el texto" '[ $code -eq 0 ] && calls | grep -q "^sendPhoto .*photo=@.*home.png" && calls | grep -q "caption=📸 proj · dev"'
+reset_calls
+out=$(run photo "$WORK/afuera.png" 2>&1); code=$?
+expect "photo rechaza imágenes de fuera del proyecto" '[ $code -eq 1 ] && [ -z "$(calls)" ]'
+out=$(run photo notas.txt 2>&1); code=$?
+expect "photo rechaza archivos que no son imágenes" '[ $code -eq 1 ] && [ -z "$(calls)" ]'
+out=$(run photo .office/screenshots/../../notas.png 2>&1); code=$?
+expect "photo con una imagen que no existe falla sin mandar nada" '[ $code -eq 1 ] && [ -z "$(calls)" ]'
+echo '{"ok":false,"description":"PHOTO_INVALID_DIMENSIONS"}' >"$FAKE/resp/sendPhoto"
+reset_calls
+out=$(run photo .office/screenshots/home.png 2>&1)
+expect "si Telegram no la acepta como foto, la manda como archivo" 'calls | grep -q "^sendDocument .*document=@.*home.png"'
+rm -f "$FAKE/resp/sendPhoto"
+
 # --- status, test y off ----------------------------------------------------------------------
 out=$(run status 2>&1)
 expect "status muestra el bot, el chat y el modo remoto" 'printf "%s" "$out" | grep -q "@oficina_bot · chat 999" && printf "%s" "$out" | grep -q "encendido"'
@@ -189,6 +210,9 @@ reset_calls
 out=$(run off 2>&1); code=$?
 expect "off apaga el modo remoto y avisa" '[ $code -eq 0 ] && [ ! -f "$STATE/on" ] && calls | grep -q "^sendMessage .*apagado"'
 reset_calls
+reset_calls
+out=$(run photo .office/screenshots/home.png 2>&1); code=$?
+expect "con el modo remoto apagado, photo no manda nada" '[ $code -eq 0 ] && [ -z "$(calls)" ]'
 out=$(hook send '{"last_assistant_message":"hola"}'; hook context)
 expect "apagado, los hooks vuelven a no hacer nada" '[ -z "$out" ] && [ -z "$(calls)" ]'
 out=$(run forget 2>&1)
