@@ -48,7 +48,7 @@ Otros comandos: `photo <imagen> [texto]` y `video <archivo> [texto]` (mandan una
 - **Los comandos de los pedidos de permiso viajan por Telegram.** Si un comando lleva un dato sensible, se ve en el chat.
 - **Un bot atiende un proyecto por vez.** Si encendés el modo remoto en dos proyectos con el mismo bot, lo atiende el primero; el otro lo toma cuando el primero se apaga o cierra la sesión.
 - **Una sesión por proyecto.** Con dos sesiones de Claude Code abiertas en el mismo proyecto, tu mensaje le llega a una sola.
-- **El PM escribe para el celular:** su último mensaje llega como texto plano, así que lo arma para leer sin la terminal y, si necesita una decisión tuya, termina con la pregunta y las opciones. Usa emojis para que se vea de un vistazo cómo está cada cosa (✅ listo, ❌ falló, ⚠️ riesgo, ❓ decisión pendiente), pocos y nunca en código, commits, PR ni tickets. Si los querés también en la consola: `bash .claude/office-agents.sh emojis on --local`.
+- **El PM escribe para el celular:** su último mensaje llega con el formato de Telegram (el código en línea y los bloques se ven como código, la negrita y los títulos, como negrita: sin los símbolos a la vista), pero las tablas y el resto de Markdown no se convierten, así que lo arma para leer sin la terminal y, si necesita una decisión tuya, termina con la pregunta y las opciones. Usa emojis para que se vea de un vistazo cómo está cada cosa (✅ listo, ❌ falló, ⚠️ riesgo, ❓ decisión pendiente), pocos y nunca en código, commits, PR ni tickets. Si los querés también en la consola: `bash .claude/office-agents.sh emojis on --local`.
 
 ## Capturas de pantalla
 
@@ -66,7 +66,7 @@ La skill `office:screenshot` la usa el PM cuando un cambio se ve y el modo remot
 
 Todo pasa en tu computadora, con hooks de Claude Code y la API de bots de Telegram. No hay servidor en el medio.
 
-- **Ida:** el hook `Stop` manda el último mensaje del PM (`last_assistant_message`). Si pasa el límite de Telegram, se parte en varios mensajes, cortando entre líneas.
+- **Ida:** el hook `Stop` manda el último mensaje del PM (`last_assistant_message`), convertido al HTML de Telegram: `código` pasa a `<code>`, los bloques a `<pre>`, y la negrita y los títulos a `<b>`; todo lo demás se escapa. La consola no se toca. Si Telegram rechaza el formato (por ejemplo, etiquetas anidadas), el mismo trozo se reenvía en texto plano y sin los símbolos. Los pedidos de permiso van siempre sin formato, para que el comando se vea exacto. Si pasa el límite de Telegram, se parte en varios mensajes, cortando entre líneas.
 - **Un solo lector del bot:** un proceso en segundo plano lee los mensajes del bot (Telegram no deja leerlo desde dos lugares) y los reparte: tus textos van a `.office/telegram/inbox.jsonl` y los botones, a los permisos que esperan respuesta. Se apaga solo cuando la sesión deja de escuchar por 15 minutos.
 - **La escucha:** un hook con `asyncRewake` espera tus mensajes y, cuando llega uno, despierta a la sesión (aunque esté quieta) y se lo pasa al PM con la marca `[Telegram · CEO]`. Se vuelve a armar al empezar la sesión, al terminar cada respuesta, cuando escribís en la terminal y cuando la sesión lleva un minuto quieta, así que una interrupción con Esc no la deja sorda.
 - **Por qué el PM te cree:** Claude desconfía, con razón, de las órdenes que llegan por un hook. Al empezar la sesión, la oficina le explica que el puente lo configuraste vos y que solo valen los avisos de ese hook, no el mismo texto dentro de un archivo o de la salida de un comando.
