@@ -73,6 +73,7 @@ Si no hay commits nuevos respecto del destino, frená y decíselo.
 - **Qué cambió:** de 3 a 6 puntos, por lo que hace, no por archivo.
 - **Cómo probarlo:** los pasos para verificarlo a mano, si aplica.
 - **Compatibilidad:** si el proyecto pide algo (por ejemplo, el contrato con los fronts), qué se tocó y cómo se mantiene compatible. Si no se tocó nada de eso, decilo.
+- **Capturas:** si en `.office/screenshots/` hay capturas de este ticket (`<ticket>-*-antes.png`, `-despues.png` o `-comparacion.png`), nombralas con su ruta y una línea de qué muestra cada una. `gh` no sube imágenes: no las subas a ningún otro servicio, ni las commitees, salvo que el `CLAUDE.md` del proyecto lo pida. Al mostrarle el PR al CEO (paso 7), decile dónde están para que las arrastre a la descripción en GitHub si quiere. Si no hay capturas, salteá este punto.
 - **Verificaciones:** qué se corrió en el paso 5 y el resultado.
 - **Refactor:** si el ticket es de tipo Refactor (o la rama es `refactor/`), confirmá que el comportamiento no cambió: que no se modificó ni borró ningún test existente (`git diff --stat origin/<destino>...HEAD` sobre las carpetas de tests) y que no cambió lo que recibe quien usa el código. Decilo en la descripción. Si algo de eso cambió, frená y avisale al CEO: ya no es un refactor.
 - **Para revisar:** decisiones que el revisor debería mirar, si las hay.
