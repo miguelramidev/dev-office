@@ -193,7 +193,8 @@
   // escritorio), talk (charla de a dos, con globos que se alternan), hold (espera que termine
   // una charla), wait, say, pose (festeja, se estira o se rasca la cabeza) y prop (taza).
   const SPEED = 64;
-  const COFFEE = [{ x: 733, y: 224, room: "hall" }, { x: 18, y: 224, room: "hall" }];
+  // La cafetera está al final del pasillo: con más de cuatro oficinas, el pasillo es más largo (HALL_DX).
+  const COFFEE = [{ get x() { return 733 + HALL_DX; }, y: 224, room: "hall" }, { x: 18, y: 224, room: "hall" }];
   const DEBATE = [[100, 62], [136, 62]];
   const DEBATE_LINES = ["Este hallazgo es real", "No coincido: ya valida", "Mirá el PATCH sin estado", "Ok, ese lo confirmo", "¿Y el del índice?", "Ese queda en disputa"];
   // Charlas de los ratos libres: entre compañeros del mismo departamento y con otros.
@@ -367,7 +368,7 @@
     if (to.debate !== undefined) { const r = room("qa"); return { x: r.x + DEBATE[to.debate][0], y: r.y + DEBATE[to.debate][1], room: "qa" }; }
     if (to.spot) {
       if (to.spot === "window" || to.spot === "printer") { const r = room(a.room); return { x: r.x + 96, y: r.y + 52, room: a.room }; }
-      const s = { cooler: COFFEE[1], cooler2: { x: 40, y: 230 }, plants: { x: 300, y: 222 }, stall0: { x: 754, y: 214 }, stall1: { x: 762, y: 222 }, sink: { x: 752, y: 236 }, bathq: { x: 740, y: 246 } }[to.spot] || COFFEE[0];
+      const s = { cooler: COFFEE[1], cooler2: { x: 40, y: 230 }, plants: { x: 300, y: 222 }, stall0: { x: 754 + HALL_DX, y: 214 }, stall1: { x: 762 + HALL_DX, y: 222 }, sink: { x: 752 + HALL_DX, y: 236 }, bathq: { x: 740 + HALL_DX, y: 246 } }[to.spot] || COFFEE[0];
       return { x: s.x, y: s.y, room: "hall" };
     }
     return to;

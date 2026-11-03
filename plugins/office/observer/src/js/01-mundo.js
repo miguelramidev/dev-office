@@ -1,5 +1,6 @@
   // --- Mundo -------------------------------------------------------------------
-  const W = 768, H = 448;             // resolución del pixel art (personajes de 32 px)
+  const W0 = 768, H = 448;            // resolución del pixel art (personajes de 32 px)
+  let W = W0;                         // el ancho sigue a las oficinas instaladas (ver layoutRooms)
   const RW = 192, RH = 180;           // tamaño de cada oficina
   const TOP_Y = 4, BOT_Y = 264;       // filas de oficinas
   const HALL_Y = 228;                 // por donde camina el PM
@@ -21,10 +22,35 @@
     { id: "db",     name: "Base de datos", x: 0,   y: BOT_Y, top: false, deco: "db" },
     { id: "scrap",  name: "Scraping",      x: 192, y: BOT_Y, top: false, deco: "scrap" },
     { id: "ops",    name: "DevOps",        x: 384, y: BOT_Y, top: false, deco: "ops" },
-    { id: "qa",     name: "QA",            x: 576, y: BOT_Y, top: false, deco: "qa" },
+    { id: "docs",   name: "Documentación", x: 576, y: BOT_Y, top: false, deco: "docs" },
+    { id: "qa",     name: "QA",            x: 768, y: BOT_Y, top: false, deco: "qa" },
   ];
   const room = id => ROOMS.find(r => r.id === id);
   const doorX = r => r.x + RW / 2;
+
+  // Solo se muestran las oficinas instaladas (las de un departamento sin instalar tienen
+  // off = true). Cada una queda en su fila de siempre (la de arriba o la de abajo) y las
+  // visibles se juntan hacia la izquierda, sin huecos. El ancho del mundo es el de la fila más
+  // larga, con un mínimo de cuatro oficinas: así el pasillo conserva su tamaño de siempre y
+  // lo del extremo derecho (la cafetera, el baño) se corre HALL_DX cuando hay más de cuatro.
+  let HALL_DX = 0, layoutSig = "";
+  function layoutRooms() {
+    const cols = { top: 0, bottom: 0 };
+    ROOMS.forEach(r => {
+      if (r.off) { r.x = -9999; r.y = -9999; return; }
+      const row = r.top ? "top" : "bottom";
+      r.x = cols[row]++ * RW; r.y = r.top ? TOP_Y : BOT_Y;
+    });
+    W = Math.max(4, cols.top, cols.bottom) * RW;
+    HALL_DX = W - W0;
+    const sig = ROOMS.filter(r => !r.off).map(r => r.id).join(",");
+    const changed = sig !== layoutSig;
+    layoutSig = sig;
+    return changed;
+  }
+  layoutRooms();
+  // Lo que otros archivos enganchan para enterarse de un cambio de layout (la vista 3D).
+  let onLayout3d = null;
 
   // Configuración simulada de proveedores, como la de .claude/office-agents.json.
   const AGENTS = [
@@ -44,12 +70,15 @@
     { id: "stest", label: "Tester de scraping",      short: "Test SC",  room: "scrap",  seat: [140, 70], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "scraper.tester", look: 13 },
     { id: "odev",  label: "Developer de DevOps",     short: "Dev Ops",  room: "ops",    seat: [52, 70],  color: "orange", provider: "claude", model: "sonnet", tier: "sonnet", role: "devops.developer", look: 14 },
     { id: "otest", label: "Tester de DevOps",        short: "Test Ops", room: "ops",    seat: [140, 70], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "devops.tester", look: 15 },
+    { id: "wdev",  label: "Redactor de documentación", short: "Dev Doc", room: "docs",  seat: [52, 70],  color: "cyan",    provider: "claude", model: "sonnet", tier: "sonnet", role: "docs.developer", look: 24 },
+    { id: "wtest", label: "Revisor de documentación", short: "Rev Doc",  room: "docs",  seat: [140, 70], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "docs.tester", look: 25 },
     // Líderes de departamento: solo en el modo equipos. Siempre Claude (Sonnet).
     { id: "blead", label: "Líder de backend",        short: "Líder BE", room: "back",   seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "backend.lead", look: 18 },
     { id: "flead", label: "Líder de frontend",       short: "Líder FE", room: "front",  seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "frontend.lead", look: 19 },
     { id: "dlead", label: "Líder de base de datos",  short: "Líder DB", room: "db",     seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "database.lead", look: 20 },
     { id: "slead", label: "Líder de scraping",       short: "Líder SC", room: "scrap",  seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "scraper.lead", look: 21 },
     { id: "olead", label: "Líder de DevOps",         short: "Líder Ops", room: "ops",   seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "devops.lead", look: 22 },
+    { id: "wlead", label: "Líder de documentación",  short: "Líder Doc", room: "docs",  seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "docs.lead", look: 23 },
     { id: "qa1",   label: "QA (Claude)",             short: "QA 1",     room: "qa",     seat: [52, 96],  color: "red",    provider: "claude", model: "opus", tier: "opus", role: "qa", look: 16 },
     { id: "qa2",   label: "QA (Codex)",              short: "QA 2",     room: "qa",     seat: [140, 96], color: "red",    provider: "codex",  model: "gpt-6-astra", tier: "opus", role: "qa", look: 17 },
   ];

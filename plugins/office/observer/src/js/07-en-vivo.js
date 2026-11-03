@@ -7,11 +7,11 @@
     "backend.architect": "barch", "frontend.architect": "farch", "frontend.designer": "dsgn", "devops.architect": "oarch",
     "backend.developer": "bdev", "backend.tester": "btest", "frontend.developer": "fdev", "frontend.tester": "ftest",
     "database.developer": "ddev", "database.tester": "dtest", "scraper.developer": "sdev", "scraper.tester": "stest",
-    "devops.developer": "odev", "devops.tester": "otest",
-    "backend.lead": "blead", "frontend.lead": "flead", "database.lead": "dlead", "scraper.lead": "slead", "devops.lead": "olead",
+    "devops.developer": "odev", "devops.tester": "otest", "docs.developer": "wdev", "docs.tester": "wtest",
+    "backend.lead": "blead", "frontend.lead": "flead", "database.lead": "dlead", "scraper.lead": "slead", "devops.lead": "olead", "docs.lead": "wlead",
   };
-  const ROOM_DEPT = { back: "backend", front: "frontend", db: "database", scrap: "scraper", ops: "devops" };
-  const DEPTS = ["backend", "frontend", "database", "scraper", "devops"];
+  const ROOM_DEPT = { back: "backend", front: "frontend", db: "database", scrap: "scraper", ops: "devops", docs: "docs" };
+  const DEPTS = ["backend", "frontend", "database", "scraper", "devops", "docs"];
   const FAILS = ["FALLA", "RECHAZADO", "PROVEEDOR NO DISPONIBLE", "REGLAS ROTAS", "TIEMPO AGOTADO", "FALLO"];
   const roleFromType = t => {
     if (t === "office:qa") return "qa";
@@ -35,10 +35,28 @@
     return cut(tool + (t ? " " + t : ""));
   }
 
+  // Las oficinas sin instalar no se muestran: las visibles se juntan y el mundo cambia de
+  // ancho. Si el acomodo cambió, todo lo que dependía de él se rehace: la gente vuelve a su
+  // lugar, el canvas se ajusta y la vista 3D reconstruye el edificio. Si no cambió, nada.
+  function relayout() {
+    if (!layoutRooms()) return false;
+    world.width = W; world.height = H;
+    if (state) {
+      state.agents.forEach(clearAnim);
+      const m = DOOR_SPOT();
+      Object.assign(state.pm, { x: m.x, y: m.y, path: [], room: "hall", walking: false });
+      state.pmTarget = null;
+    }
+    resize();
+    if (onLayout3d) onLayout3d();
+    return true;
+  }
+
   function liveReset(sess) {
     const cfg = (sess && sess.config) || {};
     const depts = sess && Array.isArray(sess.departments) ? sess.departments : null;
     ROOMS.forEach(r => { const d = ROOM_DEPT[r.id]; r.off = !!(depts && d && !depts.includes(d)); });
+    relayout();
     state.agents.forEach(a => {
       const base = AGENTS.find(b => b.id === a.id);
       Object.assign(a, { status: "idle", tool: "", task: "", tokens: 0, ext: 0, startedAt: null, bubble: null, bubbleUntil: 0, toolList: null, lastAct: 0, lastWhat: "", stuck: 0 }, NO_DOCS());
@@ -388,6 +406,7 @@
       liveRebuild();
     } else {
       ROOMS.forEach(r => { r.off = false; });
+      relayout();
       state = freshState();
       startStep();
       for (let i = 0; i < 120; i++) update(0.1);
