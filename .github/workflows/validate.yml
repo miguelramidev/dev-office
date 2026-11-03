@@ -54,6 +54,9 @@ jobs:
       - name: Probar el presupuesto de tokens
         run: bash tests/budget.test.sh
 
+      - name: Probar la memoria del proyecto
+        run: bash tests/decisions.test.sh
+
       - name: Probar el puente a Codex y Gemini
         run: bash tests/run-external.test.sh
 

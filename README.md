@@ -30,6 +30,7 @@ Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). 
 | `/office:handoff-ticket` | Avisarle a otro equipo, en su ticket de Jira, de un cambio que lo afecta. |
 | `/office:office-agents` | Elegir Claude, Codex o Gemini para cada rol, y el modo equipos. |
 | `/office:observer` | Abrir la oficina en pixel art en el navegador. |
+| `/office:decisions` | La memoria del proyecto: al cerrar un ticket deja una nota corta con lo decidido y lo que sorprendió, y al empezar lee solo el índice. |
 | `/office:screenshot` | Captura cómo quedó un cambio visible (web en el navegador, app en el emulador) y te la manda por Telegram si el modo remoto está encendido. |
 | `/office:telegram` | Manejar la oficina desde Telegram: te llega el último mensaje del PM, le respondés desde el celular y aprobás los permisos con botones. |
 | `/office:usage` | Ver cuántos tokens y cuánto tiempo gastó cada agente en cada tarea, por agente y por proveedor. |
@@ -89,7 +90,7 @@ Se actualizan cada vez que cambia un endpoint, así siempre tenés la API de tu 
 | -------------- | ------------------------------------------------------------------------- | ------------- |
 | `office`       | PM, QA, puente a Codex y Gemini, hooks de protección y registro de actividad, observer en pixel art, skills `office-setup`, `start-ticket`, `open-pr`, `review-fixes`, `handoff-ticket`, `office-agents`, `observer`, `telegram`, `usage`, `screenshot` y `update` | PM y QA: Opus; puente: Sonnet |
 | `dept-backend` | Arquitecto, developer y tester de backend, skills de backend sólido y de colección de Postman | Arquitecto: Opus; developer y tester: Sonnet |
-| `dept-frontend` | Arquitecto, designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skills de frontend sólido y de lectura de diseños entregados (imágenes o Figma) | Arquitecto: Opus; el resto: Sonnet |
+| `dept-frontend` | Arquitecto, designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skills de frontend sólido, de lectura de diseños entregados (imágenes o Figma) y de pruebas visuales y de accesibilidad | Arquitecto: Opus; el resto: Sonnet |
 | `dept-database` | Developer (DB manager) y tester de Postgres y MongoDB, skill de base de datos sólida | Sonnet |
 | `dept-scraper` | Developer y tester de scraping, skill de scraping responsable             | Sonnet        |
 | `dept-devops` | Arquitecto, developer y tester de CI/CD, despliegues, infraestructura como código, contenedores y servidores, skill de DevOps sólido | Arquitecto: Opus; developer y tester: Sonnet |
