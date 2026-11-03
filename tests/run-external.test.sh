@@ -6,7 +6,7 @@
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 RUNNER="$REPO/plugins/office/skills/external-agents/run-external.sh"
-WORK=$(mktemp -d)
+WORK=$(cd "$(mktemp -d)" && pwd -P) # ruta real: en macOS /var es un enlace a /private/var
 trap 'rm -rf "$WORK"' EXIT
 FAILED=0
 

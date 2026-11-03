@@ -262,7 +262,8 @@ bash "$STALE/build.sh" --check 2>/dev/null && fail "build.sh --check detecta un 
 # Corre el script de la página con un DOM falso: el catálogo, la vitrina de cada partida,
 # el dibujo de todos los artículos y las compras de la demo.
 if command -v node >/dev/null 2>&1; then
-  OUT=$(node - "$REPO/plugins/office/observer/index.html" 2>&1 <<'NODE'
+  # El script va a un archivo: el bash 3.2 de macOS no lee un heredoc largo dentro de $( ).
+  cat >"$WORK/tienda.js" <<'NODE'
 const fs = require("fs");
 const html = fs.readFileSync(process.argv[2], "utf8");
 let code = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</script>"));
@@ -398,7 +399,7 @@ const parts = JSON.stringify([T.state.tokens, T.state.feed.filter(f => !f.stuckK
 say(whole === parts, "en vivo: procesar solo lo nuevo da lo mismo que procesar todo");
 say(ms < 3000, "en vivo: 3000 eventos llegando de a diez se procesan en " + ms + " ms");
 NODE
-)
+  OUT=$(node "$WORK/tienda.js" "$REPO/plugins/office/observer/index.html" 2>&1)
   echo "$OUT"
   echo "$OUT" | grep -q '^FALLA' && FAILED=1
   echo "$OUT" | grep -q '^ok' || { fail "tienda: el script de la página no corre"; }
