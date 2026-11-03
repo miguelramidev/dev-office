@@ -1,6 +1,6 @@
 ---
 name: screenshot
-description: Saca una captura del resultado de un cambio visible - la pantalla de una web en el navegador o la de una app móvil en el emulador (iOS o Android) - y se la manda al CEO por Telegram cuando el modo remoto está encendido, para que vea cómo quedó aunque no esté frente a su computadora. Usar cuando un cambio tocó algo que se ve (pantallas, estilos, componentes, textos de la interfaz) y el modo remoto de Telegram está encendido, o cuando el CEO pide ver cómo quedó.
+description: Saca una captura (o un video corto, o un antes y después) del resultado de un cambio visible - la pantalla de una web en el navegador o la de una app móvil en el emulador (iOS o Android) - y se la manda al CEO por Telegram cuando el modo remoto está encendido, para que vea cómo quedó aunque no esté frente a su computadora. Usar cuando un cambio tocó algo que se ve (pantallas, estilos, componentes, textos de la interfaz) y el modo remoto de Telegram está encendido, o cuando el CEO pide ver cómo quedó.
 argument-hint: "[qué pantalla o flujo capturar]"
 ---
 
@@ -57,6 +57,45 @@ La app tiene que estar corriendo en el emulador o simulador, en la pantalla a mo
 
 Si no hay emulador encendido y el proyecto no dice cómo levantarlo, avisale al PM: él le pregunta al CEO.
 
+## Antes y después
+
+Cuando el cambio modifica una pantalla que ya existe, el PM puede pedir la captura **antes** de que el developer toque nada, para mostrar la diferencia:
+
+- Se nombran `.office/screenshots/<ticket o tema>-<pantalla>-antes.png` y `...-despues.png`, con el mismo tamaño de pantalla o dispositivo en las dos.
+- Si hay `magick` (ImageMagick 7) o `convert`, juntalas lado a lado en `...-comparacion.png` (`magick antes.png despues.png +append comparacion.png`) y mandá esa sola, con el texto `Antes (izquierda) · Después (derecha): <qué cambió>`. Si no, mandá las dos, una con el texto `Antes: ...` y la otra con `Después: ...`.
+- Para una pantalla nueva no hay "antes": una captura alcanza.
+- Dejalas guardadas: la skill `office:open-pr` las nombra en la descripción del PR.
+
+## Video corto
+
+Para un flujo o una animación que una captura no muestra (una transición, un formulario de varios pasos). Solo si el proyecto ya sabe recorrer el flujo solo (un script de e2e, Maestro, Detox, Playwright...): nadie toca la pantalla durante la grabación, así que sin eso no sirve. Máximo 30 segundos y 50 MB.
+
+- **Web:** con Playwright, grabá desde el test (`--video=on` o `video: 'on'` en su configuración) y copiá el `.webm` de `test-results/` a `.office/screenshots/`.
+- **iOS (simulador):**
+
+  ```bash
+  xcrun simctl io booted recordVideo --codec=h264 --force .office/screenshots/<nombre>.mp4 &
+  ```
+
+  Corré el flujo y después cortá la grabación con `kill -INT <pid>`; esperá a que el proceso termine para que el archivo quede completo.
+- **Android:**
+
+  ```bash
+  adb shell screenrecord --time-limit 30 /sdcard/<nombre>.mp4 &
+  adb pull /sdcard/<nombre>.mp4 .office/screenshots/<nombre>.mp4
+  adb shell rm /sdcard/<nombre>.mp4
+  ```
+
+  Hacé el `pull` cuando la grabación terminó.
+
+No abras el video con Read: no se puede ver y no sirve para nada. Comprobá que existe y pesa algo (`ls -l`) y, si hay `ffprobe`, cuánto dura. Se manda con:
+
+```bash
+bash .claude/office-telegram.sh video .office/screenshots/<nombre>.mp4 "<qué muestra>"
+```
+
+Si Telegram no lo acepta como video (algunos `.mov` o `.webm`), el script lo manda como archivo.
+
 ## Mandar la captura
 
 Mirá la imagen con Read antes de mandarla: que sea la pantalla correcta, que haya cargado y que no tenga datos sensibles. Después:
@@ -65,7 +104,7 @@ Mirá la imagen con Read antes de mandarla: que sea la pantalla correcta, que ha
 bash .claude/office-telegram.sh photo .office/screenshots/<nombre>.png "<qué se ve, en una línea>"
 ```
 
-El texto dice qué pantalla es y qué cambió (por ejemplo, `PROJ-123 · Login con error de contraseña`). Una captura por pantalla o estado importante, no más de 4 por entrega. Si `photo` falla, informalo en el reporte; no es motivo para frenar el trabajo.
+El texto dice qué pantalla es y qué cambió (por ejemplo, `PROJ-123 · Login con error de contraseña`). Una captura por pantalla o estado importante, no más de 4 por entrega (un antes y después o un video cuentan como una). Si `photo` falla, informalo en el reporte; no es motivo para frenar el trabajo.
 
 Si el script `.claude/office-telegram.sh` no existe, el CEO no configuró Telegram: avisale al PM y seguí sin mandar.
 

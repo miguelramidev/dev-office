@@ -8,6 +8,13 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.43.0] - 2026-11-03
+
+### Agregado
+
+- **Video corto de un flujo, por Telegram** (`office` 0.41.0, `office-telegram` versión 6). `office-telegram.sh video <archivo> [texto]` manda un mp4, mov o webm de hasta 50 MB (si Telegram no lo acepta como video, lo manda como archivo). La skill `office:screenshot` explica cómo grabarlo: Playwright en la web, `xcrun simctl io recordVideo` en iOS y `adb shell screenrecord` en Android, solo si el proyecto ya recorre el flujo solo (e2e).
+- **Antes y después.** Cuando el cambio modifica una pantalla que ya existe, el PM pide la captura "antes" antes de que el developer empiece y manda las dos (juntas, si hay ImageMagick). `office:open-pr` nombra las capturas del ticket en la descripción del PR; no las sube a ningún lado (`gh` no sube imágenes y la oficina no las manda a servicios externos).
+
 ## [0.42.0] - 2026-11-03
 
 ### Agregado

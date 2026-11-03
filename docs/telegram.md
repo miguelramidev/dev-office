@@ -38,7 +38,7 @@ Pedíselo al PM con `/office:telegram`, o seguí estos pasos:
 
 5. **Cuando vuelvas, apagalo:** `bash .claude/office-telegram.sh off`.
 
-Otros comandos: `photo <imagen> [texto]` (manda una captura del proyecto al chat; solo con el modo remoto encendido), `status` (bot, chat, modo remoto y si la sesión está escuchando), `test` (manda un mensaje de prueba) y `forget` (borra el bot guardado).
+Otros comandos: `photo <imagen> [texto]` y `video <archivo> [texto]` (mandan una captura o un video corto del proyecto al chat; solo con el modo remoto encendido), `status` (bot, chat, modo remoto y si la sesión está escuchando), `test` (manda un mensaje de prueba) y `forget` (borra el bot guardado).
 
 ## Lo que tenés que saber
 
@@ -58,7 +58,9 @@ La skill `office:screenshot` la usa el PM cuando un cambio se ve y el modo remot
 - **Móvil:** del simulador de iOS (`xcrun simctl io booted screenshot`) o del emulador o dispositivo Android (`adb exec-out screencap -p`), con la app ya corriendo.
 - **Qué necesita:** el servidor de desarrollo o el emulador y cómo arrancarlos, que son del proyecto: van en su `CLAUDE.md`. Si falta algo, el PM te dice qué en lugar de improvisar.
 - **Qué pasa con tus datos:** las capturas se guardan en `.office/screenshots/` (fuera de git) y viajan por Telegram. La skill pide usar datos de prueba y revisar la imagen antes de mandarla, pero si tu pantalla muestra datos reales, se ven en el chat.
-- **Límites:** hasta 4 capturas por entrega; solo imágenes de dentro del proyecto.
+- **Antes y después:** si el cambio modifica una pantalla que ya existe, el PM pide la captura "antes" antes de que el developer empiece, y te manda las dos (juntas, si hay ImageMagick). Quedan en `.office/screenshots/` y `office:open-pr` las nombra en la descripción del PR. Ninguna se sube a GitHub sola: `gh` no sube imágenes y la oficina no las manda a ningún servicio externo; si las querés en el PR, arrastralas vos.
+- **Video corto:** para un flujo o una animación, solo si el proyecto ya lo recorre solo (e2e, Maestro, Detox, Playwright). Hasta 30 segundos y 50 MB: se graba con `simctl` (iOS), `adb screenrecord` (Android) o Playwright (web) y llega con `office-telegram.sh video`.
+- **Límites:** hasta 4 capturas por entrega; solo archivos de dentro del proyecto.
 
 ## Cómo funciona
 

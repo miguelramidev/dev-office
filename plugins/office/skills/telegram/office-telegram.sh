@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-telegram-version: 5
+# office-telegram-version: 6
 # La oficina remota por Telegram: el último mensaje del PM te llega al chat, le respondés
 # desde el celular y la oficina sigue; los permisos se aprueban con botones.
 #
@@ -13,6 +13,7 @@
 #   status                   cómo está: bot, chat, modo remoto y si la sesión está escuchando
 #   test                     manda un mensaje de prueba
 #   photo <imagen> [texto]   manda una captura al chat (solo con el modo remoto encendido)
+#   video <archivo> [texto]  manda un video corto (mp4, mov o webm, hasta 50 MB), igual
 #   forget                   borra el bot guardado
 #
 # Dónde guarda las cosas:
@@ -487,36 +488,50 @@ cmd_test() {
   fi
 }
 
-# photo <imagen> [texto]: manda una captura (png, jpg, gif o webp) del proyecto al chat. Solo
-# con el modo remoto encendido: si el CEO está frente a la computadora, no hace nada.
-# Si pesa más de 10 MB o Telegram no la acepta como foto, la manda como archivo.
-cmd_photo() {
-  local file dir abs root ext size caption="${2:-}" method=sendPhoto field=photo resp
-  [ -n "${1:-}" ] || { echo "Uso: office-telegram.sh photo <imagen> [texto]"; exit 1; }
+# photo <imagen> [texto] y video <archivo> [texto]: mandan al chat una captura (png, jpg, gif o
+# webp) o un video corto (mp4, mov o webm, hasta 50 MB) del proyecto. Solo con el modo remoto
+# encendido: si el CEO está frente a la computadora, no hacen nada. Una imagen de más de
+# 10 MB, o un archivo que Telegram no acepta como foto o video, se manda como archivo.
+cmd_media() {
+  local kind="$1" file dir abs root ext size caption="${3:-}" method field icon what max resp
+  if [ "$kind" = video ]; then
+    method=sendVideo; field=video; icon="🎬"; what="el video"; max=52428800
+  else
+    method=sendPhoto; field=photo; icon="📸"; what="la captura"; max=10485760
+  fi
+  [ -n "${2:-}" ] || { echo "Uso: office-telegram.sh $kind <archivo> [texto]"; exit 1; }
   load_cfg || { echo "Primero configurá el bot: office-telegram.sh setup <token>"; exit 1; }
-  is_on || { echo "El modo remoto está apagado: no mandé la captura."; exit 0; }
-  file=$(norm_path "$1")
-  [ -f "$file" ] || { echo "No encuentro la imagen: $1"; exit 1; }
+  is_on || { echo "El modo remoto está apagado: no mandé $what."; exit 0; }
+  file=$(norm_path "$2")
+  [ -f "$file" ] || { echo "No encuentro el archivo: $2"; exit 1; }
   dir=$(cd "$(dirname "$file")" && pwd -P) || exit 1
   abs="$dir/$(basename "$file")"
   root=$(cd "$PROJECT" && pwd -P)
-  case "$abs" in "$root"/*) ;; *) echo "Solo mando imágenes de dentro del proyecto."; exit 1 ;; esac
+  case "$abs" in "$root"/*) ;; *) echo "Solo mando archivos de dentro del proyecto."; exit 1 ;; esac
   ext=$(printf '%s' "${abs##*.}" | tr '[:upper:]' '[:lower:]')
-  case "$ext" in png | jpg | jpeg | gif | webp) ;; *) echo "Formato no admitido (.$ext): uso png, jpg, gif o webp."; exit 1 ;; esac
+  if [ "$kind" = video ]; then
+    case "$ext" in mp4 | mov | webm) ;; *) echo "Formato no admitido (.$ext): uso mp4, mov o webm."; exit 1 ;; esac
+  else
+    case "$ext" in png | jpg | jpeg | gif | webp) ;; *) echo "Formato no admitido (.$ext): uso png, jpg, gif o webp."; exit 1 ;; esac
+  fi
   size=$(wc -c <"$abs" | tr -d ' ')
-  [ "$size" -gt 10485760 ] && { method=sendDocument; field=document; }
-  caption="📸 $(project_label)${caption:+
+  if [ "$kind" = video ] && [ "$size" -gt 52428800 ]; then
+    echo "El video pesa más de 50 MB, el máximo que acepta Telegram para bots: acortalo o bajale la calidad."
+    exit 1
+  fi
+  [ "$size" -gt "$max" ] && { method=sendDocument; field=document; }
+  caption="$icon $(project_label)${caption:+
 $caption}"
   caption="${caption:0:1000}"
-  resp=$(curl -s --max-time 90 --form-string "chat_id=$CHAT" --form-string "caption=$caption" -F "$field=@$abs" "$API/bot$TOKEN/$method" 2>/dev/null | tr -d '\r')
-  if [ "$(printf '%s' "$resp" | jqr -r '.ok // false')" != true ] && [ "$method" = sendPhoto ]; then
-    resp=$(curl -s --max-time 90 --form-string "chat_id=$CHAT" --form-string "caption=$caption" -F "document=@$abs" "$API/bot$TOKEN/sendDocument" 2>/dev/null | tr -d '\r')
+  resp=$(curl -s --max-time 180 --form-string "chat_id=$CHAT" --form-string "caption=$caption" -F "$field=@$abs" "$API/bot$TOKEN/$method" 2>/dev/null | tr -d '\r')
+  if [ "$(printf '%s' "$resp" | jqr -r '.ok // false')" != true ] && [ "$method" != sendDocument ]; then
+    resp=$(curl -s --max-time 180 --form-string "chat_id=$CHAT" --form-string "caption=$caption" -F "document=@$abs" "$API/bot$TOKEN/sendDocument" 2>/dev/null | tr -d '\r')
   fi
   if [ "$(printf '%s' "$resp" | jqr -r '.ok // false')" = true ]; then
-    echo "Captura enviada: ${abs#"$root"/}"
+    echo "Enviado: ${abs#"$root"/}"
   else
-    log "photo falló: ${abs#"$root"/}"
-    echo "No se pudo mandar la captura. Revisá la conexión y el modo remoto."
+    log "$kind falló: ${abs#"$root"/}"
+    echo "No se pudo mandar $what. Revisá la conexión y el modo remoto."
     exit 1
   fi
 }
@@ -543,9 +558,9 @@ case "${1:-}" in
   off) need jq curl; cmd_off ;;
   status) need jq curl; cmd_status ;;
   test) need jq curl; cmd_test ;;
-  photo) need jq curl; cmd_photo "${2:-}" "${3:-}" ;;
+  photo | video) need jq curl; cmd_media "$1" "${2:-}" "${3:-}" ;;
   forget) cmd_forget ;;
   *)
-    sed -n '2,22p' "$SELF" | sed 's/^# \{0,1\}//'
+    sed -n '2,23p' "$SELF" | sed 's/^# \{0,1\}//'
     ;;
 esac

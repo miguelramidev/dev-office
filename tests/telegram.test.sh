@@ -221,6 +221,7 @@ mkdir -p "$PROJ/.office/screenshots"
 printf 'png' >"$PROJ/.office/screenshots/home.png"
 printf 'txt' >"$PROJ/notas.txt"
 printf 'png' >"$WORK/afuera.png"
+printf 'mp4' >"$WORK/afuera.mp4"
 reset_calls
 out=$(run photo .office/screenshots/home.png "Pantalla de inicio" 2>&1); code=$?
 expect "photo manda la captura como foto con el proyecto y el texto" '[ $code -eq 0 ] && calls | grep -q "^sendPhoto .*photo=@.*home.png" && calls | grep -q "caption=📸 proj · dev"'
@@ -236,6 +237,27 @@ reset_calls
 out=$(run photo .office/screenshots/home.png 2>&1)
 expect "si Telegram no la acepta como foto, la manda como archivo" 'calls | grep -q "^sendDocument .*document=@.*home.png"'
 rm -f "$FAKE/resp/sendPhoto"
+
+printf 'mp4' >"$PROJ/.office/screenshots/flujo.mp4"
+reset_calls
+out=$(run video .office/screenshots/flujo.mp4 "Flujo de login" 2>&1); code=$?
+expect "video manda el archivo con sendVideo y el texto" '[ $code -eq 0 ] && calls | grep -q "^sendVideo .*video=@.*flujo.mp4" && calls | grep -q "caption=🎬 proj · dev"'
+out=$(run video .office/screenshots/home.png 2>&1); code=$?
+expect "video rechaza formatos que no son de video" '[ $code -eq 1 ]'
+out=$(run photo .office/screenshots/flujo.mp4 2>&1); code=$?
+expect "photo rechaza un video" '[ $code -eq 1 ]'
+out=$(run video "$WORK/afuera.mp4" 2>&1); code=$?
+expect "video rechaza archivos de fuera del proyecto" '[ $code -eq 1 ]'
+dd if=/dev/zero of="$PROJ/.office/screenshots/enorme.mp4" bs=1048576 count=51 2>/dev/null
+reset_calls
+out=$(run video .office/screenshots/enorme.mp4 2>&1); code=$?
+expect "video de más de 50 MB se rechaza con explicación" '[ $code -eq 1 ] && printf "%s" "$out" | grep -q "50 MB" && [ -z "$(calls)" ]'
+rm -f "$PROJ/.office/screenshots/enorme.mp4"
+echo '{"ok":false,"description":"unsupported"}' >"$FAKE/resp/sendVideo"
+reset_calls
+out=$(run video .office/screenshots/flujo.mp4 2>&1)
+expect "si Telegram no lo acepta como video, lo manda como archivo" 'calls | grep -q "^sendDocument .*document=@.*flujo.mp4"'
+rm -f "$FAKE/resp/sendVideo"
 
 # --- status, test y off ----------------------------------------------------------------------
 out=$(run status 2>&1)
