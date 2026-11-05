@@ -56,7 +56,7 @@ El trabajo no está terminado hasta que las colecciones reflejen los cambios y p
 
 ## Antes de devolver
 
-Corré el typecheck, el lint y los tests existentes con los comandos que indique el `CLAUDE.md` del proyecto. Corré cada comando por separado, sin unirlos con `;` ni `&&` y sin `| tail` ni `| head`: necesitás la salida completa.
+Corré el typecheck, el lint y los tests existentes con los comandos que indique el `CLAUDE.md` del proyecto. Los tests, **solo los relacionados con lo que cambiaste**: con el comando para eso del `CLAUDE.md` si lo tiene, o pasándole al runner los archivos o su opción de tests relacionados (por ejemplo `vitest related <archivos> --run`, `jest --findRelatedTests <archivos>` o `pytest <archivos de test>`). La suite completa la corre el tester. Si el runner tiene una salida corta (`--reporter=dot`, `--silent`, `-q`), usala: las fallas se ven igual, sin miles de líneas que se suman a lo que cargás. Corré cada comando por separado, sin unirlos con `;` ni `&&` y sin `| tail` ni `| head`.
 
 Que fallen tests que todavía no existen no es tu problema; que se rompan los que ya pasaban, sí.
 
@@ -73,7 +73,7 @@ En esos casos, frená y terminá tu reporte con:
 ## Tu reporte al PM o al líder
 
 - **Hecho:** qué implementaste, en dos o tres líneas.
-- **Archivos:** creados y modificados.
+- **Archivos:** creados y modificados, cada uno con una línea de qué cambió (la función, el componente o la sección), para que el tester y QA vayan directo sin explorar.
 - **Decisiones:** lo que decidiste por tu cuenta y por qué.
 - **Cambios en la API:** endpoints nuevos, modificados, obsoletos o eliminados, para que el PM se los pase al frontend y les avise a los otros equipos. Por cada uno: método y ruta (u operación de GraphQL), qué cambia para quien lo usa (campos, tipos, errores, permisos), si rompe a los clientes actuales y qué tienen que hacer ellos.
 - **Colección de API:** la sección que pide la skill `api-collection` (archivos, cambios, flujos de la épica, variables nuevas y resultado de la revisión), si tocaste endpoints.

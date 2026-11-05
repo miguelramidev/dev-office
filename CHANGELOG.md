@@ -8,6 +8,31 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.49.0] - 2026-11-05
+
+### Agregado
+
+- **Skill `save-tokens`** (`/office:save-tokens`). Revisa el proyecto y la configuración en busca de lo que hace gastar tokens a cada agente, sin llamar a ningún modelo, y propone qué cambiar:
+  - el tamaño del `CLAUDE.md`, sumando lo que importa con `@`;
+  - si tiene un comando para tests relacionados y una salida corta del runner;
+  - los departamentos instalados;
+  - cuántos QA y asesores hay, y el modo equipos;
+  - lo que más gastó en la sesión.
+
+  Los cambios al `CLAUDE.md` los hace solo si el CEO los confirma.
+- **Guía para gastar menos tokens** (`docs/tokens.md`), enlazada desde el README.
+
+### Cambiado
+
+- **El PM pregunta todo junto, antes de ejecutar** (`office` 0.47.0). Antes de activar a un departamento, piensa qué decisiones va a necesitar la tarea y se las pregunta al CEO en un solo mensaje, numeradas y con su recomendación en cada una. Después no vuelve a consultar, salvo que algo no se pueda deshacer, contradiga lo aprobado, agrande bastante el alcance o el costo, o bloquee el trabajo. Lo demás lo decide con el criterio aprobado y lo anota en el informe.
+- **Sin diseño para lo que sigue un patrón que ya existe:** aunque sea una pantalla o un endpoint nuevo, el PM le nombra al developer el archivo que tiene que usar de modelo. Además, pide solo los diseños que hacen falta.
+- **Tests acotados:**
+  - el developer corre solo los tests relacionados con su cambio;
+  - el tester corre primero los relacionados y después, una vez, la suite completa. En las vueltas siguientes corre la suite completa solo si la corrección tocó código compartido;
+  - QA no vuelve a correr la suite, el typecheck ni el lint, y empieza por los archivos que lista el reporte del developer;
+  - todos usan la salida corta del runner, si la tiene, y en el reporte se copian solo las fallas y el resumen.
+- **El reporte del developer** dice qué cambió en cada archivo, para que el tester y QA vayan directo. Versiones: `dept-backend` 0.3.4, `dept-frontend` 0.5.3, `dept-database` 0.2.4, `dept-scraper` 0.2.4, `dept-devops` 0.3.4, `dept-docs` 0.1.3.
+
 ## [0.48.0] - 2026-11-05
 
 ### Cambiado

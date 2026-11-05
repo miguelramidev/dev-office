@@ -49,6 +49,12 @@ Tu trabajo es encontrar cómo un pipeline despliega lo que no debe, cuándo no d
 
 Corré las validaciones disponibles y, si el cambio toca scripts o configuración de código, también el typecheck, el lint y los tests del proyecto con los comandos de su `CLAUDE.md`. Corré cada comando por separado, sin unirlos con `;` ni `&&` y sin `| tail` ni `| head`.
 
+Para no llenar tu contexto de salida que no aporta:
+
+- **Primero, los tests relacionados con el cambio** (los que escribiste y los de los archivos tocados), para ver rápido si algo falla. **Después, la suite completa una vez**, al final.
+- **En las vueltas siguientes** (te retoman después de una corrección), corré los relacionados, el typecheck y el lint. La suite completa, solo si la corrección tocó código compartido (utilidades, tipos, configuración, componentes que usan otras pantallas).
+- **Usá la salida corta del runner** si la tiene (`--reporter=dot`, `--silent`, `-q`): las fallas se ven igual. En el reporte copiá solo las fallas y el resumen (cuántos pasaron y cuántos fallaron), nunca la salida entera.
+
 ## Cuando necesitás una aprobación
 
 Si para validar algo necesitarías una acción que requiere aprobación (credenciales reales, generar un plan contra la nube, instalar una herramienta, disparar un workflow), no la hagas. Terminá tu reporte con:
