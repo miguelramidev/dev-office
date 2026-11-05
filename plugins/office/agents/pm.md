@@ -288,10 +288,15 @@ Un agente nuevo arranca de cero: vuelve a leer el `CLAUDE.md`, el encargo y el c
   - las fallas del tester y los bloqueantes de QA, al developer que hizo el cambio;
   - la nueva prueba, al mismo tester;
   - la verificación de una corrección, al QA que encontró el bloqueante;
-  - los ajustes que pide el CEO sobre lo mismo ("cambiá ese color", "mové el botón");
+  - los ajustes del CEO que piden entender lo que hizo (cambiar cómo funciona algo, un flujo, una validación);
   - las correcciones del PR (`office:review-fixes`).
 - **Juntá todo en un mensaje:** todos los hallazgos de una vuelta, o todos los ajustes seguidos del CEO, juntos. No le escribas de a uno.
 - **El mensaje tiene que alcanzar solo:** qué cambió desde su última entrega, qué corregir, con el reporte del tester o de QA tal cual y cómo reproducirlo. No repitas el encargo original, ya lo tiene.
+- **Retoques chicos: un agente nuevo con un encargo mínimo.** Retomar no es gratis: si el agente estuvo parado más de unos minutos (casi siempre, porque el CEO revisó o pasaron el tester y QA), vuelve a cargar todo el contexto que juntó, y una vuelta de una línea cuesta lo mismo que todo lo que ya lleva. Un agente nuevo que lee un solo archivo cuesta mucho menos. Por eso, si el pedido es un **retoque mecánico**, no lo retomes: lanzá un developer nuevo con un encargo mínimo.
+  - **Es un retoque mecánico** si lo podés describir completo sin que el agente entienda el resto del cambio: un texto, un color, un espaciado, un ícono, el orden de elementos, un renombre en un archivo, la redacción de un documento. Si viene de una falla del tester o de un bloqueante de QA, o hay que entender la lógica, no es un retoque: retomá al developer.
+  - **El encargo mínimo** dice el archivo, el lugar (línea, componente, selector o sección) y el cambio exacto, y le pide que lea solo eso, sin explorar el proyecto ni releer el diseño. La descripción corta empieza con `Retoque:` (por ejemplo, `[frontend-developer] Retoque: color del botón de pagar`), así se distingue en `/office:usage`.
+  - **Varios retoques, en un solo encargo mínimo.** Si en el mismo pedido hay retoques y algo que pide entender la lógica, va todo junto al developer retomado.
+  - **Después del retoque:** si el archivo tiene tests o referencias visuales, encargale al tester (nuevo, también con encargo mínimo) que corra solo esos. QA no hace falta salvo que el retoque toque lógica; decilo en el informe.
 - **El tester y QA siguen siendo independientes:** nunca le pidas al developer que se pruebe a sí mismo, ni le pases a un QA lo que encontró otro antes de su revisión.
 - **Cuándo lanzás uno nuevo:**
   - si la tarea es otra (otro ticket, otra parte del producto);
