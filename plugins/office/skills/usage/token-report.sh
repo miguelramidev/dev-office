@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# token-report-version: 4
+# token-report-version: 5
 # Resumen de tokens y de tiempo de la sesión de la oficina, para el informe del PM al CEO.
 #
 # Lee el registro del observer (.office/observer/events.js), que tiene los tokens exactos
@@ -60,6 +60,8 @@ sed -n 's/^OFFICE_EVENT(\(.*\));[[:space:]]*$/\1/p' "$EVENTS" | tr -d '\r' | jq 
                     role: ($e.role // role_of($e.subagent_type)),
                     provider: (($e.provider // "claude") | ascii_downcase), model: ($e.xmodel // $e.model)}]
       | if (($e.name // "") | test("-lead$")) or ((role_of($e.subagent_type) // "") | test("\\.lead$")) then .leads = true else . end
+    elif $e.type == "start" and .by[$e.agent] != null then .by[$e.agent].t0 = $e.t
+    elif $e.type == "message" and .by[($e.to // "")] != null then .by[$e.to].t0 = $e.t
     elif $e.type == "start" then
       (role_of($e.agent_type)) as $r
       | (.pending | map(.type == $e.agent_type or (.role | test("\\.lead$")) and .role == $r) | index(true)) as $i
@@ -69,7 +71,9 @@ sed -n 's/^OFFICE_EVENT(\(.*\));[[:space:]]*$/\1/p' "$EVENTS" | tr -d '\r' | jq 
     elif $e.type == "stop" then
       .tasks += [(.by[$e.agent] // {type: $e.agent_type, desc: "", role: role_of($e.agent_type), provider: "claude"})
                  + {claude: tok($e.usage), known: ($e.usage != null), verdict: ($e.verdict // "LISTO"),
-                    secs: (if .by[$e.agent].t0 then $e.t - .by[$e.agent].t0 else null end)}]
+                    secs: (if .by[$e.agent].t0 then $e.t - .by[$e.agent].t0 else null end)}
+                 | if $e.resumed == true then .desc = ((if .desc == "" then "—" else .desc end) + " (retomado)") else . end]
+      | if .by[$e.agent] != null then .by[$e.agent].t0 = null else . end
     elif $e.type == "external" then .ext += [$e]
     elif $e.type == "turn_end" then .pm = (if tok($e.usage) > 0 then tok($e.usage) else .pm end)
     else . end)) as $s

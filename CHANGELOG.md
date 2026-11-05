@@ -8,6 +8,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.47.0] - 2026-11-05
+
+### Cambiado
+
+- **El PM retoma a los mismos agentes durante toda la tarea** (`office` 0.45.0). Antes, cada corrección, cada nueva prueba y cada ajuste del CEO lanzaba un agente nuevo, que volvía a leer el `CLAUDE.md`, el encargo y el código: cientos de miles de tokens por vuelta aunque el cambio fuera de una línea. Ahora el PM anota el id de cada agente y le vuelve a escribir con SendMessage, que lo retoma con todo su contexto: los bloqueantes y las fallas al mismo developer, la nueva prueba al mismo tester, la verificación al QA que encontró el problema, y los ajustes del CEO y los comentarios del PR (`office:review-fixes`) al developer que hizo el cambio. Junta todo lo de una vuelta en un solo mensaje. Los agentes siguen hasta que el CEO aprueba o mergea el PR o da la tarea por terminada. Si el agente ya no existe (por ejemplo, después de reiniciar Claude Code) o ya dio cinco vueltas, lanza uno nuevo con un resumen. Los roles en Codex o Gemini siguen recibiendo un encargo nuevo cada vez. En el modo equipos, los líderes hacen lo mismo con su developer y su tester (`dept-backend` 0.3.2, `dept-frontend` 0.5.1, `dept-database` 0.2.2, `dept-scraper` 0.2.2, `dept-devops` 0.3.2, `dept-docs` 0.1.1).
+- **El observer y `/office:usage` cuentan bien a los agentes retomados** (`token-report` versión 5). Cada vez que un agente termina, Claude Code informa su transcripción entera: el observer anota solo lo que gastó desde la vuelta anterior, para no contarlo dos veces. En el resumen, cada vuelta es una fila marcada "(retomado)", con su tiempo desde el mensaje del PM. En la página, el agente retomado vuelve a trabajar en su puesto.
+- Un ejemplo de las instrucciones del PM nombraba una tienda real; ahora es genérico.
+
 ## [0.46.0] - 2026-11-03
 
 ### Cambiado

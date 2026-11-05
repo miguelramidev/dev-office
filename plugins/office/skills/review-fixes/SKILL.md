@@ -50,7 +50,7 @@ Si un punto es ambiguo, proponé una interpretación. Preguntale al CEO si la li
 
 ## 5. Corregí
 
-- **Si sos el PM:** encargale cada punto al departamento que corresponde (por archivo y tema), con el comentario original tal cual, la interpretación aprobada, el archivo y la línea, y la clave del ticket. Después, el ciclo de calidad de siempre: tester del departamento y QA. Si el cambio es chico y QA no aporta, podés saltear QA y decirlo en el informe.
+- **Si sos el PM:** encargale cada punto al departamento que corresponde (por archivo y tema). Si el developer que hizo el cambio sigue disponible en esta sesión, retomalo con SendMessage en vez de lanzar uno nuevo (ver "Retomá a los agentes de la tarea" en tus instrucciones), y todos los puntos de su departamento van en un solo mensaje. Pasale el comentario original tal cual, la interpretación aprobada, el archivo y la línea, y la clave del ticket. Después, el ciclo de calidad de siempre: tester del departamento y QA. Si el cambio es chico y QA no aporta, podés saltear QA y decirlo en el informe.
 - **Si no sos el PM:** corregí vos siguiendo las reglas del proyecto, y corré los tests de lo que tocaste.
 
 Al final corré las verificaciones del proyecto (lint, typecheck y tests), de a una.

@@ -61,6 +61,7 @@ case "$EVENT" in
     # Sesión nueva: el registro anterior queda como events.prev.js.
     if [ "$SOURCE" = "startup" ] || [ "$SOURCE" = "clear" ]; then
       [ -f "$EVENTS" ] && mv -f "$EVENTS" "$DIR/events.prev.js"
+      rm -rf "$DIR/usage"
     fi
     # La página se copia (o se actualiza) desde el plugin.
     PAGE_SRC="$(dirname "${BASH_SOURCE[0]//\\//}")/../observer/index.html"
@@ -149,10 +150,28 @@ case "$EVENT" in
 
   SubagentStop)
     USAGE=$(usage_of "$(json_get '.agent_transcript_path // empty')" 0)
-    emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" --argjson usage "${USAGE:-null}" "$CLIP"'
+    # Un agente que el PM retoma (SendMessage) vuelve a terminar con la transcripción entera:
+    # se anota solo lo que gastó desde la vez anterior, y que es una vuelta más.
+    RESUMED=false
+    SAFE_ID=$(printf '%s' "$AGENT_ID" | tr -cd 'A-Za-z0-9_-')
+    if [ -n "$SAFE_ID" ] && [ "${USAGE:-null}" != "null" ]; then
+      mkdir -p "$DIR/usage"
+      PREV_FILE="$DIR/usage/$SAFE_ID.json"
+      if [ -s "$PREV_FILE" ]; then
+        RESUMED=true
+        DELTA=$(jq -c -n --argjson now "$USAGE" --slurpfile prev "$PREV_FILE" '
+          ($prev[0] // {}) as $p
+          | {i: (($now.i // 0) - ($p.i // 0)), o: (($now.o // 0) - ($p.o // 0)),
+             cw: (($now.cw // 0) - ($p.cw // 0)), cr: (($now.cr // 0) - ($p.cr // 0))}
+          | with_entries(.value |= (if . < 0 then 0 else . end))' 2>/dev/null | tr -d '\r')
+      fi
+      printf '%s\n' "$USAGE" >"$PREV_FILE"
+      [ -n "${DELTA:-}" ] && USAGE="$DELTA"
+    fi
+    emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" --argjson usage "${USAGE:-null}" --argjson resumed "$RESUMED" "$CLIP"'
       (.last_assistant_message // "") as $m
       | ($m | split("\n") | map(select(test("\\S"))) | first // "" | ascii_upcase) as $f
-      | { type: "stop", t: $t, agent: .agent_id, agent_type: (.agent_type // ""), usage: $usage,
+      | { type: "stop", t: $t, agent: .agent_id, agent_type: (.agent_type // ""), usage: $usage, resumed: $resumed,
           verdict: (if ($f | test("PROVEEDOR NO DISPONIBLE")) then "PROVEEDOR NO DISPONIBLE"
                     elif ($f | test("REGLAS ROTAS")) then "REGLAS ROTAS"
                     elif ($f | test("TIEMPO AGOTADO")) then "TIEMPO AGOTADO"

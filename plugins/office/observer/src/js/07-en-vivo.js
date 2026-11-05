@@ -192,6 +192,12 @@
         feed(e, "PM encarga a " + who + (PROVIDERS[provider] && provider !== "claude" ? " (" + PROVIDERS[provider].name + ")" : "") + ": " + what + ".", "", d);
         if (fresh && role === "qa" && /valid/i.test(String(e.mode || "") + " " + String(e.description || ""))) fx.push(qaDebate);
       }
+      else if (e.type === "start" && byAgent[e.agent] && byAgent[e.agent].seat) {
+        // El PM retomó a un agente que ya había trabajado: sigue con el mismo encargo.
+        const a = agent(byAgent[e.agent].seat);
+        a.lastAct = e.t; a.lastWhat = "retoma";
+        Object.assign(a, { status: "working", tool: "retoma el encargo", startedAt: e.t - t0, bubble: null });
+      }
       else if (e.type === "start") {
         const role = roleFromType(e.agent_type);
         const i = pending.findIndex(p => p.type === e.agent_type || (isLeadRole(role) && p.role === role));
@@ -242,7 +248,7 @@
           const lead = p.lead || managedBy(p.role);
           const d = keepDoc(a, docOf(e, "Respuesta", a.label + ": " + a.bubble, e.text, { verdict: a.bubble }), "reply");
           keepDoc(lead ? agent(lead) : state.pm, d);
-          feed(e, a.label + " terminó: " + a.bubble + (n ? " · " + fmt(n) + " tokens" : "") + ".", bad ? "alert" : v === "APROBACION" ? "warn" : "good", d);
+          feed(e, a.label + (e.resumed ? " terminó otra vuelta: " : " terminó: ") + a.bubble + (n ? " · " + fmt(n) + " tokens" : "") + ".", bad ? "alert" : v === "APROBACION" ? "warn" : "good", d);
           if (lead) {
             // Modo equipos: el resultado se queda en el departamento.
             if (fresh) fx.push(() => {
@@ -263,6 +269,18 @@
             if (fresh && !bad && v !== "APROBACION") fx.push(() => pose(p.seat, "celebrate", 2));
           }
         }
+      }
+      else if (e.type === "message" && !e.from && byAgent[e.to] && byAgent[e.to].seat && !isLeadRole(byAgent[e.to].role)) {
+        // El PM le vuelve a escribir a un agente de la tarea (correcciones, ajustes): lo retoma.
+        const a = agent(byAgent[e.to].seat), text = e.text || "";
+        Object.assign(a, { status: "working", tool: "lee lo que le pide el PM", startedAt: e.t - t0, bubble: null });
+        goTo(byAgent[e.to].seat);
+        pmStatus = "working"; pmTool = "le pide de nuevo a " + a.label;
+        const d = docOf(e, "Encargo", "PM → " + a.label + " (retoma)" + (text ? ": " + text : ""), e.body || text);
+        keepDoc(a, d, "brief");
+        keepDoc(state.pm, d);
+        feed(e, "PM retoma a " + a.label + (text ? ": " + text : "") + ".", "", d);
+        if (fresh) fx.push(() => a.acts.push({ k: "wait", d: 2 }, { k: "say", text: "Dale, sigo", d: 2 }));
       }
       else if (e.type === "message") {
         const text = e.text || "";
