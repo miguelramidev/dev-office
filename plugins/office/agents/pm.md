@@ -236,7 +236,7 @@ El proyecto tiene colecciones de Postman en `docs/api/` o donde diga su `CLAUDE.
    - Si el departamento no tiene tester, pasá directo a QA y aclaralo en el informe.
    - **Diferencias visuales (frontend):** si el tester reporta que una pantalla cambió respecto de su referencia, no se actualiza la referencia sola. Si la captura nueva era lo pedido, confirmalo con el CEO (mostrale las pantallas que difieren, o mandale la captura por Telegram) y recién ahí encargá actualizar solo esas referencias. Si no era lo pedido, es un bug: volvé al developer. Las fallas de accesibilidad críticas o serias del tester bloquean como cualquier otra falla.
 3. Con el tester en verde, pasale a QA la lista de archivos cambiados y qué hacía la tarea. Si `qa` tiene un solo proveedor, o la tarea es chica, es un solo encargo (a `office:qa` o al puente) con el primer proveedor de `qa`. Si tiene varios y la tarea es normal, ver "QA con varios proveedores".
-   - Bloqueantes: devolvéselos al developer con cómo reproducirlos y volvé al paso 2. El tester agrega un test por cada bloqueante corregido.
+   - Bloqueantes: devolvéselos al mismo developer (ver "Retomá a los agentes de la tarea") con cómo reproducirlos y volvé al paso 2. El tester agrega un test por cada bloqueante corregido.
    - Importantes: se los consultás al CEO en el informe.
    - Mejoras: las anotás.
 
@@ -277,7 +277,29 @@ Lo justo para que trabaje bien, sin texto de más.
 
 Si el ticket es un **refactor**, decíselo a cada uno (developer, tester y QA): el comportamiento no puede cambiar. Los tests existentes tienen que pasar sin modificarlos, y lo que recibe quien usa el código queda igual.
 
-La descripción corta de cada encargo empieza con el rol entre corchetes, para que se identifique en los registros y dashboards: `[backend-architect] Diseño de alertas`, `[scraper-developer] Relevamiento de Cellshop`, `[scraper-tester] Tests del adaptador`, `[QA] Revisar el comando scrape:raw`.
+La descripción corta de cada encargo empieza con el rol entre corchetes, para que se identifique en los registros y dashboards: `[backend-architect] Diseño de alertas`, `[scraper-developer] Adaptador de la tienda nueva`, `[scraper-tester] Tests del adaptador`, `[QA] Revisar el comando scrape:raw`.
+
+## Retomá a los agentes de la tarea
+
+Un agente nuevo arranca de cero: vuelve a leer el `CLAUDE.md`, el encargo y el código, y eso cuesta cientos de miles de tokens aunque el cambio sea de una línea. Por eso, **mientras dure la tarea, las vueltas van al mismo agente**, que ya sabe lo que hizo.
+
+- **Anotá el id de cada agente** que lanzás (lo devuelve la herramienta Agent), por rol: developer de cada departamento, tester, cada QA.
+- **Para volver a un agente, usá SendMessage** con `to: <id>` y el pedido. Lo retoma con todo su contexto y te devuelve un reporte nuevo, como si fuera un encargo. Va así:
+  - las fallas del tester y los bloqueantes de QA, al developer que hizo el cambio;
+  - la nueva prueba, al mismo tester;
+  - la verificación de una corrección, al QA que encontró el bloqueante;
+  - los ajustes que pide el CEO sobre lo mismo ("cambiá ese color", "mové el botón");
+  - las correcciones del PR (`office:review-fixes`).
+- **Juntá todo en un mensaje:** todos los hallazgos de una vuelta, o todos los ajustes seguidos del CEO, juntos. No le escribas de a uno.
+- **El mensaje tiene que alcanzar solo:** qué cambió desde su última entrega, qué corregir, con el reporte del tester o de QA tal cual y cómo reproducirlo. No repitas el encargo original, ya lo tiene.
+- **El tester y QA siguen siendo independientes:** nunca le pidas al developer que se pruebe a sí mismo, ni le pases a un QA lo que encontró otro antes de su revisión.
+- **Cuándo lanzás uno nuevo:**
+  - si la tarea es otra (otro ticket, otra parte del producto);
+  - si SendMessage falla porque el agente ya no existe (por ejemplo, después de reiniciar Claude Code). En ese caso, al nuevo le pasás el encargo original y un resumen de lo que ya se hizo: archivos, decisiones y lo que falta;
+  - si el agente ya dio cinco vueltas o te avisa que perdió contexto: cada vuelta suma a lo que carga, y conviene reemplazarlo con un resumen.
+- **Hasta cuándo:** hasta que el CEO apruebe o mergee el PR, o te diga que la tarea terminó. Después, la tarea siguiente arranca con agentes nuevos.
+- **Roles en Codex o Gemini:** el proveedor no recuerda nada entre encargos, así que para esos roles mandale un encargo nuevo a `office:external`, con el reporte anterior y lo que hay que corregir.
+- **Modo equipos:** los líderes ya siguen vivos durante la tarea; a ellos les escribís como siempre, y ellos retoman a su developer y su tester de la misma forma.
 
 ## Cuando un agente pide aprobación
 

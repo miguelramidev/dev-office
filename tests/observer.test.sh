@@ -114,6 +114,14 @@ verdict $'PASA\n\n## Resumen\n| a | b |'; expect '.text == "PASA\n\n## Resumen\n
 hook '{"hook_event_name":"SubagentStop","agent_id":"a2","agent_type":"x","agent_transcript_path":"/no/existe"}'
 expect '.usage == null and .verdict == "LISTO"' "transcripción que no existe: sin tokens"
 
+# Agente retomado (SendMessage): cada vuelta anota solo lo que gastó desde la anterior.
+T3="$WORK/agent3.jsonl"
+echo '{"type":"assistant","message":{"id":"r1","usage":{"input_tokens":100,"output_tokens":10,"cache_creation_input_tokens":1000,"cache_read_input_tokens":0}}}' >"$T3"
+again() { hook "$(jq -cn --arg t "$T3" '{hook_event_name:"SubagentStop", agent_id:"a3", agent_type:"dept-frontend:developer", agent_transcript_path:$t, last_assistant_message:"Listo"}')"; }
+again; expect '.resumed == false and .usage == {"i":100,"o":10,"cw":1000,"cr":0}' "primera entrega: todos los tokens"
+echo '{"type":"assistant","message":{"id":"r2","usage":{"input_tokens":5,"output_tokens":20,"cache_creation_input_tokens":300,"cache_read_input_tokens":1000}}}' >>"$T3"
+again; expect '.resumed == true and .usage == {"i":5,"o":20,"cw":300,"cr":1000}' "agente retomado: solo lo nuevo, marcado como retomado"
+
 # --- Stop -------------------------------------------------------------------------
 M="$WORK/main.jsonl"
 {
@@ -241,6 +249,20 @@ EVS
 OUT=$(cd "$TP" && bash "$REPORT")
 echo "$OUT" | grep -q '| Líder de backend | Claude | Pedidos | LISTO | 10k |' && ok "resumen: reconoce al líder como <área>-lead" || { fail "resumen: reconoce al líder como <área>-lead"; echo "$OUT"; }
 echo "$OUT" | grep -q '| Líder de frontend | Claude | Pantalla | LISTO | 5k |' && ok "resumen: con varios líderes, cada tarea es de su líder" || { fail "resumen: con varios líderes"; echo "$OUT"; }
+# Agente retomado: cada vuelta es una fila, con su tiempo desde el mensaje del PM.
+cat >"$TP/.office/observer/events.js" <<'EVS'
+OFFICE_EVENT({"type":"delegate","t":1,"subagent_type":"dept-frontend:developer","description":"[frontend-developer] Botón"});
+OFFICE_EVENT({"type":"start","t":2,"agent":"d1","agent_type":"dept-frontend:developer"});
+OFFICE_EVENT({"type":"stop","t":12,"agent":"d1","agent_type":"dept-frontend:developer","usage":{"i":0,"o":0,"cw":40000},"verdict":"LISTO","resumed":false});
+OFFICE_EVENT({"type":"delegate","t":13,"subagent_type":"dept-frontend:developer","description":"[frontend-developer] Otra cosa"});
+OFFICE_EVENT({"type":"message","t":100,"from":null,"to":"d1","text":"Corregí el color"});
+OFFICE_EVENT({"type":"stop","t":105,"agent":"d1","agent_type":"dept-frontend:developer","usage":{"i":0,"o":0,"cw":3000},"verdict":"LISTO","resumed":true});
+OFFICE_EVENT({"type":"start","t":106,"agent":"d2","agent_type":"dept-frontend:developer"});
+OFFICE_EVENT({"type":"stop","t":110,"agent":"d2","agent_type":"dept-frontend:developer","usage":{"i":0,"o":0,"cw":50000},"verdict":"LISTO","resumed":false});
+EVS
+OUT=$(cd "$TP" && bash "$REPORT")
+echo "$OUT" | grep -q '| Developer de frontend | Claude | Botón (retomado) | LISTO | 3k | 5s |' && ok "resumen: la vuelta de un agente retomado, con lo nuevo y su tiempo" || { fail "resumen: agente retomado"; echo "$OUT"; }
+echo "$OUT" | grep -q '| Developer de frontend | Claude | Otra cosa | LISTO | 50k | 4s |' && ok "resumen: retomar no le roba el encargo a un agente nuevo" || { fail "resumen: retomar no le roba el encargo"; echo "$OUT"; }
 OUT=$(mkdir -p "$WORK/sinnada" && cd "$WORK/sinnada" && CLAUDE_PROJECT_DIR="$WORK/sinnada" bash "$REPORT")
 echo "$OUT" | grep -q "No hay datos de tokens" && ok "resumen: sin registro avisa" || fail "resumen: sin registro avisa"
 
