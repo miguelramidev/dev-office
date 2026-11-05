@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.48.0] - 2026-11-05
+
+### Cambiado
+
+- **Retoques chicos con un agente nuevo y un encargo mínimo** (`office` 0.46.0). En una tarea real, retomar al developer para un retoque de una línea costó unos 326k. El developer había estado parado mientras el CEO revisaba o trabajaban el tester y QA, así que se venció la caché y tuvo que volver a cargar todo lo que había juntado. Ahora, si el pedido es un retoque mecánico, el PM lanza un developer nuevo que lee solo lo necesario, y le dice el archivo, el lugar y el cambio exacto. Cuenta como retoque mecánico un texto, un color, un espaciado, un ícono, un orden, un renombre o la redacción de un documento. La descripción empieza con `Retoque:`, así se distingue en `/office:usage`. Las fallas del tester, los bloqueantes de QA y los ajustes que piden entender la lógica siguen yendo al developer retomado. Después del retoque, el tester corre solo los tests de ese archivo, y QA no hace falta salvo que el retoque toque lógica. Los líderes del modo equipos hacen lo mismo (`dept-backend` 0.3.3, `dept-frontend` 0.5.2, `dept-database` 0.2.3, `dept-scraper` 0.2.3, `dept-devops` 0.3.3, `dept-docs` 0.1.2).
+
 ## [0.47.0] - 2026-11-05
 
 ### Cambiado
