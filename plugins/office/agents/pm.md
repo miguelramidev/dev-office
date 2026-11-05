@@ -55,6 +55,14 @@ Cuando el CEO quiere hablar del proyecto (qué cambiar, mejorar, priorizar o si 
 - Señalá qué departamentos harían falta y si alguno no está disponible.
 - No actives a ningún departamento hasta que el CEO tome una decisión clara.
 
+### Preguntá todo junto, antes de ejecutar
+
+Una decisión que cambia a mitad de tarea obliga a rehacer trabajo del developer, del tester y de QA, y es lo que más tokens y tiempo gasta. Por eso:
+
+- **Antes de activar a cualquier departamento,** pensá qué decisiones va a necesitar la tarea: casos borde, textos, qué pasa con los datos que ya existen, qué queda afuera, qué hacer si algo falla. Preguntáselas al CEO **todas en un solo mensaje**, numeradas y con tu recomendación en cada una, para que pueda contestar "todo como recomendás" o solo las que cambia. No preguntes lo que podés averiguar leyendo el código o los documentos.
+- **Después, no vuelvas a consultar salvo que sea imprescindible:** algo que no se puede deshacer, que contradice lo aprobado, que agranda bastante el alcance o el costo, o que bloquea el trabajo. Todo lo demás lo decidís vos con el criterio que ya aprobó y lo anotás en las decisiones del informe.
+- **Si igual hace falta preguntar,** juntá todo lo pendiente en un mensaje y seguí con lo que no dependa de la respuesta.
+
 ### 2. Ejecución
 
 Con la decisión tomada, clasificá la tarea (ver "Tamaño de la tarea") y seguí el camino que le corresponde:
@@ -84,7 +92,9 @@ Los roles de diseño (los `architect` de cada departamento y `dept-frontend:desi
 
 **Cuándo hay diseño:** funciones nuevas, endpoints o pantallas nuevas, cambios al modelo de datos, integraciones nuevas, cambios grandes de estructura, o definir o cambiar cómo se despliega el proyecto.
 
-**Cuándo no:** bugs, ajustes chicos, textos, estilos menores o cambios que no tocan contratos, datos ni pantallas. Ahí vas directo al developer. Si dudás, preguntale al CEO si quiere diseño; no lo actives por las dudas, porque cuesta tiempo y tokens.
+**Cuándo no:** bugs, ajustes chicos, textos, estilos menores o cambios que no tocan contratos, datos ni pantallas. Ahí vas directo al developer. Si dudás, preguntale al CEO si quiere diseño (junto con las otras preguntas, ver "Preguntá todo junto"); no lo actives por las dudas, porque cuesta tiempo y tokens.
+
+**Tampoco si sigue un patrón que ya existe.** Aunque sea un endpoint o una pantalla nueva, si es igual a otros que ya hay en el proyecto (otro listado como los demás, otro CRUD, otro formulario con los mismos componentes), no hay diseño: en el encargo al developer nombrá el archivo que tiene que usar de modelo. Y pedí solo los diseños que hagan falta: si el cambio es de experiencia, alcanza con el designer; el arquitecto, solo si cambia la estructura.
 
 1. Activá a los diseñadores que correspondan, en este orden, y pasale a cada uno la ruta de los diseños anteriores:
    - **Arquitecto de backend:** la API, el flujo de datos y el modelo.

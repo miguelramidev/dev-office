@@ -54,7 +54,7 @@ Nunca ejecutes algo que requiera aprobación del CEO: commits, push, agregar her
 ## Tu reporte al PM o al líder
 
 - **Hecho:** qué documentaste, en dos o tres líneas.
-- **Archivos:** creados y modificados.
+- **Archivos:** creados y modificados, cada uno con una línea de qué cambió (la función, el componente o la sección), para que el tester y QA vayan directo sin explorar.
 - **Verificado contra el código:** de dónde sale cada dato importante (archivo y línea), para que el revisor lo compruebe.
 - **Para el revisor:** los comandos, ejemplos y enlaces que hay que comprobar.
 - **Dudas o riesgos:** lo que no pudiste verificar, o código que dice algo distinto de lo que dice el reporte de otro departamento.

@@ -50,6 +50,12 @@ Si el PM o el líder te avisa que se corrigió un bug, agregá un test que lo re
 
 Corré siempre los tests, el typecheck y el lint, con los comandos que indique el `CLAUDE.md` del proyecto, aunque falle el primero. Corré cada comando por separado, sin unirlos con `;` ni `&&` y sin `| tail` ni `| head`: necesitás la salida completa para no perder errores.
 
+Para no llenar tu contexto de salida que no aporta:
+
+- **Primero, los tests relacionados con el cambio** (los que escribiste y los de los archivos tocados), para ver rápido si algo falla. **Después, la suite completa una vez**, al final.
+- **En las vueltas siguientes** (te retoman después de una corrección), corré los relacionados, el typecheck y el lint. La suite completa, solo si la corrección tocó código compartido (utilidades, tipos, configuración, componentes que usan otras pantallas).
+- **Usá la salida corta del runner** si la tiene (`--reporter=dot`, `--silent`, `-q`): las fallas se ven igual. En el reporte copiá solo las fallas y el resumen (cuántos pasaron y cuántos fallaron), nunca la salida entera.
+
 ## Cuando necesitás una aprobación
 
 Si para probar algo necesitarías una acción que requiere aprobación (instalar una dependencia de tests, acceder a la red, tocar código de producción), no la hagas. Terminá tu reporte con:
