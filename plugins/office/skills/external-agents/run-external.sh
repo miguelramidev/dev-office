@@ -241,9 +241,11 @@ write_summary() {
 finish() {
   STATUS="$1"
   STATUS_TEXT="$2"
-  # Tokens: lo que informe el CLI en su salida, si lo informa (por ejemplo "tokens used: 12,345").
+  # Tokens: lo que informe el CLI en su salida, si lo informa. Codex lo imprime como
+  # "tokens used: 12,345" o, en versiones nuevas, con el número en la línea siguiente
+  # ("tokens used" y abajo "2.318"), así que se juntan las líneas antes de buscar.
   local tok="${EXT_TOKENS:-}"
-  [ -z "$tok" ] && [ -f "$LOG" ] && tok=$(grep -oiE 'tokens used[^0-9]*[0-9][0-9,.]*' "$LOG" 2>/dev/null | tail -n1 | grep -oE '[0-9][0-9,.]*$' | tr -d ',.')
+  [ -z "$tok" ] && [ -f "$LOG" ] && tok=$(tr '\r\n' '  ' <"$LOG" 2>/dev/null | grep -oiE 'tokens used[^0-9]*[0-9][0-9,.]*' | tail -n1 | grep -oE '[0-9][0-9,.]*$' | tr -d ',.')
   obs_emit --arg role "$ROLE" --arg prov "$PROVIDER" --arg model "${MODEL:-}" --arg effort "${EFFORT:-}" \
     --argjson code "$STATUS" --arg text "$STATUS_TEXT" --argjson dur "${DURATION:-0}" --arg tok "$tok" \
     '{type: "external", t: $t, role: $role, provider: $prov, model: $model, effort: $effort, code: $code, result: $text, duration: $dur, tokens: (if $tok == "" then null else ($tok | tonumber) end)}'
