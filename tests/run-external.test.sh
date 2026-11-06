@@ -47,6 +47,7 @@ case "${FAKE_MODE:-ok}" in
   sleep) sleep 10; report ;;
   slow) sleep 4; echo "// cambio" >>src/app.ts; report ;;
   tokens) echo "// cambio" >>src/app.ts; echo "tokens used: 12,345" >&2; report ;;
+  tokens-nextline) echo "// cambio" >>src/app.ts; printf 'tokens used\n2.318\n' >&2; report ;;
 esac
 exit 0
 EOF
@@ -274,6 +275,8 @@ FAKE_MODE=auth check 2 "codex sin sesión" backend.developer codex
 new_project
 FAKE_MODE=tokens check 0 "codex informa tokens" backend.developer codex
 expect "$PROJ/.office/observer/events.js" '"tokens":12345' "observer: toma los tokens que informa el CLI"
+FAKE_MODE=tokens-nextline check 0 "codex informa tokens en la línea siguiente" backend.developer codex
+expect "$PROJ/.office/observer/events.js" '"tokens":2318' "observer: toma los tokens aunque el número venga en la línea de abajo"
 new_project
 FAKE_MODE=ok OFFICE_OBSERVER=off check 0 "observer desactivado" backend.developer codex
 if [ -f "$PROJ/.office/observer/events.js" ]; then echo "FALLA observer desactivado: escribió eventos"; FAILED=1; else echo "ok    observer desactivado: no escribe eventos"; fi

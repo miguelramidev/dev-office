@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.49.1] - 2026-11-06
+
+### Corregido
+
+- **Codex no informaba su gasto de tokens** (`office` 0.47.1). Las versiones nuevas de Codex imprimen `tokens used` y el número en la línea de abajo, y el puente solo buscaba los dos en la misma línea, así que el informe mostraba "sin datos". Ahora junta las líneas antes de buscar.
+
 ## [0.49.0] - 2026-11-05
 
 ### Agregado
