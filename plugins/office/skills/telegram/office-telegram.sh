@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-telegram-version: 7
+# office-telegram-version: 8
 # La oficina remota por Telegram: el último mensaje del PM te llega al chat, le respondés
 # desde el celular y la oficina sigue; los permisos se aprueban con botones.
 #
@@ -560,9 +560,12 @@ cmd_media() {
   caption="$icon $(project_label)${caption:+
 $caption}"
   caption="${caption:0:1000}"
-  resp=$(curl -s --max-time 180 --form-string "chat_id=$CHAT" --form-string "caption=$caption" -F "$field=@$abs" "$API/bot$TOKEN/$method" 2>/dev/null | tr -d '\r')
+  # El texto va por stdin (caption=<-) y no por argv: en Windows el curl de Git Bash recibe los
+  # argumentos en la página de códigos ANSI y rompe el emoji y las tildes. Con "<" curl lo manda
+  # como texto del campo, no como archivo adjunto.
+  resp=$(printf '%s' "$caption" | curl -s --max-time 180 --form-string "chat_id=$CHAT" -F "caption=<-" -F "$field=@$abs" "$API/bot$TOKEN/$method" 2>/dev/null | tr -d '\r')
   if [ "$(printf '%s' "$resp" | jqr -r '.ok // false')" != true ] && [ "$method" != sendDocument ]; then
-    resp=$(curl -s --max-time 180 --form-string "chat_id=$CHAT" --form-string "caption=$caption" -F "document=@$abs" "$API/bot$TOKEN/sendDocument" 2>/dev/null | tr -d '\r')
+    resp=$(printf '%s' "$caption" | curl -s --max-time 180 --form-string "chat_id=$CHAT" -F "caption=<-" -F "document=@$abs" "$API/bot$TOKEN/sendDocument" 2>/dev/null | tr -d '\r')
   fi
   if [ "$(printf '%s' "$resp" | jqr -r '.ok // false')" = true ]; then
     echo "Enviado: ${abs#"$root"/}"

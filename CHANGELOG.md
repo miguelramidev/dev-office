@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.49.2] - 2026-11-07
+
+### Corregido
+
+- **`photo` y `video` de Telegram fallaban siempre en Windows con Git Bash** (`office` 0.47.2). El texto de la captura iba como argumento de `curl`, y el `curl` de Git Bash recibe los argumentos en la página de códigos ANSI de Windows: el emoji se perdía, la `ñ` quedaba como un byte inválido y Telegram rechazaba el pedido. Ahora el texto va por la entrada estándar (`caption=<-`), que conserva el UTF-8. En macOS y Linux no cambia nada.
+
 ## [0.49.1] - 2026-11-06
 
 ### Corregido
