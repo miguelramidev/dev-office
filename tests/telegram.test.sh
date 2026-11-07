@@ -20,7 +20,10 @@ cat >"$FAKE/bin/curl" <<'EOF'
 #!/usr/bin/env bash
 url=""; form=0; for a in "$@"; do case "$a" in http*) url="$a" ;; -F) form=1 ;; esac; done
 method="${url##*/}"
-if [ "$form" = 1 ]; then body="$*"; else body=$(cat); fi
+if [ "$form" = 1 ]; then
+  # El texto de photo y video va por stdin (caption=<-): se anota como si fuera un argumento.
+  body="$*"; case "$body" in *"caption=<-"*) body="${body//caption=<-/caption=<- caption=$(cat)}" ;; esac
+else body=$(cat); fi
 printf '%s %s\n' "$method" "$(printf '%s' "$body" | tr '\n' ' ')" >>"$FAKE/calls"
 if [ -f "$FAKE/reject_html" ] && [ "$method" = sendMessage ] && printf '%s' "$body" | grep -q '"parse_mode"'; then
   echo '{"ok":false,"description":"Bad Request: can'"'"'t parse entities"}'
@@ -248,6 +251,10 @@ printf 'mp4' >"$WORK/afuera.mp4"
 reset_calls
 out=$(run photo .office/screenshots/home.png "Pantalla de inicio" 2>&1); code=$?
 expect "photo manda la captura como foto con el proyecto y el texto" '[ $code -eq 0 ] && calls | grep -q "^sendPhoto .*photo=@.*home.png" && calls | grep -q "caption=📸 proj · dev"'
+expect "photo manda el texto como campo de texto por stdin, no por argumento" 'calls | grep -q -- "-F caption=<-" && ! calls | grep -q -- "--form-string caption="'
+reset_calls
+out=$(run photo .office/screenshots/home.png "Reintentando: ñandú 📸" 2>&1); code=$?
+expect "photo conserva la ñ y el emoji del texto" '[ $code -eq 0 ] && calls | grep -q "Reintentando: ñandú 📸"'
 reset_calls
 out=$(run photo "$WORK/afuera.png" 2>&1); code=$?
 expect "photo rechaza imágenes de fuera del proyecto" '[ $code -eq 1 ] && [ -z "$(calls)" ]'

@@ -1,5 +1,5 @@
 @echo off
-rem office-telegram-version: 7
+rem office-telegram-version: 8
 rem Abre la oficina remota por Telegram de dev-office (office-telegram.sh) con el
 rem bash de Git for Windows, desde CMD o PowerShell. Acepta los mismos comandos:
 rem   .claude\office-telegram.cmd status
