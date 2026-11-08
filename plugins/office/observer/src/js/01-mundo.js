@@ -24,6 +24,7 @@
     { id: "ops",    name: "DevOps",        x: 384, y: BOT_Y, top: false, deco: "ops" },
     { id: "docs",   name: "Documentación", x: 576, y: BOT_Y, top: false, deco: "docs" },
     { id: "qa",     name: "QA",            x: 768, y: BOT_Y, top: false, deco: "qa" },
+    { id: "res",    name: "Investigación", x: 768, y: TOP_Y, top: true,  deco: "res" },
   ];
   const room = id => ROOMS.find(r => r.id === id);
   const doorX = r => r.x + RW / 2;
@@ -72,12 +73,15 @@
     { id: "otest", label: "Tester de DevOps",        short: "Test Ops", room: "ops",    seat: [140, 70], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "devops.tester", look: 15 },
     { id: "wdev",  label: "Redactor de documentación", short: "Dev Doc", room: "docs",  seat: [52, 70],  color: "cyan",    provider: "claude", model: "sonnet", tier: "sonnet", role: "docs.developer", look: 24 },
     { id: "wtest", label: "Revisor de documentación", short: "Rev Doc",  room: "docs",  seat: [140, 70], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "docs.tester", look: 25 },
+    { id: "rdev",  label: "Investigador",            short: "Invest.",  room: "res",    seat: [52, 70],  color: "purple", provider: "claude", model: "sonnet", tier: "sonnet", role: "research.developer", look: 26 },
+    { id: "rtest", label: "Verificador",             short: "Verif.",   room: "res",    seat: [140, 70], color: "green",  provider: "claude", model: "sonnet", tier: "sonnet", role: "research.tester", look: 27 },
     // Líderes de departamento: solo en el modo equipos. Siempre Claude (Sonnet).
     { id: "blead", label: "Líder de backend",        short: "Líder BE", room: "back",   seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "backend.lead", look: 18 },
     { id: "flead", label: "Líder de frontend",       short: "Líder FE", room: "front",  seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "frontend.lead", look: 19 },
     { id: "dlead", label: "Líder de base de datos",  short: "Líder DB", room: "db",     seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "database.lead", look: 20 },
     { id: "slead", label: "Líder de scraping",       short: "Líder SC", room: "scrap",  seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "scraper.lead", look: 21 },
     { id: "olead", label: "Líder de DevOps",         short: "Líder Ops", room: "ops",   seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "devops.lead", look: 22 },
+    { id: "rlead", label: "Líder de investigación",  short: "Líder Inv", room: "res",   seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "research.lead", look: 28 },
     { id: "wlead", label: "Líder de documentación",  short: "Líder Doc", room: "docs",  seat: [52, 132], color: "teal",   provider: "claude", model: "sonnet", tier: "sonnet", role: "docs.lead", look: 23 },
     { id: "qa1",   label: "QA (Claude)",             short: "QA 1",     room: "qa",     seat: [52, 96],  color: "red",    provider: "claude", model: "opus", tier: "opus", role: "qa", look: 16 },
     { id: "qa2",   label: "QA (Codex)",              short: "QA 2",     room: "qa",     seat: [140, 96], color: "red",    provider: "codex",  model: "gpt-6-astra", tier: "opus", role: "qa", look: 17 },

@@ -433,6 +433,15 @@ T.live(sess(ALL));
 say(visible().length === 9 && T.W === 960 && T.HALL_DX === 192, "oficinas: con los seis departamentos hay nueve oficinas y el mundo se ensancha (" + T.W + " px)");
 say(new Set(cells()).size === 9 && visible().every(r => r.x % T.RW === 0 && r.x >= 0 && r.x + T.RW <= T.W), "oficinas: ninguna se pisa y todas caben en el mundo");
 say(["wdev", "wtest"].every(id => T.state.agents.find(a => a.id === id).present), "oficinas: con documentación instalada, su redactor y su revisor están");
+say(T.ROOMS.find(r => r.id === "res").off && !T.state.agents.find(a => a.id === "rdev").present, "oficinas: sin investigación instalada, su oficina y su gente no aparecen");
+T.live(sess([...ALL, "research"]));
+const res = T.ROOMS.find(r => r.id === "res");
+say(visible().length === 10 && T.W === 960 && res.x === 768 && res.y === 4 && new Set(cells()).size === 10, "oficinas: con investigación hay diez oficinas, cinco por fila, y la nueva queda arriba a la derecha (" + res.x + "," + res.y + ")");
+say(["rdev", "rtest"].every(id => T.state.agents.find(a => a.id === id).present), "oficinas: con investigación instalada, el investigador y el verificador están");
+let threwR = null;
+try { T.live([...sess([...ALL, "research"]), { type: "delegate", t: Math.floor(Date.now() / 1000) - 50, subagent_type: "dept-research:developer", description: "[research-developer] Proveedores de pago" }, { type: "start", t: Math.floor(Date.now() / 1000) - 49, agent: "R1", agent_type: "dept-research:developer" }]); } catch (e) { threwR = e; }
+say(!threwR && T.state.agents.find(a => a.id === "rdev").status === "working", "oficinas: un encargo de investigación pone a trabajar al investigador" + (threwR ? " (" + threwR.message + ")" : ""));
+T.live(sess(ALL));
 T.live(sess(ALL.filter(d => d !== "docs")));
 const grid8 = visible().map(r => r.id + "@" + r.x + "," + r.y).join(" ");
 say(visible().length === 8 && T.W === 768 && T.HALL_DX === 0 && grid8 === "meet@0,4 design@192,4 back@384,4 front@576,4 db@0,264 scrap@192,264 ops@384,264 qa@576,264", "oficinas: sin documentación el acomodo es el de siempre (4×2) · " + grid8);

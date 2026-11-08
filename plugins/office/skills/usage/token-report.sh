@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# token-report-version: 5
+# token-report-version: 6
 # Resumen de tokens y de tiempo de la sesión de la oficina, para el informe del PM al CEO.
 #
 # Lee el registro del observer (.office/observer/events.js), que tiene los tokens exactos
@@ -42,6 +42,7 @@ sed -n 's/^OFFICE_EVENT(\(.*\));[[:space:]]*$/\1/p' "$EVENTS" | tr -d '\r' | jq 
     else (r | split(".")) as $p
       | if ($p | length) < 2 then r
         elif $p[0] == "docs" then ({"developer": "Redactor", "tester": "Revisor", "lead": "Líder"}[$p[1]] // $p[1]) + " de documentación"
+        elif $p[0] == "research" then ({"developer": "Investigador", "tester": "Verificador", "lead": "Líder de investigación"}[$p[1]] // ($p[1] + " de investigación"))
         else ({"developer": "Developer", "tester": "Tester", "architect": "Arquitecto", "designer": "Designer", "lead": "Líder"}[$p[1]] // $p[1])
              + " de " + ({"backend": "backend", "frontend": "frontend", "database": "base de datos", "scraper": "scraping", "devops": "DevOps", "docs": "documentación", "project": "proyecto"}[$p[0]] // $p[0]) end end;
   def prov(p): {"claude": "Claude", "codex": "Codex", "gemini": "Gemini"}[p] // p;

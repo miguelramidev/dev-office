@@ -40,6 +40,11 @@
       "name": "dept-docs",
       "source": "./plugins/dept-docs",
       "description": "Departamento de documentación: un redactor que escribe y actualiza README, guías, referencia y changelog verificando cada dato contra el código, y un revisor que comprueba que los comandos, ejemplos y enlaces funcionan."
+    },
+    {
+      "name": "dept-research",
+      "source": "./plugins/dept-research",
+      "description": "Departamento de investigación: un investigador que busca en internet, en el navegador, en el código y en las herramientas conectadas lo que el PM le pida y entrega un informe con fuentes, y un verificador que comprueba los datos que pesan en la decisión."
     }
   ]
 }

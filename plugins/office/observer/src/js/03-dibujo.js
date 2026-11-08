@@ -451,6 +451,9 @@
       px(cx + 22, y + 4, 2, 1, "#47a865"); px(cx + 22, y + 6, 2, 1, a.status === "fail" ? "#cf4b47" : "#47a865"); px(cx + 25, y + 4, 3, 1, "#98a1b3"); px(cx + 25, y + 6, 3, 1, "#98a1b3");
     } else if (a.role === "qa") { // lupa
       px(cx + 19, y + 1, 7, 7, OUT); px(cx + 20, y + 2, 5, 5, "#9ad3ef"); px(cx + 21, y + 3, 1, 1, "#ffffff"); px(cx + 25, y + 7, 4, 2, "#5e4229");
+    } else if (dept === "research") { // globo terráqueo
+      px(cx + 20, y - 6, 9, 9, OUT); px(cx + 21, y - 5, 7, 7, "#4a78d6"); px(cx + 22, y - 4, 3, 2, "#47a865"); px(cx + 25, y - 1, 2, 2, "#47a865"); px(cx + 21, y - 5, 2, 1, "#9ad3ef");
+      px(cx + 24, y + 3, 1, 3, "#98a1b3"); px(cx + 22, y + 6, 5, 2, "#5e4229");
     } else if (dept === "docs") { // libreta abierta con lápiz
       px(cx + 18, y + 1, 13, 8, OUT); px(cx + 19, y + 2, 5, 6, "#f6f2e7"); px(cx + 25, y + 2, 5, 6, "#efe9dd"); px(cx + 24, y + 2, 1, 6, "#98a1b3");
       px(cx + 20, y + 4, 3, 1, "#98a1b3"); px(cx + 20, y + 6, 3, 1, "#98a1b3"); px(cx + 26, y + 4, 3, 1, "#98a1b3"); px(cx + 29, y - 1, 1, 6, "#f2c14e");
@@ -586,6 +589,16 @@
       px(x + 10, y + 5, 66, 18, OUT); px(x + 11, y + 6, 64, 16, "#1b2230");
       ["#5cc98a", "#5cc98a", "#f2c14e", "#3a4152"].forEach((c, i) => { px(x + 14 + i * 16, y + 11, 10, 6, (i === 2 && blink % 2) ? "#3a3220" : c); if (i < 3) px(x + 24 + i * 16, y + 13, 6, 2, "#98a1b3"); });
       px(x + 130, y + 2, 14, 26, OUT); px(x + 131, y + 3, 12, 24, "#20242e"); px(x + 134, y + 6, 6, 2, blink % 2 ? "#5cc98a" : "#1d3a2a"); px(x + 134, y + 12, 6, 2, "#2c3240"); px(x + 134, y + 18, 6, 2, "#2c3240");
+    } else if (r.deco === "res") {
+      // Un mapa del mundo con chinches unidos por hilo rojo, y un monitor con resultados de búsqueda.
+      px(x + 10, y + 3, 48, 25, OUT); px(x + 11, y + 4, 46, 23, "#cfe3ef");
+      [[14, 8, 9, 6], [26, 7, 7, 9], [36, 9, 12, 6], [40, 16, 6, 7], [16, 17, 6, 6]].forEach(([dx, dy, w, h]) => px(x + dx, y + dy, w, h, "#9cc58a"));
+      const pins = [[18, 10], [29, 12], [43, 12], [42, 19], [19, 20]];
+      pins.slice(1).forEach(([dx, dy], i) => { const [ax, ay] = pins[i]; const n = Math.max(Math.abs(dx - ax), Math.abs(dy - ay)); for (let k = 0; k <= n; k += 2) px(x + ax + Math.round((dx - ax) * k / n), y + ay + Math.round((dy - ay) * k / n), 1, 1, "#cf4b47"); });
+      pins.forEach(([dx, dy], i) => px(x + dx - 1, y + dy - 1, 3, 3, i === blink % pins.length ? "#f2c14e" : "#cf4b47"));
+      px(x + 124, y + 4, 44, 22, OUT); px(x + 125, y + 5, 42, 20, "#f6f8fa");
+      px(x + 127, y + 7, 30, 3, "#e9ecf2"); px(x + 158, y + 7, 7, 3, "#4a78d6");
+      [0, 1, 2].forEach(i => { px(x + 127, y + 12 + i * 4, 18, 1, "#4a78d6"); px(x + 127, y + 14 + i * 4, 30 - i * 5, 1, "#98a1b3"); });
     } else if (r.deco === "docs") {
       // Biblioteca con libros de colores, y un corcho con hojas clavadas.
       px(x + 10, y + 3, 56, 25, OUT); px(x + 11, y + 4, 54, 23, "#5e4229");

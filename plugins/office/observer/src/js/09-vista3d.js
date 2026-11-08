@@ -76,6 +76,7 @@
       { id: "ops", x: 14, y: 10, floor: "concrete", c: "#8a909b" },
       { id: "docs", x: 21, y: 10, floor: "wood", c: "#a67b52" },
       { id: "qa", x: 28, y: 10, floor: "tiles", c: "#e6ecf0", c2: "#cbd6de" },
+      { id: "res", x: 28, y: 0, top: true, floor: "carpet", c: "#6f6a9e", wall: "#e3e0f2" },
     ];
     R3.forEach(r => { r.corr = r.corr || 2.6; });
     const r3 = id => R3.find(r => r.id === id);
@@ -93,6 +94,7 @@
       sdev: ["scrap", 1.4, 1.6, "-y"], stest: ["scrap", 5.8, 1.6, "-y"], slead: ["scrap", 5.05, 4.4, "+x"],
       odev: ["ops", 1.4, 1.6, "-y"], otest: ["ops", 5.8, 1.6, "-y"], olead: ["ops", 5.05, 4.4, "+x"],
       wdev: ["docs", 1.4, 1.6, "-y"], wtest: ["docs", 5.8, 1.6, "-y"], wlead: ["docs", 5.05, 4.4, "+x"],
+      rdev: ["res", 1.4, 1.6, "-y"], rtest: ["res", 5.8, 1.6, "-y"], rlead: ["res", 5.05, 4.4, "+x"],
       qa1: ["qa", 1.4, 1.6, "-y"], qa2: ["qa", 5.8, 1.6, "-y"],
     };
     const SEAT = {};
@@ -486,13 +488,18 @@
         [0.45, 0.9, 1.35].forEach(y => box(X + 0.3, Z + 3.62, y, 0.48, 1.76, 0.04, "#4a3222"));
         ["#cf4b47", "#4a78d6", "#f2c14e", "#47a865", "#8b6cd6", "#e08a3a", "#36a9bb"].forEach((c, i) => [0, 1, 2, 3].forEach(row => { if ((i + row) % 5 !== 4) box(X + 0.34, Z + 3.7 + i * 0.24, 0.05 + row * 0.45, 0.4, 0.17, 0.34 + ((i * 3 + row) % 3) * 0.03, c); }));
         easel(X + 0.4, Z + 5.9, 1.6, q => { P(q, "#f6f8fa", 0, 0, 32, 20); [[2, 3], [18, 3], [2, 11], [18, 11]].forEach(([a, b], i) => { P(q, "#ffffff", a, b, 12, 7); P(q, "#c9ced8", a + 1, b + 2, 10, 1); P(q, "#c9ced8", a + 1, b + 4, 7, 1); P(q, i % 2 ? "#cf4b47" : "#4a78d6", a + 5, b - 1, 2, 2); }); });
+      } else if (rid === "res") {
+        // Un globo terráqueo y un caballete con el mapa de chinches.
+        cyl(X + 1.0, Z + 4.6, 0, 0.12, 0.45, "#5e4229"); mesh(new THREE.IcosahedronGeometry(0.3, 2), toon("#4a78d6"), null, X + 1.0, 0.78, Z + 4.6);
+        mesh(new THREE.IcosahedronGeometry(0.31, 1), toon("#5cb87a"), null, X + 1.0, 0.78, Z + 4.6).scale.set(1, 1, 0.55);
+        easel(X + 0.4, Z + 5.9, 1.6, q => { P(q, "#cfe3ef", 0, 0, 32, 20); [[3, 4, 7, 5], [12, 3, 6, 8], [20, 5, 9, 5], [22, 11, 5, 6], [5, 12, 5, 5]].forEach(([a, b, w, h]) => P(q, "#9cc58a", a, b, w, h)); [[6, 6], [15, 6], [24, 7], [24, 13], [7, 14]].forEach(([a, b]) => P(q, "#cf4b47", a, b, 2, 2)); });
       } else if (rid === "qa") {
         easel(X + 0.4, Z + 5.6, 1.6, q => { P(q, "#f6f8fa", 0, 0, 32, 20); for (let i = 0; i < 4; i++) { P(q, i === 2 ? "#ef6b5b" : "#5cc98a", 2, 2 + i * 4, 3, 3); P(q, "#8a909c", 7, 3 + i * 4, 20 - i * 3, 1); } });
         cabinet(X + 6.2, Z + 3.2, "jar");
       }
     }
     // Lo de cada puesto que depende de lo comprado: escritorio, silla, monitor y lo que hay encima.
-    const SCREEN_BY_ROOM = { back: "code", front: "ui", db: "data", scrap: "web", ops: "term", qa: "test", design: "design", docs: "doc", meet: "code" };
+    const SCREEN_BY_ROOM = { back: "code", front: "ui", db: "data", scrap: "web", ops: "term", qa: "test", design: "design", docs: "doc", res: "web", meet: "code" };
     function seatFurniture(id, R) {
       const s = SEAT[id], a = id === "pm" ? null : agent(id), role = a ? a.role || "" : "";
       chairOf(R.chair, s.x, s.y, s.facing);
@@ -523,16 +530,16 @@
     const SLOT3 = {
       small: {
         meet: [[6.5, 0.45], [6.55, 3.8]], design: [[6.5, 6.5], [0.45, 2.9], [2.65, 0.4], [4.55, 0.4]],
-        back: [[2.6, 6.55], [0.45, 2.9]], front: [[2.6, 6.55], [0.45, 2.9]], db: [[2.6, 6.55], [6.55, 2.9]], scrap: [[2.6, 6.55], [6.55, 2.9]], ops: [[2.6, 6.55], [6.55, 2.9]], docs: [[2.6, 6.55], [6.55, 2.9]], qa: [[2.6, 6.55], [4.6, 6.55]],
+        back: [[2.6, 6.55], [0.45, 2.9]], front: [[2.6, 6.55], [0.45, 2.9]], db: [[2.6, 6.55], [6.55, 2.9]], scrap: [[2.6, 6.55], [6.55, 2.9]], ops: [[2.6, 6.55], [6.55, 2.9]], docs: [[2.6, 6.55], [6.55, 2.9]], res: [[2.6, 6.55], [0.45, 2.9]], qa: [[2.6, 6.55], [4.6, 6.55]],
         hall: [[2.3, 7.35], [7.3, 7.35], [9.4, 7.35], [12.3, 7.35], [16.6, 7.35], [20.3, 7.35], [23.3, 7.35], [27.75, 9.65], [5.2, 9.65], [8.9, 9.65], [16.6, 9.65], [23.6, 9.65]],
       },
       // Cuadros: en la pared de atrás (oficinas de arriba) o sobre el tabique del fondo (abajo). x local.
-      wall: { meet: [2.5], design: [1.2, 5.9], back: [1.2, 5.9], front: [1.2, 5.9], db: [0.75, 1.95, 5.35, 6.4], scrap: [0.75, 1.95, 5.35, 6.4], ops: [0.75, 1.95, 5.35, 6.4], docs: [0.75, 1.95, 5.35, 6.4], qa: [0.75, 1.95, 5.35, 6.4] },
+      wall: { meet: [2.5], design: [1.2, 5.9], back: [1.2, 5.9], front: [1.2, 5.9], db: [0.75, 1.95, 5.35, 6.4], scrap: [0.75, 1.95, 5.35, 6.4], ops: [0.75, 1.95, 5.35, 6.4], docs: [0.75, 1.95, 5.35, 6.4], res: [1.2, 5.9], qa: [0.75, 1.95, 5.35, 6.4] },
       // Muebles grandes: centro (x, z local), giro y dónde se para quien lo usa.
       big: {
         meet: [{ x: 5.9, z: 5.9, rot: 0, stand: [4.75, 5.9, "+x"] }, { x: 0.55, z: 2.2, rot: Math.PI / 2, stand: [1.65, 2.2, "-x"] }],
         back: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }], front: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }],
-        db: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }], scrap: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }], ops: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }], docs: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }],
+        db: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }], scrap: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }], ops: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }], docs: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }], res: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }],
         qa: [{ x: 5.9, z: 6.0, rot: 0, stand: [4.75, 6.0, "+x"] }, { x: 3.0, z: 4.7, rot: 0, stand: [3.0, 5.75, "-y"] }],
       },
       // Contra los bordes del pasillo: los de arriba miran al pasillo (+z), los de abajo también (-z).
@@ -685,7 +692,7 @@
     // Cada oficina se vuelve a armar cuando cambia lo comprado para ella.
     const built = {};
     let curLive = null;
-    const ROOMS_BUY = ["meet", "design", "back", "front", "db", "scrap", "ops", "docs", "qa", "hall", "bath"];
+    const ROOMS_BUY = ["meet", "design", "back", "front", "db", "scrap", "ops", "docs", "qa", "res", "hall", "bath"];
     const ids = list => (list || []).map(it => it ? it.id : "-").join(",");
     const sigOf = rid => { if (rid === "bath") { const b = roomOf("hall").bath; return b ? b.id : "-"; } const R = roomOf(rid); return ["floor", "paint", "desk", "chair", "kit", "runner", "ceiling", "coffee", "water"].map(k => R[k] ? R[k].id : "-").join("|") + "|" + ids(R.small) + "|" + ids(R.lean) + "|" + ids(R.wall) + "|" + ids(R.big); };
     function dispose(o) { o.traverse(m => { if (m.isMesh && m.geometry) m.geometry.dispose(); }); }

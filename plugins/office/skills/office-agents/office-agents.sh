@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# office-agents-version: 11
+# office-agents-version: 12
 # Configura qué proveedor (Claude, Codex o Gemini) hace cada rol de la oficina dev-office.
 #
 # Uso (desde la carpeta del proyecto):
@@ -52,7 +52,8 @@ frontend.architect frontend.designer frontend.developer frontend.tester
 database.developer database.tester
 scraper.developer scraper.tester
 devops.architect devops.developer devops.tester
-docs.developer docs.tester"
+docs.developer docs.tester
+research.developer research.tester"
 
 # Modelos de cada proveedor por nivel, a la par de los de Claude (octubre de 2026). Se pueden
 # cambiar por proyecto con "tier". effort: razonamiento (medio para todos, para no gastar de más).
@@ -263,6 +264,10 @@ cmd_set() {
   case "$role" in
     pm | qa) ;;
     *) [ $# -gt 1 ] && die "el rol $role lleva un solo proveedor (solo qa y pm aceptan varios)." ;;
+  esac
+  # La investigación necesita búsqueda web, y el puente a Codex y Gemini no la tiene.
+  case "$role" in
+    research.*) case "$1" in claude | claude:*) ;; *) die "$role va siempre en Claude: Codex y Gemini no tienen búsqueda web en el puente. Podés elegir el modelo: set $role claude:opus" ;; esac ;;
   esac
   local e seen=" "
   for e in "$@"; do

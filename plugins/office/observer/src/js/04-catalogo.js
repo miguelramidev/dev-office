@@ -60,7 +60,7 @@
     flags: [["de colores", ["#ef6b5b", "#f2c14e", "#5cc98a", "#6f9cff"]], ["rojos y blancos", ["#cf4b47", "#f6f2e7"]], ["pastel", ["#f4b6c2", "#b8e0d2", "#cdb4f0", "#f9e0a8"]],
       ["de fiesta", ["#ff5fc8", "#5fe8ff", "#ffe35f"]], ["verdes", ["#2f7a47", "#56aa70", "#9ad8a8"]], ["azules", ["#1f5f8b", "#4a78d6", "#9ad3ef"]]].map(([n, c]) => ({ n, c })),
     dartboard: [["clásica", ["#2b2d36", "#efe6cf", "#cf4b47", "#47a865"]], ["neón", ["#16131f", "#ff5fc8", "#5fe8ff", "#c8ff4f"]], ["de madera", ["#5e4229", "#c9a26b", "#cf4b47", "#e3c14a"]]].map(([n, c]) => ({ n, c })),
-    kitRoom: [["meet", "de Reuniones"], ["design", "de Diseño"], ["back", "de Backend"], ["front", "de Frontend"], ["db", "de Base de datos"], ["scrap", "de Scraping"], ["ops", "de DevOps"], ["docs", "de Documentación"], ["qa", "de QA"]].map(([c, n]) => ({ n, c })),
+    kitRoom: [["meet", "de Reuniones"], ["design", "de Diseño"], ["back", "de Backend"], ["front", "de Frontend"], ["db", "de Base de datos"], ["scrap", "de Scraping"], ["ops", "de DevOps"], ["docs", "de Documentación"], ["res", "de Investigación"], ["qa", "de QA"]].map(([c, n]) => ({ n, c })),
     floorPair: [["gris", ["#3c4150", "#363a48"]], ["azul", ["#2b3750", "#263148"]], ["violeta", ["#3a3350", "#342d48"]], ["verde", ["#2a3a33", "#25342d"]], ["bordó", ["#462c31", "#3f272c"]],
       ["arena", ["#5a4e3a", "#524633"]], ["petróleo", ["#22414a", "#1e3a42"]], ["ciruela", ["#47304a", "#402a43"]], ["mostaza", ["#5c4a22", "#53421e"]], ["grafito", ["#26282e", "#212328"]]].map(([n, c]) => ({ n, c })),
     tile: [["blancas", ["#d9d4c8", "#b9b3a6"]], ["grises", ["#7a808c", "#5f6572"]], ["terracota", ["#a65f3f", "#7f4730"]], ["verde agua", ["#7fc9b8", "#5fa898"]], ["azules", ["#4f6fa8", "#3c5788"]], ["negras", ["#2b2d36", "#1d1f26"]]].map(([n, c]) => ({ n, c })),
@@ -714,7 +714,7 @@
     meet: { wall: [8], small: [[10, 172], [183, 172]], big: [[48, 172], [144, 172]] },
     design: { wall: TOP_WALL, small: [[10, 104], [183, 106], [10, 172], [183, 172]], big: [] },
     back: { wall: TOP_WALL, ...DEPT_FLOOR }, front: { wall: TOP_WALL, ...DEPT_FLOOR },
-    db: { wall: BOT_WALL, ...DEPT_FLOOR }, scrap: { wall: BOT_WALL, ...DEPT_FLOOR }, ops: { wall: BOT_WALL, ...DEPT_FLOOR }, docs: { wall: BOT_WALL, ...DEPT_FLOOR },
+    db: { wall: BOT_WALL, ...DEPT_FLOOR }, scrap: { wall: BOT_WALL, ...DEPT_FLOOR }, ops: { wall: BOT_WALL, ...DEPT_FLOOR }, docs: { wall: BOT_WALL, ...DEPT_FLOOR }, res: { wall: TOP_WALL, ...DEPT_FLOOR },
     qa: { wall: BOT_WALL, small: [[10, 174], [183, 174]], big: [[42, 74], [150, 74]] },
     // En el pasillo, los lugares de abajo van después para no cambiar los de compras viejas.
     hall: { wall: [], big: [],
@@ -722,7 +722,7 @@
       lean: [[345, 216], [420, 216], [530, 216], [615, 216], [707, 216], [40, 262], [190, 262], [384, 262], [576, 262], [730, 262]] },
   };
   // La pared que ocupa el equipamiento de cada departamento (lo que dibuja drawDeco).
-  const KIT_RANGES = { meet: [[12, 66]], design: [[12, 98]], back: [[12, 86]], front: [[12, 76]], db: [[10, 74]], scrap: [[14, 36], [124, 160]], ops: [[10, 76], [130, 144]], docs: [[10, 66], [124, 168]], qa: [[12, 36], [124, 164]] };
+  const KIT_RANGES = { meet: [[12, 66]], design: [[12, 98]], back: [[12, 86]], front: [[12, 76]], db: [[10, 74]], scrap: [[14, 36], [124, 160]], ops: [[10, 76], [130, 144]], docs: [[10, 66], [124, 168]], res: [[10, 58], [122, 170]], qa: [[12, 36], [124, 164]] };
   const kitBlocks = (roomId, x) => (KIT_RANGES[roomId] || []).some(([a, b]) => x < b && x + 34 > a);
   const placeName = id => id === "hall" ? "el pasillo" : (room(id) || {}).name || id;
 

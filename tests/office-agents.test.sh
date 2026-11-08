@@ -52,6 +52,10 @@ check 0 "set del revisor de documentación" set docs.tester gemini
 check 1 "docs.lead no se configura (los líderes son siempre Claude)" set docs.lead codex
 check 0 "reset del redactor" reset docs.developer
 check 0 "reset del revisor" reset docs.tester
+check 1 "investigación no va por Codex" set research.developer codex
+check 1 "investigación no va por Gemini" set research.tester gemini
+check 0 "investigación en Claude con otro modelo" set research.developer claude:opus
+check 0 "reset del investigador" reset research.developer
 same "codex" "get devuelve lo configurado" get backend.developer
 check 0 "set con modelo" set frontend.developer gemini:pro
 same "gemini:pro" "get con modelo" get frontend.developer

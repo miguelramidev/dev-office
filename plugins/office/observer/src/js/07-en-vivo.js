@@ -8,10 +8,11 @@
     "backend.developer": "bdev", "backend.tester": "btest", "frontend.developer": "fdev", "frontend.tester": "ftest",
     "database.developer": "ddev", "database.tester": "dtest", "scraper.developer": "sdev", "scraper.tester": "stest",
     "devops.developer": "odev", "devops.tester": "otest", "docs.developer": "wdev", "docs.tester": "wtest",
-    "backend.lead": "blead", "frontend.lead": "flead", "database.lead": "dlead", "scraper.lead": "slead", "devops.lead": "olead", "docs.lead": "wlead",
+    "research.developer": "rdev", "research.tester": "rtest",
+    "backend.lead": "blead", "frontend.lead": "flead", "database.lead": "dlead", "scraper.lead": "slead", "devops.lead": "olead", "docs.lead": "wlead", "research.lead": "rlead",
   };
-  const ROOM_DEPT = { back: "backend", front: "frontend", db: "database", scrap: "scraper", ops: "devops", docs: "docs" };
-  const DEPTS = ["backend", "frontend", "database", "scraper", "devops", "docs"];
+  const ROOM_DEPT = { back: "backend", front: "frontend", db: "database", scrap: "scraper", ops: "devops", docs: "docs", res: "research" };
+  const DEPTS = ["backend", "frontend", "database", "scraper", "devops", "docs", "research"];
   const FAILS = ["FALLA", "RECHAZADO", "PROVEEDOR NO DISPONIBLE", "REGLAS ROTAS", "TIEMPO AGOTADO", "FALLO"];
   const roleFromType = t => {
     if (t === "office:qa") return "qa";
