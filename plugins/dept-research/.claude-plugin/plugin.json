@@ -1,6 +1,6 @@
 {
   "name": "dept-research",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Departamento de investigación de dev-office: un investigador que busca en internet, en el código y en las herramientas conectadas lo que el PM le pida (librerías, servicios, precios, normas, competencia, cómo resolver un problema) y entrega un informe con fuentes, y un verificador que comprueba que cada dato importante está en las fuentes citadas.",
   "author": {
     "name": "Miguel Ramirez"

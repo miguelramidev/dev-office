@@ -71,3 +71,6 @@ jobs:
 
       - name: Probar la revisión de consumo
         run: bash tests/save-tokens.test.sh
+
+      - name: Probar el índice del proyecto
+        run: bash tests/project-map.test.sh

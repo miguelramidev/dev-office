@@ -93,7 +93,9 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
 
 11. **Proveedores por rol (opcional).** Contale al CEO que cada rol de la oficina lo puede hacer Claude, Codex o Gemini (por ejemplo, Codex como developer de backend y dos QA que se validan entre ellos), y que el PM siempre es Claude pero puede consultar a Codex o Gemini como asesores. Preguntale si quiere configurarlo ahora. Si dice que sí, seguí la skill `office:office-agents`. Si no, todo queda en Claude y lo puede cambiar después con `/office:office-agents`.
 
-12. **Cerrá con los próximos pasos:**
+12. **Mapa del proyecto.** Explicale al CEO que, con un mapa corto de dónde está cada cosa y un índice de archivos que se arma sin gastar tokens, los agentes van directo a los archivos en vez de buscarlos, y que eso es lo que más ahorra a medida que el proyecto crece. Sirve igual si el proyecto recién empieza o si ya es grande. Si quiere, seguí la skill `office:project-map` ("Crear el mapa"). Si no, se lo vas a proponer en la primera tarea.
+
+13. **Cerrá con los próximos pasos:**
    - Revisar los cambios y hacer commit de `.claude/settings.json` y `.gitignore`.
    - Instalar las skills de la comunidad que haya elegido.
    - Si conectó Jira, autenticarse con `/mcp` y probar con `/office:start-ticket <TICKET>`.

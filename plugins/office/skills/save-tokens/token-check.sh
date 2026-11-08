@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# token-check-version: 1
+# token-check-version: 2
 # Revisa la configuración del proyecto y de la oficina en busca de lo que más tokens hace
 # gastar a cada agente. No llama a ningún modelo: no gasta tokens.
 #
@@ -50,7 +50,25 @@ else
   echo "- **CLAUDE.md:** no hay. Los agentes van a explorar el proyecto para entender cómo se trabaja: un CLAUDE.md corto con los comandos y las reglas les ahorra esa búsqueda."
 fi
 
-# 2. Departamentos instalados: las skills de cada uno se suman al contexto de todos los agentes.
+# 2. Mapa e índice: sin ellos, cada agente busca dónde está cada cosa.
+MAP="$PROJECT/docs/project-map.md"
+if [ -f "$MD" ] && grep -qE 'project-map[^ ]*\.md' "$MD"; then
+  ref=$(grep -oE '[A-Za-z0-9_./-]*project-map[A-Za-z0-9_./-]*\.md' "$MD" | head -1)
+  [ -n "$ref" ] && MAP="$PROJECT/$ref"
+fi
+if [ -f "$MAP" ]; then
+  echo "- ✅ **Mapa del proyecto:** ${MAP#$PROJECT/}, $(lines "$MAP") líneas."
+  [ -f "$MD" ] && ! grep -q 'project-map' "$MD" && echo "  - ⚠️ El CLAUDE.md no lo nombra: los agentes no lo van a encontrar. Agregá la sección \"Dónde está cada cosa\" de la skill \`office:project-map\`."
+else
+  echo "- ⚠️ **Mapa del proyecto:** no hay. Cada agente busca dónde está cada cosa, y eso crece con el proyecto. Crealo con la skill \`office:project-map\`: sirve igual para un proyecto empezado y de cualquier tamaño."
+fi
+if [ -s "$PROJECT/.office/index/files.tsv" ]; then
+  echo "- ✅ **Índice de archivos:** $(grep -c . "$PROJECT/.office/index/files.tsv") archivos; se actualiza solo al empezar cada sesión."
+else
+  echo "- ⚠️ **Índice de archivos:** no hay. Se arma en segundos y sin tokens con \`project-index.sh --full\` (skill \`office:project-map\`)."
+fi
+
+# 3. Departamentos instalados: las skills de cada uno se suman al contexto de todos los agentes.
 if [ "$HAS_JQ" -eq 1 ]; then
   depts=""
   for s in "$HOME/.claude/settings.json" "$PROJECT/.claude/settings.json" "$PROJECT/.claude/settings.local.json"; do
@@ -64,7 +82,7 @@ if [ "$HAS_JQ" -eq 1 ]; then
   fi
 fi
 
-# 3. Configuración de la oficina: QA, asesores, modo equipos y proveedores.
+# 4. Configuración de la oficina: QA, asesores, modo equipos y proveedores.
 if [ "$HAS_JQ" -eq 1 ]; then
   cfg='{}'
   for f in "$PROJECT/.claude/office-agents.json" "$PROJECT/.claude/office-agents.local.json"; do
@@ -82,7 +100,7 @@ if [ "$HAS_JQ" -eq 1 ]; then
   [ "$teams" = "true" ] && echo "- **Modo equipos:** encendido. El líder de cada departamento es un agente más por tarea; apagalo si no lo necesitás: \`office-agents.sh teams off --local\`."
 fi
 
-# 4. Lo que gastó la última sesión, si hay registro.
+# 5. Lo que gastó la última sesión, si hay registro.
 EV="$PROJECT/.office/observer/events.js"
 if [ "$HAS_JQ" -eq 1 ] && [ -s "$EV" ]; then
   sed -n 's/^OFFICE_EVENT(\(.*\));[[:space:]]*$/\1/p' "$EV" | tr -d '\r' | jq -r -s '

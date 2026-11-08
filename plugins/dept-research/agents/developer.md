@@ -34,6 +34,10 @@ Respondé en el idioma del proyecto (el de su `CLAUDE.md`); si escribe en españ
 - **Código y documentos del proyecto:** Read, Grep y Glob.
 - **Herramientas conectadas** (Jira, Confluence, Drive) y `gh`: solo lectura.
 
+## Para encontrar código
+
+Si el encargo no trae las rutas, o necesitás algo más: primero el mapa del proyecto (`docs/project-map.md`, o la ruta que diga el `CLAUDE.md`) y el índice (Grep del nombre sobre `.office/index/files.tsv`: cada línea es un archivo con lo que exporta). Recién después, Grep o Glob en el código, acotados a esa carpeta. No recorras carpetas a ciegas: cada archivo que abrís se suma a lo que cargás.
+
 ## Límites
 
 - **Solo escribís tu informe**, en `docs/research/` o en la carpeta que diga el `CLAUDE.md`. No tocás código, tests, configuración, diseños ni otros documentos.
