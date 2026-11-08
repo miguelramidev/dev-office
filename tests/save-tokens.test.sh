@@ -52,6 +52,17 @@ has "CLAUDE.md corto: menos de 1k" "menos de 1k tokens"
 hasnt "CLAUDE.md corto: no lo marca largo" "Es largo"
 has "tests relacionados: lo reconoce" "Tiene un comando para correr solo los tests relacionados"
 has "salida corta: la reconoce" "Indica una salida corta"
+has "sin mapa: lo avisa" "**Mapa del proyecto:** no hay"
+has "sin índice: lo avisa" "**Índice de archivos:** no hay"
+
+# Con mapa enlazado e índice.
+mkdir -p "$P3/docs" "$P3/.office/index"
+printf '# Mapa\n' >"$P3/docs/project-map.md"
+printf '\n## Dónde está cada cosa\n- Mapa: `docs/project-map.md`\n' >>"$P3/CLAUDE.md"
+printf 'a.ts\tx\nb.ts\ty\n' >"$P3/.office/index/files.tsv"
+run "$P3"
+has "con mapa: lo reconoce" "**Mapa del proyecto:** docs/project-map.md"
+has "con índice: cuenta los archivos" "**Índice de archivos:** 2 archivos"
 
 [ "$FAILED" -eq 0 ] && echo "Todo bien." || echo "Hubo fallas."
 exit "$FAILED"

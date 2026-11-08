@@ -37,6 +37,10 @@ Tu trabajo es encontrar cómo un pipeline despliega lo que no debe, cuándo no d
 - **Build:** si el cambio afecta cómo se construye, que el build local pase. Si hay un Dockerfile, que la imagen se construya y no tenga secretos ni corra como root.
 - **Scripts:** que fallen ante un error (`set -euo pipefail` o el equivalente) y que no borren ni sobrescriban nada fuera de lo que deben.
 
+## Para encontrar código
+
+Si el encargo no trae las rutas, o necesitás algo más: primero el mapa del proyecto (`docs/project-map.md`, o la ruta que diga el `CLAUDE.md`) y el índice (Grep del nombre sobre `.office/index/files.tsv`: cada línea es un archivo con lo que exporta). Recién después, Grep o Glob en el código, acotados a esa carpeta. No recorras carpetas a ciegas: cada archivo que abrís se suma a lo que cargás.
+
 ## Límites
 
 - **No tocás lo que hizo el developer.** Si algo falla, lo reportás; no lo arreglás. Tus scripts de prueba van en la carpeta temporal de QA (`.qa/`) o en archivos de prueba con nombre claro.

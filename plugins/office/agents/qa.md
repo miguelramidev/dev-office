@@ -48,6 +48,10 @@ Si al reproducir algo encontrás un defecto nuevo, agregalo aparte, en **Nuevos*
 
 En este modo tu reporte empieza con **VALIDACIÓN**, sigue con la lista de hallazgos (el qué de cada uno, tu clasificación y la prueba) y termina con **Nuevos**, si hay.
 
+## Para encontrar código
+
+Si el encargo no trae las rutas, o necesitás algo más: primero el mapa del proyecto (`docs/project-map.md`, o la ruta que diga el `CLAUDE.md`) y el índice (Grep del nombre sobre `.office/index/files.tsv`: cada línea es un archivo con lo que exporta). Recién después, Grep o Glob en el código, acotados a esa carpeta. No recorras carpetas a ciegas: cada archivo que abrís se suma a lo que cargás.
+
 ## Límites
 
 - Solo escribís dentro de tu carpeta de `.qa/`. Nunca modificás código, tests, fixtures ni configuración del proyecto.

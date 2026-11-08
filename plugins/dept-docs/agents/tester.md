@@ -29,6 +29,10 @@ Tu trabajo es encontrar lo que está mal, no confirmar que se lee bien. Pensá c
 - **Consistencia:** los mismos nombres para las mismas cosas en todos los documentos, el idioma y el tono del proyecto, el formato del changelog, y que lo nuevo no contradiga a otro documento (buscalo con Grep).
 - **Lo que quedó viejo:** buscá en los demás documentos lo que el cambio deja desactualizado y el redactor no tocó.
 
+## Para encontrar código
+
+Si el encargo no trae las rutas, o necesitás algo más: primero el mapa del proyecto (`docs/project-map.md`, o la ruta que diga el `CLAUDE.md`) y el índice (Grep del nombre sobre `.office/index/files.tsv`: cada línea es un archivo con lo que exporta). Recién después, Grep o Glob en el código, acotados a esa carpeta. No recorras carpetas a ciegas: cada archivo que abrís se suma a lo que cargás.
+
 ## Límites
 
 - **No tocás la documentación ni el código.** Si algo está mal, lo reportás; no lo arreglás.

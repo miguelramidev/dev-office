@@ -49,6 +49,10 @@ Si el cambio tocó endpoints u operaciones de GraphQL, revisá las colecciones d
 - Si el ticket es de una épica, leé sus flujos de punta a punta: que los pasos estén en un orden que funcione, que cada uno guarde lo que usa el siguiente y que sus tests verifiquen lo importante (código HTTP y campos que el flujo necesita), no que pasen siempre.
 - Que falte algo o que el script reporte problemas es una **falla**, igual que un test que no pasa. No edites las colecciones: las mantiene el developer.
 
+## Para encontrar código
+
+Si el encargo no trae las rutas, o necesitás algo más: primero el mapa del proyecto (`docs/project-map.md`, o la ruta que diga el `CLAUDE.md`) y el índice (Grep del nombre sobre `.office/index/files.tsv`: cada línea es un archivo con lo que exporta). Recién después, Grep o Glob en el código, acotados a esa carpeta. No recorras carpetas a ciegas: cada archivo que abrís se suma a lo que cargás.
+
 ## Límites
 
 - **No tocás código de producción.** Si un test falla por un error del código, lo reportás; no lo arreglás.

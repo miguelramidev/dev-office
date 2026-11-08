@@ -34,6 +34,7 @@ Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). 
 | `/office:screenshot` | Captura cómo quedó un cambio visible (web en el navegador, app en el emulador) y te la manda por Telegram si el modo remoto está encendido. |
 | `/office:telegram` | Manejar la oficina desde Telegram: te llega el último mensaje del PM, le respondés desde el celular y aprobás los permisos con botones. |
 | `/office:usage` | Ver cuántos tokens y cuánto tiempo gastó cada agente en cada tarea, por agente y por proveedor. |
+| `/office:project-map` | Crear el mapa del proyecto (qué hay en cada carpeta) y el índice de archivos y símbolos, para que los agentes vayan directo a los archivos sin buscarlos. Sirve para proyectos nuevos y ya empezados, de cualquier tamaño. |
 | `/office:save-tokens` | Revisar qué hace gastar tokens en el proyecto (un `CLAUDE.md` largo, tests sin acotar, departamentos o QA de más) y proponer qué cambiar. Ver la [guía para gastar menos tokens](docs/tokens.md). |
 | `/office:update` | Dejar el botón para actualizar la oficina en todos tus proyectos. |
 
@@ -89,7 +90,7 @@ Se actualizan cada vez que cambia un endpoint, así siempre tenés la API de tu 
 
 | Plugin         | Contiene                                                                  | Modelos       |
 | -------------- | ------------------------------------------------------------------------- | ------------- |
-| `office`       | PM, QA, puente a Codex y Gemini, hooks de protección y registro de actividad, observer en pixel art, skills `office-setup`, `start-ticket`, `open-pr`, `review-fixes`, `handoff-ticket`, `office-agents`, `observer`, `telegram`, `usage`, `save-tokens`, `screenshot` y `update` | PM y QA: Opus; puente: Sonnet |
+| `office`       | PM, QA, puente a Codex y Gemini, hooks de protección y registro de actividad, observer en pixel art, skills `office-setup`, `start-ticket`, `open-pr`, `review-fixes`, `handoff-ticket`, `office-agents`, `observer`, `telegram`, `usage`, `save-tokens`, `project-map`, `screenshot` y `update` | PM y QA: Opus; puente: Sonnet |
 | `dept-backend` | Arquitecto, developer y tester de backend, skills de backend sólido y de colección de Postman | Arquitecto: Opus; developer y tester: Sonnet |
 | `dept-frontend` | Arquitecto, designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skills de frontend sólido, de lectura de diseños entregados (imágenes o Figma) y de pruebas visuales y de accesibilidad | Arquitecto: Opus; el resto: Sonnet |
 | `dept-database` | Developer (DB manager) y tester de Postgres y MongoDB, skill de base de datos sólida | Sonnet |

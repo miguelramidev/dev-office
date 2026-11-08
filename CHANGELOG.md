@@ -8,6 +8,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.51.0] - 2026-11-07
+
+### Agregado
+
+- **Mapa e índice del proyecto** (skill `project-map`, `/office:project-map`, `office` 0.49.0). Lo que más gasta a medida que un proyecto crece es que cada agente busque dónde está cada cosa. Ahora hay dos piezas que sobreviven entre sesiones:
+  - **El mapa** (`docs/project-map.md`, en git): qué hay en cada carpeta, dónde vive cada cosa y qué archivo copiar de modelo, en hasta 80 líneas. Las áreas grandes tienen su detalle en `docs/project-map/<área>.md`, que se escribe recién cuando una tarea las toca. Lleva un `map-commit` para saber desde cuándo actualizarlo.
+  - **El índice** (`.office/index/files.tsv`, fuera de git): cada archivo con lo que exporta o declara. Reconoce JavaScript y TypeScript, Python, Go, Rust, Java, Kotlin, C#, Swift, PHP, Ruby, Dart, Elixir, SQL y C/C++. Lo arma `project-index.sh` sin ningún modelo; React, con 7.100 archivos, se indexa en un segundo. El hook de inicio de sesión lo actualiza solo y procesa solo lo que cambió: commits nuevos, cambios sin commitear y lo que se deshizo. Deja afuera las dependencias, lo generado, los binarios y los lockfiles. `--dirs` resume las carpetas para escribir el mapa y `--changes <commit>` lista lo agregado, borrado y movido para actualizarlo.
+  - **Para un proyecto ya empezado,** de cualquier tamaño, el mapa se crea sin leerlo entero: con el resumen de carpetas, el índice y unos 20 archivos como máximo (README, manifiestos y los archivos de entrada de cada área).
+- **El PM usa el mapa y el índice para planear:** escribe en cada encargo las rutas exactas y el modelo a copiar. Si el proyecto no tiene mapa, propone crearlo una vez. `office-setup` lo ofrece al preparar un proyecto y `save-tokens` avisa si falta.
+- **Los agentes buscan primero en el mapa y el índice,** y recién después en el código, acotados a esa carpeta. El developer actualiza el mapa cuando su tarea agrega, mueve o borra archivos, en el mismo PR. Versiones: `dept-backend` 0.3.5, `dept-frontend` 0.5.4, `dept-database` 0.2.5, `dept-scraper` 0.2.5, `dept-devops` 0.3.5, `dept-docs` 0.1.4, `dept-research` 0.1.1.
+
 ## [0.50.0] - 2026-11-07
 
 ### Agregado

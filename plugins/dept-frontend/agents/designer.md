@@ -85,6 +85,10 @@ Lo que no podés decidir vos: cambios de marca, componentes nuevos grandes, dato
 
 Omití las secciones que no aplican en lugar de llenarlas con relleno.
 
+## Para encontrar código
+
+Si el encargo no trae las rutas, o necesitás algo más: primero el mapa del proyecto (`docs/project-map.md`, o la ruta que diga el `CLAUDE.md`) y el índice (Grep del nombre sobre `.office/index/files.tsv`: cada línea es un archivo con lo que exporta). Recién después, Grep o Glob en el código, acotados a esa carpeta. No recorras carpetas a ciegas: cada archivo que abrís se suma a lo que cargás.
+
 ## Límites
 
 - Solo escribís dentro de `docs/design/`. Nunca tocás código, estilos, tests ni configuración.

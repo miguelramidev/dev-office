@@ -15,6 +15,7 @@ bash <carpeta de esta skill>/token-check.sh
 
 Revisa:
 
+- **El mapa y el índice del proyecto:** si existen y si el `CLAUDE.md` los nombra.
 - **El `CLAUDE.md`** y lo que importa con `@`: cuánto pesa, que se carga en cada agente cada vez que arranca, si tiene un comando para correr solo los tests relacionados y si usa una salida corta del runner.
 - **Los departamentos instalados:** las skills de cada uno se suman al contexto de todos los agentes.
 - **La configuración de la oficina:** cuántos QA, asesores del PM y el modo equipos.
@@ -24,11 +25,12 @@ Revisa:
 
 Mostrale al CEO lo que encontró y, por cada punto marcado, el cambio concreto, en orden de impacto:
 
-1. **Comando de tests relacionados y salida corta en el `CLAUDE.md`.** Fijate en el `package.json` (o el archivo del stack) qué runner usa el proyecto y armá el comando real, por ejemplo `pnpm vitest related <archivos> --run --reporter=dot`, `npx jest --findRelatedTests <archivos> --silent` o `pytest <archivos> -q`. Hacé lo mismo con el lint, si se puede correr sobre los archivos cambiados.
-2. **Un `CLAUDE.md` más corto,** si pasa de unos 6k tokens. Proponé qué queda (reglas, comandos, convenciones) y qué pasa a `docs/` (explicaciones, historia, decisiones), donde los agentes lo leen solo si les hace falta. No borres reglas: se mueven.
-3. **Desinstalar los departamentos que el proyecto no usa,** según lo que ves en el código. Por ejemplo, el de scraping en un proyecto sin scrapers.
-4. **Menos QA o sin asesores,** si los tiene configurados y no le aportan. Proponelo con `--local`, salvo que pida cambiarlo para todo el equipo.
-5. **Mover el developer que más gasta a Codex,** si es de Claude y está entre lo que más gastó.
+1. **Mapa e índice del proyecto,** si faltan. Es lo que más ahorra a medida que el proyecto crece: los agentes van directo a los archivos en vez de buscarlos. Seguí la skill `office:project-map`.
+2. **Comando de tests relacionados y salida corta en el `CLAUDE.md`.** Fijate en el `package.json` (o el archivo del stack) qué runner usa el proyecto y armá el comando real, por ejemplo `pnpm vitest related <archivos> --run --reporter=dot`, `npx jest --findRelatedTests <archivos> --silent` o `pytest <archivos> -q`. Hacé lo mismo con el lint, si se puede correr sobre los archivos cambiados.
+3. **Un `CLAUDE.md` más corto,** si pasa de unos 6k tokens. Proponé qué queda (reglas, comandos, convenciones) y qué pasa a `docs/` (explicaciones, historia, decisiones), donde los agentes lo leen solo si les hace falta. No borres reglas: se mueven.
+4. **Desinstalar los departamentos que el proyecto no usa,** según lo que ves en el código. Por ejemplo, el de scraping en un proyecto sin scrapers.
+5. **Menos QA o sin asesores,** si los tiene configurados y no le aportan. Proponelo con `--local`, salvo que pida cambiarlo para todo el equipo.
+6. **Mover el developer que más gasta a Codex,** si es de Claude y está entre lo que más gastó.
 
 ## 3. Aplicá solo lo que confirme
 

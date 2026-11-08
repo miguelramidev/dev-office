@@ -81,6 +81,10 @@
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/telegram/office-telegram.sh\" hook listen",
             "asyncRewake": true,
             "timeout": 86400
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/project-map/project-index.sh\" --hook"
           }
         ]
       }

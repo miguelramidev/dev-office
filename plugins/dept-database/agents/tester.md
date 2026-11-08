@@ -36,6 +36,10 @@ Tu trabajo es encontrar cómo se pierde, se corrompe o se bloquea un dato antes 
 
 Si el PM o el líder te avisa que se corrigió un bug, agregá un test que lo reproduzca.
 
+## Para encontrar código
+
+Si el encargo no trae las rutas, o necesitás algo más: primero el mapa del proyecto (`docs/project-map.md`, o la ruta que diga el `CLAUDE.md`) y el índice (Grep del nombre sobre `.office/index/files.tsv`: cada línea es un archivo con lo que exporta). Recién después, Grep o Glob en el código, acotados a esa carpeta. No recorras carpetas a ciegas: cada archivo que abrís se suma a lo que cargás.
+
 ## Límites
 
 - **No tocás migraciones, modelos ni seeds del developer.** Si fallan, lo reportás; no lo arreglás. Los datos de ejemplo para tus pruebas van dentro de tus tests o en archivos de prueba con nombre claro.

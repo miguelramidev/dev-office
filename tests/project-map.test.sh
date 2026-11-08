@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# Pruebas del índice del proyecto (plugins/office/skills/project-map/project-index.sh).
+# Uso: bash tests/project-map.test.sh
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+IDX="$ROOT/plugins/office/skills/project-map/project-index.sh"
+WORK=$(cd "$(mktemp -d)" && pwd -P)
+trap 'rm -rf "$WORK"' EXIT
+FAILED=0
+export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@example.com GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@example.com
+
+ok() { echo "ok    $1"; }
+fail() { echo "FALLA $1"; [ -n "${2:-}" ] && printf '%s\n' "$2" | sed 's/^/      /'; FAILED=1; }
+line() { grep -F "$1	" "$P/.office/index/files.tsv"; }
+has_line() { if line "$2" | grep -qF -- "$3"; then ok "$1"; else fail "$1" "$(line "$2")"; fi; }
+no_line() { if line "$2" >/dev/null; then fail "$1" "$(line "$2")"; else ok "$1"; fi; }
+run() { out=$(cd "$P" && bash "$IDX" "$@" 2>&1); code=$?; }
+
+grep -q '^# project-index-version: [0-9]' "$IDX" && ok "el script tiene versión" || fail "el script tiene versión"
+
+# Fuera de un repositorio de git.
+P="$WORK/sin-git"; mkdir -p "$P"
+run --full
+[ "$code" -ne 0 ] && echo "$out" | grep -q "repositorio de git" && ok "fuera de git: lo explica y falla" || fail "fuera de git: lo explica y falla" "$out"
+run --hook
+[ "$code" -eq 0 ] && [ -z "$out" ] && ok "fuera de git, el hook no dice nada ni falla" || fail "fuera de git, el hook no dice nada ni falla" "$out"
+
+# Un proyecto con varios lenguajes.
+P="$WORK/proyecto"; mkdir -p "$P" && cd "$P" && git init -q
+mkdir -p "src/api" "src/ui" "app" "node_modules/lib" "dist" "db" "srv" "con espacio" "rs" "lib"
+cat >src/api/orders.ts <<'EOF'
+export async function createOrder() {}
+export const ORDER_LIMIT = 10
+export interface Order { id: string }
+export type OrderId = string
+export default class OrderService {}
+export { helperA, helperB as renamed }
+function internal() {}
+EOF
+printf 'module.exports = {}\nexports.legacy = 1\n' >src/api/legacy.js
+printf 'export default function Cart() { return null }\n' >src/ui/Cart.tsx
+printf 'def top():\n    pass\n\nclass Repo:\n    def method(self):\n        pass\n' >app/repo.py
+printf 'package srv\n\nfunc Exported() {}\nfunc hidden() {}\ntype Server struct{}\nfunc (s *Server) Start() {}\n' >srv/server.go
+printf 'pub fn run() {}\npub struct Config;\nfn private() {}\n' >rs/lib.rs
+printf 'CREATE TABLE IF NOT EXISTS "orders" (id int);\ncreate index orders_idx on orders(id);\n' >db/001_init.sql
+printf 'export const z = 1\n' >"con espacio/archivo con espacio.ts"
+printf 'export const dep = 1\n' >node_modules/lib/index.js
+printf 'export const built = 1\n' >dist/bundle.js
+printf '%s\n' "$(head -c 3000 /dev/zero | tr '\0' 'x')" >lib/vendor.js
+printf '{}\n' >package-lock.json
+printf '# Proyecto\n' >README.md
+printf 'node_modules/\ndist/\n' >.gitignore
+git add -A && git commit -qm init
+cd "$ROOT"
+
+run --full
+[ "$code" -eq 0 ] && echo "$out" | grep -q "Índice armado" && ok "--full arma el índice" || fail "--full arma el índice" "$out"
+has_line "TypeScript: funciones, constantes, interfaces, tipos y la clase por defecto" "src/api/orders.ts" "createOrder, ORDER_LIMIT, Order, OrderId, OrderService"
+has_line "TypeScript: export { a, b as c }" "src/api/orders.ts" "helperA, renamed"
+if line "src/api/orders.ts" | grep -q "internal"; then fail "TypeScript: lo que no se exporta no aparece"; else ok "TypeScript: lo que no se exporta no aparece"; fi
+has_line "CommonJS" "src/api/legacy.js" "module.exports, legacy"
+has_line "export default function" "src/ui/Cart.tsx" "Cart"
+has_line "Python: funciones y clases de primer nivel" "app/repo.py" "top, Repo"
+if line "app/repo.py" | grep -q "method"; then fail "Python: los métodos no aparecen"; else ok "Python: los métodos no aparecen"; fi
+has_line "Go: solo lo exportado" "srv/server.go" "Exported, Server, Start"
+if line "srv/server.go" | grep -q "hidden"; then fail "Go: lo privado no aparece"; else ok "Go: lo privado no aparece"; fi
+has_line "Rust: lo público" "rs/lib.rs" "run, Config"
+has_line "SQL: tablas e índices" "db/001_init.sql" "orders, orders_idx"
+has_line "rutas con espacios" "con espacio/archivo con espacio.ts" "z"
+has_line "los archivos sin código también se listan" "README.md" ""
+has_line "código minificado: se lista sin símbolos" "lib/vendor.js" "(generado o minificado)"
+no_line "node_modules no se indexa" "node_modules/lib/index.js"
+no_line "lo ignorado por git no se indexa" "dist/bundle.js"
+no_line "los lockfiles no se indexan" "package-lock.json"
+[ -s "$P/.office/index/state" ] && grep -q "^commit=$(cd "$P" && git rev-parse HEAD)" "$P/.office/index/state" && ok "guarda el commit del índice" || fail "guarda el commit del índice"
+
+# Incremental: un archivo nuevo sin commitear, uno modificado, uno borrado y uno movido.
+C0=$(cd "$P" && git rev-parse HEAD)
+cd "$P"
+printf 'export function nuevo() {}\n' >src/api/payments.ts
+printf 'export async function createOrder() {}\nexport function cancelOrder() {}\n' >src/api/orders.ts
+git rm -q src/api/legacy.js
+git mv src/ui/Cart.tsx src/ui/ShoppingCart.tsx
+cd "$ROOT"
+run
+[ "$code" -eq 0 ] && echo "$out" | grep -q "Índice al día" && ok "actualizar: termina bien" || fail "actualizar: termina bien" "$out"
+has_line "actualizar: un archivo nuevo sin commitear aparece" "src/api/payments.ts" "nuevo"
+has_line "actualizar: un archivo modificado tiene sus símbolos nuevos" "src/api/orders.ts" "createOrder, cancelOrder"
+no_line "actualizar: un archivo borrado desaparece" "src/api/legacy.js"
+no_line "actualizar: un archivo movido deja su ruta vieja" "src/ui/Cart.tsx"
+has_line "actualizar: y aparece en la nueva" "src/ui/ShoppingCart.tsx" "Cart"
+has_line "actualizar: lo que no cambió sigue igual" "srv/server.go" "Exported"
+
+# --changes: lo agregado, borrado y movido desde un commit, por carpeta.
+run --changes "$C0"
+echo "$out" | grep -q '^src/api/  .*+ payments.ts' && echo "$out" | grep -q '^src/api/  .*- legacy.js' && ok "--changes: agregados y borrados, por carpeta" || fail "--changes: agregados y borrados, por carpeta" "$out"
+echo "$out" | grep -q 'Cart.tsx → src/ui/ShoppingCart.tsx' && ok "--changes: movidos" || fail "--changes: movidos" "$out"
+run --changes 0000000000000000000000000000000000000000
+[ "$code" -ne 0 ] && echo "$out" | grep -q "No encuentro el commit" && ok "--changes con un commit que no existe: lo explica" || fail "--changes con un commit que no existe" "$out"
+
+# Se deshacen los cambios sin commitear: el índice vuelve a como estaba.
+cd "$P" && git reset -q --hard && rm -f src/api/payments.ts && cd "$ROOT"
+run --hook
+[ "$code" -eq 0 ] && [ -z "$out" ] && ok "hook: actualiza sin decir nada" || fail "hook: actualiza sin decir nada" "$out"
+no_line "hook: un archivo nuevo que se borró desaparece" "src/api/payments.ts"
+has_line "hook: un archivo que se restauró vuelve" "src/api/legacy.js" "legacy"
+if line "src/api/orders.ts" | grep -q "cancelOrder"; then fail "hook: un archivo revertido vuelve a sus símbolos"; else ok "hook: un archivo revertido vuelve a sus símbolos"; fi
+
+# Un commit nuevo también se toma.
+cd "$P" && printf 'export const extra = 1\n' >src/api/extra.ts && git add -A && git commit -qm extra && cd "$ROOT"
+run
+has_line "actualizar: lo de un commit nuevo aparece" "src/api/extra.ts" "extra"
+
+# --dirs y --stats.
+run --dirs 1
+echo "$out" | grep -q '^src/  ' && echo "$out" | grep -q '^(raíz)' && ok "--dirs: resumen de carpetas" || fail "--dirs: resumen de carpetas" "$out"
+echo "$out" | grep -q '^src/api/' && fail "--dirs 1 no baja al segundo nivel" "$out" || ok "--dirs 1 no baja al segundo nivel"
+run --dirs 2
+echo "$out" | grep -q '^src/api/  [0-9]* archivos  \[ts×' && ok "--dirs 2: archivos y tipos por carpeta" || fail "--dirs 2: archivos y tipos por carpeta" "$out"
+run --stats
+echo "$out" | grep -q '^Archivos: [0-9]' && ok "--stats" || fail "--stats" "$out"
+
+# Sin índice, el hook no lo crea (cada proyecto lo activa con --full).
+P="$WORK/sin-indice"; mkdir -p "$P" && (cd "$P" && git init -q && printf 'export const a = 1\n' >a.ts && git add -A && git commit -qm a)
+run --hook
+[ "$code" -eq 0 ] && [ ! -e "$P/.office/index/files.tsv" ] && ok "hook sin índice: no hace nada" || fail "hook sin índice: no hace nada" "$out"
+
+[ "$FAILED" -eq 0 ] && echo "Todo bien." || echo "Hubo fallas."
+exit "$FAILED"
