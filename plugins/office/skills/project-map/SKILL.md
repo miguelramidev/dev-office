@@ -8,7 +8,7 @@ description: Mapa e índice del proyecto para dev-office - un mapa corto escrito
 Lo que más gasta en un proyecto que crece es buscar: un agente que no sabe dónde está algo abre carpetas, prueba búsquedas y lee archivos que no eran. Con dos piezas eso se evita, aun en una sesión nueva:
 
 - **El mapa** (`docs/project-map.md`, en git): qué hay en cada carpeta, dónde vive cada cosa y qué archivo sirve de modelo. Lo escribe un agente, es corto y se actualiza al cerrar las tareas que cambian la estructura.
-- **El índice** (`.office/index/files.tsv`, fuera de git): cada archivo con lo que exporta o declara (funciones, clases, tipos, tablas). Lo arma `project-index.sh`, que está en la misma carpeta que este archivo, sin ningún modelo. El hook de inicio de sesión lo pone al día solo, y solo procesa lo que cambió.
+- **El índice** (`.office/index/files.tsv`, fuera de git): cada archivo con lo que exporta o declara (funciones, clases, tipos, tablas). Lo arma `project-index.sh`, que está en la misma carpeta que este archivo, sin ningún modelo. Está siempre activo: el hook de inicio de sesión lo arma la primera vez y después lo pone al día solo, procesando únicamente lo que cambió. Se apaga con la variable de entorno `OFFICE_INDEX=off`.
 
 Si el `CLAUDE.md` del proyecto indica otra ruta para el mapa, usá esa.
 
@@ -18,7 +18,7 @@ Si el `CLAUDE.md` del proyecto indica otra ruta para el mapa, usá esa.
 2. **El índice:** usá Grep con el nombre que buscás sobre `.office/index/files.tsv`, nombrando el archivo exacto (por ejemplo, el patrón `createOrder` o `orders/`). Cada línea es `<ruta>	<símbolos>`. No lo leas entero: en un proyecto grande tiene miles de líneas.
 3. **Recién después,** si hace falta, Grep o Glob en el código, acotados a la carpeta que te dieron el mapa o el índice.
 
-Si el índice no existe, armalo (ver abajo). Si sospechás que está viejo (cambiaron archivos en esta misma sesión), actualizalo: `bash <carpeta de esta skill>/project-index.sh` tarda segundos.
+Si el índice no existe (la sesión empezó antes de instalar la oficina, o está apagado), armalo con `--full`. Si sospechás que está viejo (cambiaron archivos en esta misma sesión), actualizalo: `bash <carpeta de esta skill>/project-index.sh` tarda segundos.
 
 ## Crear el mapa (una vez por proyecto)
 
@@ -34,7 +34,7 @@ Sirve igual para un proyecto que empieza y para uno grande que ya existe: nunca 
    Para saber qué hace algo, usá el índice antes de abrir archivos.
 4. **Escribí `docs/project-map.md`** con la plantilla de abajo, **en hasta 80 líneas**. Si un área es muy grande (un paquete de un monorepo, una app entera), dejá en el mapa una línea por área y abrí su detalle en `docs/project-map/<área>.md` **recién cuando una tarea la toque por primera vez**, no antes.
 5. **Anotá el commit** en la primera línea del mapa: `<!-- map-commit: <hash de git rev-parse HEAD> -->`.
-6. **Enlazalo** en el `CLAUDE.md` del proyecto (y en el `AGENTS.md`, si existe, para Codex). Mostrale el cambio al CEO antes de hacerlo:
+6. **Enlazalo, si el proyecto lo quiere.** Los agentes de la oficina ya saben dónde buscarlo. Enlazarlo en el `CLAUDE.md` (y en el `AGENTS.md`, para Codex) sirve para que lo vean también las sesiones sin la oficina. Hacelo solo si el CEO lo aprueba:
 
    ```markdown
    ## Dónde está cada cosa
@@ -42,7 +42,7 @@ Sirve igual para un proyecto que empieza y para uno grande que ya existe: nunca 
    - Índice de archivos y símbolos (generado, fuera de git): buscá un nombre con Grep en `.office/index/files.tsv`.
    ```
 
-**Quién lo hace:** el PM no escribe archivos. Corre el paso 1 y le encarga los pasos 2 a 6 al redactor de documentación (`dept-docs:developer`), si está instalado, o si no al developer del departamento principal del proyecto. Le pasa la salida de `--dirs` y esta skill. Antes, el CEO tiene que aprobarlo, porque se agrega un archivo y se toca el `CLAUDE.md`.
+**Quién lo hace:** el PM no escribe archivos. Corre el paso 1 y le encarga los pasos 2 a 6 al redactor de documentación (`dept-docs:developer`), si está instalado, o si no al developer del departamento principal del proyecto. Le pasa la salida de `--dirs` y esta skill. No hace falta pedir permiso para crearlo: es parte de cómo trabaja la oficina. Se crea en la primera tarea y va en su PR, y el PM lo avisa en una línea del plan. Tocar el `CLAUDE.md`, en cambio, sí necesita aprobación (paso 6).
 
 ### Plantilla
 

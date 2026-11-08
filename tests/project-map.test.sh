@@ -120,10 +120,17 @@ echo "$out" | grep -q '^src/api/  [0-9]* archivos  \[ts×' && ok "--dirs 2: arch
 run --stats
 echo "$out" | grep -q '^Archivos: [0-9]' && ok "--stats" || fail "--stats" "$out"
 
-# Sin índice, el hook no lo crea (cada proyecto lo activa con --full).
+# Sin índice, el hook lo arma solo, y .office/ no aparece en git aunque el proyecto no lo ignore.
 P="$WORK/sin-indice"; mkdir -p "$P" && (cd "$P" && git init -q && printf 'export const a = 1\n' >a.ts && git add -A && git commit -qm a)
 run --hook
-[ "$code" -eq 0 ] && [ ! -e "$P/.office/index/files.tsv" ] && ok "hook sin índice: no hace nada" || fail "hook sin índice: no hace nada" "$out"
+[ "$code" -eq 0 ] && [ -z "$out" ] && grep -q "^a.ts	a$" "$P/.office/index/files.tsv" && ok "hook sin índice: lo arma solo, sin decir nada" || fail "hook sin índice: lo arma solo" "$out"
+[ -z "$(cd "$P" && git status --porcelain)" ] && ok "hook: .office/ queda fuera de git (exclude local)" || fail "hook: .office/ queda fuera de git" "$(cd "$P" && git status --porcelain)"
+grep -q '^\.office/$' "$P/.git/info/exclude" && [ ! -e "$P/.gitignore" ] && ok "hook: usa el exclude local, no toca el .gitignore" || fail "hook: usa el exclude local"
+run --hook
+[ "$(grep -c '^\.office/$' "$P/.git/info/exclude")" -eq 1 ] && ok "hook: no repite la línea del exclude" || fail "hook: no repite la línea del exclude"
+P="$WORK/apagado"; mkdir -p "$P" && (cd "$P" && git init -q && printf 'x\n' >a.txt && git add -A && git commit -qm a)
+out=$(cd "$P" && OFFICE_INDEX=off bash "$IDX" --hook 2>&1); code=$?
+[ "$code" -eq 0 ] && [ ! -e "$P/.office" ] && ok "OFFICE_INDEX=off apaga el índice automático" || fail "OFFICE_INDEX=off apaga el índice automático" "$out"
 
 [ "$FAILED" -eq 0 ] && echo "Todo bien." || echo "Hubo fallas."
 exit "$FAILED"

@@ -8,6 +8,15 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.52.0] - 2026-11-07
+
+### Cambiado
+
+- **El mapa y el índice del proyecto están siempre activos** (`office` 0.50.0).
+  - **El índice** lo arma solo el hook de inicio de sesión la primera vez, y después lo actualiza (`project-index` versión 2), sin que haya que correr nada. Se apaga con la variable de entorno `OFFICE_INDEX=off`. Si el proyecto no ignora `.office/`, el hook lo agrega al exclude local de git (`.git/info/exclude`), sin tocar el `.gitignore`, así no aparece como archivo nuevo.
+  - **El mapa** lo crea el PM en la primera tarea de cada proyecto, sin preguntar: lo avisa en una línea del plan y va en el PR de esa tarea. Enlazarlo en el `CLAUDE.md` pasa a ser opcional y solo con aprobación, porque los agentes de la oficina ya saben dónde buscarlo.
+  - `office-setup` y `save-tokens` (`token-check` versión 3) lo explican así.
+
 ## [0.51.0] - 2026-11-07
 
 ### Agregado

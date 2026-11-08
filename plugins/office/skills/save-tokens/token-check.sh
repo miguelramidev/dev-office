@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# token-check-version: 2
+# token-check-version: 3
 # Revisa la configuración del proyecto y de la oficina en busca de lo que más tokens hace
 # gastar a cada agente. No llama a ningún modelo: no gasta tokens.
 #
@@ -58,14 +58,13 @@ if [ -f "$MD" ] && grep -qE 'project-map[^ ]*\.md' "$MD"; then
 fi
 if [ -f "$MAP" ]; then
   echo "- ✅ **Mapa del proyecto:** ${MAP#$PROJECT/}, $(lines "$MAP") líneas."
-  [ -f "$MD" ] && ! grep -q 'project-map' "$MD" && echo "  - ⚠️ El CLAUDE.md no lo nombra: los agentes no lo van a encontrar. Agregá la sección \"Dónde está cada cosa\" de la skill \`office:project-map\`."
 else
-  echo "- ⚠️ **Mapa del proyecto:** no hay. Cada agente busca dónde está cada cosa, y eso crece con el proyecto. Crealo con la skill \`office:project-map\`: sirve igual para un proyecto empezado y de cualquier tamaño."
+  echo "- ⚠️ **Mapa del proyecto:** no hay. Cada agente busca dónde está cada cosa, y eso crece con el proyecto. El PM lo crea solo en la próxima tarea, o ya mismo con \`/office:project-map\`: sirve igual para un proyecto empezado y de cualquier tamaño."
 fi
 if [ -s "$PROJECT/.office/index/files.tsv" ]; then
   echo "- ✅ **Índice de archivos:** $(grep -c . "$PROJECT/.office/index/files.tsv") archivos; se actualiza solo al empezar cada sesión."
 else
-  echo "- ⚠️ **Índice de archivos:** no hay. Se arma en segundos y sin tokens con \`project-index.sh --full\` (skill \`office:project-map\`)."
+  echo "- ⚠️ **Índice de archivos:** no hay. Se arma solo al empezar la próxima sesión (si no, revisá que no esté apagado con \`OFFICE_INDEX=off\`), o ya mismo con \`project-index.sh --full\`, en segundos y sin tokens."
 fi
 
 # 3. Departamentos instalados: las skills de cada uno se suman al contexto de todos los agentes.
