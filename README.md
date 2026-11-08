@@ -34,7 +34,7 @@ Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). 
 | `/office:screenshot` | Captura cómo quedó un cambio visible (web en el navegador, app en el emulador) y te la manda por Telegram si el modo remoto está encendido. |
 | `/office:telegram` | Manejar la oficina desde Telegram: te llega el último mensaje del PM, le respondés desde el celular y aprobás los permisos con botones. |
 | `/office:usage` | Ver cuántos tokens y cuánto tiempo gastó cada agente en cada tarea, por agente y por proveedor. |
-| `/office:project-map` | Crear el mapa del proyecto (qué hay en cada carpeta) y el índice de archivos y símbolos, para que los agentes vayan directo a los archivos sin buscarlos. Sirve para proyectos nuevos y ya empezados, de cualquier tamaño. |
+| `/office:project-map` | El mapa del proyecto (qué hay en cada carpeta) y el índice de archivos y símbolos, para que los agentes vayan directo a los archivos sin buscarlos. Están siempre activos: el índice se arma solo al empezar cada sesión y el PM crea el mapa en la primera tarea. El comando sirve para crearlo antes o buscar algo a mano. Funciona en proyectos nuevos y ya empezados, de cualquier tamaño. |
 | `/office:save-tokens` | Revisar qué hace gastar tokens en el proyecto (un `CLAUDE.md` largo, tests sin acotar, departamentos o QA de más) y proponer qué cambiar. Ver la [guía para gastar menos tokens](docs/tokens.md). |
 | `/office:update` | Dejar el botón para actualizar la oficina en todos tus proyectos. |
 

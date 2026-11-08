@@ -304,12 +304,12 @@ Antes de abrir una ronda nueva por un hallazgo, compará el costo de la ronda (t
 Lo que más tokens gasta en un proyecto que crece es que cada agente busque dónde está cada cosa. Para eso está la skill `office:project-map`:
 
 - **El mapa** (`docs/project-map.md`): qué hay en cada carpeta, dónde vive cada cosa y qué archivo copiar de modelo.
-- **El índice** (`.office/index/files.tsv`): cada archivo con lo que exporta. Lo arma un script sin modelo y el hook de inicio de sesión lo actualiza solo.
+- **El índice** (`.office/index/files.tsv`): cada archivo con lo que exporta. Lo arma un script sin modelo, y el hook de inicio de sesión lo crea y lo actualiza solo.
 
 Cómo los usás:
 
 - **Al planear una tarea,** leé el mapa (o la sección del área) y buscá con Grep en el índice los nombres que aparecen en el pedido. Con eso escribís en el plan y en los encargos las rutas exactas y el modelo a copiar.
-- **Si el proyecto no tiene mapa,** proponéselo al CEO una vez, junto con las otras preguntas de la tarea. Sirve igual para un proyecto que empieza y para uno grande que ya existe. Con su aprobación, seguí la skill: vos armás el índice y encargás el mapa.
+- **Si el proyecto no tiene mapa,** crealo en la primera tarea, sin preguntar: avisalo en una línea del plan ("Creo el mapa del proyecto: una vez, va en este PR"). Sirve igual para un proyecto que empieza y para uno grande que ya existe. Seguí la skill: vos revisás el índice y encargás el mapa antes que el resto del trabajo, así los encargos de la tarea ya salen con las rutas exactas.
 - **Al cerrar la tarea,** si se agregaron, movieron o borraron archivos o carpetas, el developer que hizo el cambio actualiza el mapa en el mismo PR. Fijate en su reporte que lo hizo.
 
 ## Cómo delegar

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# project-index-version: 1
+# project-index-version: 2
 # Índice de archivos y símbolos del proyecto, para que los agentes encuentren dónde está cada
 # cosa sin recorrer carpetas. No llama a ningún modelo: no gasta tokens.
 #
@@ -10,8 +10,8 @@
 # Uso: bash project-index.sh [opción]
 #   (sin opción)        actualiza el índice: solo lo que cambió desde la última vez, o todo si no hay.
 #   --full              lo arma de cero.
-#   --hook              para el hook de inicio de sesión: actualiza solo si el proyecto ya tiene
-#                       índice, sin imprimir nada y sin fallar nunca.
+#   --hook              para el hook de inicio de sesión: lo arma si no existe o lo actualiza, sin
+#                       imprimir nada y sin fallar nunca. Se apaga con OFFICE_INDEX=off.
 #   --dirs [N]          resumen de carpetas hasta N niveles (2 por defecto): cuántos archivos, de
 #                       qué tipo y cuáles parecen de entrada. Sirve para escribir el mapa.
 #   --changes <commit>  archivos agregados, borrados o movidos desde ese commit (más lo que no está
@@ -216,7 +216,13 @@ case "$MODE" in
     say "Índice armado: $(grep -c . "$FILES") archivos en $(($(date +%s) - start)) s ($FILES)."
     ;;
   update | hook)
-    if [ "$MODE" = "hook" ] && [ ! -s "$FILES" ]; then exit 0; fi
+    if [ "$MODE" = "hook" ] && [ "${OFFICE_INDEX:-on}" = "off" ]; then exit 0; fi
+    # Que .office/ no aparezca como archivo nuevo en git, aunque el proyecto no lo ignore:
+    # se agrega al exclude local del repositorio (no se commitea).
+    if ! git check-ignore -q "$DIR/files.tsv" 2>/dev/null; then
+      ex=$(git rev-parse --git-path info/exclude 2>/dev/null | tr -d '\r')
+      [ -n "$ex" ] && { mkdir -p "$(dirname "$ex")"; printf '%s\n' ".office/" >>"$ex"; }
+    fi
     if [ -s "$FILES" ] && [ -s "$STATE" ]; then build_incremental; else build_full; fi
     say "Índice al día: $(grep -c . "$FILES") archivos ($FILES)."
     ;;

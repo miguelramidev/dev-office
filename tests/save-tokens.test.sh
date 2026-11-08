@@ -53,7 +53,7 @@ hasnt "CLAUDE.md corto: no lo marca largo" "Es largo"
 has "tests relacionados: lo reconoce" "Tiene un comando para correr solo los tests relacionados"
 has "salida corta: la reconoce" "Indica una salida corta"
 has "sin mapa: lo avisa" "**Mapa del proyecto:** no hay"
-has "sin índice: lo avisa" "**Índice de archivos:** no hay"
+has "sin índice: lo avisa" "**Índice de archivos:** no hay. Se arma solo"
 
 # Con mapa enlazado e índice.
 mkdir -p "$P3/docs" "$P3/.office/index"
