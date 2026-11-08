@@ -108,6 +108,13 @@ PM ──encargo──→ líder ──→ developer ──→ tester ──fall
 
 La skill `decisions` le da memoria a la oficina sin gastar tokens de más. Las notas viven en `docs/decisions/` del proyecto (o donde diga su `CLAUDE.md`): una por ticket que dejó algo que `git log` no cuenta (una decisión con su motivo, una sorpresa, una regla dicha de palabra). Un índice (`README.md`, una línea por nota, la más nueva arriba) es lo único que el PM lee al empezar; abre solo las notas que vienen al caso. El PM no escribe archivos: las guarda con `decisions.sh add`, que solo escribe dentro del proyecto y no pisa notas. Las notas se commitean (o se ignoran) como decida el CEO; son una pista, y si el código dice otra cosa, manda el código.
 
+## Tests de punta a punta (frontend)
+
+El tester de frontend escribe siempre tests de componentes y pantallas, rápidos y con la API simulada. Los e2e (Playwright o Cypress en web; Maestro, Detox o Appium en móvil) recorren un flujo entero y son lentos, así que se usan solo en los **flujos críticos**: iniciar sesión, pagar, el flujo principal y los que marque el `CLAUDE.md` del proyecto.
+
+- **Si el proyecto tiene e2e:** cuando el cambio toca un flujo crítico, el tester escribe o actualiza un e2e de ese flujo y corre solo los de los flujos tocados, con salida corta, contra el entorno de prueba. La suite e2e completa, solo si el `CLAUDE.md` lo pide o el cambio tocó algo que comparten todos los flujos.
+- **Si no tiene:** el tester no instala nada. Si el cambio toca un flujo crítico, lo avisa en su reporte, y el PM le propone al CEO configurarlos una vez como tarea aparte. Si el CEO dice que no, queda anotado como decisión y no se vuelve a proponer.
+
 ## Pruebas visuales y de accesibilidad
 
 La skill `dept-frontend:ui-checks` guía al tester de frontend cuando un cambio se ve. **Visual:** compara capturas contra referencias aprobadas con la herramienta que el proyecto ya tenga (Playwright, Storybook, Chromatic...); el tester nunca actualiza una referencia por su cuenta: una diferencia es un hallazgo hasta que el CEO dice que fue a propósito. **Accesibilidad:** corre axe o la herramienta equivalente (las críticas y serias bloquean) y revisa a mano lo que ninguna herramienta cubre (teclado, foco, etiquetas, tamaño de toque). QA suma al usuario que no ve, no oye o no puede usar las manos a sus ataques. Sin herramientas en el proyecto, el tester no instala nada: las propone. Costo: el modelo solo lee lo que falla.

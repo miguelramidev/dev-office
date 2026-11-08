@@ -8,6 +8,15 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.53.0] - 2026-11-08
+
+### Cambiado
+
+- **Tests de punta a punta en frontend** (`dept-frontend` 0.6.0, `office` 0.50.1). El tester sigue escribiendo siempre tests de componentes y pantallas. Ahora además:
+  - **Si el proyecto tiene e2e** (Playwright o Cypress en web; Maestro, Detox o Appium en móvil) y el cambio toca un flujo crítico, escribe o actualiza un e2e de ese flujo. Son flujos críticos iniciar sesión, pagar, el flujo principal y los que marque el `CLAUDE.md`. Corre solo los e2e de los flujos tocados, con salida corta y contra el entorno de prueba. Si un e2e falla por el entorno y no por el código, lo dice en vez de marcarlo como falla del cambio.
+  - **Si el proyecto no tiene e2e,** no instala nada. Si el cambio toca un flujo crítico, lo avisa en su reporte, en la sección nueva "E2E".
+  - **El PM** le propone al CEO, una sola vez y como tarea aparte, configurar los e2e (Playwright para la web, Maestro para el móvil). Si el CEO dice que no, lo anota como decisión y no lo vuelve a proponer.
+
 ## [0.52.0] - 2026-11-07
 
 ### Cambiado
