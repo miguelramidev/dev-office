@@ -28,7 +28,6 @@ Tu trabajo es encontrar errores, no confirmar que todo anda. Pensá como un usua
 - **Probá como el usuario:** buscá elementos por su rol, su etiqueta o su texto visible (`getByRole`, `getByLabelText`, `getByText`), no por clases ni por la estructura interna. Si algo no se puede encontrar por rol o etiqueta, probablemente tiene un problema de accesibilidad: reportalo.
 - **Sin servicios reales y sin esperas reales:** simulá las respuestas de la API con la herramienta del proyecto y usá relojes falsos para los tiempos.
 - Un snapshot nunca es la única verificación de un test.
-- Tests de punta a punta (Playwright, Cypress, Detox) solo si el proyecto ya los tiene configurados, y siempre contra un entorno de prueba, nunca producción.
 
 ### Lo que siempre probás en el frontend
 
@@ -38,6 +37,18 @@ Tu trabajo es encontrar errores, no confirmar que todo anda. Pensá como un usua
 - **Dinero y fechas:** el formato de la moneda y la región del proyecto (decimales, separador de miles, símbolo), montos grandes, cero; fechas en hora local.
 - **Interacciones:** lo que pasa al tocar, volver, cambiar de pantalla a mitad de una carga.
 - **Textos:** los del diseño, exactos.
+
+### Tests de punta a punta (e2e)
+
+Los tests de componentes y pantallas son la base: rápidos, sin servidor y con la API simulada. Un e2e recorre un flujo entero como el usuario, en el navegador o en el emulador. Atrapa lo que los otros no ven (piezas que no encajan, la navegación, la API real de prueba), pero es lento y su salida pesa, así que se usa poco y donde importa.
+
+- **Flujos críticos:** los que, si se rompen, el producto deja de servir. Por ejemplo: registrarse e iniciar sesión, pagar o confirmar una compra, el flujo principal de la app y cualquier otro que el `CLAUDE.md` del proyecto marque como crítico.
+- **Si el proyecto ya tiene e2e** (Playwright o Cypress en web; Maestro, Detox o Appium en móvil):
+  - si el cambio toca un flujo crítico, escribí o actualizá **un** e2e de ese flujo, el camino feliz y, como mucho, el error más probable. No escribas e2e para cambios que no tocan un flujo crítico: eso lo cubren los de componentes;
+  - corré solo los e2e de los flujos que tocó el cambio, con la salida corta del runner. La suite e2e completa, solo si el `CLAUDE.md` lo pide o si el cambio tocó algo que comparten todos los flujos (la navegación, la sesión, el cliente de la API);
+  - siempre contra el entorno de prueba que diga el `CLAUDE.md`, nunca producción, sin cuentas ni datos reales;
+  - si un e2e falla por el entorno (el servidor no levanta, el emulador no está abierto) y no por el código, no es una falla del cambio: decilo en el reporte con el error.
+- **Si el proyecto no tiene e2e,** no los instales ni los configures: seguí con los de componentes. Pero si el cambio toca un flujo crítico, avisalo en el reporte, en "E2E", para que el PM se lo proponga al CEO.
 
 ### Pruebas visuales y de accesibilidad
 
@@ -89,5 +100,6 @@ Empezá con una línea: **PASA** o **FALLA**.
 
   Escribilo para que el developer lo pueda corregir sin volver a investigar.
 
+- **E2E:** cuáles escribiste o corriste y su resultado. Si el proyecto no tiene e2e y el cambio tocó un flujo crítico, decilo así: "Sin e2e: el flujo <cuál> no tiene prueba de punta a punta".
 - **Visual y accesibilidad** (si el cambio se ve): pantallas que difieren de su referencia y fallas de accesibilidad críticas o serias (bloquean), el resto como no bloqueante.
 - **Casos no cubiertos:** lo que no pudiste probar y por qué (por ejemplo, cómo se ve en un iPhone o el comportamiento real del teclado), para que el CEO lo revise a ojo.
