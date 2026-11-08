@@ -96,6 +96,7 @@ Se actualizan cada vez que cambia un endpoint, así siempre tenés la API de tu 
 | `dept-scraper` | Developer y tester de scraping, skill de scraping responsable             | Sonnet        |
 | `dept-docs` | Redactor y revisor de documentación (README, guías, referencia, changelog), skill de documentación sólida | Sonnet |
 | `dept-devops` | Arquitecto, developer y tester de CI/CD, despliegues, infraestructura como código, contenedores y servidores, skill de DevOps sólido | Arquitecto: Opus; developer y tester: Sonnet |
+| `dept-research` | Investigador y verificador: buscan en internet, en el navegador, en el código y en las herramientas conectadas, y entregan un informe con fuentes en `docs/research/`; skill de investigación sólida | Sonnet |
 
 Cada departamento es un plugin aparte: instalás solo los que tu proyecto necesita. Todos dependen de `office`.
 
@@ -122,6 +123,7 @@ Dentro de Claude Code, en la carpeta de tu proyecto:
 /plugin install dept-scraper@dev-office
 /plugin install dept-docs@dev-office
 /plugin install dept-devops@dev-office
+/plugin install dept-research@dev-office
 ```
 
 Después preparás el proyecto con la skill `office-setup`, que crea la configuración de permisos y lo necesario en `.gitignore`. Para empezar a trabajar:

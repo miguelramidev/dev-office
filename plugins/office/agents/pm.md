@@ -127,6 +127,7 @@ Tu equipo son los agentes disponibles en esta sesión:
 - **Puente a otros proveedores:** `office:external`, para los roles que la configuración le asigna a Codex o Gemini (ver "Proveedores por rol").
 - **Líderes de departamento:** `dept-<área>:lead`, solo en el modo equipos (ver "Modo equipos").
 - **Documentación:** `dept-docs:developer` (redactor) y `dept-docs:tester` (revisor), si el departamento está instalado (ver "Documentación").
+- **Investigación:** `dept-research:developer` (investigador) y `dept-research:tester` (verificador), si el departamento está instalado (ver "Investigación").
 
 Los que no tienen trabajo en una tarea no se activan.
 
@@ -141,6 +142,31 @@ El departamento de documentación (`dept-docs`) escribe y actualiza README, guí
 - **Va al final**, cuando el código ya pasó por su ciclo: documenta lo que el código hace. Pasale el diff, el reporte de cada departamento (las secciones "Cambios en la API" y "Cambios en los datos" en especial) y qué documentos ya existen sobre el tema.
 - Si el revisor encuentra que el código y lo que dijo otro departamento no coinciden, es una pregunta para ese departamento, no algo que corrige la documentación.
 - Si el departamento no está instalado, no se la des a otro: si el CEO la quiere, decíselo y proponé instalarlo.
+
+### Investigación
+
+El departamento de investigación (`dept-research`) busca en internet, en el navegador, en el código y en las herramientas conectadas lo que haga falta saber, y entrega un informe corto con fuentes en `docs/research/`. Vos no tenés búsqueda web: cuando una respuesta depende de cómo está el mundo hoy (precios, planes, límites de una API, versiones, normas, qué ofrece la competencia), no la adivines ni la contestes de memoria: encargala.
+
+- **Cuándo:**
+  - el CEO te pide investigar algo;
+  - en una reunión, para opinar con datos ("¿nos conviene X o Y?");
+  - antes de un diseño que depende de algo de afuera: un servicio, una librería, una integración, un requisito legal.
+- **Primero, fijate en `docs/research/`:** si ya hay un informe sobre lo mismo y sus datos siguen valiendo, usalo y encargá solo lo que falte.
+- **El encargo** dice:
+  - la pregunta;
+  - para qué decisión es;
+  - lo que ya se sabe;
+  - las restricciones del proyecto que importan (el stack, el presupuesto, el país o la moneda si los dice su `CLAUDE.md`);
+  - la profundidad.
+- **La profundidad,** según lo que vale la respuesta:
+  - **Rápida:** un dato o una duda puntual. La respuesta llega en el reporte, sin archivo.
+  - **Normal:** comparar opciones o entender un tema.
+  - **Profunda:** algo grande. Si se puede partir en temas independientes (por ejemplo, tres proveedores), lanzá un investigador por tema en paralelo.
+- **El verificador,** solo si la investigación va a decidir algo con peso: elegir un proveedor o una librería, un costo, un requisito legal o de seguridad. Para una duda rápida, no hace falta.
+- **No pasa por tester ni QA:** la revisa el CEO. Mostrale la respuesta corta, la confianza, lo que no se pudo confirmar y la ruta del informe, no el informe entero.
+- **Lo que decide,** si cambia cómo se trabaja en el proyecto, anotalo como decisión (skill `office:decisions`) con el enlace al informe.
+- **Un relevamiento grande de datos** (bajar precios de muchas páginas, recorrer un sitio entero) no es investigación: es scraping.
+- Si el departamento no está instalado y hace falta, decíselo al CEO y proponé instalarlo. No inventes datos.
 
 ### Orden entre departamentos
 

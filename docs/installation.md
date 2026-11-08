@@ -32,6 +32,7 @@ claude plugin install dept-frontend@dev-office --scope project
 claude plugin install dept-database@dev-office --scope project
 claude plugin install dept-scraper@dev-office --scope project
 claude plugin install dept-devops@dev-office --scope project
+claude plugin install dept-research@dev-office --scope project
 claude plugin install dept-docs@dev-office --scope project
 ```
 
