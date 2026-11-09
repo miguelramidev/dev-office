@@ -119,9 +119,15 @@ case "$EVENT" in
             text: (($in.summary // (if ($in.message | type) == "string" then $in.message else "" end) // "") | tostring | gsub("[\\r\\n]+"; " ") | .[0:60]),
             body: ((if ($in.message | type) == "string" then $in.message elif $in.message == null then "" else ($in.message | tojson) end) | clip) }' | tr -d '\r')"
     else
-      emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" '
+      # path: la ruta del archivo (o la carpeta de una búsqueda) relativa al proyecto, para la
+      # vista "Proyecto", que muestra por dónde pasa cada agente.
+      emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" --arg proj "$PROJECT" '
+        def np: gsub("\\\\"; "/") | if test("^[A-Za-z]:/") then "/" + (.[0:1] | ascii_downcase) + .[2:] else . end;
         .tool_input as $in
+        | (($in.file_path // $in.notebook_path // (if (.tool_name == "Grep" or .tool_name == "Glob") then $in.path else null end)) // "") as $raw
+        | ($raw | tostring | np | if startswith($proj + "/") then .[($proj | length) + 1:] else . end) as $rel
         | { type: "tool", t: $t, agent: (.agent_id // null), agent_type: (.agent_type // null), tool: .tool_name,
+            path: (if $rel == "" or ($rel | startswith("/")) then null else $rel end),
             target: ((if $in.file_path then ($in.file_path | split("/") | last | split("\\") | last)
                       elif $in.notebook_path then ($in.notebook_path | split("/") | last)
                       elif $in.command then $in.command

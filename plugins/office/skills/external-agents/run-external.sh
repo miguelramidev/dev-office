@@ -247,8 +247,8 @@ finish() {
   local tok="${EXT_TOKENS:-}"
   [ -z "$tok" ] && [ -f "$LOG" ] && tok=$(tr '\r\n' '  ' <"$LOG" 2>/dev/null | grep -oiE 'tokens used[^0-9]*[0-9][0-9,.]*' | tail -n1 | grep -oE '[0-9][0-9,.]*$' | tr -d ',.')
   obs_emit --arg role "$ROLE" --arg prov "$PROVIDER" --arg model "${MODEL:-}" --arg effort "${EFFORT:-}" \
-    --argjson code "$STATUS" --arg text "$STATUS_TEXT" --argjson dur "${DURATION:-0}" --arg tok "$tok" \
-    '{type: "external", t: $t, role: $role, provider: $prov, model: $model, effort: $effort, code: $code, result: $text, duration: $dur, tokens: (if $tok == "" then null else ($tok | tonumber) end)}'
+    --argjson code "$STATUS" --arg text "$STATUS_TEXT" --argjson dur "${DURATION:-0}" --arg tok "$tok" --arg files "${CHANGED:-}" \
+    '{type: "external", t: $t, role: $role, provider: $prov, model: $model, effort: $effort, code: $code, result: $text, duration: $dur, tokens: (if $tok == "" then null else ($tok | tonumber) end), files: ($files | split("\n") | map(select(length > 0)) | .[0:200])}'
   write_summary
   mark_exit "$STATUS"
   exit "$STATUS"

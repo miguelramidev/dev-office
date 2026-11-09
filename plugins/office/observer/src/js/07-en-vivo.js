@@ -123,6 +123,7 @@
     if (restart) {
       if (state.liveSession !== sessKey) { state.liveSession = sessKey; state.agents.forEach(clearAnim); state.holds = {}; state.nextIdle = 0; state.courier = null; state.pizza = {}; }
       liveReset(sess);
+      graphReset();
       state.live = { t0, sess, teams: !!(sess && sess.teams), pmTokens: 0, claudeSub: 0, ext: { codex: 0, gemini: 0 }, route: [], fails: 0, leads: {},
         board: { ticket: sess && sess.ticket, branch: sess && sess.branch, tests: null, qa: null, pr: null } };
       state.feed = [];
@@ -215,6 +216,10 @@
       else if (e.type === "tool") {
         const label = toolLabel(e.tool, e.target);
         const seat = seatOfEvent(e.agent, e.agent_type);
+        if (e.path) {
+          const who = seat ? agent(seat) : null;
+          graphTouch(e.path, who ? who.label : "PM", who ? ROLE_COLORS[who.color] || "#8b6cd6" : "#f2c14e", /^(Edit|Write|MultiEdit|NotebookEdit)$/.test(e.tool) ? "edit" : "read", e.t, fresh);
+        }
         if (seat) Object.assign(agent(seat), { tool: label, lastAct: e.t, lastWhat: label });
         else if (!e.agent) {
           pmTool = label;
@@ -326,6 +331,10 @@
         if (prov in L.ext) L.ext[prov] += n;
         const seat = seatFor(e.role, prov);
         if (seat) { const a = agent(seat); a.tokens += n; a.ext += n; if (e.model) a.model = e.model; }
+        if (Array.isArray(e.files)) {
+          const who = seat ? agent(seat) : null, name = (who ? who.label : e.role) + " · " + (PROVIDERS[prov] ? PROVIDERS[prov].name : prov);
+          e.files.forEach(f => graphTouch(f, name, who ? ROLE_COLORS[who.color] || "#e08a3a" : "#e08a3a", "edit", e.t, fresh));
+        }
         feed(e, (PROVIDERS[prov] ? PROVIDERS[prov].name : prov) + " (" + e.role + "): " + (e.result || "terminó") + " en " + clock(e.duration || 0) + (n ? " · " + fmt(n) + " tokens" : "") + ".", e.code ? "alert" : "");
       }
       else if (e.type === "external_start") {

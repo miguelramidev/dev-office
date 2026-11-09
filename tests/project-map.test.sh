@@ -132,5 +132,59 @@ P="$WORK/apagado"; mkdir -p "$P" && (cd "$P" && git init -q && printf 'x\n' >a.t
 out=$(cd "$P" && OFFICE_INDEX=off bash "$IDX" --hook 2>&1); code=$?
 [ "$code" -eq 0 ] && [ ! -e "$P/.office" ] && ok "OFFICE_INDEX=off apaga el índice automático" || fail "OFFICE_INDEX=off apaga el índice automático" "$out"
 
+# Imports, grafo e impacto.
+P="$WORK/grafo"; mkdir -p "$P" && cd "$P" && git init -q
+mkdir -p src/api src/ui src/lib app/svc pkg/store web
+printf 'export function fmt() {}\n' >src/lib/format.ts
+printf "import { fmt } from '../lib/format'\nexport function createOrder() {}\n" >src/api/orders.ts
+printf "import { createOrder } from './orders.js'\nexport const pay = 1\n" >src/api/payments.ts
+printf "import { pay } from '@/api/payments'\nimport x from 'react'\nexport default function Cart() {}\n" >src/ui/Cart.tsx
+printf "import Cart from './Cart'\ntest('x', () => {})\n" >src/ui/Cart.test.tsx
+printf "export * from './api/orders'\n" >src/index.ts
+printf "import {\n  fmt,\n} from \"../src/lib/format\"\nconst y = require('../src/index')\n" >web/multi.js
+printf 'def helper():\n    pass\n' >app/svc/util.py
+printf 'from .util import helper\nfrom app.svc import util\nimport os\n' >app/svc/main.py
+printf 'module example.com/demo\n' >go.mod
+printf 'package store\nfunc Save() {}\n' >pkg/store/store.go
+printf 'package main\nimport (\n\t"fmt"\n\ts "example.com/demo/pkg/store"\n)\nfunc main() { s.Save() }\n' >main.go
+git add -A && git commit -qm init
+cd "$ROOT"
+run --full
+imp() { grep -qF "$1	$2" "$P/.office/index/imports.tsv"; }
+imp src/api/orders.ts src/lib/format.ts && ok "imports: ruta relativa sin extensión" || fail "imports: ruta relativa sin extensión" "$(cat "$P/.office/index/imports.tsv")"
+imp src/api/payments.ts src/api/orders.ts && ok "imports: './x.js' que en realidad es TypeScript" || fail "imports: './x.js' que es TypeScript"
+imp src/ui/Cart.tsx src/api/payments.ts && ok "imports: alias @/ a src/" || fail "imports: alias @/"
+grep -q "react" "$P/.office/index/imports.tsv" && fail "imports: los paquetes externos no entran" || ok "imports: los paquetes externos no entran"
+imp src/index.ts src/api/orders.ts && ok "imports: export … from" || fail "imports: export … from"
+imp web/multi.js src/lib/format.ts && imp web/multi.js src/index.ts && ok "imports: import de varias líneas y require" || fail "imports: varias líneas y require"
+imp app/svc/main.py app/svc/util.py && ok "imports: Python relativo y absoluto" || fail "imports: Python" "$(grep app/ "$P/.office/index/imports.tsv")"
+imp main.go pkg/store/ && ok "imports: Go, por carpeta del módulo" || fail "imports: Go" "$(grep go "$P/.office/index/imports.tsv")"
+grep -q '^OFFICE_GRAPH({' "$P/.office/observer/graph.js" && ok "grafo: arma .office/observer/graph.js" || fail "grafo: arma graph.js"
+if command -v node >/dev/null 2>&1; then
+  out=$(node -e 'global.OFFICE_GRAPH = g => { const bad = g.edges.filter(([a, b]) => !(a in g.files) || !(b in g.files)); console.log(g.files.length + " " + g.edges.length + " " + bad.length); }; require(process.argv[1])' "$P/.office/observer/graph.js")
+  [ "$(echo "$out" | cut -d' ' -f3)" = "0" ] && [ "$(echo "$out" | cut -d' ' -f2)" -ge 8 ] && ok "grafo: JSON válido y aristas a archivos que existen ($out)" || fail "grafo: JSON válido" "$out"
+fi
+run --impact src/lib/format.ts
+echo "$out" | grep -q "Lo importan directo (2)" && echo "$out" | grep -q "src/api/orders.ts" && ok "--impact: lo que importa directo" || fail "--impact: directo" "$out"
+echo "$out" | grep -A9 "indirectamente" | grep -q "src/ui/Cart.tsx" && ok "--impact: lo que depende indirectamente" || fail "--impact: indirecto" "$out"
+echo "$out" | grep -A3 "Tests relacionados" | grep -q "src/ui/Cart.test.tsx" && ok "--impact: los tests que lo cubren" || fail "--impact: tests" "$out"
+run --impact "$P/src/ui/Cart.tsx"
+echo "$out" | grep -q "Impacto de: src/ui/Cart.tsx" && echo "$out" | grep -q "Cart.test.tsx" && ok "--impact: acepta rutas absolutas" || fail "--impact: rutas absolutas" "$out"
+run --impact 'src\api\orders.ts'
+echo "$out" | grep -q "Impacto de: src/api/orders.ts" && ok "--impact: acepta rutas con \\ (Windows)" || fail "--impact: rutas de Windows" "$out"
+run --impact pkg/store/store.go
+echo "$out" | grep -q "main.go" && ok "--impact: Go, quien importa el paquete" || fail "--impact: Go" "$out"
+run --impact README-no-existe.md
+echo "$out" | grep -q "No están en el índice" && ok "--impact: avisa si el archivo no está" || fail "--impact: archivo que no está" "$out"
+run --impact
+[ "$code" -ne 0 ] && ok "--impact sin archivos: falla con el uso" || fail "--impact sin archivos"
+# Un archivo nuevo resuelve un import que antes no encontraba.
+cd "$P" && printf "import { later } from './later'\n" >src/api/uses-later.ts && cd "$ROOT"; run
+imp src/api/uses-later.ts src/api/later.ts && fail "imports: no inventa archivos que no existen" || ok "imports: no inventa archivos que no existen"
+cd "$P" && printf 'export const later = 1\n' >src/api/later.ts && cd "$ROOT"; run
+imp src/api/uses-later.ts src/api/later.ts && ok "imports: un archivo nuevo resuelve un import que antes no encontraba" || fail "imports: archivo nuevo resuelve import"
+run --stats
+echo "$out" | grep -q '^Imports dentro del proyecto: [1-9]' && ok "--stats cuenta los imports" || fail "--stats imports" "$out"
+
 [ "$FAILED" -eq 0 ] && echo "Todo bien." || echo "Hubo fallas."
 exit "$FAILED"

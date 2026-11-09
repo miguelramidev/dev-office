@@ -20,6 +20,8 @@ Para ver en qué se fueron los tokens, usá `/office:usage`. Para que la oficina
 
 - **Mapa e índice del proyecto** (skill `office:project-map`): un mapa corto en `docs/project-map.md` dice qué hay en cada carpeta y qué archivo copiar de modelo; un índice en `.office/index/files.tsv`, que arma un script sin gastar tokens y que está siempre activo (se crea y se actualiza solo al empezar cada sesión), dice en qué archivo está cada función, clase o tipo. El PM arma los encargos con las rutas exactas y los agentes no exploran. Es lo que frena que el consumo crezca con el proyecto.
 
+- **Qué depende de cada cambio:** el PM le pasa al tester y a QA la salida de `project-index.sh --impact`, que dice sin gastar tokens qué archivos dependen de lo que cambió y qué tests lo cubren. No exploran el código para averiguarlo.
+
 ## Lo que hacés vos
 
 0. **El mapa del proyecto** lo crea el PM en la primera tarea, sin que hagas nada. Si lo querés antes, `/office:project-map`. Sirve igual si el proyecto recién empieza o si ya es grande: nunca se lee entero.

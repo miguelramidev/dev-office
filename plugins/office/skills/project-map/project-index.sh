@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
-# project-index-version: 2
+# project-index-version: 3
 # Índice de archivos y símbolos del proyecto, para que los agentes encuentren dónde está cada
 # cosa sin recorrer carpetas. No llama a ningún modelo: no gasta tokens.
 #
 # Guarda en .office/index/ (fuera de git):
 #   files.tsv  una línea por archivo: <ruta>\t<lo que exporta o declara: funciones, clases, tipos...>
+#   imports.tsv  quién importa a quién: <archivo>\t<archivo o carpeta/ que importa>, solo dentro del
+#              proyecto (JavaScript y TypeScript, Python, Go y Dart).
 #   state      el commit del último índice y los archivos que tenían cambios sin commitear.
+# Y en .office/observer/graph.js, el grafo para la vista "Proyecto" del observer.
 #
 # Uso: bash project-index.sh [opción]
 #   (sin opción)        actualiza el índice: solo lo que cambió desde la última vez, o todo si no hay.
@@ -16,7 +19,9 @@
 #                       qué tipo y cuáles parecen de entrada. Sirve para escribir el mapa.
 #   --changes <commit>  archivos agregados, borrados o movidos desde ese commit (más lo que no está
 #                       commiteado), por carpeta. Sirve para actualizar el mapa.
-#   --stats             cuántos archivos y símbolos tiene el índice y de qué commit es.
+#   --impact <archivo>… qué archivos dependen de esos (directo e indirecto) y qué tests los cubren.
+#                       Sirve para saber qué probar y qué atacar sin explorar el código.
+#   --stats             cuántos archivos, símbolos e imports tiene el índice y de qué commit es.
 #
 # Para buscar: Grep del nombre en .office/index/files.tsv (por ejemplo "createOrder" o "orders/").
 # Funciona en Linux, macOS (bash 3.2 y el awk del sistema) y Windows con el bash de Git for Windows.
@@ -30,7 +35,8 @@ case "${1:-}" in
   --dirs) MODE="dirs"; ARG="${2:-2}" ;;
   --changes) MODE="changes"; ARG="${2:-}" ;;
   --stats) MODE="stats" ;;
-  -h | --help) sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  --impact) MODE="impact"; shift; IMPACT_ARGS=("$@") ;;
+  -h | --help) sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
   *) echo "Opción desconocida: $1 (mirá --help)." >&2; exit 1 ;;
 esac
 
@@ -46,6 +52,9 @@ cd "$ROOT" || fail "No se puede entrar a $ROOT."
 DIR=".office/index"
 FILES="$DIR/files.tsv"
 STATE="$DIR/state"
+RAW="$DIR/imports.raw.tsv"
+IMPORTS="$DIR/imports.tsv"
+GRAPH=".office/observer/graph.js"
 MAX_SYMS=30          # símbolos por archivo; el resto se resume en "…+N"
 MAX_LINES=4000       # líneas que se leen de cada archivo (lo de más abajo casi nunca declara nada nuevo)
 INCREMENTAL_LIMIT=3000
@@ -65,14 +74,16 @@ list_files() {
 }
 
 # Extrae los símbolos de los archivos que recibe por stdin (uno por línea) y escribe <ruta>\t<símbolos>.
+# Los imports, sin resolver (<ruta>\t<lo que importa>), van al archivo que recibe como argumento.
 extract() {
-  local list
+  local list rawout="$1"
+  : >>"$rawout"
   list=$(mktemp "${TMPDIR:-/tmp}/office-index.XXXXXX") || return 1
   # Solo los que existen y son archivos comunes.
   while IFS= read -r f; do [ -f "$f" ] && printf '%s\n' "$f"; done >"$list"
   if [ -s "$list" ]; then
     # Rutas con espacios: xargs con una ruta por línea.
-    tr '\n' '\0' <"$list" | xargs -0 awk -v maxs="$MAX_SYMS" -v maxl="$MAX_LINES" '
+    tr '\n' '\0' <"$list" | xargs -0 awk -v maxs="$MAX_SYMS" -v maxl="$MAX_LINES" -v rawout="$rawout" -v q="'" '
       function lang(f,  e) {
         e = tolower(f); sub(/.*\./, "", e)
         if (e ~ /^(js|jsx|ts|tsx|mjs|cjs|mts|cts|vue|svelte|astro)$/) return "js"
@@ -110,12 +121,36 @@ extract() {
         if (match(s, /^[A-Za-z_$][A-Za-z0-9_$]*/)) return substr(s, RSTART, RLENGTH)
         return ""
       }
-      FNR == 1 { flush(); cur = FILENAME; sub(/^\.\//, "", cur); L = lang(FILENAME); syms = ""; n = 0; skip = 0; split("", seen) }
+      BEGIN {
+        QS = "[\"" q "]"; NQ = "[^\"" q "]+"
+        RE_FROM = "(from|import)[ \t]*[(]?[ \t]*" QS NQ QS
+        RE_REQ = "require[ \t]*[(][ \t]*" QS NQ QS
+        RE_QUOTED = QS NQ QS
+      }
+      function unq(t) { sub("^[^\"" q "]*" QS, "", t); sub(QS "$", "", t); return t }
+      function imp(t) { if (t != "") print cur "\t" t >> rawout }
+      FNR == 1 { flush(); cur = FILENAME; sub(/^\.\//, "", cur); L = lang(FILENAME); syms = ""; n = 0; skip = 0; ingo = 0; split("", seen) }
       FNR > maxl || L == "" || skip { next }
       {
         line = $0; sub(/\r$/, "", line)
         # Una línea larguísima al principio: código minificado o generado. Se lista sin símbolos.
         if (FNR <= 5 && length(line) > 1500) { skip = 1; syms = "(generado o minificado)"; n = 0; next }
+        # Imports dentro del proyecto (los paquetes externos no importan para el grafo).
+        if (L == "js") {
+          s = line
+          while (match(s, RE_FROM)) { t = unq(substr(s, RSTART, RLENGTH)); s = substr(s, RSTART + RLENGTH); if (t ~ /^(\.|\/|@\/|~\/)/) imp(t) }
+          s = line
+          while (match(s, RE_REQ)) { t = unq(substr(s, RSTART, RLENGTH)); s = substr(s, RSTART + RLENGTH); if (t ~ /^(\.|\/|@\/|~\/)/) imp(t) }
+        } else if (L == "py") {
+          if (match(line, /^[ \t]*from[ \t]+[.A-Za-z0-9_]+[ \t]+import/)) { t = substr(line, RSTART, RLENGTH); sub(/^[ \t]*from[ \t]+/, "", t); sub(/[ \t]+import$/, "", t); imp(t) }
+          else if (match(line, /^import[ \t]+/)) { t = substr(line, RSTART + RLENGTH); k = split(t, parts, ","); for (i = 1; i <= k; i++) { p = parts[i]; sub(/^[ \t]+/, "", p); sub(/[ \t].*/, "", p); imp(p) } }
+        } else if (L == "go") {
+          if (ingo) { if (line ~ /^[ \t]*\)/) ingo = 0; else if (match(line, RE_QUOTED)) imp(unq(substr(line, RSTART, RLENGTH))) }
+          else if (line ~ /^import[ \t]*\(/) ingo = 1
+          else if (line ~ /^import[ \t]/ && match(line, RE_QUOTED)) imp(unq(substr(line, RSTART, RLENGTH)))
+        } else if (L == "dart") {
+          if (line ~ /^(import|export|part)[ \t]/ && match(line, RE_QUOTED)) imp(unq(substr(line, RSTART, RLENGTH)))
+        }
         if (L == "js") {
           if (match(line, /^[ \t]*export[ \t]+(default[ \t]+)?(declare[ \t]+)?(abstract[ \t]+)?(async[ \t]+)?(function\*?|class|const|let|var|interface|type|enum|namespace)[ \t]+/)) {
             add(ident(substr(line, RSTART + RLENGTH)))
@@ -181,8 +216,87 @@ write_state() {
 
 build_full() {
   mkdir -p "$DIR"
-  list_files | extract | sort -t "$(printf '\t')" -k1,1 >"$FILES.tmp" && mv -f "$FILES.tmp" "$FILES"
+  : >"$RAW.tmp"
+  list_files | extract "$RAW.tmp" | sort -t "$(printf '\t')" -k1,1 >"$FILES.tmp" && mv -f "$FILES.tmp" "$FILES"
+  sort -u "$RAW.tmp" >"$RAW" && rm -f "$RAW.tmp"
+  resolve_imports
   write_state
+}
+
+# Resuelve cada import a un archivo (o carpeta, en Go) del proyecto. Lo que no se encuentra
+# (paquetes externos, alias desconocidos) se descarta. Se rehace entero porque un archivo nuevo
+# puede resolver imports viejos, y es rápido.
+resolve_imports() {
+  local gomod dartpkg
+  gomod=$(sed -n 's/^module[[:space:]]*//p' go.mod 2>/dev/null | head -n1 | tr -d '\r ')
+  dartpkg=$(sed -n 's/^name:[[:space:]]*//p' pubspec.yaml 2>/dev/null | head -n1 | tr -d '\r "' | tr -d "'")
+  [ -f "$RAW" ] || : >"$RAW"
+  awk -F '\t' -v gomod="$gomod" -v dartpkg="$dartpkg" '
+    BEGIN { nj = split(".ts .tsx .js .jsx .mjs .cjs .mts .cts .vue .svelte .astro .d.ts", JX, " ") }
+    function norm(p,  n, parts, out, i, m, r) {
+      n = split(p, parts, "/"); m = 0
+      for (i = 1; i <= n; i++) { if (parts[i] == "" || parts[i] == ".") continue; if (parts[i] == "..") { if (m > 0) m--; continue } out[++m] = parts[i] }
+      r = ""; for (i = 1; i <= m; i++) r = r (i > 1 ? "/" : "") out[i]; return r
+    }
+    function dirof(p) { if (p ~ /\//) { sub(/\/[^\/]*$/, "", p); return p } return "" }
+    function join(d, x) { return d == "" ? x : d "/" x }
+    function try_js(b,  i, c) {
+      if (b in F) return b
+      for (i = 1; i <= nj; i++) if ((b JX[i]) in F) return b JX[i]
+      for (i = 1; i <= nj; i++) if ((b "/index" JX[i]) in F) return b "/index" JX[i]
+      if (b ~ /\.[mc]?[jt]sx?$/) { c = b; sub(/\.[mc]?[jt]sx?$/, "", c); return try_js(c) }
+      return ""
+    }
+    function py(p) {
+      if ((p ".py") in F) return p ".py"
+      if ((p "/__init__.py") in F) return p "/__init__.py"
+      if (("src/" p ".py") in F) return "src/" p ".py"
+      if (("src/" p "/__init__.py") in F) return "src/" p "/__init__.py"
+      return ""
+    }
+    NR == FNR { F[$1] = 1; D[dirof($1)] = 1; next }
+    {
+      src = $1; spec = $2; sub(/\?.*$/, "", spec); e = tolower(src); sub(/.*\./, "", e); to = ""
+      if (e ~ /^(js|jsx|ts|tsx|mjs|cjs|mts|cts|vue|svelte|astro)$/) {
+        if (spec ~ /^\./) to = try_js(norm(join(dirof(src), spec)))
+        else if (spec ~ /^[@~]\//) { x = substr(spec, 3); to = try_js(norm("src/" x)); if (to == "") to = try_js(norm(x)) }
+        else if (spec ~ /^\//) to = try_js(norm(spec))
+      } else if (e == "py") {
+        if (spec ~ /^\./) {
+          match(spec, /^\.+/); dots = RLENGTH; rest = substr(spec, dots + 1); gsub(/\./, "/", rest)
+          base = dirof(src); for (i = 1; i < dots; i++) base = dirof(base)
+          to = py(norm(join(base, rest)))
+        } else { x = spec; gsub(/\./, "/", x); to = py(x) }
+      } else if (e == "go") {
+        if (gomod != "" && spec == gomod) { if ("" in D) to = "/" }
+        else if (gomod != "" && index(spec, gomod "/") == 1) { d = substr(spec, length(gomod) + 2); if (d in D) to = d "/" }
+      } else if (e == "dart") {
+        if (dartpkg != "" && index(spec, "package:" dartpkg "/") == 1) { x = "lib/" substr(spec, length("package:" dartpkg "/") + 1); if (x in F) to = x }
+        else if (spec !~ /^[a-z]+:/) { x = norm(join(dirof(src), spec)); if (x in F) to = x }
+      }
+      if (to != "" && to != src && to != dirof(src) "/") print src "\t" to
+    }' "$FILES" "$RAW" | sort -u >"$IMPORTS.tmp" && mv -f "$IMPORTS.tmp" "$IMPORTS"
+}
+
+# El grafo para la vista "Proyecto" del observer: los archivos y quién importa a quién, como índices.
+write_graph() {
+  mkdir -p "$(dirname "$GRAPH")"
+  awk -F '\t' -v now="$(date +%s)" '
+    BEGIN { n = 0; ne = 0 }
+    function esc(x) { gsub(/\\/, "\\\\", x); gsub(/"/, "\\\"", x); return x }
+    function dirof(p) { if (p ~ /\//) { sub(/\/[^\/]*$/, "", p); return p } return "" }
+    NR == FNR { idx[$1] = n; name[n] = $1; d = dirof($1); if (!(d in firstOf)) firstOf[d] = n; n++; next }
+    {
+      a = $1; b = $2
+      if (!(a in idx)) next
+      if (b ~ /\/$/) { b = substr(b, 1, length(b) - 1); if (!(b in firstOf)) next; j = firstOf[b] } else { if (!(b in idx)) next; j = idx[b] }
+      e = e (ne++ ? "," : "") "[" idx[a] "," j "]"
+    }
+    END {
+      printf "OFFICE_GRAPH({\"v\":1,\"t\":%s,\"files\":[", now
+      for (i = 0; i < n; i++) printf "%s\"%s\"", (i ? "," : ""), esc(name[i])
+      printf "],\"edges\":[%s]});\n", e
+    }' "$FILES" "$IMPORTS" >"$GRAPH.tmp" 2>/dev/null && mv -f "$GRAPH.tmp" "$GRAPH"
 }
 
 build_incremental() {
@@ -197,15 +311,18 @@ build_incremental() {
     cat "$DIR/dirty" 2>/dev/null
   } | tr -d '\r' | sort -u >"$changed"
   n=$(grep -c . "$changed")
-  if [ "$n" -eq 0 ]; then rm -f "$changed"; write_state; return; fi
+  if [ "$n" -eq 0 ]; then rm -f "$changed"; [ -f "$IMPORTS" ] || resolve_imports; write_state; return; fi
   if [ "$n" -gt "$INCREMENTAL_LIMIT" ]; then rm -f "$changed"; build_full; return; fi
   tmp=$(mktemp "${TMPDIR:-/tmp}/office-index.XXXXXX")
   # Se sacan las líneas de los archivos que cambiaron y se vuelven a extraer los que siguen existiendo
   # (y no son ignorados ni de los que no se indexan).
   awk -F '\t' 'NR == FNR { ch[$0] = 1; next } !($1 in ch)' "$changed" "$FILES" >"$tmp"
-  list_files | awk 'NR == FNR { ch[$0] = 1; next } ($0 in ch)' "$changed" - | extract >>"$tmp"
+  awk -F '\t' 'NR == FNR { ch[$0] = 1; next } !($1 in ch)' "$changed" "$RAW" >"$RAW.tmp"
+  list_files | awk 'NR == FNR { ch[$0] = 1; next } ($0 in ch)' "$changed" - | extract "$RAW.tmp" >>"$tmp"
   sort -t "$(printf '\t')" -k1,1 -u "$tmp" >"$FILES.tmp" && mv -f "$FILES.tmp" "$FILES"
+  sort -u "$RAW.tmp" >"$RAW" && rm -f "$RAW.tmp"
   rm -f "$tmp" "$changed"
+  resolve_imports
   write_state
 }
 
@@ -213,6 +330,7 @@ case "$MODE" in
   full)
     start=$(date +%s)
     build_full
+    write_graph
     say "Índice armado: $(grep -c . "$FILES") archivos en $(($(date +%s) - start)) s ($FILES)."
     ;;
   update | hook)
@@ -223,15 +341,67 @@ case "$MODE" in
       ex=$(git rev-parse --git-path info/exclude 2>/dev/null | tr -d '\r')
       [ -n "$ex" ] && { mkdir -p "$(dirname "$ex")"; printf '%s\n' ".office/" >>"$ex"; }
     fi
-    if [ -s "$FILES" ] && [ -s "$STATE" ]; then build_incremental; else build_full; fi
+    # Un índice de una versión anterior (sin imports) se arma de cero una vez.
+    if [ -s "$FILES" ] && [ -s "$STATE" ] && [ -f "$RAW" ]; then build_incremental; else build_full; fi
+    write_graph
     say "Índice al día: $(grep -c . "$FILES") archivos ($FILES)."
     ;;
   stats)
     [ -s "$FILES" ] || { echo "Este proyecto todavía no tiene índice. Armalo con: bash $0 --full"; exit 0; }
     echo "Archivos: $(grep -c . "$FILES")"
     echo "Con símbolos: $(awk -F '\t' '$2 != "" && $2 !~ /^\(/' "$FILES" | grep -c .)"
+    echo "Imports dentro del proyecto: $(grep -c . "$IMPORTS" 2>/dev/null || echo 0)"
     echo "Commit: $(sed -n 's/^commit=//p' "$STATE" | cut -c1-12)"
     echo "Actualizado: $(sed -n 's/^updated=//p' "$STATE")"
+    ;;
+  impact)
+    [ "${#IMPACT_ARGS[@]}" -gt 0 ] || fail "Faltan los archivos: --impact <archivo> [<archivo>…] (rutas del proyecto)."
+    if [ ! -s "$FILES" ] || [ ! -f "$RAW" ]; then build_full; write_graph; fi
+    # Rutas relativas al proyecto, con / y sin ./ adelante, aunque vengan absolutas o con \.
+    targets=""
+    for a in "${IMPACT_ARGS[@]}"; do
+      a="${a//\\//}"; a="${a#"$ROOT"/}"; a="${a#./}"
+      targets="$targets$a"$'\n'
+    done
+    printf '%s' "$targets" | awk -F '\t' -v maxn=30 '
+      function dirof(p) { if (p ~ /\//) { sub(/\/[^\/]*$/, "", p); return p } return "" }
+      function istest(p) { return p ~ /(^|\/)(__tests__|tests?|spec|e2e)\// || p ~ /[._-](test|spec|e2e)\.[A-Za-z]+$/ || p ~ /(^|\/)test_[^\/]*\.py$/ || p ~ /_test\.go$/ }
+      function base(p) { sub(/.*\//, "", p); sub(/\.[^.]*$/, "", p); sub(/[._-](test|spec|e2e)$/, "", p); sub(/^test_/, "", p); sub(/_test$/, "", p); return p }
+      function show(title, list, cnt,  i, out) {
+        if (cnt == 0) return
+        printf "%s (%d):\n", title, cnt
+        for (i = 1; i <= cnt && i <= maxn; i++) printf "  %s\n", list[i]
+        if (cnt > maxn) printf "  …y %d más\n", cnt - maxn
+      }
+      FILENAME == "-" { if ($0 != "") { T[$0] = 1; nt++; tl = tl (tl == "" ? "" : ", ") $0 } next }
+      FILENAME ~ /files\.tsv$/ { all[++na] = $1; known[$1] = 1; next }
+      {
+        # Aristas al revés: de lo importado a quien lo importa. En Go, el import es la carpeta.
+        to = $2; from = $1
+        if (to ~ /\/$/) { dk = substr(to, 1, length(to) - 1); rdir[dk] = rdir[dk] "\n" from } else rev[to] = rev[to] "\n" from
+      }
+      END {
+        for (t in T) { lvl[t] = 0; q[++qn] = t; if (!(t in known)) unknown = unknown (unknown == "" ? "" : ", ") t }
+        # Hasta 5 niveles: los archivos se muestran hasta el 3 (directo y dos de indirecto), y
+        # los tests hasta el 5, porque suelen estar al final de la cadena.
+        for (h = 1; h <= qn; h++) {
+          cur = q[h]; if (lvl[cur] >= 5) continue
+          s = rev[cur] (dirof(cur) in rdir ? rdir[dirof(cur)] : "")
+          k = split(s, fr, "\n")
+          for (i = 1; i <= k; i++) { f = fr[i]; if (f == "" || (f in lvl)) continue; lvl[f] = lvl[cur] + 1; q[++qn] = f }
+        }
+        # Tests: los que dependen del cambio y los que se llaman como lo cambiado.
+        for (t in T) tb[base(t)] = 1
+        for (i = 1; i <= na; i++) { f = all[i]; if (istest(f) && !(f in T) && (base(f) in tb)) { if (!(f in lvl)) lvl[f] = 9 } }
+        for (h = 1; h <= qn; h++) { f = q[h]; if (f in T) continue; if (istest(f)) { tests[++ntst] = f; continue } if (lvl[f] == 1) direct[++nd] = f; else if (lvl[f] <= 3) indirect[++ni] = f }
+        for (f in lvl) if (lvl[f] == 9) tests[++ntst] = f
+        printf "Impacto de: %s\n", tl
+        if (unknown != "") printf "No están en el índice (¿archivos nuevos sin guardar o fuera del proyecto?): %s\n", unknown
+        if (nd + ni + ntst == 0) { print "Nadie en el proyecto importa estos archivos (o el lenguaje no está en el grafo: JavaScript, TypeScript, Python, Go y Dart)."; exit }
+        show("Lo importan directo", direct, nd)
+        show("Dependen indirectamente (hasta 3 niveles)", indirect, ni)
+        show("Tests relacionados", tests, ntst)
+      }' - "$FILES" "$IMPORTS"
     ;;
   dirs)
     [ -s "$FILES" ] || build_full

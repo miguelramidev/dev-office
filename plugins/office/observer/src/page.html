@@ -29,6 +29,7 @@
     <button type="button" data-open="actividad" aria-pressed="false" aria-controls="drawer">Actividad <b class="count" id="hud-unread" hidden></b></button>
     <button type="button" data-open="tokens" aria-pressed="false" aria-controls="drawer">Tokens <b id="hud-tokens"></b></button>
     <button type="button" data-open="tienda" aria-pressed="false" aria-controls="drawer">Tienda <b id="hud-shop"></b></button>
+    <button type="button" id="btn-graph" aria-pressed="false" aria-controls="graph">Proyecto</button>
     <button type="button" id="btn-summary">Cierre del día</button>
     <div class="settings-wrap">
       <button type="button" id="btn-settings" aria-expanded="false" aria-controls="settings" aria-label="Ajustes">Ajustes</button>
@@ -53,6 +54,20 @@
 
   <div class="notice" id="notice" hidden><p>Todavía no hay actividad de la oficina en este proyecto. Abrí una sesión con <code>claude --agent office:pm</code> y esta página se actualiza sola. Mientras tanto, mirá la demo.</p><button type="button" id="notice-close">Entendido</button></div>
   <div class="hint" id="hint">Tocá un empleado o el tablero del pasillo. Arriba a la derecha están el equipo, la actividad, los tokens y la tienda.</div>
+
+  <section class="graph" id="graph" hidden aria-label="Proyecto: los archivos, quién importa a quién y por dónde pasan los agentes">
+    <header>
+      <h2>Proyecto</h2>
+      <input type="search" id="graph-search" placeholder="Buscar un archivo…" aria-label="Buscar un archivo">
+      <button type="button" id="graph-center">Centrar</button>
+      <button type="button" id="graph-collapse">Contraer todo</button>
+      <div class="graph-legend" id="graph-legend"></div>
+      <button type="button" id="graph-close" aria-label="Cerrar el grafo">✕</button>
+    </header>
+    <canvas id="graph-canvas"></canvas>
+    <p class="graph-status" id="graph-status"></p>
+    <aside class="graph-side" id="graph-side" hidden></aside>
+  </section>
 
   <aside class="drawer" id="drawer" role="dialog" aria-label="Panel de la oficina" hidden>
     <header>
