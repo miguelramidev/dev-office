@@ -154,6 +154,74 @@ native_path() {
   fi
 }
 
+# --- Carpetas de herramientas que Codex tiene que poder escribir ---------------------------
+# El sandbox de Codex solo deja escribir en la carpeta del proyecto. Algunas herramientas escriben
+# además en su instalación o en una caché (Flutter en su bin/cache y su bloqueo de inicio, los
+# paquetes de Dart en la caché de pub, Gradle en ~/.gradle) y, si no pueden, se quedan esperando
+# hasta que se acaba el tiempo. Se buscan según lo que usa el proyecto y donde estén instaladas en
+# esta máquina (Windows, macOS o Linux; con fvm, Homebrew, asdf, mise o a mano), sin rutas fijas.
+# OFFICE_CODEX_TOOL_DIRS=off lo apaga; OFFICE_CODEX_WRITABLE suma carpetas propias, separadas por ";".
+to_posix() {
+  if [ "$ON_WINDOWS" -eq 1 ] && command -v cygpath >/dev/null 2>&1; then cygpath -u "$1" | tr -d '\r'; else printf '%s' "$1"; fi
+}
+resolve_link() {   # sigue los enlaces simbólicos sin depender de readlink -f (que macOS no siempre tiene)
+  local p="$1" i=0 l
+  while [ -L "$p" ] && [ "$i" -lt 20 ]; do
+    l=$(readlink "$p")
+    case "$l" in /*) p="$l" ;; *) p="$(dirname "$p")/$l" ;; esac
+    i=$((i + 1))
+  done
+  printf '%s' "$p"
+}
+flutter_root() {
+  local p r
+  # fvm deja el SDK del proyecto enlazado en .fvm/flutter_sdk.
+  if [ -e "$PROJECT/.fvm/flutter_sdk" ]; then
+    r=$(resolve_link "$PROJECT/.fvm/flutter_sdk")
+    [ -f "$r/bin/flutter" ] && { printf '%s\n' "$r"; return 0; }
+  fi
+  p=$(command -v flutter 2>/dev/null) || return 0
+  r=$(dirname "$(dirname "$(resolve_link "$p")")")
+  if [ -f "$r/bin/flutter" ] && [ -d "$r/packages/flutter" ]; then printf '%s\n' "$r"; return 0; fi
+  # Un atajo que no está dentro del SDK (asdf, mise, un script propio): se le pregunta a Flutter
+  # dónde está, con un tope de tiempo para no colgarse (si no hay "timeout", no se pregunta).
+  command -v timeout >/dev/null 2>&1 || return 0
+  r=$(timeout 30 flutter --version --machine 2>/dev/null | tr -d '\r' | sed -n 's/.*"flutterRoot"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1 | sed 's#\\\\#/#g')
+  [ -n "$r" ] && { to_posix "$r"; echo; }
+  return 0
+}
+tool_dirs() {
+  [ "${OFFICE_CODEX_TOOL_DIRS:-on}" = "off" ] && return 0
+  local base d extra
+  {
+    if [ -f "$PROJECT/pubspec.yaml" ]; then
+      flutter_root
+      [ -n "${PUB_CACHE:-}" ] && { to_posix "$PUB_CACHE"; echo; }
+      for base in "${LOCALAPPDATA:-}" "${APPDATA:-}"; do
+        [ -n "$base" ] || continue
+        base=$(to_posix "$base")
+        for d in Pub/Cache .dart-tool .dartServer .flutter .flutter_settings; do echo "$base/$d"; done
+      done
+      for d in .pub-cache .dart-tool .dartServer .flutter .flutter-devtools .flutter_settings; do echo "$HOME/$d"; done
+    fi
+    # Android y Java con Gradle (también lo usa Flutter para compilar en Android).
+    if [ -d "$PROJECT/android" ] || ls "$PROJECT"/build.gradle* "$PROJECT"/settings.gradle* >/dev/null 2>&1; then
+      echo "${GRADLE_USER_HOME:-$HOME/.gradle}"
+      echo "$HOME/.android"
+    fi
+    if [ -n "${OFFICE_CODEX_WRITABLE:-}" ]; then
+      printf '%s\n' "$OFFICE_CODEX_WRITABLE" | tr ';' '\n' | while IFS= read -r extra; do
+        [ -n "$extra" ] && { to_posix "${extra//\\//}"; echo; }
+      done
+    fi
+  } | tr -d '\r' | while IFS= read -r d; do
+    d="${d%/}"
+    { [ -n "$d" ] && [ -d "$d" ]; } || continue
+    case "$d/" in "$PROJECT"/*) continue ;; esac
+    printf '%s\n' "$d"
+  done | awk '!seen[$0]++'
+}
+
 RUN_DIR="${RUN_DIR//\\//}"
 case "$RUN_DIR" in
   /* | [A-Za-z]:/*) ;;
@@ -215,6 +283,10 @@ write_summary() {
       printf '%s\n' "$CHANGES" | sed 's/^/  /'
     else
       echo "  (ninguno)"
+    fi
+    if [ -n "${TOOL_DIRS:-}" ]; then
+      echo "Carpetas de herramientas que Codex pudo escribir (fuera del proyecto):"
+      printf '%s\n' "$TOOL_DIRS" | sed 's/^/  /'
     fi
     if [ -n "${OTHERS:-}" ]; then
       echo "Editados por otros agentes de la oficina mientras trabajaba (no se le cuentan):"
@@ -418,6 +490,7 @@ EOF
       ;;
     codex)
       echo "- Trabajás en un sandbox sin red. Si un comando falla por falta de red, no insistas: decilo en el reporte."
+      echo "- **No esperes a un comando que se cuelga.** Si un comando queda esperando (por ejemplo \"Waiting for another flutter command to release the startup lock\", una descarga o un servidor que no responde) o el sandbox lo bloquea, cortalo a los 2 minutos como mucho, no lo reintentes y seguí con el resto del trabajo. Decilo en tu reporte, en la verificación: las pruebas las vuelve a correr el tester de la oficina. Un encargo que se queda esperando se corta por tiempo y pierde todo lo hecho."
       ;;
   esac
 }
@@ -488,9 +561,21 @@ build_cmd() {
       # administrador. OFFICE_CODEX_ARGS va después, así que lo puede cambiar.
       WIN_ARGS=()
       [ "$ON_WINDOWS" -eq 1 ] && WIN_ARGS=(-c 'windows.sandbox="unelevated"')
+      ROOT_ARGS=()
+      TOOL_DIRS=""
+      if [ "$SANDBOX" = "workspace-write" ]; then
+        TOOL_DIRS=$(tool_dirs)
+        if [ -n "$TOOL_DIRS" ]; then
+          local roots="" d
+          while IFS= read -r d; do roots="$roots${roots:+,}\"$(native_path "$d")\""; done <<EOF
+$TOOL_DIRS
+EOF
+          ROOT_ARGS=(-c "sandbox_workspace_write.writable_roots=[$roots]")
+        fi
+      fi
       # shellcheck disable=SC2206 # las opciones extra se separan por espacios a propósito
       CMD=(codex -a never exec -s "$SANDBOX" --skip-git-repo-check -C "$(native_path "$PROJECT")" -o "$(native_path "$OUTPUT")"
-        ${MODEL:+-m "$MODEL"} ${EFFORT:+-c "model_reasoning_effort=\"$EFFORT\""} ${WIN_ARGS[@]+"${WIN_ARGS[@]}"} ${OFFICE_CODEX_ARGS:-} -)
+        ${MODEL:+-m "$MODEL"} ${EFFORT:+-c "model_reasoning_effort=\"$EFFORT\""} ${WIN_ARGS[@]+"${WIN_ARGS[@]}"} ${ROOT_ARGS[@]+"${ROOT_ARGS[@]}"} ${OFFICE_CODEX_ARGS:-} -)
       ;;
     gemini)
       # Antigravity CLI: el encargo es largo, así que se le pide que lo lea del archivo.

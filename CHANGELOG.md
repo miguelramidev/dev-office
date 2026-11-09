@@ -8,6 +8,29 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.57.0] - 2026-11-09
+
+### Cambiado
+
+Ajustes a partir de otra tarea real medida con `/office:usage` (`office` 0.54.0):
+
+- **El tester y QA ya no se retoman: cada vuelta es un agente nuevo con un encargo corto.** Lleva los archivos de la vuelta, qué cambió, qué depende del cambio y qué verificar.
+  - **El dato:** un tester retomado cinco veces llegó a cargar un millón de tokens, y los nuevos con encargo corto gastaron entre 50k y 160k.
+  - **La excepción** es la vuelta inmediata (menos de 5 minutos), con la caché todavía fresca.
+  - **El developer** se sigue retomando, porque necesita recordar el código.
+  - Los líderes del modo equipos hacen lo mismo con su tester, y el de investigación con su verificador (`dept-backend` 0.3.9, `dept-database` 0.2.9, `dept-devops` 0.3.9, `dept-docs` 0.1.7, `dept-frontend` 0.6.4, `dept-research` 0.1.2, `dept-scraper` 0.2.9).
+- **QA en `Modo: verificación`.** Verificar una corrección costaba 330k por vuelta, porque el QA cargaba todo el PR. Ahora un QA nuevo lee solo los archivos de la corrección, reproduce el hallazgo, prueba uno o dos bordes y responde CORREGIDO o SIGUE FALLANDO. La revisión completa se hace una sola vez.
+
+### Agregado
+
+- **Codex puede usar herramientas que escriben fuera del proyecto.** Flutter se colgaba dentro del sandbox de Codex, esperando su bloqueo de inicio, y un encargo se cortó a los 30 minutos sin escribir nada. Ahora el puente busca en la máquina las carpetas que necesita cada herramienta, según lo que usa el proyecto, y se las abre al sandbox (`sandbox_workspace_write.writable_roots`):
+  - **Flutter y Dart:** el SDK y la caché de pub. El SDK lo encuentra con fvm, Homebrew, asdf, mise o a mano, siguiendo enlaces o preguntándole a Flutter, en Windows, macOS y Linux.
+  - **Gradle y Android:** sus carpetas.
+  - **Carpetas propias:** con `OFFICE_CODEX_WRITABLE`. Se apaga con `OFFICE_CODEX_TOOL_DIRS=off`.
+
+  El resumen del puente dice qué carpetas abrió.
+- **Codex no espera a un comando que se cuelga:** lo corta a los 2 minutos como mucho, sigue con el resto y lo anota en su reporte.
+
 ## [0.56.0] - 2026-11-09
 
 ### Cambiado

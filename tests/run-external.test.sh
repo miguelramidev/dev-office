@@ -512,6 +512,78 @@ new_project
 OFFICE_GEMINI_RETRY=0 FAKE_MODE=denied-once check 3 "gemini: OFFICE_GEMINI_RETRY=0 apaga el reintento" frontend.developer gemini
 expect_not "$WORK/out.txt" "Segundo intento" "gemini: sin reintento"
 
+# --- Carpetas de herramientas para el sandbox de Codex ---------------------------------
+# Flutter escribe en su SDK y en la caché de pub: el puente las busca en esta máquina.
+SDK="$WORK/sdk/flutter"; mkdir -p "$SDK/bin" "$SDK/packages/flutter"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$SDK/bin/flutter"; chmod +x "$SDK/bin/flutter"
+mkdir -p "$WORK/shims"; ln -sf "$SDK/bin/flutter" "$WORK/shims/flutter"
+FHOME="$WORK/fhome"; mkdir -p "$FHOME/.pub-cache" "$FHOME/.dart-tool"
+
+new_project
+touch "$PROJ/pubspec.yaml"
+HOME="$FHOME" PATH="$WORK/shims:$PATH" FAKE_MODE=ok check 0 "flutter: el developer en Codex corre bien" frontend.developer codex
+expect "$FAKE_ARGS" "sandbox_workspace_write.writable_roots=[" "flutter: le abre carpetas extra al sandbox"
+expect "$FAKE_ARGS" "\"$SDK\"" "flutter: el SDK, siguiendo el enlace hasta su carpeta real"
+expect "$FAKE_ARGS" "\"$FHOME/.pub-cache\"" "flutter: la caché de pub"
+expect "$FAKE_ARGS" "\"$FHOME/.dart-tool\"" "flutter: las carpetas de Dart que existen"
+expect_not "$FAKE_ARGS" ".dartServer" "flutter: no suma carpetas que no existen"
+expect "$WORK/out.txt" "Carpetas de herramientas que Codex pudo escribir" "flutter: el resumen las nombra"
+
+# Un atajo que no es el SDK (asdf, mise): se le pregunta a Flutter dónde está.
+SDK2="$WORK/sdk2/flutter"; mkdir -p "$SDK2"
+mkdir -p "$WORK/shim2"
+cat >"$WORK/shim2/flutter" <<EOF
+#!/usr/bin/env bash
+[ "\$1" = "--version" ] && echo '{"frameworkVersion":"3.0.0","flutterRoot":"$SDK2"}'
+exit 0
+EOF
+chmod +x "$WORK/shim2/flutter"
+new_project
+touch "$PROJ/pubspec.yaml"
+HOME="$FHOME" PATH="$WORK/shim2:$PATH" FAKE_MODE=ok check 0 "flutter por un atajo: corre bien" frontend.developer codex
+expect "$FAKE_ARGS" "\"$SDK2\"" "flutter por un atajo: le pregunta a Flutter dónde está el SDK"
+
+# fvm: el SDK del proyecto está enlazado en .fvm/flutter_sdk.
+SDK3="$WORK/sdk3/flutter"; mkdir -p "$SDK3/bin"; cp "$SDK/bin/flutter" "$SDK3/bin/flutter"
+new_project
+touch "$PROJ/pubspec.yaml"; mkdir -p "$PROJ/.fvm"; ln -s "$SDK3" "$PROJ/.fvm/flutter_sdk"
+HOME="$FHOME" FAKE_MODE=ok check 0 "fvm: corre bien" frontend.developer codex
+expect "$FAKE_ARGS" "\"$SDK3\"" "fvm: usa el SDK del proyecto"
+
+# Windows: la caché de pub está en LOCALAPPDATA.
+mkdir -p "$WORK/local/Pub/Cache"
+new_project
+touch "$PROJ/pubspec.yaml"
+OFFICE_OS=msys LOCALAPPDATA="$WORK/local" HOME="$FHOME" PATH="$WORK/shims:$PATH" FAKE_MODE=ok check 0 "flutter en Windows: corre bien" frontend.developer codex
+expect "$FAKE_ARGS" "\"$WORK/local/Pub/Cache\"" "flutter en Windows: la caché de pub en LOCALAPPDATA"
+
+# Android: la caché de Gradle.
+mkdir -p "$FHOME/.gradle"
+new_project
+mkdir -p "$PROJ/android"
+HOME="$FHOME" FAKE_MODE=ok check 0 "android: corre bien" frontend.developer codex
+expect "$FAKE_ARGS" "\"$FHOME/.gradle\"" "android: la caché de Gradle"
+
+# Sin nada de eso, el sandbox queda como siempre; y se puede apagar o sumar carpetas propias.
+new_project
+HOME="$FHOME" PATH="$WORK/shims:$PATH" FAKE_MODE=ok check 0 "sin Flutter ni Gradle: corre bien" backend.developer codex
+expect_not "$FAKE_ARGS" "writable_roots" "sin Flutter ni Gradle: no abre carpetas extra"
+new_project
+touch "$PROJ/pubspec.yaml"
+OFFICE_CODEX_TOOL_DIRS=off HOME="$FHOME" PATH="$WORK/shims:$PATH" FAKE_MODE=ok check 0 "OFFICE_CODEX_TOOL_DIRS=off: corre bien" frontend.developer codex
+expect_not "$FAKE_ARGS" "writable_roots" "OFFICE_CODEX_TOOL_DIRS=off lo apaga"
+mkdir -p "$WORK/propia"
+new_project
+OFFICE_CODEX_WRITABLE="$WORK/propia;$WORK/no-existe" HOME="$FHOME" FAKE_MODE=ok check 0 "OFFICE_CODEX_WRITABLE: corre bien" backend.developer codex
+expect "$FAKE_ARGS" "writable_roots=[\"$WORK/propia\"]" "OFFICE_CODEX_WRITABLE suma carpetas propias (solo las que existen)"
+new_project
+touch "$PROJ/pubspec.yaml"
+HOME="$FHOME" PATH="$WORK/shims:$PATH" FAKE_MODE=noop check 0 "asesor del PM: corre bien" pm codex
+expect_not "$FAKE_ARGS" "writable_roots" "el asesor del PM (solo lectura) no tiene carpetas extra"
+
+# Codex no espera a un comando que se cuelga.
+expect "$FAKE_STDIN" "No esperes a un comando que se cuelga" "codex: le avisa que no espere a un comando colgado"
+
 if [ "$FAILED" -ne 0 ]; then
   echo "Hay pruebas que fallan."
   exit 1
