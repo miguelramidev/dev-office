@@ -114,6 +114,16 @@ verdict $'PASA\n\n## Resumen\n| a | b |'; expect '.text == "PASA\n\n## Resumen\n
 hook '{"hook_event_name":"SubagentStop","agent_id":"a2","agent_type":"x","agent_transcript_path":"/no/existe"}'
 expect '.usage == null and .verdict == "LISTO"' "transcripción que no existe: sin tokens"
 
+# Ruta completa de cada archivo que tocan los agentes, para la vista "Proyecto".
+hook "$(jq -cn --arg f "$PROJ/src/api/orders.ts" '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f}, agent_id:"a9", agent_type:"dept-backend:developer"}')"
+expect '.type == "tool" and .path == "src/api/orders.ts" and .target == "orders.ts"' "herramienta: guarda la ruta relativa al proyecto"
+hook "$(jq -cn --arg f "$PROJ/src" '{hook_event_name:"PreToolUse", tool_name:"Grep", tool_input:{pattern:"x", path:$f}}')"
+expect '.path == "src"' "búsqueda: guarda la carpeta"
+hook '{"hook_event_name":"PreToolUse","tool_name":"Read","tool_input":{"file_path":"/otro/lado/a.ts"}}'
+expect '.path == null' "un archivo fuera del proyecto no se guarda"
+hook '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}'
+expect '.path == null' "un comando no tiene ruta"
+
 # Agente retomado (SendMessage): cada vuelta anota solo lo que gastó desde la anterior.
 T3="$WORK/agent3.jsonl"
 echo '{"type":"assistant","message":{"id":"r1","usage":{"input_tokens":100,"output_tokens":10,"cache_creation_input_tokens":1000,"cache_read_input_tokens":0}}}' >"$T3"
@@ -290,7 +300,7 @@ const fs = require("fs");
 const html = fs.readFileSync(process.argv[2], "utf8");
 let code = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</script>"));
 const end = code.lastIndexOf("})();");
-code = code.slice(0, end) + "\nglobal.T = { ROOMS, RW, layoutRooms, shopRooms, doorX, get W() { return W; }, get HALL_DX() { return HALL_DX; }, resolveSpot, idleLife, cancelIdle, view3d, KINDS, VARIANTS, itemOf, buildShop, canBuy, targetOf, SLOTS, roomOf, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, live: evs => { liveEvents = evs; liveAnimFrom = -1; liveProc = null; mode = 'live'; liveRebuild(); }, more: evs => { liveEvents = evs; liveRebuild(); } };\n" + code.slice(end);
+code = code.slice(0, end) + "\nglobal.T = { ROOMS, RW, layoutRooms, shopRooms, doorX, get W() { return W; }, get HALL_DX() { return HALL_DX; }, resolveSpot, idleLife, cancelIdle, view3d, KINDS, VARIANTS, itemOf, buildShop, canBuy, targetOf, SLOTS, roomOf, CATALOG_SIZE, drawPreview, update, shopTick, render, get game() { return game; }, get state() { return state; }, sessionStats, lifeTick, achievementsTick, get placed() { return placed; }, place, get petWalk() { return state.petWalk; }, employeeOfMonth, summaryLines, bonus, earned, G, graphSetData, graphNodeFor, graphImpactOf, graphLayout, live: evs => { liveEvents = evs; liveAnimFrom = -1; liveProc = null; mode = 'live'; liveRebuild(); }, more: evs => { liveEvents = evs; liveRebuild(); } };\n" + code.slice(end);
 const stub = () => new Proxy(function () {}, { get: (t, k) => k === Symbol.toPrimitive ? () => 0 : k === "length" ? 0 : stub(), apply: () => stub(), construct: () => stub(), set: () => true });
 Object.assign(global, { document: stub(), window: stub(), requestAnimationFrame: () => 0, setInterval: () => 0, matchMedia: () => ({ matches: false }), ResizeObserver: class { observe() {} },
   getComputedStyle: () => ({ paddingLeft: "0", paddingRight: "0", paddingBottom: "0" }) });
@@ -462,6 +472,29 @@ try { T.live([...sess(ALL.filter(d => d !== "docs")), { type: "delegate", t: Mat
 say(!threw, "oficinas: un encargo a un departamento sin instalar no rompe la página" + (threw ? " (" + threw.message + ")" : ""));
 T.render(2);
 say(true, "oficinas: se dibuja con el acomodo nuevo");
+
+// Vista "Proyecto": el grafo de archivos y por dónde pasan los agentes.
+T.graphSetData({ v: 1, t: 1, files: ["README.md", "src/api/orders.ts", "src/api/pay.ts", "src/ui/Cart.tsx", "src/ui/Cart.test.tsx"], edges: [[2, 1], [3, 2], [4, 3]] });
+say(T.G.nodes.length > 0 && T.graphNodeFor("src/api/orders.ts") !== null, "grafo: arma los nodos y encuentra el de cada archivo (" + T.G.nodes.length + " nodos)");
+const nApi = T.graphNodeFor("src/api/orders.ts");
+say(nApi && (nApi.kind === "dir" ? nApi.path === "src/api" : nApi.path === "src/api/orders.ts"), "grafo: un archivo de una carpeta cerrada cae en su carpeta");
+T.G.expanded.add("src/api"); T.graphLayout();
+say(T.graphNodeFor("src/api/orders.ts").kind === "file", "grafo: al abrir la carpeta, el archivo tiene su nodo");
+const imp = T.graphImpactOf(1);
+say(imp.get(2) === 1 && imp.get(3) === 2 && !imp.has(4), "grafo: el impacto marca lo que depende directo e indirecto, hasta dos niveles");
+const tnow = Math.floor(Date.now() / 1000);
+T.live([{ type: "session", t: tnow - 100, source: "startup" },
+  { type: "delegate", t: tnow - 90, subagent_type: "dept-backend:developer", description: "[backend-developer] Pagos" },
+  { type: "start", t: tnow - 89, agent: "B1", agent_type: "dept-backend:developer" },
+  { type: "tool", t: tnow - 80, agent: "B1", agent_type: "dept-backend:developer", tool: "Read", path: "src/api/orders.ts", target: "orders.ts" },
+  { type: "tool", t: tnow - 70, agent: "B1", agent_type: "dept-backend:developer", tool: "Edit", path: "src/api/orders.ts", target: "orders.ts" },
+  { type: "tool", t: tnow - 60, agent: null, agent_type: null, tool: "Read", path: "README.md", target: "README.md" },
+  { type: "external", t: tnow - 50, role: "frontend.developer", provider: "codex", code: 0, result: "ok", duration: 10, tokens: 5, files: ["src/ui/Cart.tsx"] }]);
+const tk = T.G.touches["src/api/orders.ts"];
+say(tk && tk.n === 2 && tk.edit && /backend/i.test(tk.who), "grafo: las lecturas y ediciones de un agente quedan en su archivo, con su nombre");
+say(T.G.touches["README.md"] && T.G.touches["README.md"].who === "PM", "grafo: lo que lee el PM también");
+say(T.G.touches["src/ui/Cart.tsx"] && T.G.touches["src/ui/Cart.tsx"].edit && /Codex/.test(T.G.touches["src/ui/Cart.tsx"].who), "grafo: los archivos que cambió Codex o Gemini, al terminar");
+say(T.G.pulses.length === 0, "grafo: la historia no anima, solo suma calor");
 NODE
   OUT=$(node "$WORK/tienda.js" "$REPO/plugins/office/observer/index.html" 2>&1)
   echo "$OUT"

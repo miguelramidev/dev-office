@@ -8,6 +8,25 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.55.0] - 2026-11-09
+
+### Agregado
+
+- **Grafo del proyecto en el observer** (`office` 0.52.0). El botón **Proyecto** muestra el proyecto como un grafo:
+  - **Carpetas y archivos:** las carpetas se abren con un click, y al elegir un archivo se ve qué importa, quién lo importa y, en naranja, lo que depende de él. Tiene búsqueda, "Centrar" y "Contraer todo".
+  - **Por dónde pasa cada agente:** cada lectura o edición de un agente ilumina su archivo con el color del agente, con un pulso y su nombre si pasa en vivo, y lo editado queda marcado. Los archivos que cambiaron Codex o Gemini se marcan al terminar.
+  - **De dónde salen los datos:** el hook del observer guarda la ruta de cada archivo que tocan los agentes (también en Windows), y el puente informa los archivos que cambió el proveedor. No gasta tokens: lo arma `project-index.sh` y se dibuja en el navegador.
+- **Imports e impacto** (`project-index` versión 3).
+  - **Imports:** el índice guarda quién importa a quién dentro del proyecto (`imports.tsv`). Entiende JavaScript y TypeScript (rutas relativas, `@/`, `~/`, `.js` que es TypeScript, `require`, imports de varias líneas), Python (relativo y absoluto), Go (paquetes del módulo) y Dart.
+  - **`--impact <archivos>`:** dice qué importa directo esos archivos, qué depende indirectamente hasta tres niveles y qué tests los cubren (por dependencia o por nombre). Acepta rutas absolutas o con `\`. React (7.100 archivos, 3.800 imports) se indexa en 3 segundos.
+- **Qué depende del cambio, sin explorar:**
+  - **el PM** corre `--impact` con los archivos que cambió el developer y le pasa la salida al tester y a QA;
+  - **el tester** corre los tests que lista y prueba lo que depende del cambio;
+  - **QA** ataca por esos bordes;
+  - **el developer** lo mira antes de cambiar algo compartido.
+
+  Versiones: `dept-backend` 0.3.7, `dept-database` 0.2.7, `dept-devops` 0.3.7, `dept-frontend` 0.6.2, `dept-scraper` 0.2.7.
+
 ## [0.54.0] - 2026-11-08
 
 ### Cambiado

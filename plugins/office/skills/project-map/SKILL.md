@@ -8,7 +8,7 @@ description: Mapa e índice del proyecto para dev-office - un mapa corto escrito
 Lo que más gasta en un proyecto que crece es buscar: un agente que no sabe dónde está algo abre carpetas, prueba búsquedas y lee archivos que no eran. Con dos piezas eso se evita, aun en una sesión nueva:
 
 - **El mapa** (`docs/project-map.md`, en git): qué hay en cada carpeta, dónde vive cada cosa y qué archivo sirve de modelo. Lo escribe un agente, es corto y se actualiza al cerrar las tareas que cambian la estructura.
-- **El índice** (`.office/index/files.tsv`, fuera de git): cada archivo con lo que exporta o declara (funciones, clases, tipos, tablas). Lo arma `project-index.sh`, que está en la misma carpeta que este archivo, sin ningún modelo. Está siempre activo: el hook de inicio de sesión lo arma la primera vez y después lo pone al día solo, procesando únicamente lo que cambió. Se apaga con la variable de entorno `OFFICE_INDEX=off`.
+- **El índice** (`.office/index/files.tsv`, fuera de git): cada archivo con lo que exporta o declara (funciones, clases, tipos, tablas). Junto a él, `imports.tsv`: quién importa a quién dentro del proyecto. Lo arma `project-index.sh`, que está en la misma carpeta que este archivo, sin ningún modelo. Está siempre activo: el hook de inicio de sesión lo arma la primera vez y después lo pone al día solo, procesando únicamente lo que cambió. Se apaga con la variable de entorno `OFFICE_INDEX=off`.
 
 Si el `CLAUDE.md` del proyecto indica otra ruta para el mapa, usá esa.
 
@@ -19,6 +19,29 @@ Si el `CLAUDE.md` del proyecto indica otra ruta para el mapa, usá esa.
 3. **Recién después,** si hace falta, Grep o Glob en el código, acotados a la carpeta que te dieron el mapa o el índice.
 
 Si el índice no existe (la sesión empezó antes de instalar la oficina, o está apagado), armalo con `--full`. Si sospechás que está viejo (cambiaron archivos en esta misma sesión), actualizalo: `bash <carpeta de esta skill>/project-index.sh` tarda segundos.
+
+## Qué depende de un cambio (impacto)
+
+`bash <carpeta de esta skill>/project-index.sh --impact <archivo> [<archivo>…]` dice, sin gastar tokens:
+
+- **qué archivos importan directamente** a esos;
+- **qué archivos dependen indirectamente,** hasta tres niveles;
+- **qué tests los cubren:** los que dependen de ellos, hasta cinco niveles, y los que se llaman igual, como `Cart.test.tsx` para `Cart.tsx`.
+
+Los imports se leen de JavaScript y TypeScript (rutas relativas, `@/` y `~/`), Python, Go y Dart. En otros lenguajes, el impacto solo encuentra los tests por el nombre.
+
+- **El PM** lo corre con los archivos que cambió el developer y pega la salida en el encargo al tester y a QA ("Qué depende del cambio").
+- **El developer** lo mira antes de cambiar algo que usan otros archivos: una función, un tipo o un componente compartido.
+- **El tester y QA** lo usan para elegir qué probar y dónde atacar, en vez de explorar el código.
+
+## La vista "Proyecto" del observer
+
+El mismo script deja en `.office/observer/graph.js` el grafo de archivos e imports. En el observer, el botón **Proyecto** lo muestra:
+
+- **Carpetas y archivos:** las carpetas se abren con un click, y cada archivo muestra qué importa, quién lo importa y qué depende de él.
+- **Por dónde pasa cada agente:** cada lectura o edición de un agente ilumina el archivo con su color, y los archivos que cambiaron Codex o Gemini se marcan al terminar.
+
+No lo lee ningún agente: es para el CEO.
 
 ## Crear el mapa (una vez por proyecto)
 

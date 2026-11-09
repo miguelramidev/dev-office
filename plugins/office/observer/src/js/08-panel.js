@@ -396,6 +396,7 @@
   renderSoundBtn();
   $("btn-summary").addEventListener("click", openSummary);
   renderPanel(true);
+  graphInit();
   poll();
   setInterval(poll, 1500);
 

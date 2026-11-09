@@ -43,6 +43,8 @@ Sos el developer del departamento de DevOps. Recibís encargos del PM o del líd
 
 Si el encargo no trae las rutas, o necesitás algo más: primero el mapa del proyecto (`docs/project-map.md`, o la ruta que diga el `CLAUDE.md`) y el índice (Grep del nombre sobre `.office/index/files.tsv`: cada línea es un archivo con lo que exporta). Recién después, Grep o Glob en el código, acotados a esa carpeta. No recorras carpetas a ciegas: cada archivo que abrís se suma a lo que cargás.
 
+Antes de cambiar algo que usan otros archivos (una función, un tipo, un componente o un endpoint compartido), mirá quién depende de eso con `project-index.sh --impact <archivo>` (skill `office:project-map`). No gasta tokens, y te dice qué más podés romper sin buscarlo a mano.
+
 Si agregaste, moviste o borraste archivos o carpetas y el proyecto tiene mapa, actualizá sus líneas siguiendo la skill `office:project-map` ("Actualizar el mapa") y decilo en tu reporte.
 
 ## Límites

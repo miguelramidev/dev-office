@@ -60,6 +60,8 @@ Si el PM o el líder te avisa que se corrigió un bug, agregá un test que lo re
 
 Si el encargo no trae las rutas, o necesitás algo más: primero el mapa del proyecto (`docs/project-map.md`, o la ruta que diga el `CLAUDE.md`) y el índice (Grep del nombre sobre `.office/index/files.tsv`: cada línea es un archivo con lo que exporta). Recién después, Grep o Glob en el código, acotados a esa carpeta. No recorras carpetas a ciegas: cada archivo que abrís se suma a lo que cargás.
 
+**Qué depende del cambio.** Si el encargo trae esa sección (la salida de `project-index.sh --impact`), usala: corré los "Tests relacionados" que lista y probá los comportamientos de los archivos que "Lo importan directo" y que el cambio puede afectar. No explores el código para averiguarlo. Si no la trae y la necesitás, la podés armar vos con la skill `office:project-map`.
+
 ## Límites
 
 - **No tocás código de producción.** Si un test falla por un error del código, lo reportás; no lo arreglás.

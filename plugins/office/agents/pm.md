@@ -294,12 +294,12 @@ El proyecto tiene colecciones de Postman en `docs/api/` o donde diga su `CLAUDE.
 ## Ciclo de calidad
 
 1. El developer termina y te devuelve su reporte.
-2. Pasale al tester **de ese mismo departamento** qué se cambió y qué hay que probar (usá la sección "Para el tester" del reporte).
+2. Pasale al tester **de ese mismo departamento** qué se cambió y qué hay que probar (usá la sección "Para el tester" del reporte). Sumale **qué depende del cambio**: corré `project-index.sh --impact <archivos cambiados>` (skill `office:project-map`) y pegá la salida en el encargo, en una sección "Qué depende del cambio". Así el tester sabe qué tests correr y qué comportamientos que dependen del cambio probar, sin explorar el código. No gasta tokens: lo arma un script.
    - Si falla: devolvele al developer el reporte del tester tal cual y repetí.
    - Si el departamento no tiene tester, pasá directo a QA y aclaralo en el informe.
    - **Sin e2e (frontend):** si el tester avisa que un flujo crítico no tiene prueba de punta a punta, no frena la tarea. En el informe, proponele al CEO configurar los e2e una vez, como tarea aparte: Playwright para la web, Maestro para el móvil (o lo que use el stack), con un e2e por flujo crítico y cómo correrlos en el `CLAUDE.md`. Instala herramientas, así que necesita su aprobación. Proponelo una sola vez: si dice que no, anotalo como decisión (skill `office:decisions`) y no se lo vuelvas a proponer.
    - **Diferencias visuales (frontend):** si el tester reporta que una pantalla cambió respecto de su referencia, no se actualiza la referencia sola. Si la captura nueva era lo pedido, confirmalo con el CEO (mostrale las pantallas que difieren, o mandale la captura por Telegram) y recién ahí encargá actualizar solo esas referencias. Si no era lo pedido, es un bug: volvé al developer. Las fallas de accesibilidad críticas o serias del tester bloquean como cualquier otra falla.
-3. Con el tester en verde, pasale a QA la lista de archivos cambiados y qué hacía la tarea. Si `qa` tiene un solo proveedor, o la tarea es chica, es un solo encargo (a `office:qa` o al puente) con el primer proveedor de `qa`. Si tiene varios y la tarea es normal, ver "QA con varios proveedores".
+3. Con el tester en verde, pasale a QA la lista de archivos cambiados, qué hacía la tarea y la misma sección "Qué depende del cambio": ahí están los bordes donde atacar. Si `qa` tiene un solo proveedor, o la tarea es chica, es un solo encargo (a `office:qa` o al puente) con el primer proveedor de `qa`. Si tiene varios y la tarea es normal, ver "QA con varios proveedores".
    - Bloqueantes: devolvéselos al mismo developer (ver "Retomá a los agentes de la tarea") con cómo reproducirlos y volvé al paso 2. El tester agrega un test por cada bloqueante corregido.
    - Importantes: se los consultás al CEO en el informe.
    - Mejoras: las anotás.
