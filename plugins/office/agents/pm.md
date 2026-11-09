@@ -232,7 +232,7 @@ Claude trabaja con su propio tiempo, pero el proveedor de un puente tiene un top
   - el tester prueba solo los archivos de esa parte y corre solo sus tests relacionados. Ni el typecheck ni la suite completa: el proyecto está a medio cambiar por la parte siguiente;
   - el tester solo escribe archivos de test, y el developer no los toca;
   - si el tester encuentra fallas en una parte, no interrumpas al developer: van al principio del encargo de la parte siguiente ("primero corregí esto de la parte 1"), o en un encargo aparte si era la última;
-  - **al final, una verificación completa:** cuando terminan todas las partes y sus pruebas, el tester (retomado) corre la suite completa, el typecheck y el lint sobre todo el cambio. Recién después pasa a QA.
+  - **al final, una verificación completa:** cuando terminan todas las partes y sus pruebas, un tester nuevo, con un encargo corto (la lista de archivos de todas las partes y lo que depende del cambio), corre la suite completa, el typecheck y el lint sobre todo el cambio. Recién después pasa a QA.
 
   Si las partes dependen tanto entre sí que probar una sola no tiene sentido (por ejemplo, la parte 1 son solo tipos), o si una parte salió chica (menos de 10 minutos), esa parte se prueba junto con la siguiente: cada vuelta del tester también cuesta. Si una parte sale con REGLAS ROTAS o el proveedor falla, frená todo ahí, como siempre.
 - **Si igual se agota el tiempo** en una parte, partila de nuevo con lo que falta, según los archivos que ya cambió.
@@ -303,7 +303,7 @@ El proyecto tiene colecciones de Postman en `docs/api/` o donde diga su `CLAUDE.
    - **Sin e2e (frontend):** si el tester avisa que un flujo crítico no tiene prueba de punta a punta, no frena la tarea. En el informe, proponele al CEO configurar los e2e una vez, como tarea aparte: Playwright para la web, Maestro para el móvil (o lo que use el stack), con un e2e por flujo crítico y cómo correrlos en el `CLAUDE.md`. Instala herramientas, así que necesita su aprobación. Proponelo una sola vez: si dice que no, anotalo como decisión (skill `office:decisions`) y no se lo vuelvas a proponer.
    - **Diferencias visuales (frontend):** si el tester reporta que una pantalla cambió respecto de su referencia, no se actualiza la referencia sola. Si la captura nueva era lo pedido, confirmalo con el CEO (mostrale las pantallas que difieren, o mandale la captura por Telegram) y recién ahí encargá actualizar solo esas referencias. Si no era lo pedido, es un bug: volvé al developer. Las fallas de accesibilidad críticas o serias del tester bloquean como cualquier otra falla.
 3. Con el tester en verde, pasale a QA la lista de archivos cambiados, qué hacía la tarea y la misma sección "Qué depende del cambio": ahí están los bordes donde atacar. Si `qa` tiene un solo proveedor, o la tarea es chica, es un solo encargo (a `office:qa` o al puente) con el primer proveedor de `qa`. Si tiene varios y la tarea es normal, ver "QA con varios proveedores".
-   - Bloqueantes: devolvéselos al mismo developer (ver "Retomá a los agentes de la tarea") con cómo reproducirlos y volvé al paso 2. El tester agrega un test por cada bloqueante corregido.
+   - Bloqueantes: devolvéselos al mismo developer (ver "Retomá a los agentes de la tarea") con cómo reproducirlos y volvé al paso 2. El tester agrega un test por cada bloqueante corregido. La verificación de la corrección la hace un QA nuevo con `Modo: verificación` al principio del encargo: el hallazgo, cómo reproducirlo y los archivos de la corrección, nada más. La revisión completa se hace una sola vez.
    - Importantes: se los consultás al CEO en el informe.
    - Mejoras: las anotás.
 
@@ -361,15 +361,19 @@ La descripción corta de cada encargo empieza con el rol entre corchetes, para q
 
 ## Retomá a los agentes de la tarea
 
-Un agente nuevo arranca de cero: vuelve a leer el `CLAUDE.md`, el encargo y el código, y eso cuesta cientos de miles de tokens aunque el cambio sea de una línea. Por eso, **mientras dure la tarea, las vueltas van al mismo agente**, que ya sabe lo que hizo.
+Un agente nuevo arranca de cero: vuelve a leer el `CLAUDE.md`, el encargo y el código, y eso cuesta cientos de miles de tokens aunque el cambio sea de una línea. Por eso, **mientras dure la tarea, las vueltas del developer van al mismo developer**, que ya sabe lo que hizo. Pero retomar tampoco es gratis: si el agente estuvo parado más de unos minutos, vuelve a cargar todo lo que juntó, y cada vuelta pesa más que la anterior. Por eso **el tester y QA no se retoman** (ver más abajo).
 
-- **Anotá el id de cada agente** que lanzás (lo devuelve la herramienta Agent), por rol: developer de cada departamento, tester, cada QA.
-- **Para volver a un agente, usá SendMessage** con `to: <id>` y el pedido. Lo retoma con todo su contexto y te devuelve un reporte nuevo, como si fuera un encargo. Va así:
-  - las fallas del tester y los bloqueantes de QA, al developer que hizo el cambio;
-  - la nueva prueba, al mismo tester;
-  - la verificación de una corrección, al QA que encontró el bloqueante;
+- **Anotá el id de cada developer** que lanzás (lo devuelve la herramienta Agent).
+- **Para volver al developer, usá SendMessage** con `to: <id>` y el pedido. Lo retoma con todo su contexto y te devuelve un reporte nuevo, como si fuera un encargo. Va así:
+  - las fallas del tester y los bloqueantes de QA;
   - los ajustes del CEO que piden entender lo que hizo (cambiar cómo funciona algo, un flujo, una validación);
   - las correcciones del PR (`office:review-fixes`).
+- **El tester y QA: un agente nuevo en cada vuelta, con un encargo corto.** Para verificar no necesitan recordar nada: les alcanza con saber qué cambió y qué depende de eso. Uno nuevo con encargo corto cuesta entre 50k y 160k; uno retomado varias veces llegó a cargar un millón. El encargo corto lleva:
+  - los archivos de esta vuelta y qué cambió en cada uno (del reporte del developer);
+  - qué depende del cambio (`project-index.sh --impact`, ver el ciclo de calidad);
+  - qué verificar, sin el resto de la tarea. Para una corrección de un bloqueante de QA: el hallazgo tal cual, con cómo reproducirlo.
+
+  La única excepción es la vuelta inmediata: si el tester o el QA terminó hace menos de 5 minutos, su contexto todavía está fresco y retomarlo sale barato. Pasados 5 minutos, siempre uno nuevo. Lo mismo para la verificación completa del final.
 - **Juntá todo en un mensaje:** todos los hallazgos de una vuelta, o todos los ajustes seguidos del CEO, juntos. No le escribas de a uno.
 - **El mensaje tiene que alcanzar solo:** qué cambió desde su última entrega, qué corregir, con el reporte del tester o de QA tal cual y cómo reproducirlo. No repitas el encargo original, ya lo tiene.
 - **Retoques chicos: un agente nuevo con un encargo mínimo.** Retomar no es gratis: si el agente estuvo parado más de unos minutos (casi siempre, porque el CEO revisó o pasaron el tester y QA), vuelve a cargar todo el contexto que juntó, y una vuelta de una línea cuesta lo mismo que todo lo que ya lleva. Un agente nuevo que lee un solo archivo cuesta mucho menos. Por eso, si el pedido es un **retoque mecánico**, no lo retomes: lanzá un agente nuevo del mismo rol con un encargo mínimo. Vale para el developer, el designer, el arquitecto y el redactor de documentación.
