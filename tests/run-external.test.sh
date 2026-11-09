@@ -37,6 +37,12 @@ case "${FAKE_MODE:-ok}" in
   commit-env) echo "SECRET=1" >.env; git add -A; git commit -qm "x"; report ;;
   branch) git switch -qc otra; report ;;
   design) mkdir -p docs/design; echo "# Diseño" >docs/design/tema.md; report ;;
+  # Mientras el proveedor trabaja, otro agente de la oficina (el tester en paralelo) escribe un
+  # test, y el observer lo anota (o no, si está apagado).
+  parallel | parallel-noevent)
+    mkdir -p docs/design .office/observer; echo "# Diseño" >docs/design/tema.md; echo "test" >src/app.test.ts
+    [ "$FAKE_MODE" = parallel ] && printf 'OFFICE_EVENT({"type":"tool","t":%s,"tool":"Write","path":"src/app.test.ts","agent":"T1","agent_type":"dept-frontend:tester"});\n' "$(date +%s)" >>.office/observer/events.js
+    report ;;
   qa-ok) mkdir -p .qa; echo "ataque" >.qa/ataque.test.ts; report ;;
   qa-bad) echo "// arreglo" >>src/app.ts; report ;;
   delete) rm src/util.ts; report ;;
@@ -231,6 +237,14 @@ expect "$WORK/out.txt" "es un archivo de secretos" "dice por qué"
 
 new_project
 FAKE_MODE=lock check 4 "tocar un lockfile" backend.developer codex
+
+new_project
+FAKE_MODE=parallel check 0 "lo que editó otro agente de la oficina mientras tanto no se le cuenta al proveedor" frontend.designer codex
+expect "$WORK/out.txt" "no se le cuentan" "lo dice en el resumen"
+expect "$WORK/out.txt" "src/app.test.ts" "y nombra el archivo"
+
+new_project
+FAKE_MODE=parallel-noevent check 4 "sin registro del observer, el archivo sí se le cuenta" frontend.designer codex
 
 new_project
 FAKE_MODE=commit check 4 "hacer un commit" backend.developer codex

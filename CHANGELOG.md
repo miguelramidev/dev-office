@@ -8,6 +8,21 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.56.0] - 2026-11-09
+
+### Cambiado
+
+Ajustes a partir de una tarea real medida con `/office:usage` (`office` 0.53.0):
+
+- **Partes según el tiempo, no según los archivos.** Con partes de 3 a 5 archivos, Codex terminaba cada una en 3 a 7 minutos, y cada encargo pagaba el costo fijo del puente: 11 encargos, 629k de Claude.
+  - **El objetivo:** unos 15 minutos de trabajo del proveedor por parte.
+  - **Para empezar,** hasta unos 8 archivos. Si una parte tardó menos de 10 minutos, la siguiente puede ser del doble; si pasó de 20, más chica.
+  - **Una parte chica** se prueba junto con la siguiente.
+  - Los líderes del modo equipos hacen lo mismo (`dept-backend` 0.3.8, `dept-database` 0.2.8, `dept-devops` 0.3.8, `dept-docs` 0.1.6, `dept-frontend` 0.6.3, `dept-scraper` 0.2.8).
+- **Puente más liviano:** `office:external` corre con `omitClaudeMd`, sin cargar el `CLAUDE.md` del proyecto. El que trabaja es el proveedor, que lo lee por su cuenta.
+- **Retoques mínimos también para el designer, el arquitecto y el redactor.** Retomar al designer para cambiar un párrafo costaba ~200k. Ahora, un retoque mecánico de un diseño o de un documento lo hace un agente nuevo que lee solo esa sección, y no pasa por el tester.
+- **Sin falsos "REGLAS ROTAS" al trabajar en paralelo.** El puente le contaba al proveedor los archivos que editaba otro agente de la oficina mientras tanto, como los tests del tester que prueba la parte anterior. Ahora descuenta los que el observer registra como editados por los agentes de Claude durante el encargo, y los nombra aparte en el resumen. Sin observer, no descuenta nada.
+
 ## [0.55.0] - 2026-11-09
 
 ### Agregado

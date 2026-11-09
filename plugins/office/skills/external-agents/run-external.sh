@@ -216,6 +216,10 @@ write_summary() {
     else
       echo "  (ninguno)"
     fi
+    if [ -n "${OTHERS:-}" ]; then
+      echo "Editados por otros agentes de la oficina mientras trabajaba (no se le cuentan):"
+      printf '%s\n' "$OTHERS" | sed 's/^/  /'
+    fi
     if [ "${RETRIED:-0}" -eq 1 ]; then
       echo "Segundo intento: el primero se cortó porque Antigravity rechazó un comando; se lo volvió a correr con ese aviso."
     fi
@@ -625,6 +629,20 @@ if [ -n "$HEAD_AFTER" ] && [ "$HEAD_AFTER" != "$HEAD_BEFORE" ]; then
 fi
 CHANGED=$(printf '%s\n' "$CHANGED" | sed '/^$/d' | sort -u)
 rm -f "$BEFORE" "$AFTER"
+
+# Lo que editaron en ese tiempo los agentes de Claude (por ejemplo, el tester que prueba en
+# paralelo la parte anterior) no es del proveedor: se descuenta, según el registro del observer,
+# que guarda la ruta de cada edición. Sin observer (OFFICE_OBSERVER=off), no se descuenta nada.
+OTHERS=""
+EVENTS_FILE="$PROJECT/.office/observer/events.js"
+if [ -n "$CHANGED" ] && [ -s "$EVENTS_FILE" ]; then
+  OTHERS=$(sed -n 's/^OFFICE_EVENT(\(.*\));[[:space:]]*$/\1/p' "$EVENTS_FILE" | tr -d '\r' |
+    jq -r --argjson s "$START" 'select(.type == "tool" and (.t // 0) >= $s and ((.path // "") != "") and ((.tool // "") | test("^(Edit|Write|MultiEdit|NotebookEdit)$"))) | .path' 2>/dev/null | sort -u)
+  if [ -n "$OTHERS" ]; then
+    OTHERS=$(printf '%s\n' "$OTHERS" | awk 'NR == FNR { ch[$0] = 1; next } ($0 in ch)' <(printf '%s\n' "$CHANGED") -)
+    [ -n "$OTHERS" ] && CHANGED=$(printf '%s\n' "$CHANGED" | awk 'NR == FNR { o[$0] = 1; next } !($0 in o)' <(printf '%s\n' "$OTHERS") -)
+  fi
+fi
 
 forbidden_reason() {
   local name="${1##*/}"

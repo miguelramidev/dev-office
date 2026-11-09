@@ -212,11 +212,14 @@ Si el puente responde:
 
 ### Encargos en partes para Codex y Gemini
 
-Claude trabaja con su propio tiempo, pero el proveedor de un puente tiene un tope (`OFFICE_EXTERNAL_TIMEOUT`, 30 minutos por defecto). Un encargo grande se corta a la mitad y deja el trabajo a medias. Por eso, **cuando el developer es Codex o Gemini, partí el trabajo antes de encargarlo**:
+Claude trabaja con su propio tiempo, pero el proveedor de un puente tiene un tope (`OFFICE_EXTERNAL_TIMEOUT`, 30 minutos por defecto). Un encargo grande se corta a la mitad y deja el trabajo a medias. Pero cada encargo también tiene un costo fijo en Claude, el del puente, aunque sea chico. Por eso, **cuando el developer es Codex o Gemini, partí el trabajo en pocas partes, del tamaño justo**:
 
-- **Cuándo partir:** si el encargo toca más de unos 5 archivos, más de una pantalla o un endpoint, o mezcla cosas distintas (crear algo nuevo y además refactorizar, o el modelo de datos y la interfaz). Si cabe en una parte, un solo encargo.
+- **Apuntá a unos 15 minutos de trabajo del proveedor por parte:** lejos del tope, pero sin pagar un puente por cada cosa chica.
+  - **Para empezar,** hasta unos 8 archivos por parte.
+  - **Después, según lo que tardó:** el puente informa la duración de cada parte. Si una tardó menos de 10 minutos, la siguiente puede ser del doble. Si pasó de 20, hacé la siguiente más chica.
+  - Si todo cabe en 15 minutos, es un solo encargo, sin partes.
 - **Cómo partir:**
-  - cada parte es una unidad que se termina sola: una pantalla, un endpoint con su lógica, un grupo de componentes, una migración. Entre 3 y 5 archivos;
+  - cada parte es una unidad que se termina sola: una o varias pantallas, endpoints con su lógica, un grupo de componentes, una migración;
   - cada parte deja el proyecto compilando (el typecheck y los tests que ya existían pasan);
   - las que dependen de otras van después: primero tipos y datos, después la lógica, al final la interfaz.
 - **El developer hace las partes una después de la otra,** nunca dos a la vez: comparten la carpeta del proyecto y se pisarían.
@@ -231,7 +234,7 @@ Claude trabaja con su propio tiempo, pero el proveedor de un puente tiene un top
   - si el tester encuentra fallas en una parte, no interrumpas al developer: van al principio del encargo de la parte siguiente ("primero corregí esto de la parte 1"), o en un encargo aparte si era la última;
   - **al final, una verificación completa:** cuando terminan todas las partes y sus pruebas, el tester (retomado) corre la suite completa, el typecheck y el lint sobre todo el cambio. Recién después pasa a QA.
 
-  Si las partes dependen tanto entre sí que probar una sola no tiene sentido (por ejemplo, la parte 1 son solo tipos), esa parte se prueba junto con la siguiente. Si una parte sale con REGLAS ROTAS o el proveedor falla, frená todo ahí, como siempre.
+  Si las partes dependen tanto entre sí que probar una sola no tiene sentido (por ejemplo, la parte 1 son solo tipos), o si una parte salió chica (menos de 10 minutos), esa parte se prueba junto con la siguiente: cada vuelta del tester también cuesta. Si una parte sale con REGLAS ROTAS o el proveedor falla, frená todo ahí, como siempre.
 - **Si igual se agota el tiempo** en una parte, partila de nuevo con lo que falta, según los archivos que ya cambió.
 - **Avisale al CEO en el plan** cuántas partes son, en una línea ("Codex lo hace en 3 partes: tipos y API, lógica, pantallas").
 
@@ -369,11 +372,11 @@ Un agente nuevo arranca de cero: vuelve a leer el `CLAUDE.md`, el encargo y el c
   - las correcciones del PR (`office:review-fixes`).
 - **Juntá todo en un mensaje:** todos los hallazgos de una vuelta, o todos los ajustes seguidos del CEO, juntos. No le escribas de a uno.
 - **El mensaje tiene que alcanzar solo:** qué cambió desde su última entrega, qué corregir, con el reporte del tester o de QA tal cual y cómo reproducirlo. No repitas el encargo original, ya lo tiene.
-- **Retoques chicos: un agente nuevo con un encargo mínimo.** Retomar no es gratis: si el agente estuvo parado más de unos minutos (casi siempre, porque el CEO revisó o pasaron el tester y QA), vuelve a cargar todo el contexto que juntó, y una vuelta de una línea cuesta lo mismo que todo lo que ya lleva. Un agente nuevo que lee un solo archivo cuesta mucho menos. Por eso, si el pedido es un **retoque mecánico**, no lo retomes: lanzá un developer nuevo con un encargo mínimo.
-  - **Es un retoque mecánico** si lo podés describir completo sin que el agente entienda el resto del cambio: un texto, un color, un espaciado, un ícono, el orden de elementos, un renombre en un archivo, la redacción de un documento. Si viene de una falla del tester o de un bloqueante de QA, o hay que entender la lógica, no es un retoque: retomá al developer.
-  - **El encargo mínimo** dice el archivo, el lugar (línea, componente, selector o sección) y el cambio exacto, y le pide que lea solo eso, sin explorar el proyecto ni releer el diseño. La descripción corta empieza con `Retoque:` (por ejemplo, `[frontend-developer] Retoque: color del botón de pagar`), así se distingue en `/office:usage`.
+- **Retoques chicos: un agente nuevo con un encargo mínimo.** Retomar no es gratis: si el agente estuvo parado más de unos minutos (casi siempre, porque el CEO revisó o pasaron el tester y QA), vuelve a cargar todo el contexto que juntó, y una vuelta de una línea cuesta lo mismo que todo lo que ya lleva. Un agente nuevo que lee un solo archivo cuesta mucho menos. Por eso, si el pedido es un **retoque mecánico**, no lo retomes: lanzá un agente nuevo del mismo rol con un encargo mínimo. Vale para el developer, el designer, el arquitecto y el redactor de documentación.
+  - **Es un retoque mecánico** si lo podés describir completo sin que el agente entienda el resto del cambio: un texto, un color, un espaciado, un ícono, el orden de elementos, un renombre en un archivo, la redacción de un documento o un párrafo de un diseño. Si viene de una falla del tester o de un bloqueante de QA, o hay que entender la lógica (o, en un diseño, cambia una decisión que arrastra a otras), no es un retoque: retomá al agente.
+  - **El encargo mínimo** dice el archivo, el lugar (línea, componente, selector o sección) y el cambio exacto, y le pide que lea solo eso, sin explorar el proyecto ni releer el diseño. En un diseño (`docs/design/`), la sección que cambia y el texto nuevo o lo que tiene que decir. La descripción corta empieza con `Retoque:` (por ejemplo, `[frontend-developer] Retoque: color del botón de pagar`), así se distingue en `/office:usage`.
   - **Varios retoques, en un solo encargo mínimo.** Si en el mismo pedido hay retoques y algo que pide entender la lógica, va todo junto al developer retomado.
-  - **Después del retoque:** si el archivo tiene tests o referencias visuales, encargale al tester (nuevo, también con encargo mínimo) que corra solo esos. QA no hace falta salvo que el retoque toque lógica; decilo en el informe.
+  - **Después del retoque:** si el archivo tiene tests o referencias visuales, encargale al tester (nuevo, también con encargo mínimo) que corra solo esos. QA no hace falta salvo que el retoque toque lógica; decilo en el informe. Un retoque de un diseño o de un documento no pasa por el tester: mostráselo al CEO.
 - **El tester y QA siguen siendo independientes:** nunca le pidas al developer que se pruebe a sí mismo, ni le pases a un QA lo que encontró otro antes de su revisión.
 - **Cuándo lanzás uno nuevo:**
   - si la tarea es otra (otro ticket, otra parte del producto);
