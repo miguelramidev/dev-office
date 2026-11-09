@@ -59,7 +59,7 @@ Y después el encargo completo, el mismo que recibiría el agente del rol. Si fa
 | 0 | Seguí con el paso 4. |
 | 2 | Frená. Tu reporte empieza con **PROVEEDOR NO DISPONIBLE**: qué proveedor, el motivo del resumen y cómo se arregla (instalarlo, `codex login`, correr `agy` e iniciar sesión con la cuenta de Google, elegir otro modelo con `office-agents.sh tier` si la cuenta no lo tiene, esperar a que se renueve la cuota). No pruebes con otro proveedor: lo decide el CEO. |
 | 4 | Frená. Tu reporte empieza con **REGLAS ROTAS**: la lista de problemas del resumen y los archivos cambiados. No deshagas nada: lo decide el CEO. |
-| 5 | Reportá **TIEMPO AGOTADO**, qué archivos alcanzó a cambiar y proponé dividir el encargo en partes más chicas. |
+| 5 | Reportá **TIEMPO AGOTADO** y la lista completa de archivos que alcanzó a cambiar, con lo que el reporte del proveedor diga que quedó hecho y lo que falta: el PM arma con eso la parte siguiente. No deshagas nada. |
 | 1 o 3 | Reportá **EL PROVEEDOR FALLÓ** con el motivo del resumen. Si el resumen lista comandos que Antigravity le rechazó a Gemini, copialos tal cual (el script ya le dio un segundo intento con ese aviso). Si no, leé las últimas líneas de `log.txt` y copiá lo relevante. |
 
 ## 4. Controles mínimos

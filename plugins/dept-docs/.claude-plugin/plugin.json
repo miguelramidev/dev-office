@@ -1,6 +1,6 @@
 {
   "name": "dept-docs",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Departamento de documentación de dev-office: un redactor que escribe y actualiza README, guías, documentación de uso y changelog verificando cada dato contra el código, y un revisor que comprueba que los comandos, ejemplos y enlaces de lo escrito funcionan.",
   "author": {
     "name": "Miguel Ramirez"

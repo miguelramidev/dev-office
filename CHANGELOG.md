@@ -8,6 +8,19 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.54.0] - 2026-11-08
+
+### Cambiado
+
+- **Encargos en partes para Codex y Gemini** (`office` 0.51.0). El proveedor de un puente tiene un tope de tiempo (`OFFICE_EXTERNAL_TIMEOUT`, 30 minutos por defecto), y un encargo grande se cortaba a la mitad. Ahora, cuando el developer es Codex o Gemini, el PM parte el trabajo antes de encargarlo:
+  - **cuándo:** si toca más de unos 5 archivos, más de una pantalla o un endpoint, o mezcla cosas distintas;
+  - **cada parte:** de 3 a 5 archivos, se termina sola y deja el proyecto compilando. Las que dependen de otras van después;
+  - **orden:** el developer las hace una después de la otra, nunca dos a la vez, cada una con lo que quedó hecho en las anteriores;
+  - **en paralelo con el tester:** mientras el developer hace una parte, el tester prueba la anterior, solo con los archivos y los tests relacionados de esa parte y escribiendo solo archivos de test. Las fallas van al principio del encargo de la parte siguiente. Al final, el tester corre la suite completa, el typecheck y el lint sobre todo el cambio, y recién después pasa a QA;
+  - **el plan** le avisa al CEO en cuántas partes va.
+
+  Si igual se agota el tiempo, el PM arma la parte siguiente con la lista de archivos que ya cambió, que el puente ahora informa completa junto con lo que quedó hecho y lo que falta. Los roles en Claude no se parten. Los líderes del modo equipos hacen lo mismo (`dept-backend` 0.3.6, `dept-database` 0.2.6, `dept-devops` 0.3.6, `dept-docs` 0.1.5, `dept-frontend` 0.6.1, `dept-scraper` 0.2.6).
+
 ## [0.53.0] - 2026-11-08
 
 ### Cambiado

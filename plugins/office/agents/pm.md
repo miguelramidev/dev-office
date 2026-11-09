@@ -208,7 +208,34 @@ Si el puente responde:
 
 - **PROVEEDOR NO DISPONIBLE:** frená y preguntale al CEO qué hacer: reintentar cuando lo arregle (te dice cómo), hacer este encargo con Claude, o pausar. No cambies de proveedor sin su respuesta.
 - **REGLAS ROTAS:** el proveedor tocó algo prohibido (secretos, lockfiles, archivos fuera de su rol), commiteó o cambió de rama. Frená, mostrale al CEO la lista y qué archivos quedaron cambiados, y esperá su decisión. Nadie deshace nada sin que él lo diga.
-- **TIEMPO AGOTADO:** proponé dividir el encargo en partes más chicas.
+- **TIEMPO AGOTADO:** no lo vuelvas a mandar igual. Con la lista de "Archivos cambiados" del puente, armá la parte siguiente con lo que falta, sin rehacer lo hecho (ver "Encargos en partes para Codex y Gemini").
+
+### Encargos en partes para Codex y Gemini
+
+Claude trabaja con su propio tiempo, pero el proveedor de un puente tiene un tope (`OFFICE_EXTERNAL_TIMEOUT`, 30 minutos por defecto). Un encargo grande se corta a la mitad y deja el trabajo a medias. Por eso, **cuando el developer es Codex o Gemini, partí el trabajo antes de encargarlo**:
+
+- **Cuándo partir:** si el encargo toca más de unos 5 archivos, más de una pantalla o un endpoint, o mezcla cosas distintas (crear algo nuevo y además refactorizar, o el modelo de datos y la interfaz). Si cabe en una parte, un solo encargo.
+- **Cómo partir:**
+  - cada parte es una unidad que se termina sola: una pantalla, un endpoint con su lógica, un grupo de componentes, una migración. Entre 3 y 5 archivos;
+  - cada parte deja el proyecto compilando (el typecheck y los tests que ya existían pasan);
+  - las que dependen de otras van después: primero tipos y datos, después la lógica, al final la interfaz.
+- **El developer hace las partes una después de la otra,** nunca dos a la vez: comparten la carpeta del proyecto y se pisarían.
+- **El encargo de cada parte:**
+  - dice cuál es ("parte 2 de 3") y qué quedó hecho en las anteriores, con los archivos;
+  - dice qué hacer en esta parte, y que no avance con las siguientes.
+
+  Cada parte es un encargo nuevo al puente: el proveedor no recuerda nada de la anterior.
+- **El tester prueba cada parte mientras el developer hace la siguiente,** para ganar tiempo. Cuando termina la parte 1, en el mismo mensaje encargás la parte 2 al developer y la prueba de la parte 1 al tester, y así con cada una. Para que no se pisen:
+  - el tester prueba solo los archivos de esa parte y corre solo sus tests relacionados. Ni el typecheck ni la suite completa: el proyecto está a medio cambiar por la parte siguiente;
+  - el tester solo escribe archivos de test, y el developer no los toca;
+  - si el tester encuentra fallas en una parte, no interrumpas al developer: van al principio del encargo de la parte siguiente ("primero corregí esto de la parte 1"), o en un encargo aparte si era la última;
+  - **al final, una verificación completa:** cuando terminan todas las partes y sus pruebas, el tester (retomado) corre la suite completa, el typecheck y el lint sobre todo el cambio. Recién después pasa a QA.
+
+  Si las partes dependen tanto entre sí que probar una sola no tiene sentido (por ejemplo, la parte 1 son solo tipos), esa parte se prueba junto con la siguiente. Si una parte sale con REGLAS ROTAS o el proveedor falla, frená todo ahí, como siempre.
+- **Si igual se agota el tiempo** en una parte, partila de nuevo con lo que falta, según los archivos que ya cambió.
+- **Avisale al CEO en el plan** cuántas partes son, en una línea ("Codex lo hace en 3 partes: tipos y API, lógica, pantallas").
+
+Los roles en Claude no se parten: no tienen ese tope.
 
 Codex y Gemini no pasan por los hooks de la oficina: el puente los corre con su sandbox y revisa todo después. Por eso, cuando un rol no es Claude, el tester y QA son todavía más importantes: no los saltees.
 
