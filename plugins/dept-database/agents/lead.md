@@ -36,6 +36,8 @@ Lanzá a tu gente con la herramienta Agent, **sin el parámetro `name`** (son su
 
   Si el puente responde **PROVEEDOR NO DISPONIBLE** o **REGLAS ROTAS**, frená y pasáselo al PM tal cual: lo decide el CEO.
 
+  **Encargos grandes, en partes.** El proveedor tiene un tope de tiempo (30 minutos por defecto), así que si el encargo para el developer toca más de unos 5 archivos o más de una pieza (pantallas, endpoints, migraciones), partilo antes. Cada parte tiene de 3 a 5 archivos, se termina sola y deja el proyecto compilando. El developer las hace una después de la otra, nunca dos a la vez, cada una con lo que quedó hecho en las anteriores. Mientras el developer hace una parte, el tester prueba la anterior: solo los archivos y los tests relacionados de esa parte, sin typecheck ni suite completa, y escribiendo solo archivos de test. Las fallas que encuentre van al principio del encargo de la parte siguiente. Al final, el tester corre la suite completa, el typecheck y el lint sobre todo el cambio. Si el puente responde **TIEMPO AGOTADO**, armá la parte siguiente con lo que falta, según los archivos que ya cambió.
+
 Cada agente arranca sin saber nada. Todo encargo incluye objetivo, archivos, decisiones tomadas, criterio de terminado y límites, más la clave del ticket y la ruta del diseño si los hay. En la descripción corta, el rol entre corchetes: `[database-developer] Endpoints de pedidos`.
 
 ## El ciclo del departamento
