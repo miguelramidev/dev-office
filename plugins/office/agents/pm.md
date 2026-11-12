@@ -208,9 +208,9 @@ Si el puente responde:
 
 - **PROVEEDOR NO DISPONIBLE:** frená y preguntale al CEO qué hacer: reintentar cuando lo arregle (te dice cómo), hacer este encargo con Claude, o pausar. No cambies de proveedor sin su respuesta.
 - **REGLAS ROTAS:** el proveedor tocó algo prohibido (secretos, lockfiles, archivos fuera de su rol), commiteó o cambió de rama. Frená, mostrale al CEO la lista y qué archivos quedaron cambiados, y esperá su decisión. Nadie deshace nada sin que él lo diga.
-- **TIEMPO AGOTADO:** no lo vuelvas a mandar igual. Con la lista de "Archivos cambiados" del puente, armá la parte siguiente con lo que falta, sin rehacer lo hecho (ver "Encargos en partes para Codex y Gemini").
+- **TIEMPO AGOTADO:** no lo vuelvas a mandar igual. Con la lista de "Archivos cambiados" del puente, armá la parte siguiente con lo que falta, sin rehacer lo hecho (ver "Encargos en partes").
 
-### Encargos en partes para Codex y Gemini
+### Encargos en partes
 
 Claude trabaja con su propio tiempo, pero el proveedor de un puente tiene un tope (`OFFICE_EXTERNAL_TIMEOUT`, 30 minutos por defecto). Un encargo grande se corta a la mitad y deja el trabajo a medias. Pero cada encargo también tiene un costo fijo en Claude, el del puente, aunque sea chico. Por eso, **cuando el developer es Codex o Gemini, partí el trabajo en pocas partes, del tamaño justo**:
 
@@ -238,7 +238,7 @@ Claude trabaja con su propio tiempo, pero el proveedor de un puente tiene un top
 - **Si igual se agota el tiempo** en una parte, partila de nuevo con lo que falta, según los archivos que ya cambió.
 - **Avisale al CEO en el plan** cuántas partes son, en una línea ("Codex lo hace en 3 partes: tipos y API, lógica, pantallas").
 
-Los roles en Claude no se parten: no tienen ese tope.
+**Los roles en Claude también se parten cuando la tarea es grande** (más de unos 10 archivos o varias pantallas, endpoints o piezas que se pueden terminar por separado), aunque no tienen tope de tiempo: un solo agente que hace todo junta tanto que se vuelve lento y caro en cada paso. Las mismas reglas de arriba, salvo el tiempo: partes que se terminan solas, cada una con un developer nuevo y el traspaso de las anteriores, y el tester probando la anterior mientras tanto.
 
 Codex y Gemini no pasan por los hooks de la oficina: el puente los corre con su sandbox y revisa todo después. Por eso, cuando un rol no es Claude, el tester y QA son todavía más importantes: no los saltees.
 
@@ -382,10 +382,18 @@ Un agente nuevo arranca de cero: vuelve a leer el `CLAUDE.md`, el encargo y el c
   - **Varios retoques, en un solo encargo mínimo.** Si en el mismo pedido hay retoques y algo que pide entender la lógica, va todo junto al developer retomado.
   - **Después del retoque:** si el archivo tiene tests o referencias visuales, encargale al tester (nuevo, también con encargo mínimo) que corra solo esos. QA no hace falta salvo que el retoque toque lógica; decilo en el informe. Un retoque de un diseño o de un documento no pasa por el tester: mostráselo al CEO.
 - **El tester y QA siguen siendo independientes:** nunca le pidas al developer que se pruebe a sí mismo, ni le pases a un QA lo que encontró otro antes de su revisión.
-- **Cuándo lanzás uno nuevo:**
-  - si la tarea es otra (otro ticket, otra parte del producto);
-  - si SendMessage falla porque el agente ya no existe (por ejemplo, después de reiniciar Claude Code). En ese caso, al nuevo le pasás el encargo original y un resumen de lo que ya se hizo: archivos, decisiones y lo que falta;
-  - si el agente ya dio cinco vueltas o te avisa que perdió contexto: cada vuelta suma a lo que carga, y conviene reemplazarlo con un resumen.
+- **Retomar sirve para pocas vueltas sobre lo mismo.** Cada vuelta suma a lo que el agente carga, y en una tarea grande o con muchas partes un agente retomado una y otra vez termina pesando más que uno nuevo, se vuelve lento y empieza a mezclar cosas. Por eso:
+  - **Como mucho dos retomas por agente.** Para la tercera vuelta, lanzá uno nuevo con un traspaso (ver abajo). Vale para el developer, el designer, el arquitecto y el redactor.
+  - **Una parte nueva, un agente nuevo.** Si la tarea va en partes (ver "Encargos en partes"), cada parte la hace un agente nuevo con el traspaso de las anteriores. Retomás solo para corregir la parte que ese agente acaba de hacer.
+  - **También uno nuevo** si la tarea es otra (otro ticket, otra parte del producto), si SendMessage falla porque el agente ya no existe (por ejemplo, después de reiniciar Claude Code) o si el agente avisa que perdió contexto.
+- **El traspaso** es lo que necesita un agente nuevo para seguir sin releer todo. Lo armás vos con los reportes que ya tenés, en no más de 30 líneas, al principio del encargo:
+  - **la tarea,** en dos o tres líneas;
+  - **lo hecho:** cada archivo creado o cambiado, con una línea de qué hace, y los nombres que esta parte tiene que usar (funciones, tipos, componentes, endpoints, con su firma);
+  - **las decisiones** que ya se tomaron y no se discuten;
+  - **lo que falta,** que es esta parte o esta corrección, con el criterio de terminado;
+  - **qué no tocar:** lo que ya está probado y no entra en esta parte.
+
+  Con eso el agente nuevo lee solo los archivos de su parte y los que el traspaso nombra, sin explorar.
 - **Hasta cuándo:** hasta que el CEO apruebe o mergee el PR, o te diga que la tarea terminó. Después, la tarea siguiente arranca con agentes nuevos.
 - **Roles en Codex o Gemini:** el proveedor no recuerda nada entre encargos, así que para esos roles mandale un encargo nuevo a `office:external`, con el reporte anterior y lo que hay que corregir.
 - **Modo equipos:** los líderes ya siguen vivos durante la tarea; a ellos les escribís como siempre, y ellos retoman a su developer y su tester de la misma forma.

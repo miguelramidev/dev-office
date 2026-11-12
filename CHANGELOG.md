@@ -8,6 +8,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.57.1] - 2026-11-12
+
+### Cambiado
+
+- **Menos retomas en las tareas grandes** (`office` 0.54.1). En una tarea grande o con muchas partes, un agente retomado una y otra vez terminaba cargando todo lo anterior: cada vuelta pesaba más, se volvía lento y mezclaba cosas.
+  - **Como mucho dos retomas por agente:** developer, designer, arquitecto o redactor. Para la tercera vuelta, uno nuevo.
+  - **Cada parte nueva la hace un agente nuevo.** Se retoma solo para corregir la parte que ese agente acaba de hacer.
+  - **El traspaso:** el agente nuevo recibe uno de no más de 30 líneas, que el PM arma con los reportes. Lleva la tarea, cada archivo hecho con qué hace y los nombres que hay que usar, las decisiones tomadas, lo que falta y qué no tocar. Así lee solo los archivos de su parte, sin explorar.
+  - **Las tareas grandes se parten también con Claude,** cuando tocan más de unos 10 archivos o varias piezas que se terminan por separado, con las mismas reglas que con Codex, salvo el tope de tiempo.
+  - Los líderes del modo equipos hacen lo mismo (`dept-backend` 0.3.10, `dept-database` 0.2.10, `dept-devops` 0.3.10, `dept-docs` 0.1.8, `dept-frontend` 0.6.5, `dept-research` 0.1.3, `dept-scraper` 0.2.10).
+
 ## [0.57.0] - 2026-11-09
 
 ### Cambiado
