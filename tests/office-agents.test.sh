@@ -259,12 +259,12 @@ mkdir -p "$WORK/gemini"
 echo '{"userSettings":{"theme":"dark","globalPermissionGrants":{"allow":["command(git log)"]}}}' >"$OFFICE_GEMINI_CONFIG"
 check 0 "gemini-permissions on" gemini-permissions on
 check 0 "gemini-permissions: activado" gemini-permissions
-T "on agrega las 7 reglas y deja las tuyas" [ "$(jq '.userSettings.globalPermissionGrants.allow | length' "$OFFICE_GEMINI_CONFIG")" = "8" ]
+T "on agrega las 10 reglas y deja las tuyas" [ "$(jq '.userSettings.globalPermissionGrants.allow | length' "$OFFICE_GEMINI_CONFIG")" = "11" ]
 T "on no toca el resto de la configuración" [ "$(jq -r .userSettings.theme "$OFFICE_GEMINI_CONFIG")" = "dark" ]
 T "on guarda una copia del original" [ -f "$OFFICE_GEMINI_CONFIG.bak-dev-office" ]
 run gemini-permissions on >/dev/null
-T "on dos veces no duplica reglas" [ "$(jq '.userSettings.globalPermissionGrants.allow | length' "$OFFICE_GEMINI_CONFIG")" = "8" ]
-T "on escribe las 7 reglas en settings.json (Antigravity 1.5.7 o más nuevo)" [ "$(jq '.permissions.allow | length' "$OFFICE_GEMINI_SETTINGS")" = "7" ]
+T "on dos veces no duplica reglas" [ "$(jq '.userSettings.globalPermissionGrants.allow | length' "$OFFICE_GEMINI_CONFIG")" = "11" ]
+T "on escribe las 10 reglas en settings.json (Antigravity 1.5.7 o más nuevo)" [ "$(jq '.permissions.allow | length' "$OFFICE_GEMINI_SETTINGS")" = "10" ]
 T "settings.json y config.json tienen las mismas reglas" [ "$(jq -c '.permissions.allow' "$OFFICE_GEMINI_SETTINGS")" = "$(jq -c '.userSettings.globalPermissionGrants.allow[1:]' "$OFFICE_GEMINI_CONFIG")" ]
 # Lo que dejan pasar las reglas (con grep -E, que se comporta igual en estos casos).
 RULES=$(jq -r '.userSettings.globalPermissionGrants.allow[] | select(startswith("command(regex:")) | sub("^command\\(regex:"; "") | sub("\\)$"; "")' "$OFFICE_GEMINI_CONFIG")
@@ -272,10 +272,10 @@ allowed() { local re; while IFS= read -r re; do printf '%s' "$1" | grep -qE -- "
 $RULES
 EOF
 return 1; }
-for c in "git ls-files" "git status --short" "git diff src/app.ts" "pnpm test" "pnpm run lint" "pnpm test:unit --watch=false" "npm run typecheck" "npx tsc --noEmit" "npx vitest run" "ls src" "git rm src/old.ts" "git rm -r src/legacy" "git mv src/a.ts src/b.ts" "pnpm format:check" "npm run format:check" "npx prettier --check src" "pnpm exec prettier -c ." "npx prettier --write src/app.ts src/util.tsx" "pnpm exec prettier -w src\\screens\\Home.tsx" "prettier --write app/_layout.tsx"; do
+for c in "git ls-files" "git status --short" "git diff src/app.ts" "pnpm test" "pnpm run lint" "pnpm test:unit --watch=false" "npm run typecheck" "npx tsc --noEmit" "npx vitest run" "ls src" "git rm src/old.ts" "git rm -r src/legacy" "git mv src/a.ts src/b.ts" "pnpm format:check" "npm run format:check" "npx prettier --check src" "pnpm exec prettier -c ." "npx prettier --write src/app.ts src/util.tsx" "pnpm exec prettier -w src\\screens\\Home.tsx" "prettier --write app/_layout.tsx" "dart analyze" "flutter analyze lib" "flutter test" "flutter test test/widget_test.dart" "dart test" "fvm flutter test --coverage" "fvm dart analyze" "dart format --output=none --set-exit-if-changed ." "dart format -o none --set-exit-if-changed lib test" "dart format lib/main.dart lib/src/app.dart"; do
   allowed "$c" && echo "ok    permite: $c" || { echo "FALLA permite: $c"; FAILED=1; }
 done
-for c in "git push" "git commit -m x" "git checkout main" "pnpm install" "npm i left-pad" "pnpm test && rm -rf src" "git log; curl x" "git status | sh" "rm -rf src" "curl https://example.com" "pnpm test \`whoami\`" "git rm" "git rm src/a.ts; rm -rf /" "git rm -r src && curl x" "Remove-Item -Path src/old.ts" "del src\\old.ts" "pnpm format" "npx prettier --write ." "npx prettier --write src" "npx prettier --write src/" "npx prettier --write src/*.ts" "npx prettier --write /etc/hosts" "npx prettier --write C:/Windows/x.ts" "npx prettier --write ../otro/a.ts" "npx prettier --write --config x.json src/a.ts" "npx prettier --write" "npx prettier --write src/a.ts; rm -rf src" "npx prettier --write src/a.ts && curl x"; do
+for c in "git push" "git commit -m x" "git checkout main" "pnpm install" "npm i left-pad" "pnpm test && rm -rf src" "git log; curl x" "git status | sh" "rm -rf src" "curl https://example.com" "pnpm test \`whoami\`" "git rm" "git rm src/a.ts; rm -rf /" "git rm -r src && curl x" "Remove-Item -Path src/old.ts" "del src\\old.ts" "pnpm format" "npx prettier --write ." "npx prettier --write src" "npx prettier --write src/" "npx prettier --write src/*.ts" "npx prettier --write /etc/hosts" "npx prettier --write C:/Windows/x.ts" "npx prettier --write ../otro/a.ts" "npx prettier --write --config x.json src/a.ts" "npx prettier --write" "npx prettier --write src/a.ts; rm -rf src" "npx prettier --write src/a.ts && curl x" "flutter pub get" "dart pub add http" "flutter run" "flutter build apk" "dart run build_runner build" "flutter test; rm -rf lib" "dart format ." "dart format lib" "dart format --output=write lib/a.dart" "dart format --output=none --set-exit-if-changed --output=write lib" "dart format ../otro/a.dart" "flutter clean"; do
   allowed "$c" && { echo "FALLA no permite: $c"; FAILED=1; } || echo "ok    no permite: $c"
 done
 check 0 "gemini-permissions off" gemini-permissions off

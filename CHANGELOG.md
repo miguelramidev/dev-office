@@ -8,6 +8,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.59.1] - 2026-11-16
+
+### Cambiado
+
+- **Permisos de Gemini para Dart y Flutter** (`office` 0.55.1). `gemini-permissions on` suma tres reglas: `dart analyze`, `flutter analyze`, `dart test` y `flutter test` (también con `fvm`); `dart format --output=none --set-exit-if-changed` para chequear el formato; y `dart format <archivos .dart>` para formatear archivos puntuales. Instalar paquetes, generar código, correr o compilar la app se siguen rechazando. Si ya los tenías activados, corré `gemini-permissions on` otra vez (el estado dice "incompletos" hasta entonces).
+
 ## [0.59.0] - 2026-11-16
 
 ### Cambiado
