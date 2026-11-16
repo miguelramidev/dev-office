@@ -8,6 +8,21 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.58.0] - 2026-11-16
+
+### Agregado
+
+- **Lo mínimo que resuelve.** Reglas para escribir menos código, adaptadas de [Ponytail](https://github.com/DietrichGebert/ponytail) (MIT, de Dietrich Gebert). No se instala Ponytail: sus ideas quedan en las instrucciones de cada rol, así también le llegan a Codex por el puente.
+  - **Developers** (`dept-backend` 0.4.0, `dept-frontend` 0.7.0, `dept-database` 0.3.0, `dept-scraper` 0.3.0, `dept-devops` 0.4.0):
+    - una escalera antes de escribir código nuevo: ¿hace falta?, ¿ya existe en el proyecto?, ¿lo resuelve la plataforma o la librería estándar?, ¿lo resuelve una dependencia instalada?, ¿alcanza con una línea?, y recién después, lo mínimo;
+    - nada "para después";
+    - los bugs se arreglan una sola vez en el código compartido;
+    - los atajos con su límite van marcados `atajo:`;
+    - lo que nunca se recorta: validación, manejo de errores, seguridad, accesibilidad y lo pedido;
+    - el reporte suma "Lo que dejaste afuera".
+  - **Arquitectos y designer:** la misma escalera antes de proponer algo nuevo. Lo que el objetivo no justifica va como fuera de alcance, y lo decide el CEO. El designer usa primero los componentes del proyecto y después los de la plataforma.
+  - **QA** (`office` 0.54.2): las mejoras incluyen el "código de más" (borrar, reusar, nativo, para después, juntar), cada una con su caso concreto. Un `atajo:` marcado es una decisión, no un hallazgo.
+
 ## [0.57.1] - 2026-11-12
 
 ### Cambiado

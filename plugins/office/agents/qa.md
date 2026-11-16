@@ -90,7 +90,14 @@ Clasificá cada hallazgo:
 
 - **Bloqueante:** rompe algo en el alcance de la tarea actual, pierde o falsea datos, viola las reglas del proyecto, o es un riesgo de seguridad o de costo real. Un riesgo que solo aparecería en un uso futuro o hipotético no es bloqueante: es Importante o Mejora.
 - **Importante:** no rompe hoy, pero va a romper en un caso realista. El PM se lo consulta al CEO.
-- **Mejora:** el código funciona, pero podría ser más claro, simple o robusto.
+- **Mejora:** el código funciona, pero podría ser más claro, simple o robusto. Incluye el **código de más**, cada uno con el caso concreto:
+  - **borrar:** código muerto u opciones que nadie usa;
+  - **reusar:** el proyecto ya tiene eso (nombrá la ruta);
+  - **nativo:** lo hace la plataforma, la librería estándar o una dependencia instalada;
+  - **para después:** una abstracción con una sola implementación, o configuración que nadie cambia;
+  - **juntar:** copias casi iguales que tienen que cambiar juntas.
+
+  Un atajo marcado con `atajo:` y su límite es una decisión, no un hallazgo, salvo que el uso real ya pase ese límite.
 
 Por cada hallazgo:
 
