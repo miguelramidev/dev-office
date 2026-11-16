@@ -55,14 +55,16 @@ devops.architect devops.developer devops.tester
 docs.developer docs.tester
 research.developer research.tester"
 
-# Modelos de cada proveedor por nivel, a la par de los de Claude (octubre de 2026). Se pueden
+# Modelos de cada proveedor por nivel, a la par de los de Claude (noviembre de 2026). Se pueden
 # cambiar por proyecto con "tier". effort: razonamiento (medio para todos, para no gastar de más).
 #   codex:  gpt-6-astra (el más inteligente de OpenAI), gpt-6.1-sol (el recomendado para
 #           programar), gpt-6-luna (rápido).
-#   gemini: gemini-4-argon (el más capaz de Google), gemini-3.8-flash, gemini-3.5-flash-lite.
+#   gemini: gemini-4-argon (el más capaz de Google con Google AI Pro), gemini-4-hydrogen (liviano
+#           y rápido, para código, tests y comandos; Antigravity 1.5.8 o más nuevo) y
+#           gemini-3.8-flash.
 DEFAULT_MODELS='{
-  "codex":  { "opus": "gpt-6-astra",    "sonnet": "gpt-6.1-sol",      "haiku": "gpt-6-luna",            "effort": "medium" },
-  "gemini": { "opus": "gemini-4-argon", "sonnet": "gemini-3.8-flash", "haiku": "gemini-3.5-flash-lite", "effort": "medium" }
+  "codex":  { "opus": "gpt-6-astra",    "sonnet": "gpt-6.1-sol",       "haiku": "gpt-6-luna",       "effort": "medium" },
+  "gemini": { "opus": "gemini-4-argon", "sonnet": "gemini-4-hydrogen", "haiku": "gemini-3.8-flash", "effort": "medium" }
 }'
 
 die() {
@@ -318,13 +320,17 @@ teams_flag_on() {
 }
 
 # --- Permisos de comandos para Gemini (Antigravity) --------------------------------
-# Sin pantalla, Antigravity niega solo cualquier comando que no tenga permiso, y solo lee los
-# permisos de comandos de ~/.gemini/config/config.json (los de settings.json los ignora).
+# Sin pantalla, Antigravity rechaza solo cualquier comando que no tenga permiso. Desde la 1.5.7
+# lee los permisos guardados de ~/.gemini/antigravity-cli/settings.json (permissions.allow); las
+# versiones anteriores, de ~/.gemini/config/config.json. La oficina los escribe en los dos.
 # Estas reglas dejan pasar solo comandos de lectura y de verificación, más borrar y mover con
 # git rm y git mv (Antigravity no tiene herramienta para borrar archivos; git solo actúa sobre
 # archivos que sigue dentro del repo, y se deshace con git restore). De a uno: ningún comando
 # encadenado (; & | ` $ < >). Valen para toda la computadora.
+GEMINI_SETTINGS="${OFFICE_GEMINI_SETTINGS:-$HOME/.gemini/antigravity-cli/settings.json}"
 GEMINI_CONFIG="${OFFICE_GEMINI_CONFIG:-$HOME/.gemini/config/config.json}"
+SETTINGS_PATH='["permissions","allow"]'
+CONFIG_PATH='["userSettings","globalPermissionGrants","allow"]'
 gemini_rules() {
   cat <<'RULES'
 command(regex:^git (status|diff|log|show|ls-files|grep|blame)( [^;&|`$<>]*)?$)
@@ -338,42 +344,58 @@ RULES
 }
 gemini_rules_json() { gemini_rules | jq -R -s -c 'split("\n") | map(select(length > 0))'; }
 
-# Cuántas de las reglas de la oficina tiene la configuración de Antigravity (0 si no hay).
+# Cuántas de las reglas de la oficina tiene un archivo de Antigravity (0 si no hay).
+# $1: el archivo; $2: dónde están los permisos, como lista de claves de jq.
 gemini_rules_present() {
-  [ -f "$GEMINI_CONFIG" ] || { echo 0; return; }
-  jqc -r --argjson rules "$(gemini_rules_json)" \
-    '(.userSettings.globalPermissionGrants.allow // []) as $a | [$rules[] | select(. as $r | $a | index($r))] | length' \
-    "$GEMINI_CONFIG" 2>/dev/null || echo 0
+  [ -f "$1" ] || { echo 0; return; }
+  jqc -r --argjson rules "$(gemini_rules_json)" --argjson p "$2" \
+    '(getpath($p) // []) as $a | [$rules[] | select(. as $r | $a | index($r))] | length' \
+    "$1" 2>/dev/null || echo 0
+}
+
+# Suma (on) o saca (off) las reglas de la oficina de un archivo, sin tocar el resto.
+gemini_rules_write() {
+  local action="$1" file="$2" path="$3" tmp
+  mkdir -p "$(dirname "$file")" || die "no pude crear la carpeta de $file."
+  [ -f "$file" ] || echo '{}' >"$file"
+  # Una copia del archivo original, la primera vez que la oficina lo cambia.
+  [ -f "$file.bak-dev-office" ] || cp "$file" "$file.bak-dev-office"
+  tmp="$file.tmp"
+  if [ "$action" = on ]; then
+    jqc --indent 2 --argjson rules "$(gemini_rules_json)" --argjson p "$path" \
+      'setpath($p; reduce $rules[] as $r ((getpath($p) // []); if index($r) then . else . + [$r] end))' \
+      "$file" >"$tmp" && mv "$tmp" "$file"
+  else
+    jqc --indent 2 --argjson rules "$(gemini_rules_json)" --argjson p "$path" \
+      'setpath($p; ((getpath($p) // []) - $rules))' \
+      "$file" >"$tmp" && mv "$tmp" "$file"
+  fi
 }
 
 cmd_gemini_permissions() {
-  local action="${1:-status}" tmp total present
+  local action="${1:-status}" total present f
   total=$(gemini_rules | grep -c .)
   case "$action" in
     on | off)
-      mkdir -p "$(dirname "$GEMINI_CONFIG")" || die "no pude crear la carpeta de $GEMINI_CONFIG."
-      [ -f "$GEMINI_CONFIG" ] || echo '{}' >"$GEMINI_CONFIG"
-      jq empty "$GEMINI_CONFIG" >/dev/null 2>&1 || die "$GEMINI_CONFIG no es un JSON válido: no lo toco."
-      # Una copia del archivo original, la primera vez que la oficina lo cambia.
-      [ -f "$GEMINI_CONFIG.bak-dev-office" ] || cp "$GEMINI_CONFIG" "$GEMINI_CONFIG.bak-dev-office"
-      tmp="$GEMINI_CONFIG.tmp"
+      # Primero se revisan los dos: si uno es un JSON roto, no se toca ninguno.
+      for f in "$GEMINI_SETTINGS" "$GEMINI_CONFIG"; do
+        [ -f "$f" ] && ! jq empty "$f" >/dev/null 2>&1 && die "$f no es un JSON válido: no lo toco."
+      done
+      gemini_rules_write "$action" "$GEMINI_SETTINGS" "$SETTINGS_PATH"
+      gemini_rules_write "$action" "$GEMINI_CONFIG" "$CONFIG_PATH"
       if [ "$action" = on ]; then
-        jqc --indent 2 --argjson rules "$(gemini_rules_json)" \
-          '.userSettings.globalPermissionGrants.allow = (reduce $rules[] as $r ((.userSettings.globalPermissionGrants.allow // []); if index($r) then . else . + [$r] end))' \
-          "$GEMINI_CONFIG" >"$tmp" && mv "$tmp" "$GEMINI_CONFIG"
-        echo "Permisos de Gemini activados en $GEMINI_CONFIG."
+        echo "Permisos de Gemini activados en $GEMINI_SETTINGS (y en $GEMINI_CONFIG, para las versiones de Antigravity anteriores a la 1.5.7)."
         echo "Gemini puede correr, de a uno y sin encadenar: git status, diff, log, show, ls-files, grep y blame; borrar y mover archivos del repo con git rm y git mv; listar carpetas (ls, dir); y lint, typecheck, tests y chequeo de formato del proyecto (pnpm, npm, yarn o bun, con format:check; npx tsc, eslint, jest, vitest o prettier --check); y formatear archivos puntuales con prettier --write <archivos> (rutas relativas, sin . ni comodines)."
         echo "Cualquier otro comando (commit, push, instalar, rm, del, red...) se sigue rechazando solo. Valen para toda la computadora."
       else
-        jqc --indent 2 --argjson rules "$(gemini_rules_json)" \
-          '.userSettings.globalPermissionGrants.allow = ((.userSettings.globalPermissionGrants.allow // []) - $rules)' \
-          "$GEMINI_CONFIG" >"$tmp" && mv "$tmp" "$GEMINI_CONFIG"
-        echo "Permisos de Gemini desactivados: saqué las reglas de la oficina de $GEMINI_CONFIG. Las tuyas quedan como estaban."
+        echo "Permisos de Gemini desactivados: saqué las reglas de la oficina de $GEMINI_SETTINGS y de $GEMINI_CONFIG. Las tuyas quedan como estaban."
       fi
       ;;
     status)
-      present=$(gemini_rules_present)
-      if [ "$present" -eq "$total" ]; then echo "Permisos de Gemini: activados ($GEMINI_CONFIG)."; return 0
+      present=$(gemini_rules_present "$GEMINI_SETTINGS" "$SETTINGS_PATH")
+      if [ "$present" -eq "$total" ]; then echo "Permisos de Gemini: activados ($GEMINI_SETTINGS)."; return 0
+      elif [ "$present" -eq 0 ] && [ "$(gemini_rules_present "$GEMINI_CONFIG" "$CONFIG_PATH")" -gt 0 ]; then
+        echo "Permisos de Gemini: en el lugar viejo. Antigravity 1.5.7 o más nuevo los lee de otro archivo. Corré: gemini-permissions on"; return 1
       elif [ "$present" -eq 0 ]; then echo "Permisos de Gemini: desactivados. Gemini solo lee y edita archivos; los comandos los corre la oficina."; return 1
       else echo "Permisos de Gemini: incompletos ($present de $total reglas). Corré: gemini-permissions on"; return 1; fi
       ;;
@@ -608,11 +630,11 @@ cmd_check() {
             continue
           fi
           echo "ok    gemini: Antigravity CLI instalado y con sesión"
-          # Antes de la 1.3.6, sin pantalla, un subagente que pregunta algo se queda esperando
-          # para siempre, y el encargo se corta por tiempo.
+          # Antes de la 1.5.7, sin pantalla, un comando rechazado corta todo el encargo y los
+          # permisos guardados no se respetan; la 1.5.8 suma Gemini 4 Hydrogen.
           version=$(version_number "$(agy --version 2>/dev/null | tr -d '\r')")
-          if [ -n "$version" ] && [ "$version" -lt 1003006 ]; then
-            echo "AVISO gemini: Antigravity CLI 1.3.6 o más nuevo evita que los encargos se cuelguen esperando a un subagente. Actualizalo volviendo a correr el instalador: $(install_hint gemini | sed 's/^.*[Ii]nstalalo[^:]*: //; s/\. Después.*//')"
+          if [ -n "$version" ] && [ "$version" -lt 1005008 ]; then
+            echo "AVISO gemini: Antigravity CLI 1.5.8 o más nuevo trae Gemini 4 Hydrogen, respeta los permisos de gemini-permissions y no corta el encargo cuando rechaza un comando. Actualizalo con: agy update (o volviendo a correr el instalador: $(install_hint gemini | sed 's/^.*[Ii]nstalalo[^:]*: //; s/\. Después.*//'))"
             problems=$((problems + 1))
           fi
           for tier in opus sonnet; do

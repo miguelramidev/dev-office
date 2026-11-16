@@ -451,6 +451,13 @@ case "$MODEL" in *[!A-Za-z0-9._-]*) usage_error "modelo inválido en la tabla: $
 # Gemini puede correr comandos de lectura y de verificación; si no, ninguno.
 GEMINI_CMDS=0
 [ "$PROVIDER" = "gemini" ] && [ -f "$AGENTS_SCRIPT" ] && bash "$AGENTS_SCRIPT" --project "$PROJECT" gemini-permissions status >/dev/null 2>&1 && GEMINI_CMDS=1
+# Desde Antigravity 1.5.7, sin pantalla, un comando rechazado ya no corta la corrida (sigue y lo
+# avisa por stderr), y el modo por defecto es Auto, que aprueba solo las ediciones.
+AGY_SOFT_DENY=0
+if [ "$PROVIDER" = "gemini" ]; then
+  AGY_VERSION=$("$BIN" --version 2>/dev/null | tr -d '\r' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
+  [ -n "$AGY_VERSION" ] && [ "$(printf '%s' "$AGY_VERSION" | awk -F. '{ print $1 * 1000000 + $2 * 1000 + $3 }')" -ge 1005007 ] && AGY_SOFT_DENY=1
+fi
 case "$EFFORT" in *[!a-z]*) EFFORT="" ;; esac
 
 provider_rules() {
@@ -476,7 +483,13 @@ EOF
     gemini)
       if [ "$GEMINI_CMDS" -eq 1 ]; then
         echo "- Solo podés correr estos comandos, tal cual, de a uno y sin encadenarlos (nada de \`;\`, \`&&\`, \`|\`, \`\$\`, \`<\` ni \`>\`): \`git status\`, \`git diff\`, \`git log\`, \`git show\`, \`git ls-files\` y \`git blame\`; borrar y mover archivos del repo con \`git rm\` y \`git mv\` (la única forma de borrar o mover que tenés: nunca \`rm\`, \`del\` ni \`Remove-Item\`); listar carpetas (\`ls\`, \`dir\`); y lint, typecheck, tests y chequeo de formato del proyecto (\`pnpm lint\`, \`pnpm test\`, \`npm run typecheck\`, \`pnpm format:check\`, \`npx tsc --noEmit\`, \`npx eslint\`, \`npx jest\`, \`npx vitest run\`, \`npx prettier --check\`...); y formatear los archivos que cambiaste con \`npx prettier --write\` seguido de cada archivo con su ruta relativa (por ejemplo \`npx prettier --write src/app.ts src/util.ts\`), nunca \`.\`, comodines, opciones extra ni \`pnpm format\`."
-        echo "- **Un comando fuera de esa lista corta todo el encargo** y se pierde lo que hiciste: Antigravity lo rechaza y la corrida termina ahí, sin tu reporte. Ante la duda, no lo corras. Para buscar texto en el código usá tu herramienta de búsqueda de archivos (grep_search), y para buscar archivos find_by_name: nunca comandos para eso. Para leer archivos, tus herramientas de archivos."
+        if [ "$AGY_SOFT_DENY" -eq 1 ]; then
+          echo "- **Un comando fuera de esa lista se rechaza** y no se corre. No lo reintentes ni pruebes otro parecido para lograr lo mismo: seguí con el resto y decilo en tu reporte. Para buscar texto en el código usá tu herramienta de búsqueda de archivos (grep_search), y para buscar archivos find_by_name: nunca comandos para eso. Para leer archivos, tus herramientas de archivos."
+        else
+          echo "- **Un comando fuera de esa lista corta todo el encargo** y se pierde lo que hiciste: Antigravity lo rechaza y la corrida termina ahí, sin tu reporte. Ante la duda, no lo corras. Para buscar texto en el código usá tu herramienta de búsqueda de archivos (grep_search), y para buscar archivos find_by_name: nunca comandos para eso. Para leer archivos, tus herramientas de archivos."
+        fi
+      elif [ "$AGY_SOFT_DENY" -eq 1 ]; then
+        echo "- No corras comandos de la terminal, ni siquiera para listar o buscar archivos: acá se rechazan solos y no se corren. Para leer, listar y buscar en el proyecto usá tus herramientas de archivos (grep_search para buscar texto, find_by_name para buscar archivos)."
       else
         echo "- No corras comandos de la terminal, ni siquiera para listar o buscar archivos: acá se rechazan solos, y un comando rechazado corta todo el encargo, sin tu reporte. Para leer, listar y buscar en el proyecto usá tus herramientas de archivos (grep_search para buscar texto, find_by_name para buscar archivos)."
       fi
@@ -545,6 +558,7 @@ EOF
 
 
 STDOUT_FILE="$RUN_DIR/.stdout"
+STDERR_FILE="$RUN_DIR/.stderr"
 # La carpeta del proyecto como espacio de trabajo de Antigravity, si esta versión de agy lo permite.
 DIR_ARGS=()
 [ "$PROVIDER" = "gemini" ] && "$BIN" --help 2>&1 | grep -q -- '--add-dir' && DIR_ARGS=(--add-dir "$(native_path "$PROJECT")")
@@ -579,10 +593,15 @@ EOF
       ;;
     gemini)
       # Antigravity CLI: el encargo es largo, así que se le pide que lo lea del archivo.
-      # accept-edits edita sin preguntar; los comandos de la terminal quedan sin aprobar.
-      # El asesor del PM corre en el modo normal: lo que necesita aprobación se niega solo.
+      # accept-edits edita sin preguntar; los comandos quedan sin aprobar, salvo los que permite
+      # gemini-permissions. No se usa Auto: sus comandos "seguros" los decide Antigravity, no la
+      # oficina. El asesor del PM solo lee: antes, en el modo normal (lo que necesita aprobación
+      # se niega solo); desde la 1.5.7, que arranca en Auto y aprueba las ediciones, en plan.
       MODE_ARGS=(--mode accept-edits)
-      [ "$SCOPE" = "none" ] && MODE_ARGS=()
+      if [ "$SCOPE" = "none" ]; then
+        MODE_ARGS=()
+        [ "$AGY_SOFT_DENY" -eq 1 ] && MODE_ARGS=(--mode plan)
+      fi
       STDIN_FILE=/dev/null
       # shellcheck disable=SC2206
       CMD=(agy -p "Tu encargo completo está en el archivo ${1#"$PROJECT"/}. Leelo entero antes de empezar y seguilo al pie de la letra."
@@ -597,7 +616,7 @@ run_once() {
   local start
   echo "\$ ${CMD[*]} < ${STDIN_FILE#"$PROJECT"/}" >>"$LOG"
   start=$(date +%s)
-  "${CMD[@]}" <"$STDIN_FILE" >"$STDOUT_FILE" 2>>"$LOG" &
+  "${CMD[@]}" <"$STDIN_FILE" >"$STDOUT_FILE" 2>"$STDERR_FILE" &
   PID=$!
   while kill -0 "$PID" 2>/dev/null; do
     if [ $(( $(date +%s) - start )) -ge "$1" ]; then
@@ -611,6 +630,7 @@ run_once() {
   done
   wait "$PID" 2>/dev/null
   RC=$?
+  cat "$STDERR_FILE" >>"$LOG" 2>/dev/null
   echo "(código de salida: $RC)" >>"$LOG"
 }
 
@@ -638,8 +658,13 @@ parse_gemini() {
         + (if .state == "DONE" then " → ok" else " → ERROR: " + ((.tool_info.error.message // "") | split("\n")[0] | .[0:200]) end)' "$part"
   } >>"$LOG" 2>/dev/null
   DENIED_NOW=$(jq -R -r 'fromjson? | select(.event == "step_update") | .step_update
-    | select(.step_type == "tool" and .state == "ERROR" and ((.tool_info.error.message // "") | test("denied permission|permission check failed"; "i")))
+    | select(.step_type == "tool" and .state == "ERROR" and ((.tool_info.error.message // "") | test("denied permission|permission check failed|auto-denied|soft-denied"; "i")))
     | (.tool_info.parameters.CommandLine // .tool_name) | tostring | gsub("[\r\n]+"; " ") | .[0:200]' "$part" 2>/dev/null | tr -d '\r' | awk 'NF && !seen[$0]++')
+  # Desde la 1.5.7, el rechazo no corta la corrida: Antigravity lo avisa por stderr, nombrando
+  # la herramienta y cómo permitirla.
+  if [ -s "$STDERR_FILE" ]; then
+    DENIED_NOW=$(printf '%s\n%s\n' "$DENIED_NOW" "$(tr -d '\r' <"$STDERR_FILE" | grep -iE 'denied' | sed 's/^[[:space:]]*//' | cut -c1-200)" | awk 'NF && !seen[$0]++')
+  fi
   DENIED=$(printf '%s\n%s\n' "$DENIED" "$DENIED_NOW" | awk 'NF && !seen[$0]++')
   rm -f "$STDOUT_FILE" "$part"
 }
@@ -692,7 +717,7 @@ if [ ! -s "$OUTPUT" ] && [ -s "$STDOUT_FILE" ]; then
 elif [ -s "$STDOUT_FILE" ]; then
   { echo "--- salida estándar ---"; cat "$STDOUT_FILE"; } >>"$LOG"
 fi
-rm -f "$STDOUT_FILE"
+rm -f "$STDOUT_FILE" "$STDERR_FILE"
 
 # --- Revisar lo que cambió ----------------------------------------------------
 

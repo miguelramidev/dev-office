@@ -23,7 +23,7 @@ Los archivos `office-agents.sh` y `office-agents.cmd` están en la misma carpeta
   | Nivel | Claude | Codex | Gemini |
   | --- | --- | --- | --- |
   | Opus | Opus | `gpt-6-astra` | `gemini-4-argon` |
-  | Sonnet | Sonnet | `gpt-6.1-sol` | `gemini-3.8-flash` |
+  | Sonnet | Sonnet | `gpt-6.1-sol` | `gemini-4-hydrogen` |
 
   La tabla es la de dev-office; el proyecto la puede cambiar con `tier` (por ejemplo, si un modelo cambia de nombre o la cuenta no lo tiene). `models` muestra la tabla efectiva.
 - **Gemini se usa con Antigravity CLI** (`agy`), el CLI de Google para cuentas personales, con la cuenta de Google del CEO. Gemini CLI ya no atiende cuentas personales.
@@ -105,7 +105,7 @@ Los archivos `office-agents.sh` y `office-agents.cmd` están en la misma carpeta
    | | Instalar | Iniciar sesión |
    | --- | --- | --- |
    | Codex | `npm install -g @openai/codex` (en macOS también `brew install --cask codex`) | `codex login` con su plan de ChatGPT, o una API key |
-   | Gemini (con Antigravity CLI, `agy`) | macOS y Linux: `curl -fsSL https://antigravity.google/cli/install.sh \| bash`. Windows (PowerShell): `irm https://antigravity.google/cli/install.ps1 \| iex` | Correr `agy` una vez e iniciar sesión con tu cuenta de Google. El modelo de nivel Opus (Gemini 4 Argon) depende de tu plan: mirá los tuyos con `agy models` |
+   | Gemini (con Antigravity CLI, `agy`, 1.5.8 o más nuevo; se actualiza con `agy update`) | macOS y Linux: `curl -fsSL https://antigravity.google/cli/install.sh \| bash`. Windows (PowerShell): `irm https://antigravity.google/cli/install.ps1 \| iex` | Correr `agy` una vez e iniciar sesión con tu cuenta de Google. El modelo de nivel Opus (Gemini 4 Argon) depende de tu plan: mirá los tuyos con `agy models` |
 
    En Windows, después de instalar, hay que cerrar y abrir la terminal y Claude Code para que los encuentre. GPT-6 Astra necesita Codex CLI 0.153.0 o más nuevo. `check` también avisa si la cuenta de Google no tiene alguno de los modelos de la tabla.
 

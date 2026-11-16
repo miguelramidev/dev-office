@@ -129,12 +129,12 @@ fi
 FAKE_BIN="$WORK/fakebin"
 mkdir -p "$FAKE_BIN"
 printf '#!/usr/bin/env bash\ncase "$1" in\n  --version) echo "codex-cli 0.150.2" ;;\n  login) exit 0 ;;\nesac\n' >"$FAKE_BIN/codex"
-printf '#!/usr/bin/env bash\n[ "$1" = --version ] && echo "agy ${FAKE_AGY_VERSION:-1.2.11}"\n[ "$1" = models ] && printf "gemini-3.8-flash\\ngemini-3.5-flash-lite\\n"\nexit 0\n' >"$FAKE_BIN/agy"
+printf '#!/usr/bin/env bash\n[ "$1" = --version ] && echo "agy ${FAKE_AGY_VERSION:-1.2.11}"\n[ "$1" = models ] && printf "gemini-3.8-flash-medium\\ngemini-4-hydrogen-medium\\n"\nexit 0\n' >"$FAKE_BIN/agy"
 chmod +x "$FAKE_BIN/codex" "$FAKE_BIN/agy"
 run set frontend.developer gemini >/dev/null
 (cd "$PROJ" && PATH="$FAKE_BIN:$EMPTY_PATH" "$BASH_BIN" "$SCRIPT" check) >"$WORK/out.txt" 2>&1
 CHECK_RC=$?
-for want in "ok    codex: instalado y con sesión" "necesita Codex CLI 0.153.0" "ok    gemini: Antigravity CLI instalado" "no tiene el modelo 'gemini-4-argon'" "Antigravity CLI 1.3.6 o más nuevo" "volviendo a correr el instalador: curl -fsSL"; do
+for want in "ok    codex: instalado y con sesión" "necesita Codex CLI 0.153.0" "ok    gemini: Antigravity CLI instalado" "no tiene el modelo 'gemini-4-argon'" "Antigravity CLI 1.5.8 o más nuevo" "agy update" "volviendo a correr el instalador: curl -fsSL"; do
   if grep -qF "$want" "$WORK/out.txt"; then
     echo "ok    check: $want"
   else
@@ -144,21 +144,21 @@ for want in "ok    codex: instalado y con sesión" "necesita Codex CLI 0.153.0" 
   fi
 done
 [ "$CHECK_RC" -ne 0 ] && echo "ok    check: con avisos sale con error" || { echo "FALLA check: con avisos tendría que salir con error"; FAILED=1; }
-if grep -qF "gemini-3.8-flash'" "$WORK/out.txt"; then
+if grep -qF "gemini-4-hydrogen'" "$WORK/out.txt"; then
   echo "FALLA check: avisa por un modelo que la cuenta sí tiene"
   FAILED=1
 else
   echo "ok    check: no avisa por los modelos que la cuenta tiene"
 fi
-(cd "$PROJ" && FAKE_AGY_VERSION=1.3.6 PATH="$FAKE_BIN:$EMPTY_PATH" "$BASH_BIN" "$SCRIPT" check) >"$WORK/out.txt" 2>&1
-grep -qF "1.3.6 o más nuevo" "$WORK/out.txt" && { echo "FALLA check: avisa con Antigravity 1.3.6"; FAILED=1; } || echo "ok    check: Antigravity 1.3.6 no lleva aviso"
+(cd "$PROJ" && FAKE_AGY_VERSION=1.5.8 PATH="$FAKE_BIN:$EMPTY_PATH" "$BASH_BIN" "$SCRIPT" check) >"$WORK/out.txt" 2>&1
+grep -qF "1.5.8 o más nuevo" "$WORK/out.txt" && { echo "FALLA check: avisa con Antigravity 1.5.8"; FAILED=1; } || echo "ok    check: Antigravity 1.5.8 no lleva aviso"
 run reset --all >/dev/null
 
 # Tabla de modelos por nivel
 same "gpt-6-astra" "nivel opus de codex" model codex opus
 same "gpt-6.1-sol" "nivel sonnet de codex" model codex sonnet
 same "gemini-4-argon" "nivel opus de gemini" model gemini opus
-same "gemini-3.8-flash" "nivel sonnet de gemini" model gemini sonnet
+same "gemini-4-hydrogen" "nivel sonnet de gemini" model gemini sonnet
 same "medium" "razonamiento medio por defecto (codex)" effort codex
 same "medium" "razonamiento medio por defecto (gemini)" effort gemini
 check 0 "cambiar un modelo del equipo" tier codex opus gpt-7-algo
@@ -250,8 +250,10 @@ echo '{"teams": false}' >"$TP/.claude/office-agents.local.json"
 T "teams-check: el archivo personal manda" [ -z "$(CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS= tcheck)" ]
 T "hooks.json corre teams-check al empezar la sesión" eval 'jq -e "[.hooks.SessionStart[].hooks[].command] | any(test(\"teams-check.sh\"))" "$(dirname "$CHECK")/../hooks/hooks.json" >/dev/null'
 
-# Permisos de comandos de Gemini (Antigravity): reglas en ~/.gemini/config/config.json.
+# Permisos de comandos de Gemini (Antigravity): reglas en ~/.gemini/antigravity-cli/settings.json
+# (1.5.7 o más nueva) y en ~/.gemini/config/config.json (las anteriores).
 export OFFICE_GEMINI_CONFIG="$WORK/gemini/config.json"
+export OFFICE_GEMINI_SETTINGS="$WORK/gemini/settings.json"
 check 1 "gemini-permissions: sin configurar está desactivado" gemini-permissions
 mkdir -p "$WORK/gemini"
 echo '{"userSettings":{"theme":"dark","globalPermissionGrants":{"allow":["command(git log)"]}}}' >"$OFFICE_GEMINI_CONFIG"
@@ -262,6 +264,8 @@ T "on no toca el resto de la configuración" [ "$(jq -r .userSettings.theme "$OF
 T "on guarda una copia del original" [ -f "$OFFICE_GEMINI_CONFIG.bak-dev-office" ]
 run gemini-permissions on >/dev/null
 T "on dos veces no duplica reglas" [ "$(jq '.userSettings.globalPermissionGrants.allow | length' "$OFFICE_GEMINI_CONFIG")" = "8" ]
+T "on escribe las 7 reglas en settings.json (Antigravity 1.5.7 o más nuevo)" [ "$(jq '.permissions.allow | length' "$OFFICE_GEMINI_SETTINGS")" = "7" ]
+T "settings.json y config.json tienen las mismas reglas" [ "$(jq -c '.permissions.allow' "$OFFICE_GEMINI_SETTINGS")" = "$(jq -c '.userSettings.globalPermissionGrants.allow[1:]' "$OFFICE_GEMINI_CONFIG")" ]
 # Lo que dejan pasar las reglas (con grep -E, que se comporta igual en estos casos).
 RULES=$(jq -r '.userSettings.globalPermissionGrants.allow[] | select(startswith("command(regex:")) | sub("^command\\(regex:"; "") | sub("\\)$"; "")' "$OFFICE_GEMINI_CONFIG")
 allowed() { local re; while IFS= read -r re; do printf '%s' "$1" | grep -qE -- "$re" && return 0; done <<EOF
@@ -276,12 +280,26 @@ for c in "git push" "git commit -m x" "git checkout main" "pnpm install" "npm i 
 done
 check 0 "gemini-permissions off" gemini-permissions off
 T "off saca solo las reglas de la oficina" [ "$(jq -c '.userSettings.globalPermissionGrants.allow' "$OFFICE_GEMINI_CONFIG")" = '["command(git log)"]' ]
+T "off las saca también de settings.json" [ "$(jq -c '.permissions.allow' "$OFFICE_GEMINI_SETTINGS")" = '[]' ]
 check 1 "gemini-permissions: desactivado otra vez" gemini-permissions
+# Activados antes de la 1.5.7: solo en config.json. El estado pide volver a activarlos.
+run gemini-permissions on >/dev/null
+echo '{"model":"x"}' >"$OFFICE_GEMINI_SETTINGS"
+check 1 "gemini-permissions: solo en el lugar viejo no cuenta" gemini-permissions
+T "gemini-permissions: avisa que están en el lugar viejo" eval 'run gemini-permissions | grep -qF "en el lugar viejo"'
+run gemini-permissions on >/dev/null
+T "on no toca el resto de settings.json" [ "$(jq -r .model "$OFFICE_GEMINI_SETTINGS")" = "x" ]
+check 0 "gemini-permissions: activado otra vez" gemini-permissions
+run gemini-permissions off >/dev/null
+echo 'no es json' >"$OFFICE_GEMINI_SETTINGS"
+check 1 "gemini-permissions: no toca un settings.json roto" gemini-permissions on
+T "con un archivo roto no toca el otro" [ "$(jq -c '.userSettings.globalPermissionGrants.allow' "$OFFICE_GEMINI_CONFIG")" = '["command(git log)"]' ]
+rm -f "$OFFICE_GEMINI_SETTINGS"
 echo 'no es json' >"$OFFICE_GEMINI_CONFIG"
 check 1 "gemini-permissions: no toca un JSON roto" gemini-permissions on
 T "el JSON roto queda como estaba" [ "$(cat "$OFFICE_GEMINI_CONFIG")" = "no es json" ]
 check 1 "gemini-permissions con acción inválida" gemini-permissions quizas
-unset OFFICE_GEMINI_CONFIG
+unset OFFICE_GEMINI_CONFIG OFFICE_GEMINI_SETTINGS
 
 if [ "$FAILED" -ne 0 ]; then
   echo "Hay pruebas que fallan."
