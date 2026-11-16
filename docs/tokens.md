@@ -22,6 +22,8 @@ Para ver en qué se fueron los tokens, usá `/office:usage`. Para que la oficina
 
 - **Qué depende de cada cambio:** el PM le pasa al tester y a QA la salida de `project-index.sh --impact`, que dice sin gastar tokens qué archivos dependen de lo que cambió y qué tests lo cubren. No exploran el código para averiguarlo.
 
+- **Lo mínimo que resuelve:** los developers siguen una escalera antes de escribir código nuevo: ¿hace falta?, ¿ya existe en el proyecto?, ¿lo resuelve la plataforma o una dependencia instalada?, ¿alcanza con una línea? Menos código es menos para escribir, probar y revisar. Está adaptado de [Ponytail](https://github.com/DietrichGebert/ponytail) (MIT), de Dietrich Gebert.
+
 ## Lo que hacés vos
 
 0. **El mapa del proyecto** lo crea el PM en la primera tarea, sin que hagas nada. Si lo querés antes, `/office:project-map`. Sirve igual si el proyecto recién empieza o si ya es grande: nunca se lee entero.

@@ -38,7 +38,7 @@ Si el `CLAUDE.md` dice que los diseños los entrega otro y el encargo no trae im
 - **Todos los estados.** Cada pantalla con cargando, vacío, error y sin conexión, además del caso normal y los datos raros (textos largos, listas enormes, imágenes que no cargan).
 - **Web y móvil.** Si el encargo abarca las dos, decí qué es igual y qué cambia (navegación, gestos, tamaño de pantalla). Diseñá primero para el celular.
 - **Textos exactos.** Escribí los textos reales de botones, títulos, mensajes vacíos y errores, en el idioma y el tono del proyecto. El developer los copia tal cual.
-- **Componentes existentes primero.** Si hace falta un componente nuevo, describilo y explicá por qué no alcanza ninguno de los que hay.
+- **Componentes existentes primero.** Primero los del proyecto, después los de la plataforma (un selector de fecha nativo antes que uno armado a mano). Si hace falta un componente nuevo, describilo y explicá por qué no alcanza ninguno de los que hay.
 - **Accesible desde el diseño.** Orden de lectura, etiquetas para lector de pantalla, contraste, tamaño de las áreas táctiles.
 
 ## El documento de diseño
