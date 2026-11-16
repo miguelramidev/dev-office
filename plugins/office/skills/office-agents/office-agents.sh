@@ -340,6 +340,9 @@ command(regex:^(npx |pnpm exec |bunx )?(tsc|eslint|jest|vitest)( [^;&|`$<>]*)?$)
 command(regex:^(npx |pnpm exec |bunx )?prettier (--check|-c)( [^;&|`$<>]*)?$)
 command(regex:^(npx |pnpm exec |bunx )?prettier (--write|-w)( [A-Za-z0-9_][A-Za-z0-9_./\\-]*\.[A-Za-z0-9]+)+$)
 command(regex:^(ls|dir|Get-ChildItem)( [^;&|`$<>]*)?$)
+command(regex:^(fvm )?(dart|flutter) (analyze|test)( [^;&|`$<>]*)?$)
+command(regex:^(fvm )?dart format (--output=none|-o none) --set-exit-if-changed( (\.|[A-Za-z0-9_][A-Za-z0-9_./\\-]*))*$)
+command(regex:^(fvm )?dart format( [A-Za-z0-9_][A-Za-z0-9_./\\-]*\.dart)+$)
 RULES
 }
 gemini_rules_json() { gemini_rules | jq -R -s -c 'split("\n") | map(select(length > 0))'; }
@@ -385,7 +388,7 @@ cmd_gemini_permissions() {
       gemini_rules_write "$action" "$GEMINI_CONFIG" "$CONFIG_PATH"
       if [ "$action" = on ]; then
         echo "Permisos de Gemini activados en $GEMINI_SETTINGS (y en $GEMINI_CONFIG, para las versiones de Antigravity anteriores a la 1.5.7)."
-        echo "Gemini puede correr, de a uno y sin encadenar: git status, diff, log, show, ls-files, grep y blame; borrar y mover archivos del repo con git rm y git mv; listar carpetas (ls, dir); y lint, typecheck, tests y chequeo de formato del proyecto (pnpm, npm, yarn o bun, con format:check; npx tsc, eslint, jest, vitest o prettier --check); y formatear archivos puntuales con prettier --write <archivos> (rutas relativas, sin . ni comodines)."
+        echo "Gemini puede correr, de a uno y sin encadenar: git status, diff, log, show, ls-files, grep y blame; borrar y mover archivos del repo con git rm y git mv; listar carpetas (ls, dir); y lint, typecheck, tests y chequeo de formato del proyecto (pnpm, npm, yarn o bun, con format:check; npx tsc, eslint, jest, vitest o prettier --check); y formatear archivos puntuales con prettier --write <archivos> (rutas relativas, sin . ni comodines). En Dart y Flutter: dart analyze, flutter analyze, dart test, flutter test (también con fvm), dart format --output=none --set-exit-if-changed para chequear el formato y dart format <archivos .dart> para formatear archivos puntuales."
         echo "Cualquier otro comando (commit, push, instalar, rm, del, red...) se sigue rechazando solo. Valen para toda la computadora."
       else
         echo "Permisos de Gemini desactivados: saqué las reglas de la oficina de $GEMINI_SETTINGS y de $GEMINI_CONFIG. Las tuyas quedan como estaban."
