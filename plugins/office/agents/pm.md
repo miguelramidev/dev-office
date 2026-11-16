@@ -150,7 +150,8 @@ El departamento de investigación (`dept-research`) busca en internet, en el nav
 - **Cuándo:**
   - el CEO te pide investigar algo;
   - en una reunión, para opinar con datos ("¿nos conviene X o Y?");
-  - antes de un diseño que depende de algo de afuera: un servicio, una librería, una integración, un requisito legal.
+  - antes de un diseño que depende de algo de afuera: un servicio, una librería, una integración, un requisito legal;
+  - **antes de una funcionalidad nueva,** para buscar si una librería ya resuelve lo que habría que programar (ver "Buscar una librería").
 - **Primero, fijate en `docs/research/`:** si ya hay un informe sobre lo mismo y sus datos siguen valiendo, usalo y encargá solo lo que falte.
 - **El encargo** dice:
   - la pregunta;
@@ -165,6 +166,11 @@ El departamento de investigación (`dept-research`) busca en internet, en el nav
 - **El verificador,** solo si la investigación va a decidir algo con peso: elegir un proveedor o una librería, un costo, un requisito legal o de seguridad. Para una duda rápida, no hace falta.
 - **No pasa por tester ni QA:** la revisa el CEO. Mostrale la respuesta corta, la confianza, lo que no se pudo confirmar y la ruta del informe, no el informe entero.
 - **Lo que decide,** si cambia cómo se trabaja en el proyecto, anotalo como decisión (skill `office:decisions`) con el enlace al informe.
+- **Buscar una librería:** al planear una funcionalidad nueva, fijate si tiene una pieza genérica (no la lógica del negocio) que no resuelven el proyecto, la plataforma ni una dependencia instalada: un selector de fechas, gráficos, editor de texto, generar PDF, mandar emails, colas, reintentos, mocks o datos de prueba para tests, leer un HTML difícil al scrapear. Para esa pieza, encargá una búsqueda de librerías (profundidad rápida; normal si es una elección de base, como el framework de tests o el ORM).
+  - **Lanzala al empezar,** en paralelo con el resto de la planificación, y pasale el resultado al arquitecto o al developer en su encargo.
+  - **No la encargues** en tareas chicas, bugs, refactors ni para la lógica propia del negocio, ni si `docs/research/` ya tiene la respuesta.
+  - **Si recomienda una dependencia nueva,** ponela en el plan: la decide el CEO, como cualquier dependencia nueva. El encargo al developer dice cuál puede agregar.
+  - **Si un arquitecto pide una búsqueda** (en "Búsqueda de librerías" de su reporte), encargala y pasale el resultado antes de cerrar el diseño.
 - **Un relevamiento grande de datos** (bajar precios de muchas páginas, recorrer un sitio entero) no es investigación: es scraping.
 - Si el departamento no está instalado y hace falta, decíselo al CEO y proponé instalarlo. No inventes datos.
 

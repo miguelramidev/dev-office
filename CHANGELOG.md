@@ -8,6 +8,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.60.0] - 2026-11-16
+
+### Agregado
+
+- **Búsqueda de librerías antes de programar** (`office` 0.56.0, `dept-research` 0.2.0, `dept-backend` 0.4.1, `dept-frontend` 0.7.1, `dept-devops` 0.4.1).
+  - **El PM la encarga** al planear una funcionalidad nueva que tiene una pieza genérica (no la lógica del negocio) que no resuelven el proyecto, la plataforma ni una dependencia instalada: de front, back, base de datos, tests, scraping o despliegue. La lanza en paralelo con la planificación y le pasa el resultado al arquitecto o al developer. No en tareas chicas, bugs, refactors ni si `docs/research/` ya lo tiene. Una dependencia nueva la sigue decidiendo el CEO en el plan.
+  - **La skill `solid-research`** suma la sección "Buscar una librería": primero lo instalado y la plataforma; después el registro del stack (npm, pub.dev, PyPI...) y el repositorio; compatibilidad, licencia, mantenimiento, uso, peso y vulnerabilidades; señales de peligro (nombres parecidos, paquetes nuevos sin uso, scripts al instalar, abandonadas); siempre la opción sin librería; hasta tres candidatas y una recomendación.
+  - **El verificador** comprueba la licencia, la última versión y la compatibilidad de la recomendada.
+  - **Los arquitectos** de backend, frontend y devops no eligen librerías de memoria: piden la búsqueda en el nuevo campo "Búsqueda de librerías" de su reporte.
+
 ## [0.59.1] - 2026-11-16
 
 ### Cambiado
