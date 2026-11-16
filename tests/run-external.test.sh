@@ -15,6 +15,7 @@ FAILED=0
 FAKE_BIN="$WORK/bin"
 # La configuración de Antigravity de estas pruebas (no la de quien las corre).
 export OFFICE_GEMINI_CONFIG="$WORK/gemini/config.json"
+export OFFICE_GEMINI_SETTINGS="$WORK/gemini/settings.json"
 mkdir -p "$FAKE_BIN"
 export FAKE_ARGS="$WORK/fake-args.txt"
 export FAKE_STDIN="$WORK/fake-stdin.txt"
@@ -63,6 +64,8 @@ cat >"$FAKE_BIN/agy" <<'EOF'
 #!/usr/bin/env bash
 # La ayuda nombra --add-dir solo si FAKE_AGY_HELP lo trae (versiones nuevas de agy).
 [ "$1" = "--help" ] && { printf '%s\n' "${FAKE_AGY_HELP:-}"; exit 0; }
+# La versión: 1.3.6 salvo que FAKE_AGY_VERSION diga otra.
+[ "$1" = "--version" ] && { echo "agy ${FAKE_AGY_VERSION:-1.3.6}"; exit 0; }
 printf '%s\n' "$*" >"$FAKE_ARGS"
 PROMPT_FILE=$(printf '%s' "$2" | grep -oE '\.office/[^ ]+prompt(-2)?\.md')
 [ -n "$PROMPT_FILE" ] && cp "$PROMPT_FILE" "$FAKE_STDIN"
@@ -93,6 +96,11 @@ case "${FAKE_MODE:-ok}" in
       step 2 ERROR run_command '{"CommandLine":"pnpm format"}' 'permission check failed for unsandboxed \"pnpm format\": user denied permission to run command'
       result ""
     fi ;;
+  softdenied)
+    # Antigravity 1.5.7 o más nuevo: el rechazo no corta la corrida, se avisa por stderr.
+    echo "// cambio" >>src/app.ts
+    echo 'Tool "run_command" (pnpm format) was soft-denied: headless mode cannot prompt. Allow it with a command(...) rule under permissions.allow in ~/.gemini/antigravity-cli/settings.json' >&2
+    result "Hecho: listo, sin formatear." ;;
   silent) ;;
   auth) echo "Error: authentication required. Run agy to sign in." >&2; exit 1 ;;
   badmodel) echo "ERROR: unknown model 'gemini-4-argon'" >&2; exit 1 ;;
@@ -331,7 +339,7 @@ check 1 "sin task.md" backend.developer codex
 new_project
 FAKE_MODE=ok check 0 "gemini: developer" frontend.developer gemini
 expect "$FAKE_ARGS" "--mode accept-edits" "gemini: edita sin preguntar"
-expect "$FAKE_ARGS" "--model gemini-3.8-flash" "gemini: developer (nivel sonnet) usa gemini-3.8-flash"
+expect "$FAKE_ARGS" "--model gemini-4-hydrogen" "gemini: developer (nivel sonnet) usa gemini-4-hydrogen"
 expect "$FAKE_ARGS" "--effort medium" "gemini: razonamiento medio"
 expect "$FAKE_ARGS" "--print-timeout 31m" "gemini: el tope de agy queda por encima del de la oficina (30 minutos)"
 expect "$FAKE_ARGS" ".office/runs/r1/prompt.md" "gemini: se le pide leer el encargo del archivo"
@@ -511,6 +519,31 @@ expect "$WORK/out.txt" "Segundo intento" "gemini: hubo un solo reintento"
 new_project
 OFFICE_GEMINI_RETRY=0 FAKE_MODE=denied-once check 3 "gemini: OFFICE_GEMINI_RETRY=0 apaga el reintento" frontend.developer gemini
 expect_not "$WORK/out.txt" "Segundo intento" "gemini: sin reintento"
+
+# --- Gemini con Antigravity 1.5.7 o más nuevo: el rechazo no corta la corrida ----------------
+
+new_project
+FAKE_AGY_VERSION=1.5.9 FAKE_MODE=softdenied check 0 "agy 1.5.9: un comando rechazado no corta el encargo" frontend.developer gemini
+expect "$FAKE_ARGS" "--mode accept-edits" "agy 1.5.9: el developer sigue en accept-edits (no en Auto)"
+expect "$WORK/out.txt" "Comandos que Antigravity le rechazó a Gemini" "agy 1.5.9: el resumen nombra el rechazo"
+expect "$WORK/out.txt" "pnpm format" "agy 1.5.9: con el comando del aviso"
+expect_not "$WORK/out.txt" "Segundo intento" "agy 1.5.9: con reporte no hay segundo intento"
+expect "$PROJ/.office/runs/r1/output.md" "Hecho: listo, sin formatear." "agy 1.5.9: el reporte llega"
+expect "$FAKE_STDIN" "se rechazan solos y no se corren" "agy 1.5.9: el prompt no dice que un rechazo corta todo"
+expect_not "$FAKE_STDIN" "corta todo el encargo" "agy 1.5.9: sin la advertencia vieja"
+new_project
+FAKE_AGY_VERSION=1.5.9 FAKE_MODE=noop check 0 "agy 1.5.9: asesor del PM" pm gemini
+expect "$FAKE_ARGS" "--mode plan" "agy 1.5.9: el asesor va en plan (Auto aprobaría ediciones)"
+new_project
+FAKE_AGY_VERSION=1.5.6 FAKE_MODE=noop check 0 "agy 1.5.6: asesor del PM" pm gemini
+expect_not "$FAKE_ARGS" "--mode plan" "agy 1.5.6: el asesor sigue en el modo normal"
+mkdir -p "$WORK/gemini"
+bash "$REPO/plugins/office/skills/office-agents/office-agents.sh" gemini-permissions on >/dev/null
+new_project
+FAKE_AGY_VERSION=1.5.9 FAKE_MODE=ok check 0 "agy 1.5.9 con permisos" frontend.developer gemini
+expect "$FAKE_STDIN" "Un comando fuera de esa lista se rechaza" "agy 1.5.9 con permisos: sabe que el rechazo no corta"
+expect_not "$FAKE_STDIN" "corta todo el encargo" "agy 1.5.9 con permisos: sin la advertencia vieja"
+rm -rf "$WORK/gemini"
 
 # --- Carpetas de herramientas para el sandbox de Codex ---------------------------------
 # Flutter escribe en su SDK y en la caché de pub: el puente las busca en esta máquina.

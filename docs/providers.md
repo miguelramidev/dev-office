@@ -27,9 +27,9 @@ No hace falta elegir el modelo. Cada rol tiene el nivel de su agente de Claude, 
 | Nivel | Roles | Claude | Codex | Gemini |
 | --- | --- | --- | --- | --- |
 | Opus | Asesores del PM, QA, arquitectos | Opus | `gpt-6-astra` | `gemini-4-argon` |
-| Sonnet | Developers, testers, designer | Sonnet | `gpt-6.1-sol` | `gemini-3.8-flash` |
+| Sonnet | Developers, testers, designer | Sonnet | `gpt-6.1-sol` | `gemini-4-hydrogen` |
 
-Es la tabla de dev-office (octubre de 2026). Los nombres de los modelos cambian seguido y no todas las cuentas tienen todos, así que el proyecto la puede cambiar (ver "Cambiar la tabla de modelos").
+Es la tabla de dev-office (noviembre de 2026). Gemini 4 Hydrogen es el modelo liviano y rápido de la familia Gemini 4: rinde como Argon en código, tests y comandos, gasta menos y necesita Antigravity CLI 1.5.8 o más nuevo. Los nombres de los modelos cambian seguido y no todas las cuentas tienen todos, así que el proyecto la puede cambiar (ver "Cambiar la tabla de modelos").
 
 **Razonamiento:** todos los roles, de cualquier proveedor, van en **medio** (`effort: medium` en los agentes de Claude, `model_reasoning_effort="medium"` en Codex y `--effort medium` en Antigravity). Más razonamiento gasta más tokens y tarda más.
 
@@ -39,7 +39,7 @@ Es la tabla de dev-office (octubre de 2026). Los nombres de los modelos cambian 
 | --- | --- | --- |
 | Claude | Ya lo tenés: es Claude Code. | — |
 | Codex | `npm install -g @openai/codex` (en macOS también `brew install --cask codex`). GPT-6 Astra necesita la versión 0.153.0 o más nueva. | `codex login`, con tu plan de ChatGPT o una API key. |
-| Gemini | Se usa con **Antigravity CLI** (`agy`). macOS y Linux: `curl -fsSL https://antigravity.google/cli/install.sh \| bash`. Windows (PowerShell): `irm https://antigravity.google/cli/install.ps1 \| iex`. | Corré `agy` una vez e iniciá sesión con tu cuenta de Google. |
+| Gemini | Se usa con **Antigravity CLI** (`agy`), 1.5.8 o más nuevo. macOS y Linux: `curl -fsSL https://antigravity.google/cli/install.sh \| bash`. Windows (PowerShell): `irm https://antigravity.google/cli/install.ps1 \| iex`. Para actualizarlo: `agy update`. | Corré `agy` una vez e iniciá sesión con tu cuenta de Google. |
 
 En Windows, después de instalar, cerrá y abrí la terminal y Claude Code para que los encuentre.
 
@@ -142,7 +142,8 @@ La primera vez que el puente corre Codex o Gemini, Claude Code te pide permiso p
 ## Límites que conviene conocer
 
 - **Codex y Gemini no pasan por los hooks de la oficina** (la protección de secretos y de ramas protegidas solo ve las herramientas de Claude). El puente no corre nada en una rama protegida y revisa todo después, pero **detecta, no impide**. Por eso el tester y QA no se saltean nunca.
-- **Gemini no corre comandos de la terminal** en este modo: edita archivos y las verificaciones las corren el tester y QA después. Como developer funciona bien; como tester o QA rinde menos, porque no puede ejecutar sus pruebas. Para esos roles conviene Claude o Codex. El puente le pide que lea y busque en el proyecto con sus herramientas de archivos, porque en este modo cualquier comando se rechaza solo. También le pide que haga todo él, sin pasarle trabajo a subagentes: en este modo, el resultado de un subagente no le llega y el encargo se corta por tiempo. Usá Antigravity CLI 1.3.6 o más nuevo; `office-agents.sh check` avisa si tenés uno más viejo.
+- **Gemini no corre comandos de la terminal** en este modo: edita archivos y las verificaciones las corren el tester y QA después. Como developer funciona bien; como tester o QA rinde menos, porque no puede ejecutar sus pruebas. Para esos roles conviene Claude o Codex, o activar sus permisos de comandos (abajo). El puente le pide que lea y busque en el proyecto con sus herramientas de archivos, porque en este modo cualquier comando sin permiso se rechaza solo. También le pide que haga todo él, sin pasarle trabajo a subagentes. Usá Antigravity CLI 1.5.8 o más nuevo; `office-agents.sh check` avisa si tenés uno más viejo.
+- **Modo de Antigravity:** desde la 1.5.7, Antigravity arranca en **Auto**, que aprueba las ediciones y los comandos que él considera seguros. El puente no lo usa: los developers y testers van en `accept-edits` (editan sin preguntar y corren solo los comandos que permite `gemini-permissions`), y los asesores del PM, que solo leen, en `plan`. Así lo que puede correr Gemini lo decide la oficina, no Antigravity. Igual, el puente revisa después qué archivos cambió cada uno.
 
 ### Permisos de comandos para Gemini (opcional)
 
@@ -161,12 +162,13 @@ bash .claude/office-agents.sh gemini-permissions       # ver el estado
   - lint, typecheck, tests y chequeo de formato del proyecto: con `pnpm`, `npm`, `yarn` o `bun` (`pnpm test`, `npm run lint`, `pnpm test:unit`, `pnpm format:check`...) y con `npx tsc`, `eslint`, `jest`, `vitest` o `prettier --check`. `pnpm format` a secas no, porque suele formatear el repo entero;
   - formatear archivos puntuales: `npx prettier --write` seguido de cada archivo, con su ruta relativa (`npx prettier --write src/app.ts src/util.ts`). Nada de `.`, carpetas, comodines, rutas absolutas o que empiecen con `..`, ni opciones extra: así no reformatea archivos que no tienen que ver con la tarea. Las reglas no pueden bloquear un `..` en el medio de una ruta (`src/../../otro.ts`), pero prettier solo cambia el formato.
 - **Lo demás se sigue rechazando solo:** commits, push, cambios de rama, instalar paquetes, `rm`, `del` o `Remove-Item`, red y cualquier comando encadenado.
-- **Dónde quedan:** en `~/.gemini/config/config.json` (en Windows, `C:\Users\<usuario>\.gemini\config\config.json`), en `userSettings.globalPermissionGrants.allow`. Es el único lugar del que Antigravity, sin pantalla, lee permisos de comandos; los de `settings.json` los ignora. La primera vez se guarda una copia del archivo (`config.json.bak-dev-office`). `off` saca solo las reglas de la oficina y deja las tuyas.
+- **Dónde quedan:** en `~/.gemini/antigravity-cli/settings.json` (en Windows, `C:\Users\<usuario>\.gemini\antigravity-cli\settings.json`), en `permissions.allow`, que es de donde los lee Antigravity desde la 1.5.7. También en `~/.gemini/config/config.json` (`userSettings.globalPermissionGrants.allow`), para las versiones anteriores. La primera vez se guarda una copia de cada archivo (`.bak-dev-office`). `off` saca solo las reglas de la oficina y deja las tuyas.
+- **Si los activaste antes de actualizar Antigravity a la 1.5.7,** corré `gemini-permissions on` otra vez: el estado dice "en el lugar viejo" hasta entonces.
 - **Valen para toda tu computadora,** no solo para un proyecto: Antigravity no permite guardar permisos dentro del repo. También aplican cuando usás `agy` por tu cuenta.
 - **Correr tests ejecuta código del proyecto,** igual que con Claude o Codex. No uses `--dangerously-skip-permissions`: aprueba cualquier comando.
 - **Antigravity no tiene herramienta para borrar archivos:** puede ver, crear, editar y buscar, pero para borrar necesita un comando. Con los permisos activados usa `git rm` y `git mv`; sin ellos, el PM le pasa los encargos de borrar o mover archivos a Claude (o a Codex) y te avisa.
 - **Si ya los habías activado antes de esta versión,** corré `gemini-permissions on` otra vez para sumar `git rm` y `git mv` (el estado dice "incompletos" hasta entonces).
-- **Un comando rechazado corta toda la corrida:** sin pantalla, cuando Antigravity rechaza un comando, Gemini termina ahí, sin reporte. Por eso el encargo le pide buscar con su herramienta `grep_search` y no con `git grep`, y correr solo los comandos de la lista, tal cual. Si igual pasa, el puente le da **un segundo intento** con el aviso de qué se rechazó (gasta tokens de Gemini, no de Claude; `OFFICE_GEMINI_RETRY=0` lo apaga).
+- **Un comando rechazado ya no corta la corrida** desde Antigravity 1.5.7: el comando no se corre, Gemini sigue con el resto y Antigravity lo avisa. El puente lo junta y lo muestra en el resumen. Con una versión anterior, un rechazo terminaba la corrida sin reporte; para esas, el puente le da **un segundo intento** con el aviso de qué se rechazó (gasta tokens de Gemini, no de Claude; `OFFICE_GEMINI_RETRY=0` lo apaga). En los dos casos, el encargo le pide buscar con su herramienta `grep_search` y no con `git grep`, y correr solo los comandos de la lista, tal cual.
 - **Qué le rechazaron:** el puente corre a Gemini con `--output-format stream-json` y anota cada paso en el registro de la corrida (`.office/runs/<corrida>/log.txt`). Si Antigravity le rechaza un comando, el resumen dice cuál fue, exacto. El flujo completo queda en `stream.jsonl`.
 - **Herramientas que escriben fuera del proyecto.** El sandbox de Codex solo deja escribir en la carpeta del proyecto, y algunas herramientas escriben también en su instalación o en una caché. Flutter, por ejemplo, escribe en su `bin/cache` y en la caché de pub; si no puede, se queda esperando ("Waiting for another flutter command to release the startup lock") hasta que se acaba el tiempo. Por eso el puente busca esas carpetas en tu máquina, según lo que usa el proyecto, y se las abre al sandbox:
   - **Proyecto con `pubspec.yaml`** (Flutter o Dart): el SDK de Flutter y las carpetas de Dart y Flutter de tu usuario que existan.

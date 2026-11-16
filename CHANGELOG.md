@@ -8,6 +8,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.59.0] - 2026-11-16
+
+### Cambiado
+
+- **Gemini con Antigravity CLI 1.5.x y Gemini 4 Hydrogen** (`office` 0.55.0).
+  - **Hydrogen en el nivel Sonnet:** developers, testers y designer en Gemini usan `gemini-4-hydrogen` en vez de `gemini-3.8-flash`. Es el modelo liviano de Gemini 4: rinde como Argon en código, tests y comandos, y gasta menos. El nivel Haiku pasa a `gemini-3.8-flash`, porque `gemini-3.5-flash-lite` ya no aparece en las cuentas. El nivel Opus sigue en `gemini-4-argon`.
+  - **Permisos en el lugar nuevo:** `gemini-permissions on` escribe las reglas en `~/.gemini/antigravity-cli/settings.json` (`permissions.allow`), que es de donde las lee Antigravity desde la 1.5.7, y sigue escribiéndolas en `~/.gemini/config/config.json` para las versiones anteriores. Si las activaste antes, el estado dice "en el lugar viejo": corré `gemini-permissions on` otra vez.
+  - **Un comando rechazado ya no corta el encargo:** con Antigravity 1.5.7 o más nuevo, Gemini sigue con el resto y el aviso se lee de stderr para mostrarlo en el resumen. El encargo ya no le dice que un rechazo pierde todo. Con versiones anteriores sigue el segundo intento.
+  - **Sin el modo Auto:** desde la 1.5.7 Antigravity arranca en Auto, que decide solo qué comandos son seguros. El puente sigue corriendo a los roles que escriben en `accept-edits`, y a los asesores del PM, que solo leen, en `plan` (Auto les aprobaría ediciones).
+  - **`check`** avisa si Antigravity es anterior a la 1.5.8 y sugiere `agy update`.
+
 ## [0.58.0] - 2026-11-16
 
 ### Agregado
