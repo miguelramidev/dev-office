@@ -11,7 +11,7 @@ Los archivos `office-telegram.sh` y `office-telegram.cmd` están en la misma car
 ## Cómo funciona
 
 - **Ida:** al terminar cada respuesta, tu último mensaje (el que explica lo que se hizo y lo que sugerís) le llega al CEO por Telegram. Los mensajes de los departamentos no se mandan.
-- **Vuelta:** lo que el CEO le escribe al bot despierta la sesión, aunque esté quieta, y te llega como un aviso que empieza con `[Telegram · CEO]`.
+- **Vuelta:** lo que el CEO le escribe al bot despierta la sesión, aunque esté quieta, con un aviso que empieza con `[Telegram · CEO]`. El aviso no trae el texto: lo leés con `office-telegram.sh inbox`, que muestra solo lo que llegó del chat del CEO y lo marca leído.
 - **Permisos:** cuando un agente pide permiso, al CEO le llega el pedido con los botones Permitir y Rechazar. Si no responde en 10 minutos, el pedido pasa a la terminal como siempre.
 - **Capturas:** si un cambio se ve (web o app móvil), con la skill `office:screenshot` un agente de frontend saca la captura del navegador o del emulador y se la mandás al CEO con `bash .claude/office-telegram.sh photo <imagen> [texto]` (o `video <archivo> [texto]` para un video corto de hasta 50 MB).
 - **Comandos en el chat:** `/estado` (en qué está la oficina) y `/ayuda`.
