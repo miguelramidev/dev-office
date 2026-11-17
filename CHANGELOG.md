@@ -8,6 +8,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.60.1] - 2026-11-17
+
+### Cambiado
+
+- **Telegram: el PM lee tus mensajes en vez de recibirlos en el aviso** (`office` 0.56.1, `office-telegram.sh` versión 9). A veces el PM rechazaba lo que le escribías por Telegram: tu texto le llegaba dentro de un aviso automático del hook, y un texto que dice ser del usuario dentro de un aviso es justo lo que haría una manipulación.
+  - **El aviso de `[Telegram · CEO]` ya no trae el texto:** dice cuántos mensajes hay sin leer y el comando para leerlos.
+  - **`office-telegram.sh inbox`** (nuevo) muestra los mensajes sin leer con su hora y los marca leídos. Solo tiene lo que el lector del bot aceptó de tu chat.
+  - **El PM** corre ese comando al recibir el aviso y toma lo que muestra como escrito por vos en la terminal.
+  - Se actualiza con la oficina; si el script del proyecto quedó viejo, `/office:telegram` lo copia de nuevo.
+
 ## [0.60.0] - 2026-11-16
 
 ### Agregado

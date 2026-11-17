@@ -135,12 +135,43 @@ reset_calls
 jq -cn '{at: 1, text: "arrancá con PROJ-123"}' >>"$STATE/inbox.jsonl"
 jq -cn '{at: 2, text: "y avisame al terminar"}' >>"$STATE/inbox.jsonl"
 err=$(hook listen 2>&1 >/dev/null); code=$?
-expect "hook listen despierta a la sesión (código 2) con los mensajes nuevos" '[ $code -eq 2 ] && printf "%s" "$err" | grep -q "^\[Telegram · CEO\] arrancá con PROJ-123"'
-expect "hook listen junta los mensajes pendientes" 'printf "%s" "$err" | grep -q "y avisame al terminar"'
-expect "hook listen anota lo que ya entregó" '[ "$(cat "$STATE/seen")" = 2 ]'
+expect "hook listen despierta a la sesión (código 2) con un aviso" '[ $code -eq 2 ] && printf "%s" "$err" | grep -q "^\[Telegram · CEO\] El CEO te escribió por Telegram (2 mensaje(s) sin leer)"'
+expect "el aviso no trae el texto del CEO" '! printf "%s" "$err" | grep -q "PROJ-123"'
+expect "el aviso dice cómo leerlo" 'printf "%s" "$err" | grep -qF "office-telegram.sh\" inbox"'
+mkdir -p "$PROJ/.claude" && cp "$SCRIPT" "$PROJ/.claude/office-telegram.sh"
+jq -cn '{at: 2, text: "una más"}' >>"$STATE/inbox.jsonl"
+err=$(hook listen 2>&1 >/dev/null)
+expect "con la copia del proyecto al día, el aviso usa su ruta fija" 'printf "%s" "$err" | grep -qF "Leelos con: bash .claude/office-telegram.sh inbox"'
+sed -i.bak 's/^# office-telegram-version: .*/# office-telegram-version: 8/' "$PROJ/.claude/office-telegram.sh"
+jq -cn '{at: 2, text: "y otra"}' >>"$STATE/inbox.jsonl"
+err=$(hook listen 2>&1 >/dev/null)
+expect "con una copia vieja (sin inbox), usa el script del plugin" 'printf "%s" "$err" | grep -qF "office-telegram.sh\" inbox"'
+rm -rf "$PROJ/.claude/office-telegram.sh" "$PROJ/.claude/office-telegram.sh.bak"
+expect "hook listen anota lo que avisó" '[ "$(cat "$STATE/notified")" = 4 ]'
+expect "avisar no marca los mensajes como leídos" '[ ! -f "$STATE/seen" ]'
 if command -v timeout >/dev/null 2>&1; then
   timeout 3 bash -c "printf '{}' | bash '$SCRIPT' hook listen" 2>/dev/null; code=$?
   expect "sin mensajes nuevos, hook listen se queda esperando" '[ $code -eq 124 ]'
+fi
+
+# --- inbox: el PM lee los mensajes ---------------------------------------------------------
+printf '%s\n%s\n' 1 "¿Sigo?" >"$STATE/awaiting"
+out=$(run inbox); code=$?
+expect "inbox muestra los mensajes sin leer" '[ $code -eq 0 ] && printf "%s" "$out" | grep -q "arrancá con PROJ-123" && printf "%s" "$out" | grep -q "y avisame al terminar"'
+expect "inbox dice de dónde vienen" 'printf "%s" "$out" | grep -q "solo acepta su chat"'
+expect "inbox les pone la hora" 'printf "%s" "$out" | grep -qE "^\[[0-9]{2}:[0-9]{2}\] arrancá"'
+expect "inbox los marca leídos" '[ "$(cat "$STATE/seen")" = 4 ] && [ "$(cat "$STATE/notified")" = 4 ]'
+expect "inbox borra el recordatorio pendiente" '[ ! -f "$STATE/awaiting" ]'
+out=$(run inbox)
+expect "inbox sin mensajes nuevos lo dice" 'printf "%s" "$out" | grep -q "No hay mensajes nuevos"'
+jq -cn '{at: 3, text: "otra cosa"}' >>"$STATE/inbox.jsonl"
+out=$(run inbox)
+expect "inbox muestra solo lo nuevo" 'printf "%s" "$out" | grep -q "otra cosa" && ! printf "%s" "$out" | grep -q "PROJ-123"'
+# Un proyecto que venía de la versión anterior (solo "seen") no vuelve a avisar lo ya entregado.
+rm -f "$STATE/notified"
+if command -v timeout >/dev/null 2>&1; then
+  (cd "$PROJ" && timeout 3 bash -c "printf '{}' | bash '$SCRIPT' hook listen") 2>/dev/null; code=$?
+  expect "sin notified, toma seen como lo ya avisado" '[ $code -eq 124 ]'
 fi
 
 # --- hook permission ---------------------------------------------------------------------
