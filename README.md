@@ -97,7 +97,7 @@ Se actualizan cada vez que cambia un endpoint, así siempre tenés la API de tu 
 | `dept-scraper` | Developer y tester de scraping, skill de scraping responsable             | Sonnet        |
 | `dept-docs` | Redactor y revisor de documentación (README, guías, referencia, changelog), skill de documentación sólida | Sonnet |
 | `dept-devops` | Arquitecto, developer y tester de CI/CD, despliegues, infraestructura como código, contenedores y servidores, skill de DevOps sólido | Arquitecto: Opus; developer y tester: Sonnet |
-| `dept-research` | Investigador y verificador: buscan en internet, en el navegador, en el código y en las herramientas conectadas, y entregan un informe con fuentes en `docs/research/`; skill de investigación sólida | Sonnet |
+| `dept-research` | Investigador y verificador: buscan en internet, en el navegador, en el código y en las herramientas conectadas, y entregan un informe con fuentes en `docs/research/`. Antes de una funcionalidad nueva, buscan si una librería ya resuelve lo que habría que programar; skill de investigación sólida | Sonnet |
 
 Cada departamento es un plugin aparte: instalás solo los que tu proyecto necesita. Todos dependen de `office`.
 
