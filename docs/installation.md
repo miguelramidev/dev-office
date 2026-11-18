@@ -88,7 +88,7 @@ Si los diseños los hace otro (un cliente o un equipo de diseño), el designer d
 claude --agent office:pm
 ```
 
-Al arrancar, el encabezado tiene que mostrar `@office:pm`. Para verificar, preguntale: "¿Qué departamentos tenés disponibles?".
+`office-setup` deja al PM como agente por defecto del proyecto (`"agent": "office:pm"` en `.claude/settings.json`), así que `claude` a secas también arranca con la oficina. Al arrancar, el encabezado tiene que mostrar `@office:pm`. Para verificar, preguntale: "¿Qué departamentos tenés disponibles?".
 
 Atajo opcional en `~/.bashrc` o `~/.zshrc`:
 

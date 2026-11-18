@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Script de la skill office-setup de dev-office.
 # Prepara un proyecto para trabajar con la oficina: permisos base, modo de permisos,
-# zona horaria del registro de actividad y entradas de .gitignore.
+# el PM como agente por defecto, zona horaria del registro de actividad y entradas de .gitignore.
 # Agrega lo que falta sin borrar lo que el proyecto ya tiene.
 #
 # Uso:
@@ -129,6 +129,9 @@ jq \
   | .permissions.ask = add_missing(.permissions.ask; $ask)
   | .permissions.deny = add_missing(.permissions.deny; $deny)
   | .permissions.defaultMode = $mode
+  # El PM como agente por defecto: "claude" a secas arranca con la oficina. Si el proyecto
+  # ya eligió otro agente, queda el suyo.
+  | if (.agent // "") == "" then .agent = "office:pm" else . end
   | if $tz != "" then .env.OFFICE_TIMEZONE = $tz else . end
   | if $protected != "" then .env.OFFICE_PROTECTED_BRANCHES = $protected else . end
 ' "$SETTINGS.bak" | tr -d '\r' > "$SETTINGS"

@@ -8,6 +8,15 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.61.0] - 2026-11-18
+
+### Cambiado
+
+- **El PM como agente por defecto, desde tus settings** (`office` 0.57.0). Claude Code dejó como deprecado el campo `agent` del `settings.json` de un plugin: muestra un aviso al arrancar y va a dejar de aplicarlo. La oficina lo usaba para que `claude` a secas arrancara con el PM.
+  - **`office-setup`** deja `"agent": "office:pm"` en el `.claude/settings.json` del proyecto, salvo que ya tenga otro agente.
+  - **En los proyectos ya armados,** un hook nuevo de inicio de sesión (`default-agent.sh`) lo agrega una sola vez donde está instalada la oficina: `.claude/settings.json`, `.claude/settings.local.json` o `~/.claude/settings.json`. No toca un `agent` que ya tengas; si lo sacás, no lo vuelve a poner. Se apaga con `OFFICE_DEFAULT_AGENT=off`. El PM te avisa en una línea dónde lo puso; si fue en `.claude/settings.json`, commitealo.
+  - **El aviso de Claude Code desaparece** desde la sesión siguiente. El `settings.json` del plugin queda por una versión más, para que nadie arranque sin el PM durante el cambio, y se saca en la próxima.
+
 ## [0.60.1] - 2026-11-17
 
 ### Cambiado
