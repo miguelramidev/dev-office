@@ -13,6 +13,7 @@ Los cambios los hace el script `setup.sh` que está en la misma carpeta que este
 1. **Explicá qué va a pasar**, en pocas líneas:
    - Se agregan a `.claude/settings.json` permisos base: comandos de git y de `gh` de solo lectura permitidos (incluido ver las corridas de GitHub Actions); commit, push, abrir PRs, comentar en GitHub, disparar workflows, aplicar infraestructura, SSH, instalar paquetes y AWS siempre con consulta; leer secretos, forzar push, saltear hooks, mergear PRs, cambiar secretos de GitHub y destruir infraestructura prohibidos.
    - Se define el modo de permisos y las ramas protegidas, donde los agentes no pueden editar ni commitear.
+   - Se deja al PM como agente por defecto (`"agent": "office:pm"`), así `claude` a secas arranca con la oficina. Si el proyecto ya tenía otro agente, queda el suyo.
    - Se agregan a `.gitignore` la carpeta temporal de QA, la de trabajo de la oficina (`.office/`), el registro de actividad, la copia de seguridad y la configuración personal de proveedores.
    - No se borra nada de lo que ya existe, y se guarda una copia del archivo anterior.
 

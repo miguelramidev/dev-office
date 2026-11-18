@@ -284,6 +284,7 @@ Los agentes leen el `CLAUDE.md` del proyecto (y lo que este importe) antes de tr
 ## Limitaciones de Claude Code que condicionan el diseño
 
 - **Un plugin no puede definir permisos.** Por eso la skill `office-setup` los crea en el `.claude/settings.json` de cada proyecto.
+- **Un plugin ya no elige el agente de la sesión.** El campo `agent` del `settings.json` de un plugin está deprecado (Claude Code muestra un aviso al arrancar y va a dejar de aplicarlo). Por eso `office-setup` deja `"agent": "office:pm"` en el `.claude/settings.json` del proyecto, y en los proyectos ya armados el hook `default-agent.sh` lo agrega una sola vez, al empezar la sesión, donde esté instalada la oficina: `.claude/settings.json` (scope project), `.claude/settings.local.json` (scope local) o `~/.claude/settings.json` (scope user). Si ya hay otro `agent`, no lo toca; si el CEO lo saca, no lo vuelve a poner (queda anotado en `.office/default-agent`); `OFFICE_DEFAULT_AGENT=off` lo apaga. El `settings.json` del plugin queda una versión más, para que nadie arranque sin el PM mientras se hace el cambio.
 - **En los agentes de un plugin se ignora `permissionMode`.** El modo (`acceptEdits` o `auto`) se define en el proyecto con `defaultMode`, y los subagentes lo heredan de la sesión principal.
 - **Escribir en `.git` o `.claude` siempre pide confirmación** (rutas protegidas), aunque el modo sea automático.
 - **Las reglas `ask` siempre preguntan**, sin importar el modo: commit, push, instalar paquetes o comandos de la nube pasan por el CEO.
