@@ -66,7 +66,7 @@ Después probalo en un proyecto real instalando el marketplace desde la carpeta 
 
 ```bash
 claude plugin marketplace add ~/dev/dev-office
-claude plugin install dept-<área>@dev-office --scope project
+claude plugin install dept-<área>@dev-office --scope local
 ```
 
 Hacé una tarea chica con el PM y verificá que:

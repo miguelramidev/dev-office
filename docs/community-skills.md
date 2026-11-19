@@ -30,25 +30,25 @@ La skill `office-setup` mira las dependencias del proyecto y te recomienda las q
 ```bash
 # Postgres
 claude plugin marketplace add supabase/agent-skills
-claude plugin install postgres-best-practices@supabase-agent-skills --scope project
+claude plugin install postgres-best-practices@supabase-agent-skills --scope local
 
 # MongoDB
 claude plugin marketplace add mongodb/agent-skills
-claude plugin install mongodb@mongodb-plugins --scope project
+claude plugin install mongodb@mongodb-plugins --scope local
 
 # React, Next.js y React Native (instalador interactivo: elegí las que uses)
 npx skills add vercel-labs/agent-skills
 
 # Expo
 claude plugin marketplace add expo/skills
-claude plugin install expo@expo-plugins --scope project
+claude plugin install expo@expo-plugins --scope local
 
 # Terraform
 claude plugin marketplace add hashicorp/agent-skills
-claude plugin install terraform-code-generation@hashicorp --scope project
+claude plugin install terraform-code-generation@hashicorp --scope local
 ```
 
-Con `--scope project` quedan registradas en `.claude/settings.json`, así que cualquiera que trabaje en el proyecto sabe cuáles usa.
+Con `--scope local` quedan solo para vos en este proyecto, como el resto de la oficina en el modo local. Si el equipo entero las usa, instalalas con `--scope project`: quedan registradas en `.claude/settings.json` y cualquiera que trabaje en el proyecto sabe cuáles usa.
 
 ## Cuidado con el servidor MCP de MongoDB
 

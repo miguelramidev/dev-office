@@ -29,7 +29,7 @@ Después, en cualquier sistema: `gh auth login` (GitHub.com, HTTPS, usar gh para
 
 ## 3. Revisá la rama
 
-1. `git status`. Si hay cambios sin commitear, frená: mostrale qué archivos son y preguntale si los commitea (con su aprobación) o los deja fuera del PR.
+1. `git status`. Si hay cambios sin commitear, frená: mostrale qué archivos son y preguntale si los commitea (con su aprobación) o los deja fuera del PR. Si son de otro ticket que se trabajó a la vez, no van en este PR: el PM los pasa a su rama antes ("Varios tickets a la vez", paso de cierre).
 2. Anotá la rama actual. Si es la base o la de producción, frená: no se abre un PR desde ahí. Desde una rama de épica solo se abre el PR de la épica completa (paso 4).
 3. Buscá la clave del ticket en el nombre de la rama (letras, guion, número: `feature/PROJ-123-...` → `PROJ-123`). Las ramas `chore/` no tienen ticket.
 4. Fijate si ya hay un PR abierto para esta rama: `gh pr list --head <rama> --state open`. Si existe, mostrale el enlace al CEO y frená: los cambios nuevos se suben a la misma rama y el PR se actualiza solo.
