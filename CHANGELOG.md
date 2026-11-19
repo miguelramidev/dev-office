@@ -8,6 +8,20 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.63.0] - 2026-11-19
+
+### Agregado
+
+- **Varios tickets a la vez, por defecto** (`office` 0.59.0). Si el CEO pide dos tickets que no dependen entre sí (por ejemplo, dos de la misma épica), el PM los trabaja a la vez en la misma copia del proyecto, sin worktrees.
+  - **Cuándo:** salen de la misma rama, ninguno necesita lo que hace el otro, tocan archivos distintos (las listas se arman con el mapa, el índice y `--impact`) y lo que no se puede repartir (dependencias, migraciones, archivos generados, configuración global, registros centrales) lo toca uno solo. Si no, el PM dice por qué y los hace en orden.
+  - **Cómo:** `start-ticket` crea la rama del segundo sin cambiarse; cada encargo lleva su lista de archivos ("Tus archivos:"); los developers arrancan en el mismo mensaje y cada ticket sigue su ciclo de calidad. Las partes de un mismo ticket también pueden ir a la vez con las mismas condiciones.
+  - **Cierre:** con la confirmación del CEO, cada ticket se commitea en su rama (`git add` con su lista, `git switch` lleva los cambios del otro), el tester prueba cada rama por separado y se abre un PR por ticket.
+  - **Reservas de archivos:** un hook nuevo (`file-lock.sh`) no deja que un agente edite un archivo que está editando otro, y le dice quién lo tiene. Las reservas se liberan cuando el agente termina, vencen a los 30 minutos sin ediciones (`OFFICE_LOCK_TTL`) y se borran al empezar la sesión. Se apaga con `OFFICE_FILE_LOCKS=off`.
+
+### Cambiado
+
+- **Documentación al día con el modo local y el trabajo en paralelo:** README, instalación, arquitectura (sección "Trabajo en paralelo" y decisiones descartadas), proveedores, skills de la comunidad y cómo agregar un departamento.
+
 ## [0.62.0] - 2026-11-19
 
 ### Cambiado

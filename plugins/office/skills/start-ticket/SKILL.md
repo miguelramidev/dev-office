@@ -91,6 +91,14 @@ Con la rama lista, **mové el ticket al estado de trabajo en curso sin preguntar
 
 Si el ticket no tiene responsable, mencionalo en el cierre y ofrecé asignárselo al CEO (`editJiraIssue`); eso sí se pregunta.
 
+## Segundo ticket en paralelo (sin cambiar de rama)
+
+Cuando el PM trabaja dos tickets a la vez (ver "Varios tickets a la vez" en sus instrucciones), usa esta skill para el segundo con la indicación "sin cambiar de rama". Los pasos son los mismos, con tres diferencias:
+
+- **Paso 2:** los cambios sin commitear del primer ticket son esperables: no frenes por ellos.
+- **Paso 4:** la rama de origen tiene que ser la misma del primer ticket (la misma épica, o la base). Si no lo es, decíselo al PM: esos dos tickets no pueden ir a la vez.
+- **Paso 5:** creá la rama sin cambiarte: `git branch <rama> <origen>`. Si ya existe, no la toques. Te quedás en la rama del primer ticket; el trabajo del segundo pasa a su rama al cerrar.
+
 ## 7. Cerrá
 
 En pocas líneas:

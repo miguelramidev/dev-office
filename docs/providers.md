@@ -6,7 +6,7 @@ La oficina puede repartir sus roles entre tres proveedores de IA: por ejemplo, C
 
 **Si no configurás nada, la oficina funciona igual que siempre:** todos los roles son agentes de Claude, con sus modelos de siempre y razonamiento medio. La configuración de proveedores es opcional. Mientras no exista `.claude/office-agents.json`, el PM ni la mira, y el puente a Codex y Gemini no se usa.
 
-Para volver a ese estado en cualquier momento: `bash .claude/office-agents.sh reset --all`, o borrar `.claude/office-agents.json`.
+Para volver a ese estado en cualquier momento: `bash .claude/office-agents.sh reset --all`, o borrar `.claude/office-agents.local.json` (y `.claude/office-agents.json`, si el proyecto usa el modo compartido).
 
 ## Qué se puede configurar
 
@@ -82,8 +82,9 @@ El PM lee la configuración cada vez que encarga algo: no hace falta reiniciar.
 
 ### Para el equipo o solo para vos
 
-- `.claude/office-agents.json` es la configuración **del equipo**: hacé commit de ese archivo y de `.claude/office-agents.sh` y `.claude/office-agents.cmd` para que todos usen la misma.
-- Con `--local`, el cambio va a `.claude/office-agents.local.json`, que es **tuya** y no va en git. Manda rol por rol sobre la del equipo. Sirve, por ejemplo, si el equipo usa Codex de developer y vos no tenés cuenta: `bash .claude/office-agents.sh set backend.developer claude --local`.
+- **Por defecto es tuya:** el script guarda en `.claude/office-agents.local.json`, que no va en git. Es el modo local de la oficina (ver [Instalar](installation.md#3-preparar-el-proyecto)): en un proyecto en equipo, cada uno elige sus proveedores sin pisar los de otro.
+- **La del equipo** es `.claude/office-agents.json`. Si el proyecto la tiene (modo compartido), el script escribe ahí, y para que todos usen la misma se commitea junto con `.claude/office-agents.sh` y `.claude/office-agents.cmd`. Con `--shared` se escribe ahí aunque no exista todavía.
+- **Con `--local`, siempre en la tuya,** también en un proyecto compartido. La tuya manda rol por rol sobre la del equipo. Sirve, por ejemplo, si el equipo usa Codex de developer y vos no tenés cuenta: `bash .claude/office-agents.sh set backend.developer claude --local`.
 
 ### Cambiar la tabla de modelos
 
@@ -94,7 +95,7 @@ bash .claude/office-agents.sh tier codex effort high              # más razonam
 bash .claude/office-agents.sh tier codex opus default             # volver al de dev-office
 ```
 
-Los niveles son `opus`, `sonnet` y `haiku`, y `effort` es el razonamiento. Con `--local`, el cambio es solo para vos.
+Los niveles son `opus`, `sonnet` y `haiku`, y `effort` es el razonamiento. Como el resto, va a tu configuración, salvo en un proyecto compartido sin `--local`.
 
 ## Cómo trabaja
 
@@ -183,6 +184,6 @@ bash .claude/office-agents.sh gemini-permissions       # ver el estado
 - **En Windows**, el puente prende el sandbox de Codex en modo `unelevated`; sin eso, Codex no puede ni leer el proyecto ("blocked by policy"). Si usás Codex por tu cuenta en Windows y te pasa lo mismo, agregá a `%USERPROFILE%\.codex\config.toml` la sección `[windows]` con `sandbox = "unelevated"`.
 - **Costo:** cada proveedor se paga con su cuenta, y el puente gasta un poco de Claude (Sonnet) por encargo para pasarlo y revisarlo.
 - **Encargos grandes:** el puente corre al proveedor en segundo plano y lo espera hasta 30 minutos (`OFFICE_EXTERNAL_TIMEOUT`). Por eso, cuando el developer es Codex o Gemini, el PM parte el trabajo antes de encargarlo: partes de unos 15 minutos de trabajo (para empezar, hasta unos 8 archivos; después, según lo que tardó la anterior) que se terminan solas y dejan el proyecto compilando. Así no paga el costo fijo del puente por cada cosa chica, una después de la otra. Mientras el developer hace una parte, el tester prueba la anterior (solo sus archivos y tests relacionados), y al final corre la verificación completa. Si igual se agota el tiempo, arma la parte siguiente con lo que falta.
-- **Si una versión nueva de un CLI cambia sus opciones,** se pueden agregar opciones extra con `OFFICE_CODEX_ARGS` y `OFFICE_GEMINI_ARGS` en `.claude/settings.json`, sin esperar una versión nueva de la oficina.
+- **Si una versión nueva de un CLI cambia sus opciones,** se pueden agregar opciones extra con `OFFICE_CODEX_ARGS` y `OFFICE_GEMINI_ARGS` en el `env` de tus settings (`.claude/settings.local.json`), sin esperar una versión nueva de la oficina.
 
 Para el detalle técnico (cómo se arma el prompt, qué controla el runner, los códigos de salida), ver [Arquitectura](architecture.md#proveedores-por-rol) y la skill `external-agents`.

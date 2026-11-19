@@ -41,8 +41,8 @@ Los modelos de la tabla son los de siempre. Cada proyecto puede cambiar el prove
 
 Cada rol lo puede hacer Claude, Codex o Gemini. Se configura por proyecto con la skill `office-agents`, que instala el script `.claude/office-agents.sh` (y `.claude/office-agents.cmd` para Windows), en dos archivos:
 
-- `.claude/office-agents.json`: el del equipo, va en git.
-- `.claude/office-agents.local.json`: el personal, no va en git y manda rol por rol.
+- `.claude/office-agents.local.json`: el personal, no va en git y manda rol por rol. Es donde escribe el script por defecto (modo local) y siempre con `--local`.
+- `.claude/office-agents.json`: el del equipo, va en git. El script escribe ahí si el proyecto ya lo tiene (modo compartido), o con `--shared`.
 
 ```json
 { "roles": { "backend.developer": ["codex"], "frontend.developer": ["gemini:gemini-3.1-pro-preview"], "qa": ["claude", "codex"], "pm": ["codex"] } }
@@ -95,7 +95,7 @@ PM ──encargo──→ líder ──→ developer ──→ tester ──fall
  └──── reporte con las acciones requeridas ──────────┘
 ```
 
-- **Cómo se activa:** `bash .claude/office-agents.sh teams on` (o `--local`, solo para vos). Anota `"teams": true` en la configuración y `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` en el `env` de `.claude/settings.json`. `teams off` lo deshace. Hay que reiniciar Claude Code.
+- **Cómo se activa:** `bash .claude/office-agents.sh teams on`. Anota `"teams": true` en la configuración y `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` en el `env` de tus settings (`.claude/settings.local.json`; en el modo compartido, `.claude/settings.json`, salvo con `--local`). `teams off` lo deshace. Hay que reiniciar Claude Code.
 - **Por qué agent teams:** un subagente no puede encargarle trabajo a otro subagente. Con agent teams, el PM crea al líder como compañero de equipo (`dept-<área>:lead`, con nombre `<área>-lead`) y el líder sí puede encargarles al developer y al tester como subagentes. En los eventos de los hooks, Claude Code identifica al líder por su nombre (`<área>-lead`, en `agent_type`), no por `dept-<área>:lead`; el observer y el resumen de tokens reconocen los dos. El equipo es plano: los líderes no crean más líderes.
 - **El líder:** lee el `CLAUDE.md` y la configuración de proveedores, encarga a su developer y a su tester (por el puente si el rol va en Codex o Gemini), manda las fallas del tester de vuelta al developer y escribe el reporte en `.office/reports/<fecha>-<área>.md`: qué se hizo, archivos, calidad, qué necesitan otros departamentos, acciones requeridas y pendientes. Después le avisa al PM por mensaje.
 - **El PM:** sigue con la fase de diseño, QA, los asesores y el informe al CEO. Cuando un líder avisa, lee su reporte. Las aprobaciones siguen pasando por el CEO. Los bloqueantes de QA vuelven al líder del departamento.
@@ -211,8 +211,8 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 
 ## Ramas y tickets
 
-- **Ramas protegidas.** Cada proyecto define en `OFFICE_PROTECTED_BRANCHES` (en `.claude/settings.json`) las ramas donde nunca se trabaja directamente, con nombres o patrones, por ejemplo `main dev epic/*`. Si no la define, se protegen `main` y `master`. El hook `branch-guard.sh` bloquea editar archivos del proyecto, commitear o mergear sobre esas ramas, y hacer push hacia ellas desde cualquier rama.
-- **Tickets de Jira.** La skill `start-ticket` trae el ticket con el servidor MCP de Atlassian (que el proyecto configura en `.mcp.json` con el nombre `atlassian`) y decide todo a partir de él. Con la rama lista, pasa el ticket a "en curso" sin preguntar. El PM la usa cuando el CEO nombra un ticket.
+- **Ramas protegidas.** Cada proyecto define en `OFFICE_PROTECTED_BRANCHES` (en el `env` de los settings: `.claude/settings.local.json` en el modo local, `.claude/settings.json` en el compartido) las ramas donde nunca se trabaja directamente, con nombres o patrones, por ejemplo `main dev epic/*`. Si no la define, se protegen `main` y `master`. El hook `branch-guard.sh` bloquea editar archivos del proyecto, commitear o mergear sobre esas ramas, y hacer push hacia ellas desde cualquier rama.
+- **Tickets de Jira.** La skill `start-ticket` trae el ticket con el servidor MCP de Atlassian (con el nombre `atlassian`: en el modo local se conecta con `claude mcp add --scope local`, y en el compartido va en `.mcp.json`) y decide todo a partir de él. Con la rama lista, pasa el ticket a "en curso" sin preguntar. El PM la usa cuando el CEO nombra un ticket.
 
   | Lo que dice el ticket | Decide |
   | --- | --- |
@@ -231,6 +231,19 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
   - Antes de escribir, le muestra el texto al CEO y espera su confirmación. Si el ticket no tiene responsable, pregunta a quién se asigna.
   - No cambia el estado de esos tickets.
 - **La rama base, la de producción, los prefijos y el proyecto de Jira** van en el flujo de trabajo del proyecto (`CLAUDE.md` o `.claude/rules/`). Si el proyecto no los define, `start-ticket` usa los valores por defecto de la tabla.
+
+## Trabajo en paralelo
+
+Por defecto, el PM trabaja a la vez lo que no depende entre sí, en la misma copia del proyecto y sin worktrees. Lo que lo hace seguro es que cada agente toca sus propios archivos.
+
+- **Varios tickets a la vez.** Si el CEO pide dos tickets (o uno nuevo mientras otro sigue), el PM los hace a la vez cuando se cumplen cuatro cosas: salen de la misma rama (la misma épica, o la base); ninguno necesita lo que hace el otro (código, API, tipos, esquema, o un "bloquea" en Jira); tocan archivos distintos (compara las listas de cada uno, armadas con el mapa, el índice y `--impact`); y lo que no se puede repartir (dependencias y lockfile, migraciones, archivos generados, configuración global, registros centrales como rutas o traducciones) lo toca uno solo. Si alguna falla, se lo dice al CEO y los hace en orden.
+- **Ramas.** `start-ticket` crea la rama del primero y se cambia a ella; para el segundo, la crea desde el mismo origen sin cambiarse. Se trabaja en la rama del primero.
+- **Encargos.** Cada encargo lleva su ticket y su lista de archivos ("Tus archivos:"). Los developers de los dos tickets arrancan en el mismo mensaje, y cada ticket sigue su ciclo de calidad. Las pruebas que levantan un servidor, usan la base de datos o un puerto fijo van de a una.
+- **Cierre** (con la confirmación del CEO): en la rama del primero se commitean solo sus archivos; `git switch` a la rama del segundo lleva sus cambios sin commitear (no hay choque porque son archivos distintos) y se commitean ahí; después el tester corre los tests relacionados de cada ticket en su propia rama, para confirmar que ninguno dependía del otro, y se abre un PR por ticket. Si git no deja cambiar de rama, el PM frena y se lo muestra al CEO: no usa `stash` ni fuerza nada.
+- **Partes de un mismo ticket.** Van a la vez con las mismas condiciones; si no, en orden (ver "Encargos en partes").
+- **Reservas de archivos (`file-lock.sh`).** Un hook hace cumplir las listas: el primer agente que edita un archivo lo reserva, y si otro agente que sigue trabajando intenta editarlo, lo bloquea y le dice quién lo tiene, para que siga con lo suyo y lo diga en su reporte. Las reservas se liberan cuando el agente termina, vencen a los 30 minutos sin ediciones (`OFFICE_LOCK_TTL`) y se borran al empezar la sesión; están en `.office/locks.tsv`. El PM no reserva (no edita código), y no se cuidan `.qa/`, `.office/` ni los archivos de fuera del proyecto. Se apaga con `OFFICE_FILE_LOCKS=off`.
+- **Lo que el hook no ve:** los cambios hechos con comandos (`sed`, `git mv`) y los de Codex y Gemini, que corren fuera de Claude Code. Para esos, la lista de archivos del encargo es la regla, y el PM compara los "Archivos cambiados" del puente con esa lista.
+- **No ahorra tokens:** gasta lo mismo en menos tiempo. Y dos épicas a la vez sí necesitan dos copias del código (worktrees); eso la oficina no lo hace por ahora.
 
 ## Colección de API
 
@@ -287,7 +300,7 @@ Los agentes leen el `CLAUDE.md` del proyecto (y lo que este importe) antes de tr
 
 ## Limitaciones de Claude Code que condicionan el diseño
 
-- **Un plugin no puede definir permisos.** Por eso la skill `office-setup` los crea en el `.claude/settings.json` de cada proyecto.
+- **Un plugin no puede definir permisos.** Por eso la skill `office-setup` los crea en los settings de cada proyecto (`.claude/settings.local.json` en el modo local, `.claude/settings.json` en el compartido).
 - **Un plugin ya no elige el agente de la sesión.** El campo `agent` del `settings.json` de un plugin está deprecado (Claude Code muestra un aviso al arrancar y va a dejar de aplicarlo). Por eso `office-setup` deja `"agent": "office:pm"` en el `.claude/settings.json` del proyecto, y en los proyectos ya armados el hook `default-agent.sh` lo agrega una sola vez, al empezar la sesión, donde esté instalada la oficina: `.claude/settings.json` (scope project), `.claude/settings.local.json` (scope local) o `~/.claude/settings.json` (scope user). Si ya hay otro `agent`, no lo toca; si el CEO lo saca, no lo vuelve a poner (queda anotado en `.office/default-agent`); `OFFICE_DEFAULT_AGENT=off` lo apaga. El `settings.json` del plugin queda una versión más, para que nadie arranque sin el PM mientras se hace el cambio.
 - **En los agentes de un plugin se ignora `permissionMode`.** El modo (`acceptEdits` o `auto`) se define en el proyecto con `defaultMode`, y los subagentes lo heredan de la sesión principal.
 - **Escribir en `.git` o `.claude` siempre pide confirmación** (rutas protegidas), aunque el modo sea automático.
@@ -297,4 +310,6 @@ Los agentes leen el `CLAUDE.md` del proyecto (y lo que este importe) antes de tr
 
 - **"Agent teams" como modo por defecto:** es experimental y gasta bastante más tokens. Por defecto el ciclo en orden lo resuelve el PM con subagentes; los líderes de departamento son un modo opcional (ver "Modo equipos").
 - **Un plugin único con todos los departamentos:** no permite elegir qué departamentos tiene cada proyecto.
+- **Worktrees para trabajar en paralelo:** cada worktree es otra copia del proyecto, con sus dependencias instaladas aparte, su observer y una sesión más que coordinar. Para tickets de una misma épica alcanza con repartir los archivos en la misma copia (ver "Trabajo en paralelo").
+- **La configuración de la oficina en git por defecto:** en un proyecto en equipo, la configuración de uno pisaba la de otro. Por eso el modo por defecto es el local, y el compartido es opcional.
 - **El PM en Codex o Gemini:** el PM es la sesión de Claude Code. Un PM en otro proveedor sería Claude reenviando cada mensaje, con el costo de los dos y sin memoria entre mensajes. En su lugar, el PM puede tener asesores.

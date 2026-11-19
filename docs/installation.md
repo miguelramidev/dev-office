@@ -107,6 +107,10 @@ Atajo opcional en `~/.bashrc` o `~/.zshrc`:
 alias oficina='claude --agent office:pm'
 ```
 
+### Varios tickets a la vez
+
+Si le pedís al PM dos tickets que no dependen entre sí (por ejemplo, dos de la misma épica: "hagamos PROJ-123 y PROJ-124"), los trabaja a la vez, en la misma copia del proyecto y cada uno en su rama. Antes revisa que salgan de la misma rama, que ninguno necesite al otro y que toquen archivos distintos; si no, te dice por qué y los hace en orden. Al cerrar, con tu confirmación, commitea cada ticket en su rama, prueba cada rama por separado y abre un PR por ticket. Un hook evita que dos agentes editen el mismo archivo a la vez. Ver [Trabajo en paralelo](architecture.md#trabajo-en-paralelo).
+
 ## 5. Ver qué hace el equipo
 
 - **En la conversación:** cada vez que el PM activa a alguien aparece una fila con el nombre del agente y la tarea.

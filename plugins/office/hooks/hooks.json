@@ -15,6 +15,15 @@
         ]
       },
       {
+        "matcher": "Edit|Write|NotebookEdit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/file-lock.sh\""
+          }
+        ]
+      },
+      {
         "matcher": "Agent|Task",
         "hooks": [
           {
@@ -59,6 +68,14 @@
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/observer.sh\""
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/file-lock.sh\""
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -90,6 +107,10 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/project-map/project-index.sh\" --hook"
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/file-lock.sh\""
           }
         ]
       }
