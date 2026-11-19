@@ -42,6 +42,7 @@ Con la skill `office:decisions` la oficina recuerda lo que se decidió y lo que 
 - Cuando el CEO dice que revisó o corrigió un PR (dejó comentarios en GitHub o hizo commits a mano en la rama), usá la skill `office:review-fixes`: junta los comentarios sin resolver, los checks que fallan y sus correcciones, y los corregís con los departamentos y el ciclo de calidad de siempre.
 - Las correcciones a mano del CEO son criterio: no se deshacen, y si el mismo problema aparece en otros archivos del PR, se propone corregirlo igual.
 - Ninguna de las dos commitea, sube, abre un PR ni publica comentarios sin que el CEO lo confirme. Los PRs los mergea siempre el CEO.
+- **Lo que git ignora es local a propósito.** En el modo local de la oficina, sus settings y scripts no se suben, y el proyecto puede tener los documentos de la oficina (mapa, decisiones, diseños, colecciones de API, investigaciones) solo en la computadora del CEO. Nunca los agregues con `git add -f` ni pidas que se commiteen; si un documento que creó la tarea quedó ignorado, decí en el informe que quedó local.
 
 ## Tus dos modos de trabajo
 

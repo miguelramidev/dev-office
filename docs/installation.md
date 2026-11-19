@@ -26,17 +26,18 @@ Desde la terminal, en la carpeta del proyecto:
 
 ```bash
 claude plugin marketplace add miguelramidev/dev-office
-claude plugin install office@dev-office --scope project
-claude plugin install dept-backend@dev-office --scope project
-claude plugin install dept-frontend@dev-office --scope project
-claude plugin install dept-database@dev-office --scope project
-claude plugin install dept-scraper@dev-office --scope project
-claude plugin install dept-devops@dev-office --scope project
-claude plugin install dept-research@dev-office --scope project
-claude plugin install dept-docs@dev-office --scope project
+claude plugin install office@dev-office --scope local
+claude plugin install dept-backend@dev-office --scope local
+claude plugin install dept-frontend@dev-office --scope local
+claude plugin install dept-database@dev-office --scope local
+claude plugin install dept-scraper@dev-office --scope local
+claude plugin install dept-devops@dev-office --scope local
+claude plugin install dept-research@dev-office --scope local
+claude plugin install dept-docs@dev-office --scope local
 ```
 
-- `--scope project` registra los plugins en `.claude/settings.json` del proyecto. Así queda documentado en git qué departamentos usa el proyecto.
+- `--scope local` instala los plugins solo para vos en este proyecto (en `.claude/settings.local.json`, que no va en git). Es el modo local de la oficina, el de por defecto: en un proyecto en equipo, cada uno arma su oficina sin pisar la de otro, y quien no la usa no ve nada.
+- Si todo el equipo usa la oficina y quiere la misma configuración, usá `--scope project` (queda en `.claude/settings.json`, en git) y elegí el modo compartido en `office-setup`.
 - Instalá solo los departamentos que el proyecto necesita. `office` es obligatorio.
 - En otra computadora hay que repetir los comandos `install` (Claude Code no descarga plugins externos solo).
 
@@ -44,16 +45,26 @@ claude plugin install dept-docs@dev-office --scope project
 
 1. **Reglas del proyecto.** El proyecto necesita un `CLAUDE.md` en la raíz con lo que los agentes tienen que saber: stack, estructura, comandos y reglas. Los agentes lo leen antes de trabajar.
 2. **Configuración inicial.** Abrí Claude Code en el proyecto y ejecutá la skill `office-setup` (escribí `/` y buscala en la lista). La skill:
-   - Crea o completa `.claude/settings.json` con los permisos base de la oficina y el modo `acceptEdits`.
-   - Agrega a `.gitignore` las carpetas temporales de la oficina (`.qa/` y el registro de actividad).
+   - Te pregunta si la querés **local** (por defecto: tu configuración va a `.claude/settings.local.json` y lo que git ignora, a `.git/info/exclude`, así que no cambia ningún archivo del repositorio) o **compartida** (a `.claude/settings.json` y `.gitignore`, en git, igual para todo el equipo).
+   - Te pregunta si los **documentos de la oficina** (mapa del proyecto, decisiones, diseños, colecciones de API e investigaciones) van a git, que es lo de por defecto, o quedan solo en tu computadora. Se puede cambiar cuando quieras.
+   - Completa los settings con los permisos base de la oficina y el modo `acceptEdits`, y deja al PM como agente por defecto.
+   - Hace que git ignore las carpetas de trabajo de la oficina (`.qa/`, `.office/` y el registro de actividad).
    - Revisa que exista `CLAUDE.md` y te avisa si falta.
-3. **Revisá y commiteá** los cambios de `.claude/settings.json` y `.gitignore`.
+3. **En el modo compartido, revisá y commiteá** los cambios de `.claude/settings.json` y `.gitignore`. En el local no hay nada que commitear.
 
-Los permisos van en el proyecto porque Claude Code no permite que un plugin los defina.
+**Si el proyecto ya tenía la oficina en git** y querés pasarla a local, `office-setup` lo hace por vos: saca del repositorio lo de la oficina (deja las reglas propias del proyecto), lo pasa a tus archivos locales y te dice cómo reinstalar los plugins con `--scope local`. Ese cambio sí se commitea una vez: conviene acordarlo con el equipo.
+
+Los permisos van en los settings del proyecto (los tuyos o los del equipo) porque Claude Code no permite que un plugin los defina.
 
 ### Ramas protegidas y Jira
 
-`office-setup` pregunta qué ramas proteger (por ejemplo `main dev`) y las guarda en `OFFICE_PROTECTED_BRANCHES`. Si el equipo usa Jira, también crea `.mcp.json` con el servidor de Atlassian:
+`office-setup` pregunta qué ramas proteger (por ejemplo `main dev`) y las guarda en `OFFICE_PROTECTED_BRANCHES`. Si usás Jira, en el modo local te da el comando para conectarlo solo para vos:
+
+```bash
+claude mcp add --transport http --scope local atlassian https://mcp.atlassian.com/v2/mcp
+```
+
+En el compartido, crea `.mcp.json` con el servidor de Atlassian:
 
 ```json
 {
@@ -88,7 +99,7 @@ Si los diseños los hace otro (un cliente o un equipo de diseño), el designer d
 claude --agent office:pm
 ```
 
-`office-setup` deja al PM como agente por defecto del proyecto (`"agent": "office:pm"` en `.claude/settings.json`), así que `claude` a secas también arranca con la oficina. Al arrancar, el encabezado tiene que mostrar `@office:pm`. Para verificar, preguntale: "¿Qué departamentos tenés disponibles?".
+`office-setup` deja al PM como agente por defecto (`"agent": "office:pm"` en tus settings), así que `claude` a secas también arranca con la oficina. Al arrancar, el encabezado tiene que mostrar `@office:pm`. Para verificar, preguntale: "¿Qué departamentos tenés disponibles?".
 
 Atajo opcional en `~/.bashrc` o `~/.zshrc`:
 
@@ -138,16 +149,16 @@ Actualiza el marketplace y todos los plugins de dev-office **en todos los proyec
 
 ```bash
 claude plugin marketplace update dev-office
-claude plugin update office@dev-office --scope project
+claude plugin update office@dev-office --scope local
 ```
 
-(y lo mismo con cada departamento instalado).
+(y lo mismo con cada departamento instalado; con `--scope project` si los instalaste para el equipo).
 
 En los dos casos, reiniciá Claude Code en los proyectos abiertos o usá `/reload-plugins`. Revisá el [registro de cambios](../CHANGELOG.md) antes de actualizar una versión mayor.
 
 ## 7. Desactivar un departamento en un proyecto
 
-En `.claude/settings.json` del proyecto:
+En tus settings del proyecto (`.claude/settings.local.json`; en el modo compartido, `.claude/settings.json`):
 
 ```json
 "enabledPlugins": {
@@ -155,7 +166,7 @@ En `.claude/settings.json` del proyecto:
 }
 ```
 
-Para desactivarlo solo para vos, poné lo mismo en `.claude/settings.local.json`. `office` no se puede desactivar mientras haya departamentos activos, porque dependen de él.
+En el modo compartido, para desactivarlo solo para vos, poné lo mismo en `.claude/settings.local.json`. `office` no se puede desactivar mientras haya departamentos activos, porque dependen de él.
 
 ## 8. Problemas comunes
 

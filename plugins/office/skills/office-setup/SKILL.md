@@ -1,20 +1,22 @@
 ---
 name: office-setup
-description: Prepara un proyecto para trabajar con la oficina dev-office - permisos base, modo de permisos, ramas protegidas, zona horaria del registro de actividad, .gitignore, conexión con Jira, colección de Postman de la API, proveedores por rol (Claude, Codex o Gemini) y recomendación de skills de la comunidad según el stack. Usar una vez al instalar la oficina en un proyecto, o para volver a aplicar la configuración base.
+description: Prepara un proyecto para trabajar con la oficina dev-office - en modo local (por defecto, nada se sube al repositorio) o compartido, permisos base, modo de permisos, ramas protegidas, zona horaria del registro de actividad, archivos ignorados, documentos de la oficina en git o locales, conexión con Jira, colección de Postman de la API, proveedores por rol (Claude, Codex o Gemini) y recomendación de skills de la comunidad según el stack. Usar una vez al instalar la oficina en un proyecto, o para volver a aplicar la configuración base.
 disable-model-invocation: true
 ---
 
 Vas a preparar este proyecto para trabajar con la oficina dev-office. Hablale al CEO en su idioma (si escribe en español, con voseo).
 
-Los cambios los hace el script `setup.sh` que está en la misma carpeta que este archivo. No edites `.claude/settings.json` ni `.gitignore` a mano.
+Los cambios los hace el script `setup.sh` que está en la misma carpeta que este archivo. No edites a mano los settings, `.gitignore` ni `.git/info/exclude`.
+
+**Modo local (por defecto) o compartido.** En el modo local, la oficina queda solo en la computadora de esta persona: su configuración va a `.claude/settings.local.json` y lo que git tiene que ignorar, a `.git/info/exclude`, que no se sube. No cambia ningún archivo del repositorio, así que en un proyecto en equipo nadie pisa la configuración de otro y quien no usa la oficina no ve nada. En el modo compartido (`--shared`), la configuración va a `.claude/settings.json` y a `.gitignore`, en git, igual para todos. En el resto de los pasos, "los settings" es el archivo del modo elegido.
 
 ## Pasos
 
 1. **Explicá qué va a pasar**, en pocas líneas:
-   - Se agregan a `.claude/settings.json` permisos base: comandos de git y de `gh` de solo lectura permitidos (incluido ver las corridas de GitHub Actions); commit, push, abrir PRs, comentar en GitHub, disparar workflows, aplicar infraestructura, SSH, instalar paquetes y AWS siempre con consulta; leer secretos, forzar push, saltear hooks, mergear PRs, cambiar secretos de GitHub y destruir infraestructura prohibidos.
+   - Se agregan a los settings permisos base: comandos de git y de `gh` de solo lectura permitidos (incluido ver las corridas de GitHub Actions); commit, push, abrir PRs, comentar en GitHub, disparar workflows, aplicar infraestructura, SSH, instalar paquetes y AWS siempre con consulta; leer secretos, forzar push, saltear hooks, mergear PRs, cambiar secretos de GitHub y destruir infraestructura prohibidos.
    - Se define el modo de permisos y las ramas protegidas, donde los agentes no pueden editar ni commitear.
    - Se deja al PM como agente por defecto (`"agent": "office:pm"`), así `claude` a secas arranca con la oficina. Si el proyecto ya tenía otro agente, queda el suyo.
-   - Se agregan a `.gitignore` la carpeta temporal de QA, la de trabajo de la oficina (`.office/`), el registro de actividad, la copia de seguridad y la configuración personal de proveedores.
+   - Git ignora la carpeta temporal de QA, la de trabajo de la oficina (`.office/`), el registro de actividad, las copias de seguridad y la configuración personal de proveedores. En el modo local, también los settings y los scripts que la oficina copia en `.claude/`, con `.git/info/exclude`.
    - No se borra nada de lo que ya existe, y se guarda una copia del archivo anterior.
 
 2. **Revisá `CLAUDE.md`.** Si el proyecto no lo tiene, avisale al CEO que los agentes lo necesitan para conocer las reglas del proyecto, y preguntale si querés seguir igual.
@@ -22,6 +24,8 @@ Los cambios los hace el script `setup.sh` que está en la misma carpeta que este
 3. **Comandos de verificación.** Buscá en `CLAUDE.md` y en los archivos del proyecto (por ejemplo `package.json`, `Makefile`, `pyproject.toml`) los comandos de tests, typecheck y lint. Proponé una regla `allow` para cada uno, con su variante con argumentos (por ejemplo `Bash(pnpm test)` y `Bash(pnpm test *)`), para que los testers trabajen sin pedir permiso. Mostrale la lista al CEO y esperá su confirmación. Nunca pongas `*` antes del subcomando (por ejemplo, `Bash(pnpm --filter * test)`): aprobaría cualquier opción en esa posición. Usá el nombre exacto del paquete y el `*` solo al final.
 
 4. **Preguntá al CEO:**
+   - **Local o compartido.** Recomendá el local (es el de por defecto), salvo que el equipo entero use la oficina y quiera la misma configuración para todos. Si el proyecto ya tiene la oficina en git (`.claude/settings.json` con `"agent": "office:pm"` o las reglas de la oficina, o `.claude/office-agents.json`) y el CEO elige local, ofrecé pasarla a lo local con `--move-to-local`: saca del repositorio lo de la oficina (deja las reglas propias del proyecto) y deja ese cambio para que lo commitee, conviniéndolo con su equipo.
+   - **Documentos de la oficina** (mapa del proyecto, decisiones, diseños, colecciones de API e investigaciones): en git (por defecto, le sirven a todo el equipo y van en los PRs) o locales (`--docs local`: quedan en las mismas carpetas, pero git los ignora). Se puede cambiar cuando quiera con `--docs git` o `--docs local`. Lo que ya estaba en git sigue en git.
    - **Modo de permisos:** `acceptEdits` (recomendado: los agentes editan archivos sin preguntar; los comandos fuera de la lista se consultan), `auto` (un clasificador aprueba los comandos razonables; solo si su cuenta lo tiene disponible) o `default` (todo se consulta).
    - **Zona horaria** del registro de actividad (opcional, por ejemplo `America/Bogota`). Si no responde, se usa la del sistema.
    - **Ramas protegidas:** en cuáles nunca se trabaja directamente. Acepta nombres y patrones, por ejemplo `main dev epic/*` si usan ramas de épica. Si no responde, se protegen `main` y `master`. Mirá las ramas del remoto (`git branch --all --list *`) para proponerle las que correspondan.
@@ -32,11 +36,13 @@ Los cambios los hace el script `setup.sh` que está en la misma carpeta que este
    bash <carpeta de esta skill>/setup.sh --mode acceptEdits --timezone America/Bogota --protected "main dev epic/*" --allow "Bash(pnpm test)" --allow "Bash(pnpm test *)"
 ```
 
+   Sumá `--shared` si eligió compartido, `--docs local` si quiere los documentos locales y `--move-to-local` si pasa de compartido a local.
+
 Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos a mano.
 
-6. **Mostrá el resultado:** corré `git diff .claude/settings.json .gitignore` y explicale los cambios en pocas líneas.
+6. **Mostrá el resultado** en pocas líneas, con lo que imprime el script. En el compartido, o si usó `--move-to-local`, corré también `git diff` de los archivos que cambiaron (`git status` te dice cuáles). Si el script imprime comandos para pasar los plugins a local, mostráselos para que los corra él en su terminal.
 
-7. **Recomendá skills de la comunidad.** Mirá las dependencias del proyecto (`package.json` y los de cada aplicación si es un monorepo) y recomendá solo las que correspondan a su stack. No las instales vos: mostrale al CEO los comandos para que decida.
+7. **Recomendá skills de la comunidad.** Mirá las dependencias del proyecto (`package.json` y los de cada aplicación si es un monorepo) y recomendá solo las que correspondan a su stack. No las instales vos: mostrale al CEO los comandos para que decida. En el modo local, cambiá `--scope project` por `--scope local` en los comandos.
 
    | Si el proyecto usa | Recomendá | Comandos |
    | --- | --- | --- |
@@ -50,7 +56,7 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
    Si recomendás el plugin de MongoDB, avisale que trae un servidor MCP que se conecta a la base con `MDB_MCP_CONNECTION_STRING`: si lo configura, que sea solo con una base local o de pruebas y con `MDB_MCP_READ_ONLY=true`, nunca con producción. Sin esa variable, las skills funcionan igual.
 
 8. **Jira (si el equipo lo usa).** Preguntale al CEO si gestionan las tareas en Jira. Si dice que sí:
-   - Ofrecé crear `.mcp.json` en la raíz con el servidor oficial de Atlassian. El nombre `atlassian` es obligatorio, porque el PM tiene acceso a las herramientas de ese servidor:
+   - En el modo local, dale al CEO el comando para conectarlo solo para él (lo corre en su terminal, en la carpeta del proyecto): `claude mcp add --transport http --scope local atlassian https://mcp.atlassian.com/v2/mcp`. En el compartido, ofrecé crear `.mcp.json` en la raíz con el servidor oficial de Atlassian. En los dos, el nombre `atlassian` es obligatorio, porque el PM tiene acceso a las herramientas de ese servidor:
 
      ```json
      {
@@ -61,12 +67,12 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
      ```
 
      Si `.mcp.json` ya existe, agregá solo esa entrada sin tocar las demás.
-   - Pedile la clave del proyecto de Jira (por ejemplo `PROJ`), la rama base (por ejemplo `dev`), la de producción (por ejemplo `main`), si usan ramas de épica, si los prefijos por tipo de ticket de `start-ticket` (`epic/`, `feature/`, `task/`, `fix/`, `hotfix/`) le sirven, y **los nombres exactos de los estados** a los que pasa un ticket al empezar (por ejemplo "En curso") y al abrir el PR (por ejemplo "En revisión"): `start-ticket` y `open-pr` mueven el ticket a esos estados sin preguntar. Preguntale también **qué clientes usan la API** (por ejemplo front web y app móvil), **cómo se reconocen sus tickets** (un componente, una etiqueta o un prefijo en el título) y **qué tipo de ticket** usan para el trabajo nuevo: con eso `handoff-ticket` encuentra o crea el ticket de cada equipo cuando cambia la API. Podés listarlos con las herramientas de Atlassian para ofrecérselos. Proponé agregar esos datos a una sección "Flujo de trabajo" del `CLAUDE.md` (o a `.claude/rules/git-workflow.md`) y mostrale el texto antes de escribirlo.
+   - Pedile la clave del proyecto de Jira (por ejemplo `PROJ`), la rama base (por ejemplo `dev`), la de producción (por ejemplo `main`), si usan ramas de épica, si los prefijos por tipo de ticket de `start-ticket` (`epic/`, `feature/`, `task/`, `fix/`, `hotfix/`) le sirven, y **los nombres exactos de los estados** a los que pasa un ticket al empezar (por ejemplo "En curso") y al abrir el PR (por ejemplo "En revisión"): `start-ticket` y `open-pr` mueven el ticket a esos estados sin preguntar. Preguntale también **qué clientes usan la API** (por ejemplo front web y app móvil), **cómo se reconocen sus tickets** (un componente, una etiqueta o un prefijo en el título) y **qué tipo de ticket** usan para el trabajo nuevo: con eso `handoff-ticket` encuentra o crea el ticket de cada equipo cuando cambia la API. Podés listarlos con las herramientas de Atlassian para ofrecérselos. Proponé agregar esos datos a una sección "Flujo de trabajo" y mostrale el texto antes de escribirlo. En el modo local va a `.claude/rules/office-project.md` (Claude Code lo lee igual que el `CLAUDE.md`, y git lo ignora); en el compartido, al `CLAUDE.md` o a `.claude/rules/git-workflow.md`. Si el CEO prefiere que el equipo también lo vea, va al `CLAUDE.md` aunque el modo sea local. Lo mismo vale para las otras secciones que propone esta skill (diseños, colección de API).
    - Cada persona inicia sesión en Jira una vez con `/mcp`: servidor `atlassian`, opción de autenticar.
 
 9. **Diseños (si hay frontend).** Preguntale al CEO si los diseños de las pantallas los entrega otro (un cliente o un equipo de diseño) y si están en Figma.
    - Si los entrega otro, proponé agregar al `CLAUDE.md` una línea que lo diga y la carpeta de imágenes de referencia (por defecto `docs/design/references/`), y mostrale el texto antes de escribirlo.
-   - Si están en Figma, ofrecé agregar a `.mcp.json` el servidor remoto de Figma con el nombre `figma` (obligatorio, porque el designer tiene acceso a las herramientas de ese nombre), sin tocar las otras entradas:
+   - Si están en Figma, ofrecé el servidor remoto de Figma con el nombre `figma` (obligatorio, porque el designer tiene acceso a las herramientas de ese nombre). En el modo local, con el comando `claude mcp add --transport http --scope local figma https://mcp.figma.com/mcp`; en el compartido, agregándolo a `.mcp.json` sin tocar las otras entradas:
 
      ```json
      "figma": { "type": "http", "url": "https://mcp.figma.com/mcp" }
@@ -97,12 +103,12 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
 12. **Mapa del proyecto.** Explicale al CEO que, con un mapa corto de dónde está cada cosa y un índice de archivos que se arma sin gastar tokens, los agentes van directo a los archivos en vez de buscarlos, y que eso es lo que más ahorra a medida que el proyecto crece. Sirve igual si el proyecto recién empieza o si ya es grande. El índice ya está activo: se arma solo al empezar cada sesión. El mapa lo creás en la primera tarea; si el CEO prefiere tenerlo ya, seguí ahora la skill `office:project-map` ("Crear el mapa").
 
 13. **Cerrá con los próximos pasos:**
-   - Revisar los cambios y hacer commit de `.claude/settings.json` y `.gitignore`.
+   - En el compartido, o si pasó a local con `--move-to-local`, revisar los cambios y commitearlos. En el local, no hay nada que commitear.
    - Instalar las skills de la comunidad que haya elegido.
    - Si conectó Jira, autenticarse con `/mcp` y probar con `/office:start-ticket <TICKET>`.
    - Para abrir PRs y aplicar correcciones de revisión (`/office:open-pr` y `/office:review-fixes`), instalar `gh` e iniciar sesión con `gh auth login`.
    - Si quiere la colección de API y el proyecto ya tiene endpoints, pedirle al PM que la genere.
    - Para ver la oficina trabajando en vivo, `/office:observer`.
    - Para actualizar la oficina con un doble click en todos sus proyectos, `/office:update`.
-   - Borrar `.claude/settings.json.bak` cuando esté conforme.
+   - Borrar la copia de los settings (`.bak`) cuando esté conforme.
    - Reiniciar Claude Code para que tome la configuración nueva.
