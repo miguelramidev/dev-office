@@ -75,10 +75,13 @@ expect "OFFICE_DEFAULT_AGENT=off lo apaga" '[ -z "$(agent "$PROJ/.claude/setting
 # office-setup deja al PM por defecto, salvo que el proyecto ya tenga otro agente.
 fresh
 (cd "$PROJ" && git init -q . && bash "$SETUP" --mode acceptEdits >/dev/null 2>&1)
-expect "setup: agrega el PM como agente por defecto" '[ "$(agent "$PROJ/.claude/settings.json")" = "office:pm" ]'
+expect "setup: agrega el PM como agente por defecto (en tus settings)" '[ "$(agent "$PROJ/.claude/settings.local.json")" = "office:pm" ]'
+fresh
+(cd "$PROJ" && git init -q . && bash "$SETUP" --shared --mode acceptEdits >/dev/null 2>&1)
+expect "setup --shared: lo agrega en settings.json" '[ "$(agent "$PROJ/.claude/settings.json")" = "office:pm" ]'
 fresh
 echo '{"agent":"otro:agente"}' >"$PROJ/.claude/settings.json"
-(cd "$PROJ" && git init -q . && bash "$SETUP" --mode acceptEdits >/dev/null 2>&1)
+(cd "$PROJ" && git init -q . && bash "$SETUP" --shared --mode acceptEdits >/dev/null 2>&1)
 expect "setup: respeta otro agente ya elegido" '[ "$(agent "$PROJ/.claude/settings.json")" = "otro:agente" ]'
 
 echo

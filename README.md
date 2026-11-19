@@ -23,7 +23,7 @@ Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). 
 | Comando | Para qué |
 | --- | --- |
 | `claude --agent office:pm` | Abrir la oficina: hablás con el PM. |
-| `/office:office-setup` | Preparar un proyecto la primera vez (permisos, `.gitignore`, ramas, Jira). |
+| `/office:office-setup` | Preparar un proyecto la primera vez (local o compartida, permisos, ramas, Jira). |
 | `/office:start-ticket PROJ-123` | Empezar un ticket de Jira: crea la rama correcta y lo pasa a "en curso". |
 | `/office:open-pr` | Abrir el PR del trabajo terminado. |
 | `/office:review-fixes` | Resolver los comentarios del PR y revisar lo que corregiste a mano. |
@@ -127,7 +127,9 @@ Dentro de Claude Code, en la carpeta de tu proyecto:
 /plugin install dept-research@dev-office
 ```
 
-Después preparás el proyecto con la skill `office-setup`, que crea la configuración de permisos y lo necesario en `.gitignore`. Para empezar a trabajar:
+Cuando te pregunte el alcance, elegí el local (solo para vos en este proyecto), salvo que todo el equipo use la oficina.
+
+Después preparás el proyecto con la skill `office-setup`. Por defecto la oficina queda **local**: tu configuración no se sube al repositorio, así que en un proyecto en equipo cada uno arma la suya. Si todo el equipo la usa, podés elegir el modo compartido. Para empezar a trabajar:
 
 ```bash
 claude --agent office:pm
@@ -142,7 +144,7 @@ Guía completa: [docs/installation.md](docs/installation.md).
 | En dev-office (genérico)       | En tu proyecto (propio)            |
 | ------------------------------ | ---------------------------------- |
 | Agentes: PM, QA, departamentos | `CLAUDE.md` y reglas del proyecto  |
-| Hooks generales                | Permisos (`.claude/settings.json`) |
+| Hooks generales                | Permisos (`.claude/settings.local.json`, o `settings.json` en el modo compartido) |
 | Skills genéricas               | Skills propias del proyecto        |
 
 Los agentes leen las reglas de cada proyecto, así que el mismo equipo se adapta a proyectos distintos. Los permisos van siempre en el proyecto porque Claude Code no permite que un plugin los defina.

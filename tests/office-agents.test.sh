@@ -45,6 +45,31 @@ same() {
 same "claude" "sin configurar, un rol es claude" get backend.developer
 same "" "sin configurar, el PM no tiene asesores" get pm
 
+# Modo local por defecto: sin la configuración del equipo, escribe en la tuya.
+check 0 "sin archivo del equipo: set escribe en el local" set backend.developer codex
+if [ -f "$PROJ/.claude/office-agents.local.json" ] && [ ! -f "$PROJ/.claude/office-agents.json" ]; then
+  echo "ok    sin archivo del equipo, guarda en .claude/office-agents.local.json"
+else
+  echo "FALLA sin archivo del equipo, guarda en .claude/office-agents.local.json"; FAILED=1
+fi
+same "codex" "lo lee del local" get backend.developer
+run teams on >/dev/null
+if [ "$(jq -r '.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS // empty' "$PROJ/.claude/settings.local.json" 2>/dev/null)" = "1" ] && [ ! -f "$PROJ/.claude/settings.json" ]; then
+  echo "ok    sin archivo del equipo, teams on va a settings.local.json"
+else
+  echo "FALLA sin archivo del equipo, teams on va a settings.local.json"; FAILED=1
+fi
+run teams off >/dev/null
+check 0 "--shared escribe en el del equipo" set backend.developer gemini --shared
+if jq -e '.roles["backend.developer"] == ["gemini"]' "$PROJ/.claude/office-agents.json" >/dev/null 2>&1; then
+  echo "ok    --shared guarda en .claude/office-agents.json"
+else
+  echo "FALLA --shared guarda en .claude/office-agents.json"; FAILED=1
+fi
+# Desde acá el proyecto tiene la configuración del equipo (modo compartido).
+rm -f "$PROJ/.claude/office-agents.local.json" "$PROJ/.claude/settings.local.json"
+echo '{}' >"$PROJ/.claude/office-agents.json"
+
 # set y get
 check 0 "set de un developer" set backend.developer codex
 check 0 "set del redactor de documentación" set docs.developer codex
@@ -107,6 +132,7 @@ check 1 "comando desconocido" otro
 echo '{ roto' >"$PROJ/.claude/office-agents.json"
 check 1 "JSON roto" get backend.developer
 rm "$PROJ/.claude/office-agents.json"
+echo '{}' >"$PROJ/.claude/office-agents.json"  # sigue en modo compartido
 
 # check: sin los CLIs instalados
 run set backend.developer codex >/dev/null

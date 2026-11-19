@@ -10,8 +10,8 @@ Los archivos `office-agents.sh` y `office-agents.cmd` están en la misma carpeta
 
 ## Cómo funciona
 
-- **Configuración del equipo:** `.claude/office-agents.json`, va en git.
-- **Configuración personal:** `.claude/office-agents.local.json` (con `--local`), no va en git. Manda rol por rol: sirve para quien no tiene Codex o Gemini, o quiere probar otro.
+- **Configuración personal:** `.claude/office-agents.local.json`, no va en git. Manda rol por rol. Es donde escribe el script por defecto (modo local de la oficina), o siempre con `--local`.
+- **Configuración del equipo:** `.claude/office-agents.json`, va en git. El script escribe ahí si el proyecto ya la tiene (modo compartido), o con `--shared`. `--local` sigue escribiendo en la personal: sirve para quien no tiene Codex o Gemini, o quiere probar otro.
 - **Por rol:**
   - `pm`: el PM es siempre Claude, porque es la sesión de Claude Code. Lo que se configura son sus **asesores** (codex, gemini o los dos): les pide una segunda opinión sobre los planes y los diseños.
   - `qa`: uno o varios. Con varios, revisan por separado y después se validan entre ellos.

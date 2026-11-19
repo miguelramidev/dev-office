@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# office-agents-version: 12
+# office-agents-version: 13
 # Configura qué proveedor (Claude, Codex o Gemini) hace cada rol de la oficina dev-office.
 #
 # Uso (desde la carpeta del proyecto):
 #   bash .claude/office-agents.sh                  menú interactivo
 #   bash .claude/office-agents.sh show             muestra la configuración de cada rol
 #   bash .claude/office-agents.sh roles            lista los roles que se pueden configurar
-#   bash .claude/office-agents.sh set <rol> <proveedor>[:<modelo>]... [--local]
-#   bash .claude/office-agents.sh reset <rol>|--all [--local]
+#   bash .claude/office-agents.sh set <rol> <proveedor>[:<modelo>]... [--local|--shared]
+#   bash .claude/office-agents.sh reset <rol>|--all [--local|--shared]
 #   bash .claude/office-agents.sh get <rol>        el proveedor efectivo, uno por línea
 #   bash .claude/office-agents.sh check            verifica que los CLIs estén instalados y con sesión
 #   bash .claude/office-agents.sh teams on|off     modo equipos: un líder por departamento (agent teams)
@@ -30,8 +30,11 @@
 #   tier gemini effort high        (más razonamiento: más tokens y más tiempo)
 #
 # Archivos:
-#   .claude/office-agents.json        la del equipo, va en git
-#   .claude/office-agents.local.json  la tuya (--local), no va en git; manda rol por rol
+#   .claude/office-agents.local.json  la tuya, no va en git; manda rol por rol
+#   .claude/office-agents.json        la del equipo (--shared), va en git
+# Dónde escribe si no decís --local ni --shared: en la del equipo si el proyecto ya la tiene
+# (lo armó así office-setup --shared, o alguien la subió); si no, en la tuya. --local
+# siempre escribe en la tuya, y lo mismo pasa con los settings de "teams".
 #
 # Reglas:
 #   - Proveedores: claude, codex y gemini. Modelos de Claude: opus, sonnet o haiku.
@@ -87,12 +90,13 @@ jqc() { jq "$@" | tr -d '\r'; }
 
 # --- Opciones generales -------------------------------------------------------
 
-LOCAL=0
+LOCAL=""
 PROJECT=""
 ARGS=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --local) LOCAL=1 ;;
+    --shared) LOCAL=0 ;;
     --project) PROJECT="$2"; shift ;;
     -h | --help) awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"; exit 0 ;;
     *) ARGS+=("$1") ;;
@@ -108,6 +112,10 @@ fi
 PROJECT="${PROJECT//\\//}"
 SHARED="$PROJECT/.claude/office-agents.json"
 LOCAL_FILE="$PROJECT/.claude/office-agents.local.json"
+# Sin --local ni --shared: la del equipo solo si el proyecto ya la usa.
+if [ -z "$LOCAL" ]; then
+  if [ -f "$SHARED" ]; then LOCAL=0; else LOCAL=1; fi
+fi
 TARGET="$SHARED"
 [ "$LOCAL" -eq 1 ] && TARGET="$LOCAL_FILE"
 

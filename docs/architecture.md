@@ -270,7 +270,7 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 | En dev-office                                        | En cada proyecto                                      |
 | ---------------------------------------------------- | ----------------------------------------------------- |
 | Agentes genéricos                                    | `CLAUDE.md` y las reglas del proyecto                 |
-| Hooks de protección y de registro de actividad       | Permisos y modo de permisos (`.claude/settings.json`) |
+| Hooks de protección y de registro de actividad       | Permisos y modo de permisos (en los settings del proyecto) |
 | Skills genéricas (por ejemplo, scraping responsable) | Skills propias del proyecto                           |
 | Plantilla de los documentos de diseño                | Los diseños aprobados (`docs/design/`)                |
 | Reglas y revisión de las colecciones de API          | Las colecciones de Postman y sus entornos (`docs/api/`) |
@@ -278,6 +278,10 @@ PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas
 | Valores por defecto y ejemplos genéricos (`PROJ-123`) | Moneda, idioma, zona horaria, clave de Jira, ramas protegidas y convenciones |
 
 Los agentes leen el `CLAUDE.md` del proyecto (y lo que este importe) antes de trabajar. Así el mismo equipo respeta las reglas de cada proyecto.
+
+**Modo local (por defecto) o compartido.** En el local, todo lo que la oficina deja en el proyecto queda solo en la computadora de quien la usa: los plugins se instalan con `--scope local`, `office-setup` escribe en `.claude/settings.local.json`, ignora sus archivos con `.git/info/exclude` (no con `.gitignore`), `office-agents.sh` escribe en `.claude/office-agents.local.json`, Jira y Figma se conectan con `claude mcp add --scope local` y las reglas del proyecto que propone la oficina van a `.claude/rules/office-project.md`, también ignorado. Así, en un proyecto en equipo nadie pisa la configuración de otro. En el compartido, la configuración va a `.claude/settings.json`, `.gitignore`, `.claude/office-agents.json` y `.mcp.json`, en git. `office-setup --move-to-local` pasa un proyecto de compartido a local.
+
+**Los documentos de la oficina** (mapa del proyecto, decisiones, diseños, colecciones de API, investigaciones) van a git por defecto, porque le sirven a todo el equipo. Cada proyecto puede dejarlos locales con `office-setup --docs local`: quedan en las mismas carpetas, así que los agentes no cambian nada, y git los ignora con `.git/info/exclude`. Lo que ya estaba en git sigue en git. El PM nunca fuerza un archivo ignorado en un commit.
 
 **dev-office no se ata a ningún proyecto.** Nada de lo que está en los plugins nombra un proyecto, una empresa, un país, una moneda ni un stack concreto como obligatorio: lo propio de cada proyecto va en su `CLAUDE.md` y en `.claude/`. Los ejemplos usan valores genéricos (`PROJ-123`, `USD`, `main`/`dev`).
 

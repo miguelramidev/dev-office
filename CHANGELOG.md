@@ -8,6 +8,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.62.0] - 2026-11-19
+
+### Cambiado
+
+- **La oficina pasa a ser local por defecto** (`office` 0.58.0, `office-agents.sh` versión 13). En un proyecto en equipo, la configuración de uno pisaba la de otro, y quien no usaba la oficina veía sus archivos en el repositorio. Ahora cada persona arma su oficina y no se sube nada.
+  - **`office-setup`** escribe en `.claude/settings.local.json` y hace que git ignore los archivos de la oficina con `.git/info/exclude`, que no se sube: no cambia ningún archivo del repositorio, ni siquiera `.gitignore`. Con `--shared` vuelve al modo de antes (`.claude/settings.json` y `.gitignore`, en git).
+  - **Los documentos de la oficina** (mapa del proyecto, decisiones, diseños, colecciones de API, investigaciones) siguen yendo a git por defecto. Con `--docs local` quedan en las mismas carpetas pero git los ignora; `--docs git` lo vuelve atrás. El PM nunca fuerza un archivo ignorado en un commit.
+  - **`--move-to-local`** pasa un proyecto que tenía la oficina en git a lo local: saca de `.claude/settings.json` lo de la oficina (sus reglas base, el modo de permisos, sus variables y el PM por defecto) y deja las reglas propias del proyecto; pasa `.claude/office-agents.json` a tu configuración personal (la tuya manda) y lo borra; saca sus líneas de `.gitignore`; y te da los comandos para reinstalar los plugins con `--scope local`. Ese cambio se commitea una vez.
+  - **`office-agents.sh`** escribe en `.claude/office-agents.local.json` salvo que el proyecto ya tenga la configuración del equipo, y lo mismo los settings de `teams`. `--shared` escribe en la del equipo; `--local` sigue funcionando.
+  - **Jira y Figma** se conectan con `claude mcp add --scope local`, y las reglas del proyecto que propone `office-setup` van a `.claude/rules/office-project.md`, ignorado, salvo que el CEO quiera que el equipo las vea.
+  - **La guía de instalación** usa `--scope local` para los plugins.
+
 ## [0.61.0] - 2026-11-18
 
 ### Cambiado
