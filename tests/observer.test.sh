@@ -205,6 +205,24 @@ hook "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_input:{co
 [ "$(grep -c '^OFFICE_EVENT' "$EVENTS")" -eq "$LINES" ] && ok "PR: otros comandos no se anotan" || fail "PR: otros comandos no se anotan"
 jq -e '.hooks.PostToolUse | any(.matcher == "Bash")' "$REPO/plugins/office/hooks/hooks.json" >/dev/null && ok "hooks.json escucha PostToolUse de Bash" || fail "hooks.json escucha PostToolUse de Bash"
 
+# --- Cuánto tarda cada comando -----------------------------------------------------------
+hook "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_use_id:"toolu_A1", agent_id:"a9", agent_type:"dept-frontend:tester", tool_input:{command:"pnpm test"}}')"
+[ -f "$PROJ/.office/observer/cmd/toolu_A1" ] && ok "comandos: anota cuándo arrancó" || fail "comandos: anota cuándo arrancó"
+echo $(( $(date +%s) - 95 )) >"$PROJ/.office/observer/cmd/toolu_A1"
+hook "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_use_id:"toolu_A1", agent_id:"a9", agent_type:"dept-frontend:tester", tool_input:{command:"pnpm test\n--silent"}, tool_response:{stdout:"ok", interrupted:false}}')"
+quiet "PostToolUse de un comando"
+expect '.type == "cmd" and .agent == "a9" and .agent_type == "dept-frontend:tester" and .dur >= 95 and .dur <= 97 and .cmd == "pnpm test --silent" and .failed == false' "comandos: anota cuánto tardó, quién y cuál"
+[ ! -f "$PROJ/.office/observer/cmd/toolu_A1" ] && ok "comandos: borra la marca de inicio" || fail "comandos: borra la marca de inicio"
+hook "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_use_id:"toolu_A2", tool_input:{command:"npx tsc"}}')"
+echo $(( $(date +%s) - 30 )) >"$PROJ/.office/observer/cmd/toolu_A2"
+hook "$(jq -cn '{hook_event_name:"PostToolUseFailure", tool_name:"Bash", tool_use_id:"toolu_A2", tool_input:{command:"npx tsc"}, error:"timeout"}')"
+expect '.type == "cmd" and .failed == true and .agent == null' "comandos: un comando que falla o se corta también se anota"
+LINES=$(grep -c '^OFFICE_EVENT' "$EVENTS")
+hook "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_use_id:"toolu_A3", tool_input:{command:"git status"}}')"
+hook "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_use_id:"toolu_A3", tool_input:{command:"git status"}, tool_response:{stdout:""}}')"
+[ "$(grep -c '^OFFICE_EVENT' "$EVENTS")" -eq "$((LINES + 1))" ] && ! tail -n1 "$EVENTS" | grep -q '"type":"cmd"' && ok "comandos: los rápidos (menos de 2 s) no se anotan" || fail "comandos: los rápidos (menos de 2 s) no se anotan"
+jq -e '.hooks.PostToolUseFailure | any(.matcher == "Bash")' "$REPO/plugins/office/hooks/hooks.json" >/dev/null && ok "hooks.json escucha PostToolUseFailure de Bash" || fail "hooks.json escucha PostToolUseFailure de Bash"
+
 # --- open-observer.sh en WSL ---------------------------------------------------------
 OPEN="$REPO/plugins/office/skills/observer/open-observer.sh"
 FAKE="$WORK/fakebin"; mkdir -p "$FAKE"
@@ -247,6 +265,18 @@ echo "$OUT" | grep -q '| Tester de backend | Claude | Tests | FALLA | 26.3k | 1s
 echo "$OUT" | grep -q 'puente 18.5k | 2s (Codex 3m 20s) |' && ok "resumen: el tiempo del puente y, entre paréntesis, el del proveedor" || { fail "resumen: el tiempo del puente y del proveedor"; echo "$OUT"; }
 echo "$OUT" | grep -q '^\*\*Tiempo:\*\* sesión 9s · trabajo de los agentes 3s · Codex 3m 20s en 1 encargo' && ok "resumen: tiempo de la sesión y por proveedor" || { fail "resumen: tiempo de la sesión y por proveedor"; echo "$OUT" | grep Tiempo; }
 echo "$OUT" | grep -q 'Claude 241.8k (PM 197k, agentes y puente 44.8k) · Codex 120.5k' && ok "resumen: total por proveedor con el PM aparte" || { fail "resumen: total por proveedor"; echo "$OUT" | tail -4; }
+echo "$OUT" | grep -q 'Los comandos más lentos' && fail "resumen: sin comandos anotados, no hay sección de comandos" || ok "resumen: sin comandos anotados, no hay sección de comandos"
+cat >>"$TP/.office/observer/events.js" <<'EVS'
+OFFICE_EVENT({"type":"cmd","t":8,"agent":"a2","agent_type":"dept-backend:tester","dur":240,"cmd":"pnpm vitest run","failed":false,"interrupted":false});
+OFFICE_EVENT({"type":"cmd","t":8,"agent":"a2","agent_type":"dept-backend:tester","dur":45,"cmd":"pnpm exec tsc --noEmit","failed":false,"interrupted":false});
+OFFICE_EVENT({"type":"cmd","t":8,"agent":"a2","agent_type":"dept-backend:tester","dur":130,"cmd":"pnpm test","failed":true,"interrupted":false});
+OFFICE_EVENT({"type":"cmd","t":9,"agent":null,"agent_type":null,"dur":6,"cmd":"pnpm lint","failed":false,"interrupted":false});
+EVS
+OUT=$(cd "$TP" && bash "$REPORT")
+echo "$OUT" | grep -q '^\*\*Tiempo en comandos:\*\* Tests 6m 10s (2) · Typecheck 45s (1) · Lint y formato 6s (1)' && ok "resumen: tiempo en comandos por tipo" || { fail "resumen: tiempo en comandos por tipo"; echo "$OUT" | grep -A1 "Tiempo en"; }
+echo "$OUT" | grep -q '| Tester de backend | `pnpm vitest run` | 4m 0s |' && ok "resumen: el comando más lento primero" || { fail "resumen: el comando más lento primero"; echo "$OUT" | grep -A8 "más lentos"; }
+echo "$OUT" | grep -q '`pnpm test` (falló o se cortó) | 2m 10s |' && ok "resumen: marca los que fallaron o se cortaron" || fail "resumen: marca los que fallaron o se cortaron"
+echo "$OUT" | grep -q '| PM | `pnpm lint` | 6s |' && ok "resumen: los comandos del PM" || fail "resumen: los comandos del PM"
 # Modo equipos: Claude Code identifica al líder como "<área>-lead", no como "dept-<área>:lead".
 cat >"$TP/.office/observer/events.js" <<'EVS'
 OFFICE_EVENT({"type":"delegate","t":1,"name":"backend-lead","subagent_type":"dept-backend:lead","description":"[backend-lead] Pedidos"});

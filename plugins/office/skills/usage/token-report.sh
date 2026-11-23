@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# token-report-version: 6
+# token-report-version: 7
 # Resumen de tokens y de tiempo de la sesión de la oficina, para el informe del PM al CEO.
 #
 # Lee el registro del observer (.office/observer/events.js), que tiene los tokens exactos
@@ -10,7 +10,8 @@
 #   --prev  la sesión anterior (events.prev.js), en vez de la actual.
 #
 # Imprime Markdown: una tabla por tarea (con su duración), el total por agente y el total por
-# proveedor, en tokens y en tiempo.
+# proveedor, en tokens y en tiempo, y en qué comandos se fue el tiempo (tests, typecheck,
+# lint...) con los más lentos.
 # Los tokens son entrada + salida + caché escrita (sin lecturas de caché), igual que el
 # observer. Funciona en Linux, macOS (bash 3.2) y Windows con el bash de Git for Windows.
 
@@ -134,6 +135,32 @@ sed -n 's/^OFFICE_EVENT(\(.*\));[[:space:]]*$/\1/p' "$EVENTS" | tr -d '\r' | jq 
       + ($rows | map(select(.provider != "claude" and .psecs != null)) | group_by(.provider)
          | map(" · " + prov(.[0].provider) + " " + (map(.psecs) | add | dur) + " en " + (length | tostring) + (if length == 1 then " encargo" else " encargos" end)) | join("")),
     "",
+    # En qué comandos se fue el tiempo (los de 2 segundos o más que anotó el observer).
+    ([.[] | select(.type == "cmd")] as $cmds
+     | if ($cmds | length) == 0 then empty else
+        def kind: (.cmd | ascii_downcase) as $c
+          | if ($c | test("(^|[ /])(jest|vitest|pytest|mocha|playwright|cypress|maestro|detox)( |$)|flutter test|dart test|go test|cargo test|phpunit|rspec|(^| )(npm|pnpm|yarn|bun)( run)? test")) then "Tests"
+            elif ($c | test("tsc|typecheck|type-check|mypy|pyright")) then "Typecheck"
+            elif ($c | test("lint|eslint|prettier|ruff|flake8|analyze|format")) then "Lint y formato"
+            elif ($c | test("(^| )(npm|pnpm|yarn|bun) (install|i|add|ci)( |$)|pub get|pip install|go mod|bundle install")) then "Instalar dependencias"
+            elif ($c | test("build|compile")) then "Build"
+            elif ($c | test("run-external")) then "Codex o Gemini (puente)"
+            else "Otros" end;
+        "**Tiempo en comandos:** "
+          + ($cmds | map(. + {k: kind}) | group_by(.k) | map({k: .[0].k, s: (map(.dur) | add), n: length}) | sort_by(-.s)
+             | map(.k + " " + (.s | dur) + " (" + (.n | tostring) + ")") | join(" · ")),
+        "",
+        "**Los comandos más lentos**",
+        "",
+        "| Agente | Comando | Duración |",
+        "| --- | --- | --- |",
+        ($cmds | sort_by(-.dur) | .[0:8][]
+          | "| " + (if .agent_type then rname(role_of(.agent_type)) else "PM" end | cell)
+            + " | `" + (.cmd | .[0:90] | gsub("`"; "") | cell) + "`"
+            + (if .failed then " (falló o se cortó)" elif .interrupted then " (cortado)" else "" end)
+            + " | " + (.dur | dur) + " |"),
+        ""
+       end),
     "Tokens: entrada, salida y caché escrita, sin lecturas de caché. Los de Claude son exactos; los de Codex y Gemini, los que informa cada CLI. Tiempo: de que arranca cada agente a que termina; entre paréntesis, lo que tardó Codex o Gemini dentro del puente.",
     (if $s.leads and ([$rows[] | select(.role | test("\\.lead$"))] | length) == 0
      then "Los líderes de departamento (modo equipos) no aparecen: Claude Code no informó sus tokens." else empty end)

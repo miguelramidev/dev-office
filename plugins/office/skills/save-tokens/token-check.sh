@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# token-check-version: 3
+# token-check-version: 4
 # Revisa la configuración del proyecto y de la oficina en busca de lo que más tokens hace
 # gastar a cada agente. No llama a ningún modelo: no gasta tokens.
 #
@@ -36,12 +36,24 @@ if [ -f "$MD" ]; then
   if [ "$tok" -gt 6000 ]; then
     echo "  - ⚠️ Es largo. Dejá en el CLAUDE.md las reglas y los comandos, y mové lo que es explicación o historia a \`docs/\`, donde los agentes lo leen solo si lo necesitan."
   fi
-  if grep -qiE 'related|findRelatedTests|--changed|relacionad' "$MD"; then
+  # Las reglas del proyecto también valen: en el modo local de la oficina, los comandos
+  # rápidos están en .claude/rules/.
+  RULES_TXT=$(cat "$MD" "$PROJECT"/.claude/rules/*.md 2>/dev/null)
+  if printf '%s' "$RULES_TXT" | grep -qiE 'related|findRelatedTests|--changed|relacionad'; then
     echo "  - ✅ Tiene un comando para correr solo los tests relacionados."
   else
-    echo "  - ⚠️ No tiene un comando para correr solo los tests relacionados con un cambio. Sin eso, el developer y el tester pueden terminar corriendo la suite completa. Ejemplo: \`Tests de lo que cambiaste: pnpm vitest related <archivos> --run --reporter=dot\`."
+    echo "  - ⚠️ No tiene un comando para correr solo los tests relacionados con un cambio. Sin eso, el developer y el tester pueden terminar corriendo la suite completa, y la tarea tarda más. Ejemplo: \`Tests de lo que cambiaste: pnpm vitest related <archivos> --run --reporter=dot\`."
   fi
-  if grep -qiE 'reporter|--silent|[[:space:]]-q([[:space:]]|$)|--quiet' "$MD"; then
+  if printf '%s' "$RULES_TXT" | grep -qiE 'CI.{0,60}(suite|tests)|(suite|tests).{0,60}\bCI\b'; then
+    echo "  - ✅ Dice si la suite completa la corre CI."
+  elif [ -d "$PROJECT/.github/workflows" ] || [ -f "$PROJECT/.gitlab-ci.yml" ]; then
+    echo "  - 💡 El proyecto tiene CI. Si corre la suite completa en cada PR, decilo en las reglas (\`La suite completa la corre CI en cada PR\`): así \`open-pr\` no la vuelve a correr en local y la tarea termina antes."
+  fi
+  if [ -f "$PROJECT/package.json" ] && [ "$HAS_JQ" -eq 1 ] && jq -r '.scripts.test // ""' "$PROJECT/package.json" 2>/dev/null | tr -d '\r' | grep -qE '(^|[ &;])vitest( |$)|--watch' \
+     && ! printf '%s' "$RULES_TXT" | grep -qiE 'vitest run|--run|watchAll=false|--ci'; then
+    echo "  - ⚠️ El script \`test\` de \`package.json\` arranca en modo watch: un agente que lo corre se queda esperando hasta que lo corta el tiempo límite. Poné en las reglas cómo correrlo una vez (\`pnpm vitest run\` o \`jest --ci --watchAll=false\`)."
+  fi
+  if printf '%s' "$RULES_TXT" | grep -qiE 'reporter|--silent|[[:space:]]-q([[:space:]]|$)|--quiet'; then
     echo "  - ✅ Indica una salida corta para algún comando."
   else
     echo "  - 💡 Si el runner de tests tiene una salida corta (\`--reporter=dot\`, \`--silent\`, \`-q\`), ponela en el comando: cada línea de salida queda en el contexto del agente."
@@ -92,7 +104,7 @@ if [ "$HAS_JQ" -eq 1 ]; then
   pmadv=$(printf '%s' "$cfg" | jq -r '(.roles.pm // .pm // empty) | if type == "array" then join(" ") else tostring end' 2>/dev/null)
   teams=$(printf '%s' "$cfg" | jq -r '.teams // false' 2>/dev/null)
   echo "- **QA:** ${qa:-claude}."
-  [ "${nqa:-1}" -ge 3 ] && echo "  - 💡 Con tres QA, cada tarea normal paga tres revisiones y una vuelta de validación cruzada. Para la mayoría alcanza con uno o dos: \`office-agents.sh set qa claude codex --local\`."
+  [ "${nqa:-1}" -ge 3 ] && echo "  - 💡 Con tres QA, cada tarea normal paga tres revisiones (y una vuelta de validación cruzada si hay bloqueantes). Para la mayoría alcanza con uno o dos: \`office-agents.sh set qa claude codex --local\`."
   if [ -n "$pmadv" ]; then
     echo "- **Asesores del PM:** $pmadv. Cada uno suma una consulta antes de cada plan; si no te aportan, \`office-agents.sh reset pm --local\`."
   fi

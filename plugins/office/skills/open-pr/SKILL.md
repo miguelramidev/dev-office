@@ -14,7 +14,7 @@ En el `CLAUDE.md` del proyecto y en `.claude/rules/` buscá:
 
 - La **rama base** (por ejemplo `dev`) y la de **producción** (por ejemplo `main`). Si no lo dice, la base es la rama por defecto del remoto (`git remote show origin`, línea "HEAD branch") y producción es `main`.
 - A qué rama va el PR según el tipo de ticket. Si no lo define, usá la tabla de la skill `office:start-ticket`.
-- Qué tiene que pasar antes de abrir un PR (lint, typecheck, tests) y qué tiene que decir la descripción (por ejemplo, la compatibilidad con los fronts).
+- Qué tiene que pasar antes de abrir un PR (lint, typecheck, tests), si la suite completa la corre CI, y qué tiene que decir la descripción (por ejemplo, la compatibilidad con los fronts).
 - El formato de los títulos (por ejemplo, Conventional Commits con la clave del ticket al final).
 
 ## 2. Revisá que `gh` esté listo
@@ -53,7 +53,12 @@ Si el CEO la dijo en `$ARGUMENTS`, usá esa. Si no:
 
 ## 5. Corré las verificaciones
 
-Corré las del proyecto (por ejemplo lint, typecheck y tests), de a una. Si alguna falla, frená: mostrale al CEO qué falló y no abras el PR. Si sos el PM, ofrecé encargarle el arreglo al departamento que corresponde.
+Corré las del proyecto (por ejemplo lint, typecheck y tests), de a una. **Acá se corre la suite completa, una sola vez por tarea:** durante la tarea, el developer y el tester corrieron solo los tests relacionados con el cambio.
+
+- **Si el proyecto tiene CI que corre la suite en cada PR** y su `CLAUDE.md` (o `.claude/rules/`) dice que la suite completa la corre CI, corré solo el lint y el typecheck, abrí el PR y decí en la descripción que los tests los corre CI. Después del PR, revisá el resultado con `gh pr checks <número>` y, si falla, avisale al CEO.
+- **Nunca en modo watch** (`vitest run`, `jest --ci`). Si la suite puede tardar más de 2 minutos, pedile a Bash un tiempo límite mayor (hasta 10 minutos). Si la suite no termina en 10 minutos, corréla en segundo plano y esperala, o pedile al CEO que la corra él; no la repitas igual.
+
+Si alguna falla, frená: mostrale al CEO qué falló y no abras el PR. Si sos el PM, ofrecé encargarle el arreglo al departamento que corresponde.
 
 ## 6. Armá el PR
 

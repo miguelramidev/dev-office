@@ -107,9 +107,9 @@ Cada agente que activás arranca de cero y tarda, aunque el cambio sea de una l�
 
 - **Chica:** un solo departamento, cambio acotado que sigue un patrón que ya existe en el proyecto (un texto, un estilo, un bug con causa clara, un campo o una pantalla simple) y que no toca contratos de API que usen otros, el modelo de datos ni migraciones, pagos, autenticación, permisos, secretos ni datos personales.
   - Sin asesores y sin fase de diseño. El plan es una línea en el mensaje y no esperás aprobación, salvo que el CEO haya pedido ver el plan.
-  - Developer → tester → **un solo QA**: el primer proveedor de `qa` en la configuración, sin validación cruzada.
+  - Developer → tester y **un solo QA**, a la vez: el primer proveedor de `qa` en la configuración, sin validación cruzada.
   - Si el tester o QA encuentran algo serio, o el cambio resultó más grande de lo que parecía, pasala a normal en ese momento y avisale al CEO.
-- **Normal:** todo lo demás. El camino completo: asesores y diseño cuando corresponda, y todos los QA con su validación cruzada.
+- **Normal:** todo lo demás. El camino completo: asesores y diseño cuando corresponda, y todos los QA, con validación cruzada de los bloqueantes.
 
 Ante la duda, normal. Nunca es chica si el CEO pidió revisión completa.
 
@@ -265,7 +265,7 @@ Claude trabaja con su propio tiempo, pero el proveedor de un puente tiene un top
   - el tester prueba solo los archivos de esa parte y corre solo sus tests relacionados. Ni el typecheck ni la suite completa: el proyecto está a medio cambiar por la parte siguiente;
   - el tester solo escribe archivos de test, y el developer no los toca;
   - si el tester encuentra fallas en una parte, no interrumpas al developer: van al principio del encargo de la parte siguiente ("primero corregí esto de la parte 1"), o en un encargo aparte si era la última;
-  - **al final, una verificación completa:** cuando terminan todas las partes y sus pruebas, un tester nuevo, con un encargo corto (la lista de archivos de todas las partes y lo que depende del cambio), corre la suite completa, el typecheck y el lint sobre todo el cambio. Recién después pasa a QA.
+  - **al final, una verificación de todo el cambio:** cuando terminan todas las partes y sus pruebas, un tester nuevo, con un encargo corto (la lista de archivos de todas las partes y lo que depende del cambio), corre los tests relacionados de todo el cambio, el typecheck y el lint. La suite completa se corre una vez, al abrir el PR. Recién después pasa a QA.
 
   Si las partes dependen tanto entre sí que probar una sola no tiene sentido (por ejemplo, la parte 1 son solo tipos), o si una parte salió chica (menos de 10 minutos), esa parte se prueba junto con la siguiente: cada vuelta del tester también cuesta. Si una parte sale con REGLAS ROTAS o el proveedor falla, frená todo ahí, como siempre.
 - **Si igual se agota el tiempo** en una parte, partila de nuevo con lo que falta, según los archivos que ya cambió.
@@ -329,14 +329,17 @@ El proyecto tiene colecciones de Postman en `docs/api/` o donde diga su `CLAUDE.
 
 ## Ciclo de calidad
 
-1. El developer termina y te devuelve su reporte.
-2. Pasale al tester **de ese mismo departamento** qué se cambió y qué hay que probar (usá la sección "Para el tester" del reporte). Sumale **qué depende del cambio**: corré `project-index.sh --impact <archivos cambiados>` (skill `office:project-map`) y pegá la salida en el encargo, en una sección "Qué depende del cambio". Así el tester sabe qué tests correr y qué comportamientos que dependen del cambio probar, sin explorar el código. No gasta tokens: lo arma un script.
-   - Si falla: devolvele al developer el reporte del tester tal cual y repetí.
-   - Si el departamento no tiene tester, pasá directo a QA y aclaralo en el informe.
+Tester y QA trabajan **a la vez**, sobre el mismo cambio, y lo que encuentran los dos vuelve al developer en una sola vuelta. Así no se espera a uno para empezar con el otro, y cada corrección se hace una vez.
+
+1. El developer termina y te devuelve su reporte. Corré `project-index.sh --impact <archivos cambiados>` (skill `office:project-map`): esa salida va en los dos encargos, en una sección "Qué depende del cambio". Así el tester sabe qué tests correr y QA dónde atacar, sin explorar el código. No gasta tokens: lo arma un script.
+2. **En el mismo mensaje,** encargale al tester **de ese mismo departamento** qué se cambió y qué hay que probar (usá la sección "Para el tester" del reporte), y a QA la lista de archivos cambiados y qué hacía la tarea (ver el paso 3).
+   - **En fila,** primero el tester y después QA, solo si el `CLAUDE.md` del proyecto dice que sus pruebas no pueden correr a la vez (por ejemplo, porque usan un puerto fijo o una base compartida), o si el cambio es tan grande o tan delicado que conviene que QA ataque código que ya pasó los tests.
+   - Si el departamento no tiene tester, va solo QA, y aclaralo en el informe.
+   - **Con los dos reportes,** si hay fallas del tester o bloqueantes de QA, devolvéselos juntos al mismo developer (ver "Retomá a los agentes de la tarea"): primero las fallas de los tests y después los bloqueantes, cada uno con cómo reproducirlo. Si el tester falló por algo que cambió mucho el código, avisá en la vuelta siguiente que QA revise también esos archivos.
    - **Sin e2e (frontend):** si el tester avisa que un flujo crítico no tiene prueba de punta a punta, no frena la tarea. En el informe, proponele al CEO configurar los e2e una vez, como tarea aparte: Playwright para la web, Maestro para el móvil (o lo que use el stack), con un e2e por flujo crítico y cómo correrlos en el `CLAUDE.md`. Instala herramientas, así que necesita su aprobación. Proponelo una sola vez: si dice que no, anotalo como decisión (skill `office:decisions`) y no se lo vuelvas a proponer.
    - **Diferencias visuales (frontend):** si el tester reporta que una pantalla cambió respecto de su referencia, no se actualiza la referencia sola. Si la captura nueva era lo pedido, confirmalo con el CEO (mostrale las pantallas que difieren, o mandale la captura por Telegram) y recién ahí encargá actualizar solo esas referencias. Si no era lo pedido, es un bug: volvé al developer. Las fallas de accesibilidad críticas o serias del tester bloquean como cualquier otra falla.
-3. Con el tester en verde, pasale a QA la lista de archivos cambiados, qué hacía la tarea y la misma sección "Qué depende del cambio": ahí están los bordes donde atacar. Si `qa` tiene un solo proveedor, o la tarea es chica, es un solo encargo (a `office:qa` o al puente) con el primer proveedor de `qa`. Si tiene varios y la tarea es normal, ver "QA con varios proveedores".
-   - Bloqueantes: devolvéselos al mismo developer (ver "Retomá a los agentes de la tarea") con cómo reproducirlos y volvé al paso 2. El tester agrega un test por cada bloqueante corregido. La verificación de la corrección la hace un QA nuevo con `Modo: verificación` al principio del encargo: el hallazgo, cómo reproducirlo y los archivos de la corrección, nada más. La revisión completa se hace una sola vez.
+3. **El encargo a QA** lleva la lista de archivos cambiados, qué hacía la tarea y la sección "Qué depende del cambio": ahí están los bordes donde atacar. Si `qa` tiene un solo proveedor, o la tarea es chica, es un solo encargo (a `office:qa` o al puente) con el primer proveedor de `qa`. Si tiene varios y la tarea es normal, ver "QA con varios proveedores".
+   - **Después de una corrección,** vuelven a la vez el tester (los tests relacionados con la corrección, más un test por cada bloqueante corregido) y un QA nuevo con `Modo: verificación` al principio del encargo: cada hallazgo, cómo reproducirlo y los archivos de la corrección, nada más. La revisión completa se hace una sola vez.
    - Importantes: se los consultás al CEO en el informe.
    - Mejoras: las anotás.
 
@@ -346,7 +349,7 @@ Cuando `qa` tiene más de un proveedor (por ejemplo `claude` y `codex`), cada un
 
 1. **Revisión independiente, en paralelo.** Encargale a cada QA la misma revisión, sin mostrarle lo de los otros, **con todos los encargos en el mismo mensaje**, así trabajan a la vez y la revisión tarda lo que tarda el más lento. Cada QA escribe sus ataques en su propia carpeta, que le indicás en el encargo: `Tu carpeta: .qa/<proveedor>/` (`.qa/claude/`, `.qa/codex/` o `.qa/gemini/`). Si te devuelve su reporte antes que los otros, esperá a tener todos antes de seguir.
    - Uno después del otro solo si el `CLAUDE.md` del proyecto dice que sus tests no pueden correr a la vez (por ejemplo, porque usan un puerto fijo o una base compartida).
-2. **Validación cruzada, también en paralelo.** Una sola ronda. A cada QA le pasás los hallazgos de los demás con `Modo: validación` al principio del encargo y su misma carpeta, todos en el mismo mensaje. Por cada hallazgo responde CONFIRMADO (lo reprodujo), REFUTADO (con la prueba de por qué no es un defecto) o SIN VERIFICAR.
+2. **Validación cruzada, solo de los bloqueantes y también en paralelo.** Una sola ronda. A cada QA le pasás los bloqueantes de los demás con `Modo: validación` al principio del encargo y su misma carpeta, todos en el mismo mensaje. Por cada hallazgo responde CONFIRMADO (lo reprodujo), REFUTADO (con la prueba de por qué no es un defecto) o SIN VERIFICAR. **Si ningún QA encontró un bloqueante, no hay validación:** los importantes y las mejoras van al informe como "de uno solo", sin validar.
 3. **Consolidación.** La hacés vos, con estas reglas:
    - **Confirmado:** lo encontró uno y otro lo confirmó. Queda con su clasificación.
    - **De uno solo:** nadie lo confirmó ni lo refutó. Queda si quien lo encontró tiene una reproducción concreta; si no, baja a Importante.
@@ -357,7 +360,7 @@ En las vueltas siguientes, después de corregir bloqueantes, alcanza con que el 
 
 En el informe al CEO, indicá qué QA encontró cada hallazgo y si quedó confirmado, de uno solo o en disputa.
 
-Como máximo 3 vueltas developer → tester y 3 vueltas developer → QA por tarea. Si se agotan, frená y explicale al CEO qué falla, qué se intentó y qué opciones ves.
+Como máximo 3 vueltas de corrección por tarea, contando juntas las del tester y las de QA (cada vuelta lleva lo que encontraron los dos). Si se agotan, frená y explicale al CEO qué falla, qué se intentó y qué opciones ves.
 
 ### Proporcionalidad
 

@@ -51,14 +51,20 @@ Si el encargo no trae las rutas, o necesitás algo más: primero el mapa del pro
 - Nunca copies, muevas ni enlaces archivos fuera de la carpeta del proyecto.
 - Para leer y buscar archivos usá Read, Grep y Glob, no `cat`, `head`, `grep` ni bucles en Bash.
 
-## Verificación completa
+## Verificación
 
 Corré las validaciones disponibles y, si el cambio toca scripts o configuración de código, también el typecheck, el lint y los tests del proyecto con los comandos de su `CLAUDE.md`. Corré cada comando por separado, sin unirlos con `;` ni `&&` y sin `| tail` ni `| head`.
 
-Para no llenar tu contexto de salida que no aporta:
+Para que la verificación sea rápida y no llene tu contexto:
 
-- **Primero, los tests relacionados con el cambio** (los que escribiste y los de los archivos tocados), para ver rápido si algo falla. **Después, la suite completa una vez**, al final.
-- **En las vueltas siguientes** (te retoman después de una corrección), corré los relacionados, el typecheck y el lint. La suite completa, solo si la corrección tocó código compartido (utilidades, tipos, configuración, componentes que usan otras pantallas).
+- **Los comandos rápidos primero.** Si el proyecto los tiene (en su `CLAUDE.md` o en `.claude/rules/`: tests relacionados, lint de archivos, typecheck incremental), usá esos. Si no, armalos con el runner:
+  - **Tests relacionados** con los archivos cambiados: los de "Qué depende del cambio", o el modo del runner que los encuentra solo (`jest --findRelatedTests <archivos>`, `vitest related <archivos> --run`); en otros lenguajes, pasale al runner los archivos o paquetes de test (`pytest <archivos>`, `go test ./<paquete>/...`, `flutter test <archivos>`).
+  - **Lint** solo sobre los archivos cambiados, si la herramienta lo permite (`eslint <archivos>`, `ruff check <archivos>`, `dart analyze <archivos>`).
+  - **Typecheck:** el del proyecto (no se puede por archivo); si tiene modo incremental, ese.
+- **La suite completa no la corrés vos:** se corre una sola vez, al abrir el PR (o la corre CI, si el `CLAUDE.md` lo dice). Corréla vos, una vez y al final, solo si el cambio tocó algo que usa todo el proyecto: la configuración de los tests o del build, utilidades, tipos o componentes que importa la mayoría, el cliente de la API, la sesión o la navegación. Decilo en el reporte.
+- **Nunca en modo watch:** `vitest run`, `jest --ci --watchAll=false` o lo que use el runner para correr una vez y terminar. Un comando que espera cambios no termina nunca.
+- **Comandos largos:** si uno puede tardar más de 2 minutos, pedile a Bash un tiempo límite mayor (hasta 10 minutos). Si igual se corta, no lo repitas igual: acotalo (menos archivos, una sola aplicación) y decilo en el reporte.
+- **En las vueltas siguientes** (después de una corrección), solo los tests relacionados con la corrección, el typecheck y el lint de esos archivos.
 - **Usá la salida corta del runner** si la tiene (`--reporter=dot`, `--silent`, `-q`): las fallas se ven igual. En el reporte copiá solo las fallas y el resumen (cuántos pasaron y cuántos fallaron), nunca la salida entera.
 
 ## Cuando necesitás una aprobación

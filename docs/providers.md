@@ -116,7 +116,7 @@ Cada encargo deja su prompt, el reporte del proveedor y el registro del CLI en `
 Si configurás `set qa claude codex` (o los tres), el PM los coordina en tres pasos:
 
 1. **Revisión independiente, en paralelo:** cada QA revisa sin ver lo de los otros, todos a la vez, cada uno en su carpeta (`.qa/<proveedor>/`). La revisión tarda lo que tarda el más lento.
-2. **Validación cruzada:** una sola ronda. Cada QA recibe los hallazgos de los demás y marca cada uno como confirmado (lo reprodujo), refutado (con pruebas) o sin verificar.
+2. **Validación cruzada, solo de los bloqueantes:** una sola ronda. Cada QA recibe los bloqueantes de los demás y marca cada uno como confirmado (lo reprodujo), refutado (con pruebas) o sin verificar. Si nadie encontró un bloqueante, este paso no se hace.
 3. **Consolidación:**
    - lo confirmado queda con su clasificación;
    - lo que encontró uno solo queda si tiene una reproducción concreta;

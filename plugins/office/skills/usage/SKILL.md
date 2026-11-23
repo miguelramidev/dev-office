@@ -18,6 +18,7 @@ Imprime una sección "Consumo de tokens y tiempo" en Markdown, con estas partes:
 - **Por tarea:** qué hizo cada agente, con qué proveedor, su resultado, sus tokens y cuánto tardó. En los roles que van por Codex o Gemini, separa lo que gastó el proveedor y lo que gastó Claude en el puente, y entre paréntesis lo que tardó el proveedor.
 - **Por agente:** cantidad de tareas, tokens de Claude, de Codex o Gemini, el total, el promedio por tarea y el tiempo total.
 - **El total de la sesión** por proveedor, con lo que gastó el PM aparte, y el tiempo: de la sesión, del trabajo de los agentes y de cada proveedor.
+- **En qué comandos se fue el tiempo:** el total por tipo (tests, typecheck, lint y formato, instalar dependencias, build, el puente a Codex o Gemini) y los ocho comandos más lentos, con quién los corrió y si fallaron o se cortaron. Cuenta los de 2 segundos o más. Sirve para encontrar el cuello de botella de un proyecto: una suite lenta, un typecheck de todo el proyecto, un comando que se colgó.
 
 Los datos salen del registro del observer (`.office/observer/events.js`): los de Claude son exactos, porque se leen de las transcripciones, y los de Codex y Gemini son los que informa cada CLI. El script no llama a ningún modelo. Si el observer está apagado, avisa que no hay datos.
 
