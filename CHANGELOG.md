@@ -8,6 +8,15 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.67.0] - 2026-11-23
+
+### Cambiado
+
+- **Dos cuentas de Atlassian con el login del navegador** (`office` 0.63.0). Claude Code guarda una sesión por dirección del servidor, así que cada cuenta se conecta con la suya: `https://mcp.atlassian.com/v2/mcp?cuenta=<etiqueta>`, con el servidor llamado `atlassian` como siempre. Probado con una cuenta del trabajo y una personal: cada proyecto mantiene la suya.
+  - **`office-setup`** pregunta la etiqueta de la cuenta del proyecto (es de la cuenta, no del proyecto: los proyectos con la misma cuenta comparten el login), da el comando y pide sacar antes un `atlassian` de alcance user o de `.mcp.json`.
+  - **El token de API** (`jira-account.sh`) queda como alternativa para cuando el login por navegador no sirve.
+  - **La guía de instalación** explica las etiquetas con dos proyectos personales y uno del trabajo, o dos cuentas de trabajo.
+
 ## [0.66.1] - 2026-11-23
 
 ### Arreglado
