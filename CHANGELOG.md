@@ -8,6 +8,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.70.0] - 2026-11-23
+
+### Agregado
+
+- **Instalador interactivo: `dev-office.sh`** (en la raíz del repositorio), con `dev-office.ps1` para lanzarlo desde PowerShell en Windows. Se corre desde internet, en la carpeta del proyecto, y tiene un menú:
+  - **Instalar:** revisa Claude Code, git, jq y gh (ofrece instalar lo que falta con winget, brew o apt), agrega o actualiza el marketplace y pregunta el alcance (local por defecto), los departamentos (sugiere según `package.json`, `pubspec.yaml`, `go.mod`, `Dockerfile`...), las ramas protegidas, si los documentos van a git y Jira (etiqueta de la cuenta y sitio). Instala, corre el setup y el diagnóstico. Si la oficina ya estaba, actualiza y suma departamentos.
+  - **Desinstalar:** saca los plugins del proyecto (departamentos primero), la configuración de la oficina, sus archivos de trabajo, los scripts copiados y Jira. Pregunta por los documentos (quedan por defecto, y si eran locales siguen fuera de git), las reglas que anotó la oficina y los plugins con alcance user. Ofrece ignorar en `.git/info/exclude` lo que git empiece a ver. Si no queda la oficina en ningún proyecto, ofrece sacar el actualizador del Escritorio, Telegram y el marketplace.
+  - **Reinstalar desde 0:** desinstala y vuelve a instalar con lo que había (alcance, departamentos, ramas, documentos); quedan los documentos y Jira.
+  - **Diagnóstico:** `/office:doctor` desde la terminal.
+  - Con opciones (`--scope`, `--departments`, `--docs`, `--protected`, `--jira`, `--jira-site`, `--yes`...) se saltea el menú y las preguntas.
+- **`office-setup` con `--remove`** (`office` 0.66.0): saca de los dos settings lo que puso la oficina (permisos base, modo de permisos, variables y el PM por defecto), sus bloques de `.git/info/exclude` y sus líneas de `.gitignore`. Las reglas propias del proyecto quedan.
+
 ## [0.69.0] - 2026-11-23
 
 ### Agregado

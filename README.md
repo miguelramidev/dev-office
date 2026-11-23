@@ -119,7 +119,21 @@ Para el detalle técnico de cada tecnología, los agentes también usan las skil
 
 ## Instalación
 
-Dentro de Claude Code, en la carpeta de tu proyecto:
+**Con el instalador**, en la carpeta de tu proyecto. Te pregunta paso a paso (para quién, qué departamentos, ramas protegidas, documentos, Jira), instala y configura todo, y al final corre el diagnóstico:
+
+```bash
+# macOS, Linux o Git Bash
+bash <(curl -fsSL https://raw.githubusercontent.com/miguelramidev/dev-office/main/dev-office.sh)
+```
+
+```powershell
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/miguelramidev/dev-office/main/dev-office.ps1 | iex
+```
+
+El mismo instalador desinstala la oficina de un proyecto o la reinstala desde 0: elegilo en el menú.
+
+**A mano**, dentro de Claude Code, en la carpeta de tu proyecto:
 
 ```text
 /plugin marketplace add miguelramidev/dev-office
