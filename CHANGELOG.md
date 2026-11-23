@@ -8,6 +8,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.64.0] - 2026-11-22
+
+### Cambiado
+
+- **Flujos más rápidos** (`office` 0.60.0, `dept-backend` 0.5.0, `dept-frontend` 0.8.0, `dept-database` 0.4.0, `dept-scraper` 0.4.0, `dept-devops` 0.5.0). Las tareas llegaban a 30 minutos, y lo que más tardaba eran los tests y QA.
+  - **Tester y QA a la vez:** apenas termina el developer, el PM los encarga en el mismo mensaje, y lo que encuentran los dos vuelve al developer en una sola vuelta. El tope pasa a 3 vueltas en total (antes, 3 del tester y 3 de QA). Van en fila solo si el proyecto dice que sus pruebas no pueden correr a la vez, o si el cambio es muy delicado.
+  - **La suite completa, una sola vez,** al abrir el PR (`open-pr`), o la corre CI si las reglas del proyecto lo dicen. El developer y el tester corren los tests relacionados (con los comandos rápidos del proyecto o el modo "related" del runner), el lint de los archivos cambiados y el typecheck. El tester la corre antes solo si el cambio tocó algo que usa todo el proyecto.
+  - **Sin cuelgues:** los tests nunca en modo watch, los comandos largos con un tiempo límite mayor (hasta 10 minutos) y, si uno se corta, se acota en vez de repetirlo igual.
+  - **QA enfocado:** elige los atacantes que aplican al cambio, prueba con scripts como mucho cinco sospechas y el resto lo revisa leyendo. Con varios QA, la validación cruzada es solo de los bloqueantes: sin bloqueantes, no hay segunda etapa.
+  - **Comandos rápidos por proyecto:** `office-setup` propone una sección con los tests relacionados, el lint de archivos, el typecheck incremental y si CI corre la suite. `save-tokens` avisa si faltan, si el proyecto tiene CI y no lo dice, o si el script `test` arranca en modo watch, y ahora también lee `.claude/rules/`.
+  - **Medir:** el observer anota cuánto tarda cada comando de 2 segundos o más (también los que fallan o se cortan), y `/office:usage` muestra el tiempo por tipo de comando (tests, typecheck, lint, instalar, build, puente) y los ocho más lentos, con quién los corrió.
+
 ## [0.63.0] - 2026-11-19
 
 ### Agregado

@@ -73,7 +73,7 @@ Cada rol lo puede hacer Claude, Codex o Gemini. Se configura por proyecto con la
 Si `qa` tiene varios proveedores, el PM los coordina en tres pasos:
 
 1. **Revisión independiente, en paralelo:** cada QA revisa sin ver lo de los otros, todos a la vez, cada uno con su carpeta de ataques (`.qa/claude/`, `.qa/codex/`, `.qa/gemini/`). Van uno después del otro solo si el `CLAUDE.md` del proyecto dice que sus tests no pueden correr a la vez.
-2. **Validación cruzada:** una sola ronda. Cada QA recibe los hallazgos de los demás y los marca como confirmado (lo reprodujo), refutado (con pruebas) o sin verificar.
+2. **Validación cruzada, solo de los bloqueantes:** una sola ronda. Cada QA recibe los bloqueantes de los demás y los marca como confirmado (lo reprodujo), refutado (con pruebas) o sin verificar. Si nadie encontró un bloqueante, no hay validación: los importantes y las mejoras van al informe como de uno solo.
 3. **Consolidación:** lo confirmado queda con su clasificación; lo de uno solo queda si tiene reproducción; lo refutado con pruebas queda en disputa y va al CEO como importante, con los dos argumentos. Un hallazgo en disputa nunca es bloqueante.
 
 ### Límites de Codex y Gemini
@@ -199,10 +199,15 @@ Los diseños no pasan por tester ni QA: los revisa el CEO.
 ## Ciclo de calidad
 
 ```
-PM → developer ─→ tester ──falla──→ developer   (máx. 3 vueltas)
-                    └─pasa─→ QA ──bloqueante──→ developer → tester   (máx. 3 vueltas)
-                              └─aprobado─→ PM → informe al CEO
+PM → developer ─┬─→ tester ─┐
+                └─→ QA ─────┴─ fallas o bloqueantes ─→ developer → tester y QA (verificación)   (máx. 3 vueltas en total)
+                               └─ todo en verde ─→ PM → informe al CEO
 ```
+
+- **Tester y QA trabajan a la vez** sobre el mismo cambio, y lo que encuentran los dos vuelve al developer en una sola vuelta. Van en fila (primero el tester) solo si el `CLAUDE.md` del proyecto dice que sus pruebas no pueden correr a la vez, o si el cambio es tan delicado que conviene que QA ataque código que ya pasó los tests. Lo que se resigna: si el tester encuentra algo que cambia mucho el código, QA revisó una versión que después cambió; por eso, en la vuelta siguiente, el QA que verifica mira también esos archivos.
+- **Tests rápidos.** El developer y el tester corren solo los tests relacionados con el cambio (con los comandos rápidos del proyecto, o el modo "related" del runner), el lint de los archivos cambiados y el typecheck. **La suite completa se corre una sola vez, al abrir el PR** (`open-pr`), o la corre CI si el `CLAUDE.md` del proyecto lo dice. El tester la corre antes solo si el cambio tocó algo que usa todo el proyecto. Nunca en modo watch, y los comandos largos con un tiempo límite mayor: si uno se corta, se acota en vez de repetirlo igual.
+- **QA enfocado.** Elige los atacantes que aplican al cambio y prueba con scripts como mucho cinco sospechas, las de más riesgo; el resto lo revisa leyendo. No corre la suite, el typecheck ni el lint.
+- **Medir.** El observer anota cuánto tarda cada comando de 2 segundos o más, y `/office:usage` muestra el tiempo por tipo (tests, typecheck, lint, instalar, build) y los comandos más lentos, con quién los corrió.
 
 - **QA clasifica sus hallazgos** en bloqueantes (vuelven al developer), importantes (el PM los consulta al CEO) y mejoras (se anotan).
 - **Cada bloqueante corregido termina en un test nuevo**, para que no vuelva a aparecer.

@@ -23,6 +23,15 @@ Los cambios los hace el script `setup.sh` que está en la misma carpeta que este
 
 3. **Comandos de verificación.** Buscá en `CLAUDE.md` y en los archivos del proyecto (por ejemplo `package.json`, `Makefile`, `pyproject.toml`) los comandos de tests, typecheck y lint. Proponé una regla `allow` para cada uno, con su variante con argumentos (por ejemplo `Bash(pnpm test)` y `Bash(pnpm test *)`), para que los testers trabajen sin pedir permiso. Mostrale la lista al CEO y esperá su confirmación. Nunca pongas `*` antes del subcomando (por ejemplo, `Bash(pnpm --filter * test)`): aprobaría cualquier opción en esa posición. Usá el nombre exacto del paquete y el `*` solo al final.
 
+   **Comandos rápidos.** Lo que más alarga una tarea son los tests y el typecheck en un proyecto grande. Con lo que encontraste, proponé una sección "Comandos rápidos" para las reglas del proyecto (en el modo local, en `.claude/rules/office-project.md`; en el compartido, en el `CLAUDE.md`), con lo que el proyecto permita:
+   - **tests relacionados** con unos archivos: el modo del runner que los encuentra (`vitest related <archivos> --run`, `jest --findRelatedTests <archivos>`) o cómo pasarle archivos o paquetes (`pytest <archivos>`, `go test ./<paquete>/...`, `flutter test <archivos>`);
+   - **los tests sin modo watch** (`vitest run`, `jest --ci`), si el script `test` del proyecto arranca en watch;
+   - **lint de archivos sueltos** (`eslint <archivos>`, `ruff check <archivos>`, `dart analyze <archivos>`);
+   - **typecheck incremental,** si el stack lo tiene (`tsc --noEmit --incremental`);
+   - **si CI corre la suite completa en cada PR** (preguntale al CEO, o mirá `.github/workflows/`): en ese caso, `open-pr` no la vuelve a correr en local.
+
+   Sumá sus reglas `allow` a las de arriba. Mostrale la sección al CEO antes de escribirla.
+
 4. **Preguntá al CEO:**
    - **Local o compartido.** Recomendá el local (es el de por defecto), salvo que el equipo entero use la oficina y quiera la misma configuración para todos. Si el proyecto ya tiene la oficina en git (`.claude/settings.json` con `"agent": "office:pm"` o las reglas de la oficina, o `.claude/office-agents.json`) y el CEO elige local, ofrecé pasarla a lo local con `--move-to-local`: saca del repositorio lo de la oficina (deja las reglas propias del proyecto) y deja ese cambio para que lo commitee, conviniéndolo con su equipo.
    - **Documentos de la oficina** (mapa del proyecto, decisiones, diseños, colecciones de API e investigaciones): en git (por defecto, le sirven a todo el equipo y van en los PRs) o locales (`--docs local`: quedan en las mismas carpetas, pero git los ignora). Se puede cambiar cuando quiera con `--docs git` o `--docs local`. Lo que ya estaba en git sigue en git.

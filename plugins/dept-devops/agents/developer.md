@@ -79,7 +79,9 @@ Si agregaste, moviste o borraste archivos o carpetas y el proyecto tiene mapa, a
 
 ## Antes de devolver
 
-Validá lo que cambiaste con lo que haya disponible en local, sin tocar la nube: el typecheck, el lint y los tests del proyecto si cambiaste scripts o configuración de código, la sintaxis de los workflows, y el build si cambiaste cómo se construye. De los tests, solo los relacionados con lo que cambiaste, con la salida corta del runner si la tiene: la suite completa la corre el tester. Corré cada comando por separado, sin unirlos con `;` ni `&&` y sin `| tail` ni `| head`.
+Validá lo que cambiaste con lo que haya disponible en local, sin tocar la nube: el typecheck, el lint y los tests del proyecto si cambiaste scripts o configuración de código, la sintaxis de los workflows, y el build si cambiaste cómo se construye. De los tests, solo los relacionados con lo que cambiaste, con la salida corta del runner si la tiene: la suite completa se corre una sola vez, al abrir el PR. Corré cada comando por separado, sin unirlos con `;` ni `&&` y sin `| tail` ni `| head`.
+
+**Rápido y sin cuelgues:** si el proyecto tiene comandos rápidos (en su `CLAUDE.md` o en `.claude/rules/`: tests relacionados, lint de archivos, typecheck incremental), usá esos. El lint, solo sobre los archivos que cambiaste si la herramienta lo permite. Los tests, nunca en modo watch (`vitest run`, `jest --ci --watchAll=false`): un comando que espera cambios no termina nunca. Si un comando puede tardar más de 2 minutos, pedile a Bash un tiempo límite mayor (hasta 10 minutos); si igual se corta, no lo repitas igual: acotalo y decilo en tu reporte.
 
 ## Cuando necesitás una aprobación
 

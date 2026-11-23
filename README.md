@@ -58,7 +58,7 @@ Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). 
 1. **Reunión.** Hablás con el PM sobre qué cambiar, mejorar o priorizar. Opina, te contradice si hace falta y te propone opciones. No activa a nadie hasta que decidas.
 2. **Diseño.** Para funciones nuevas o cambios grandes, los roles de diseño (el arquitecto de backend y el designer de frontend) escriben una propuesta en `docs/design/` y vos la aprobás antes de que se programe. Los bugs y ajustes chicos se saltean este paso.
 3. **Ejecución.** Con tu decisión, el PM arma un plan, lo aprobás y activa solo a los departamentos que hacen falta. El resto no trabaja ni gasta tokens.
-4. **Calidad.** Todo el código pasa por el tester del departamento y después por QA. Si algo falla, vuelve al departamento, con un máximo de 3 vueltas.
+4. **Calidad.** Todo el código pasa por el tester del departamento y por QA, que trabajan a la vez. Lo que encuentran los dos vuelve al departamento en una sola vuelta, con un máximo de 3. Los tests que se corren son los relacionados con el cambio; la suite completa, una sola vez, al abrir el PR.
 5. **Informe.** El PM te entrega un resumen por departamento: qué se hizo, qué archivos cambiaron, resultados de calidad y decisiones pendientes. Si querés ver cuántos tokens y cuánto tiempo gastó cada agente, pedilo con `/office:usage`.
 
 Las tareas chicas (un cambio acotado en un solo departamento) van por un camino corto: sin asesores ni diseño, y con un solo QA. Si configurás varios QA, en las tareas normales trabajan en paralelo.

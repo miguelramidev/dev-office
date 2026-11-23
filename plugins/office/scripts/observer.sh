@@ -2,9 +2,9 @@
 # Hook del observer de dev-office: anota lo que pasa en la oficina para la página
 # .office/observer/index.html (la oficina en pixel art).
 #
-# Escucha SessionStart, UserPromptSubmit, PreToolUse, PostToolUse (solo el PR que abre
-# gh), SubagentStart, SubagentStop, Notification y Stop, y en el modo equipos TeammateIdle,
-# TaskCreated y TaskCompleted.
+# Escucha SessionStart, UserPromptSubmit, PreToolUse, PostToolUse y PostToolUseFailure (de
+# Bash: cuánto tardó cada comando, y el PR que abre gh), SubagentStart, SubagentStop,
+# Notification y Stop, y en el modo equipos TeammateIdle, TaskCreated y TaskCompleted.
 # Cada evento es una línea "OFFICE_EVENT({...});" en .office/observer/events.js, que la
 # página lee sin servidor. Los tokens salen de las transcripciones que Claude Code ya
 # guarda en el disco. Para leerlos en grande en la página, guarda también el texto completo
@@ -61,7 +61,7 @@ case "$EVENT" in
     # Sesión nueva: el registro anterior queda como events.prev.js.
     if [ "$SOURCE" = "startup" ] || [ "$SOURCE" = "clear" ]; then
       [ -f "$EVENTS" ] && mv -f "$EVENTS" "$DIR/events.prev.js"
-      rm -rf "$DIR/usage"
+      rm -rf "$DIR/usage" "$DIR/cmd"
     fi
     # La página se copia (o se actualiza) desde el plugin.
     PAGE_SRC="$(dirname "${BASH_SOURCE[0]//\\//}")/../observer/index.html"
@@ -98,6 +98,11 @@ case "$EVENT" in
 
   PreToolUse)
     TOOL=$(json_get '.tool_name // empty')
+    # Cuándo arrancó cada comando, para saber cuánto tardó (PostToolUse).
+    if [ "$TOOL" = "Bash" ]; then
+      TID=$(json_get '.tool_use_id // empty' | tr -cd 'A-Za-z0-9_-')
+      [ -n "$TID" ] && mkdir -p "$DIR/cmd" && printf '%s\n' "$NOW" >"$DIR/cmd/$TID"
+    fi
     if [ "$TOOL" = "Agent" ] || [ "$TOOL" = "Task" ]; then
       # Alguien encarga trabajo: el PM, o en el modo equipos un líder de departamento
       # ("from" es quién encarga; "name" es el nombre del compañero de equipo, si lo tiene).
@@ -139,7 +144,20 @@ case "$EVENT" in
     fi
     ;;
 
-  PostToolUse)
+  PostToolUse | PostToolUseFailure)
+    # Cuánto tardó el comando. Solo se anotan los de 2 segundos o más: los que pesan.
+    TID=$(json_get '.tool_use_id // empty' | tr -cd 'A-Za-z0-9_-')
+    if [ -n "$TID" ] && [ -f "$DIR/cmd/$TID" ]; then
+      T0=$(tr -cd '0-9' <"$DIR/cmd/$TID"); rm -f "$DIR/cmd/$TID"
+      if [ -n "$T0" ] && [ $((NOW - T0)) -ge 2 ]; then
+        emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" --argjson d "$((NOW - T0))" --arg ev "$EVENT" '
+          { type: "cmd", t: $t, agent: (.agent_id // null), agent_type: (.agent_type // null), dur: $d,
+            cmd: ((.tool_input.command // "") | tostring | gsub("[\\r\\n]+"; " ") | .[0:160]),
+            failed: ($ev == "PostToolUseFailure"),
+            interrupted: ((.tool_response | if type == "object" then (.interrupted // false) else false end) == true) }' | tr -d '\r')"
+      fi
+    fi
+    [ "$EVENT" = "PostToolUse" ] || exit 0
     # El PR de la oficina (gh pr create o gh pr view): su link, para el tablero del pasillo.
     CMD=$(json_get '.tool_input.command // empty')
     case "$CMD" in *"gh pr create"* | *"gh pr view"*) ;; *) exit 0 ;; esac
