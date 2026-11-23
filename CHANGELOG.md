@@ -16,6 +16,7 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
   - **`office-setup`** pregunta la etiqueta de la cuenta del proyecto (es de la cuenta, no del proyecto: los proyectos con la misma cuenta comparten el login), da el comando y pide sacar antes un `atlassian` de alcance user o de `.mcp.json`.
   - **El token de API** (`jira-account.sh`) queda como alternativa para cuando el login por navegador no sirve.
   - **La guía de instalación** explica las etiquetas con dos proyectos personales y uno del trabajo, o dos cuentas de trabajo.
+  - **Guía nueva, [Migrar la oficina](docs/migration.md):** cómo pasar un proyecto de compartido a local (plugins de `--scope project` a `--scope local`, `office-setup --move-to-local`, sacar de git los archivos de la oficina), cómo instalarla en un proyecto donde no se puede ver nada, y cómo separar cuentas de Atlassian con etiquetas o con token, con problemas comunes.
 
 ## [0.66.1] - 2026-11-23
 

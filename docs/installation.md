@@ -52,7 +52,7 @@ claude plugin install dept-docs@dev-office --scope local
    - Revisa que exista `CLAUDE.md` y te avisa si falta.
 3. **En el modo compartido, revisá y commiteá** los cambios de `.claude/settings.json` y `.gitignore`. En el local no hay nada que commitear.
 
-**Si el proyecto ya tenía la oficina en git** y querés pasarla a local, `office-setup` lo hace por vos: saca del repositorio lo de la oficina (deja las reglas propias del proyecto), lo pasa a tus archivos locales y te dice cómo reinstalar los plugins con `--scope local`. Ese cambio sí se commitea una vez: conviene acordarlo con el equipo.
+**Si el proyecto ya tenía la oficina en git** y querés pasarla a local (paso a paso completo en [Migrar la oficina](migration.md)), `office-setup` lo hace por vos: saca del repositorio lo de la oficina (deja las reglas propias del proyecto), lo pasa a tus archivos locales y te dice cómo reinstalar los plugins con `--scope local`. Ese cambio sí se commitea una vez: conviene acordarlo con el equipo.
 
 Los permisos van en los settings del proyecto (los tuyos o los del equipo) porque Claude Code no permite que un plugin los defina.
 
@@ -77,6 +77,8 @@ En el compartido, crea `.mcp.json` con el servidor de Atlassian:
 El servidor tiene que llamarse `atlassian`, porque el PM tiene acceso a las herramientas de ese nombre. Cada persona inicia sesión una vez con `/mcp`: servidor `atlassian`, opción de autenticar.
 
 #### Dos cuentas de Atlassian (trabajo y personal)
+
+El paso a paso completo, con ejemplos y problemas comunes, está en [Migrar la oficina](migration.md#3-una-cuenta-de-atlassian-por-proyecto).
 
 Claude Code guarda **una sesión de Atlassian por dirección del servidor**, para toda la computadora. Con la dirección de siempre, si te logueás con la cuenta personal en un proyecto, el del trabajo pasa a usarla también. La salida es que cada cuenta use su propia dirección, agregándole `?cuenta=<etiqueta>`, sin cambiar el nombre del servidor (tiene que seguir siendo `atlassian`):
 
