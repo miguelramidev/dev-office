@@ -55,7 +55,7 @@ Sirve igual para un proyecto que empieza y para uno grande que ya existe: nunca 
    - en cada área principal, su README o su archivo de entrada (los que `--dirs` marca después del `·`).
 
    Para saber qué hace algo, usá el índice antes de abrir archivos.
-4. **Escribí `docs/project-map.md`** con la plantilla de abajo, **en hasta 80 líneas**. Si un área es muy grande (un paquete de un monorepo, una app entera), dejá en el mapa una línea por área y abrí su detalle en `docs/project-map/<área>.md` **recién cuando una tarea la toque por primera vez**, no antes.
+4. **Escribí `docs/project-map.md`** con la plantilla de abajo, **en hasta 80 líneas** (nunca más de 150). Si un área es muy grande (un paquete de un monorepo, una app entera), dejá en el mapa una línea por área y abrí su detalle en `docs/project-map/<área>.md` **recién cuando una tarea la toque por primera vez**, no antes.
 5. **Anotá el commit** en la primera línea del mapa: `<!-- map-commit: <hash de git rev-parse HEAD> -->`.
 6. **Enlazalo, si el proyecto lo quiere.** Los agentes de la oficina ya saben dónde buscarlo. Enlazarlo en el `CLAUDE.md` (y en el `AGENTS.md`, para Codex) sirve para que lo vean también las sesiones sin la oficina. Hacelo solo si el CEO lo aprueba:
 
@@ -101,12 +101,15 @@ Archivos generados o de terceros, y de dónde salen.
 
 Solo lo que existe: si el proyecto no tiene alguna de esas cosas, sacá la línea. Nada de explicar cómo funciona el código: el mapa dice **dónde**. Las reglas van en el `CLAUDE.md` y las decisiones en `docs/decisions/`.
 
+**El mapa no es un historial.** Nunca lleva entradas por ticket, por PR o por parte ("PROJ-123: se agregaron estos archivos..."), ni listas de lo que hizo cada tarea: eso ya está en git, en los PRs y en el índice. Cada línea describe cómo está el proyecto **hoy**. Un mapa que crece con cada ticket termina costando decenas de miles de tokens en cada lectura.
+
 ## Actualizar el mapa (al cerrar una tarea)
 
 Lo hace el developer que hizo el cambio, en la misma tarea, y va en el mismo PR. Solo si la tarea agregó, movió o borró archivos o carpetas. Si solo cambió el contenido de archivos que ya estaban, el mapa sigue valiendo: el índice se actualiza solo.
 
 1. `bash <carpeta de esta skill>/project-index.sh --changes <commit del map-commit>` lista, por carpeta, lo agregado (`+`), lo borrado (`-`) y lo movido (`↦`).
-2. Cambiá solo las líneas del mapa de esas carpetas: un área nueva, una ruta que se movió, un modelo a copiar mejor que el anterior. No reescribas el resto.
-3. Actualizá el `map-commit` con el commit actual.
+2. **Corregí** las líneas del mapa de esas carpetas: un área nueva, una ruta que se movió, una pantalla más en la línea de su módulo, un modelo a copiar mejor que el anterior. No reescribas el resto, y **no agregues una entrada con el ticket ni la lista de archivos de la tarea**: si una carpeta nueva no entra en una línea de la tabla, sumale una fila.
+3. **Si el mapa pasa de 150 líneas,** mové el área más grande a `docs/project-map/<área>.md` y dejá en el mapa una línea que apunte a ese archivo.
+4. Actualizá el `map-commit` con el commit actual.
 
 Si `--changes` dice que no encuentra el commit (otra historia, un clon nuevo), revisá el mapa contra `--dirs 1` y corregí lo que no coincida.

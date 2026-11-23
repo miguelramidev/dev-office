@@ -377,9 +377,9 @@ Lo que más tokens gasta en un proyecto que crece es que cada agente busque dón
 
 Cómo los usás:
 
-- **Al planear una tarea,** leé el mapa (o la sección del área) y buscá con Grep en el índice los nombres que aparecen en el pedido. Con eso escribís en el plan y en los encargos las rutas exactas y el modelo a copiar.
+- **Al planear una tarea,** leé del mapa la tabla de áreas y la sección del área de la tarea (o su archivo en `docs/project-map/`), no el mapa entero, y buscá con Grep en el índice los nombres que aparecen en el pedido. Con eso escribís en el plan y en los encargos las rutas exactas y el modelo a copiar.
 - **Si el proyecto no tiene mapa,** crealo en la primera tarea, sin preguntar: avisalo en una línea del plan ("Creo el mapa del proyecto: una vez, va en este PR"). Sirve igual para un proyecto que empieza y para uno grande que ya existe. Seguí la skill: vos revisás el índice y encargás el mapa antes que el resto del trabajo, así los encargos de la tarea ya salen con las rutas exactas.
-- **Al cerrar la tarea,** si se agregaron, movieron o borraron archivos o carpetas, el developer que hizo el cambio actualiza el mapa en el mismo PR. Fijate en su reporte que lo hizo.
+- **Al cerrar la tarea,** si se agregaron, movieron o borraron archivos o carpetas, el developer que hizo el cambio actualiza el mapa en el mismo PR. Fijate en su reporte que lo hizo, y en el diff que **corrigió líneas de su carpeta y no agregó una entrada por ticket**: el mapa dice dónde está cada cosa, no qué hizo cada tarea (eso queda en git y en el PR). Si agregó un párrafo con el ticket, sus partes o su lista de archivos, pedile que lo cambie antes del PR.
 
 ## Cómo delegar
 

@@ -8,6 +8,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.66.1] - 2026-11-23
+
+### Arreglado
+
+- **El mapa del proyecto ya no se vuelve un historial** (`office` 0.62.1 y los developers de todos los departamentos: `dept-backend` 0.6.1, `dept-frontend` 0.9.1, `dept-database` 0.5.1, `dept-scraper` 0.5.1, `dept-devops` 0.6.1, `dept-docs` 0.1.9). En un proyecto, cada ticket le había sumado un párrafo con sus archivos y el mapa llegó a 843 líneas, unos 36k tokens en cada lectura.
+  - **La skill `project-map`** lo dice explícito: el mapa describe cómo está el proyecto hoy, nunca lleva entradas por ticket, PR o parte. Al cerrar una tarea se corrigen las líneas de las carpetas tocadas; si pasa de 150 líneas, el área más grande va a `docs/project-map/<área>.md`.
+  - **Los developers** corrigen las líneas de su carpeta, sin agregar el ticket ni la lista de archivos de la tarea.
+  - **El PM** lee al planear solo la tabla de áreas y la sección del área de la tarea, y revisa en el diff que el mapa no haya sumado una entrada por ticket.
+  - **`save-tokens`** avisa cuando el mapa pasa de 150 líneas, con su tamaño en tokens, y si nombra tickets en muchas líneas dice que se volvió un historial.
+- **`save-tokens` reconoce los tests relacionados escritos como regla** ("corré solo las pruebas de lo que tocaste", o dónde está el test de cada archivo, como en Flutter, Go o Python), no solo un comando con modo "related".
+- **La sugerencia de dejarle la suite al CI** aclara que solo aplica si el CI corre en los PR que abre la oficina (los de cada ticket). Si no corre ahí, la verificación local sigue; lo mismo en `open-pr`.
+
 ## [0.66.0] - 2026-11-23
 
 ### Agregado

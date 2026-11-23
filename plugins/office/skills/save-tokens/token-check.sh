@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# token-check-version: 4
+# token-check-version: 5
 # Revisa la configuración del proyecto y de la oficina en busca de lo que más tokens hace
 # gastar a cada agente. No llama a ningún modelo: no gasta tokens.
 #
@@ -15,6 +15,8 @@ HAS_JQ=0; command -v jq >/dev/null 2>&1 && HAS_JQ=1
 
 chars() { [ -f "$1" ] && wc -c <"$1" | tr -d ' \r' || echo 0; }
 lines() { [ -f "$1" ] && wc -l <"$1" | tr -d ' \r' || echo 0; }
+# Tokens aproximados de un archivo, como texto corto: "36k" o "800".
+tokens() { local t=$(( $(chars "$1") / 4 )); if [ "$t" -ge 1000 ]; then echo "$((t / 1000))k"; else echo "$t"; fi; }
 
 echo "## Revisión de consumo"
 echo
@@ -39,7 +41,9 @@ if [ -f "$MD" ]; then
   # Las reglas del proyecto también valen: en el modo local de la oficina, los comandos
   # rápidos están en .claude/rules/.
   RULES_TXT=$(cat "$MD" "$PROJECT"/.claude/rules/*.md 2>/dev/null)
-  if printf '%s' "$RULES_TXT" | grep -qiE 'related|findRelatedTests|--changed|relacionad'; then
+  # Cuenta como "tests relacionados" un comando con modo related, una regla de "solo lo que
+  # tocaste", o dónde está el test de cada archivo (lo que se usa en Flutter, Go o Python).
+  if printf '%s' "$RULES_TXT" | grep -qiE 'related|findRelatedTests|--changed|relacionad|(pruebas|tests?) de lo que (tocaste|cambiaste)|solo (las pruebas|los tests)|_test\.(dart|go|py)|test_[a-z_<>]+\.py|\.(test|spec)\.[jt]sx?.{0,40}(junto|al lado|mismo)'; then
     echo "  - ✅ Tiene un comando para correr solo los tests relacionados."
   else
     echo "  - ⚠️ No tiene un comando para correr solo los tests relacionados con un cambio. Sin eso, el developer y el tester pueden terminar corriendo la suite completa, y la tarea tarda más. Ejemplo: \`Tests de lo que cambiaste: pnpm vitest related <archivos> --run --reporter=dot\`."
@@ -47,7 +51,7 @@ if [ -f "$MD" ]; then
   if printf '%s' "$RULES_TXT" | grep -qiE 'CI.{0,60}(suite|tests)|(suite|tests).{0,60}\bCI\b'; then
     echo "  - ✅ Dice si la suite completa la corre CI."
   elif [ -d "$PROJECT/.github/workflows" ] || [ -f "$PROJECT/.gitlab-ci.yml" ]; then
-    echo "  - 💡 El proyecto tiene CI. Si corre la suite completa en cada PR, decilo en las reglas (\`La suite completa la corre CI en cada PR\`): así \`open-pr\` no la vuelve a correr en local y la tarea termina antes."
+    echo "  - 💡 El proyecto tiene CI. Si corre la suite completa en los PR que abre la oficina (los de cada ticket, no solo los que van a la rama base o a producción), decilo en las reglas (\`La suite completa la corre CI en los PR de ticket\`): así \`open-pr\` no la vuelve a correr en local. Si no corre en esos PR, la verificación local tiene que seguir: no cambies nada."
   fi
   if [ -f "$PROJECT/package.json" ] && [ "$HAS_JQ" -eq 1 ] && jq -r '.scripts.test // ""' "$PROJECT/package.json" 2>/dev/null | tr -d '\r' | grep -qE '(^|[ &;])vitest( |$)|--watch' \
      && ! printf '%s' "$RULES_TXT" | grep -qiE 'vitest run|--run|watchAll=false|--ci'; then
@@ -69,7 +73,14 @@ if [ -f "$MD" ] && grep -qE 'project-map[^ ]*\.md' "$MD"; then
   [ -n "$ref" ] && MAP="$PROJECT/$ref"
 fi
 if [ -f "$MAP" ]; then
-  echo "- ✅ **Mapa del proyecto:** ${MAP#$PROJECT/}, $(lines "$MAP") líneas."
+  ML=$(lines "$MAP")
+  if [ "$ML" -gt 150 ]; then
+    # Un mapa largo casi siempre es un historial: un párrafo por ticket con sus archivos.
+    TICKETS=$(grep -cE '(^|[^A-Za-z])[A-Z][A-Z0-9]+-[0-9]+' "$MAP" 2>/dev/null || echo 0)
+    echo "- ⚠️ **Mapa del proyecto:** ${MAP#$PROJECT/} tiene $ML líneas (unos $(tokens "$MAP") tokens) y debería tener hasta 150: lo lee el PM al planear y cada agente que lo abre.$( [ "${TICKETS:-0}" -gt 5 ] && printf ' Nombra tickets en %s líneas: se volvió un historial de lo que hizo cada tarea, y eso ya está en git.' "$TICKETS") Conviene rehacerlo con la skill \`/office:project-map\` (qué hay en cada carpeta y dónde vive cada cosa, sin entradas por ticket) y pasar las áreas grandes a \`docs/project-map/<área>.md\`."
+  else
+    echo "- ✅ **Mapa del proyecto:** ${MAP#$PROJECT/}, $ML líneas."
+  fi
 else
   echo "- ⚠️ **Mapa del proyecto:** no hay. Cada agente busca dónde está cada cosa, y eso crece con el proyecto. El PM lo crea solo en la próxima tarea, o ya mismo con \`/office:project-map\`: sirve igual para un proyecto empezado y de cualquier tamaño."
 fi

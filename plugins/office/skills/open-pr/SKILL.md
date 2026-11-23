@@ -55,7 +55,7 @@ Si el CEO la dijo en `$ARGUMENTS`, usá esa. Si no:
 
 Corré las del proyecto (por ejemplo lint, typecheck y tests), de a una. **Acá se corre la suite completa, una sola vez por tarea:** durante la tarea, el developer y el tester corrieron solo los tests relacionados con el cambio.
 
-- **Si el proyecto tiene CI que corre la suite en cada PR** y su `CLAUDE.md` (o `.claude/rules/`) dice que la suite completa la corre CI, corré solo el lint y el typecheck, abrí el PR y decí en la descripción que los tests los corre CI. Después del PR, revisá el resultado con `gh pr checks <número>` y, si falla, avisale al CEO.
+- **Si el proyecto tiene CI que corre la suite en los PR que abre la oficina** (los de cada ticket, no solo los que van a la rama base o a producción) y su `CLAUDE.md` (o `.claude/rules/`) lo dice, corré solo el lint y el typecheck, abrí el PR y decí en la descripción que los tests los corre CI. Después del PR, revisá el resultado con `gh pr checks <número>` y, si falla, avisale al CEO.
 - **Nunca en modo watch** (`vitest run`, `jest --ci`). Si la suite puede tardar más de 2 minutos, pedile a Bash un tiempo límite mayor (hasta 10 minutos). Si la suite no termina en 10 minutos, corréla en segundo plano y esperala, o pedile al CEO que la corra él; no la repitas igual.
 
 Si alguna falla, frená: mostrale al CEO qué falló y no abras el PR. Si sos el PM, ofrecé encargarle el arreglo al departamento que corresponde.
