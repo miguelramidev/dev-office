@@ -8,6 +8,19 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.69.0] - 2026-11-23
+
+### Agregado
+
+- **`/office:doctor`, el diagnóstico de la oficina** (`office` 0.65.0), al estilo de `flutter doctor`. Revisa la instalación en el proyecto y, para cada cosa que falta, dice cómo arreglarla. No cambia nada ni gasta tokens.
+  - **Herramientas:** Claude Code, git, jq (sin él no funcionan los hooks) y gh con sesión.
+  - **Plugins:** `office` instalado y activo, los departamentos, plugins en dos alcances o de equipo con la oficina local, y versiones nuevas en el marketplace.
+  - **Proyecto:** `CLAUDE.md` o `.claude/rules/`, `office-setup` aplicado (local, compartido o los dos), el PM por defecto, comandos de tests permitidos, la regla de tests relacionados, `.office/` y `.qa/` ignorados, archivos de la oficina que git sigue en el modo local y copias viejas de los scripts.
+  - **Codex y Gemini,** si algún rol los usa: instalados, con sesión, en una versión que sirve, y los permisos de Gemini.
+  - **Jira:** en qué alcance está `atlassian`, con qué cuenta (etiqueta o token, sin mostrarlo), si quedó uno de alcance user, con otro nombre o en dos alcances, y si las reglas dicen el sitio.
+  - **Opcional:** Telegram, Figma, el observer y el mapa del proyecto.
+  - **El PM** muestra el resultado, ofrece arreglar lo que puede hacer él y le da al CEO los comandos que se corren en su terminal. `office-setup` lo corre al final, y `update` lo recomienda después de actualizar.
+
 ## [0.68.0] - 2026-11-23
 
 ### Cambiado

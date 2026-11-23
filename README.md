@@ -25,6 +25,7 @@ Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). 
 | --- | --- |
 | `claude --agent office:pm` | Abrir la oficina: hablás con el PM. |
 | `/office:office-setup` | Preparar un proyecto la primera vez (local o compartida, permisos, ramas, Jira). |
+| `/office:doctor` | Diagnóstico de la oficina en el proyecto, como `flutter doctor`: qué falta (herramientas, plugins, configuración, Codex y Gemini, Jira) y cómo arreglarlo. |
 | `/office:start-ticket PROJ-123` | Empezar un ticket de Jira: crea la rama correcta y lo pasa a "en curso". |
 | `/office:open-pr` | Abrir el PR del trabajo terminado. |
 | `/office:review-fixes` | Resolver los comentarios del PR y revisar lo que corregiste a mano. |
@@ -139,6 +140,8 @@ Después preparás el proyecto con la skill `office-setup`. Por defecto la ofici
 ```bash
 claude --agent office:pm
 ```
+
+Para comprobar que quedó todo bien, `/office:doctor`: revisa la instalación y, para cada cosa que falta, te dice cómo arreglarla.
 
 Guía completa: [docs/installation.md](docs/installation.md).
 
