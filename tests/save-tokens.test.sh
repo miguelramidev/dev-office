@@ -76,6 +76,27 @@ printf 'a.ts\tx\nb.ts\ty\n' >"$P3/.office/index/files.tsv"
 run "$P3"
 has "con mapa: lo reconoce" "**Mapa del proyecto:** docs/project-map.md"
 has "con índice: cuenta los archivos" "**Índice de archivos:** 2 archivos"
+hasnt "mapa corto: no lo marca largo" "debería tener hasta 150"
+
+# Un mapa que se volvió historial: un párrafo por ticket.
+for i in $(seq 1 60); do printf '## PROJ-%s, PR 2, partes 1 a 3\n- lib/a%s.dart\n- lib/b%s.dart\n\n' "$i" "$i" "$i"; done >>"$P3/docs/project-map.md"
+run "$P3"
+has "mapa largo: lo avisa con su tamaño" "debería tener hasta 150"
+has "mapa largo: detecta que es un historial de tickets" "se volvió un historial"
+has "mapa largo: propone rehacerlo y partirlo" "docs/project-map/<área>.md"
+printf '# Mapa\n' >"$P3/docs/project-map.md"
+
+# Tests relacionados escritos como regla (Flutter, Go, Python), sin un comando "related".
+P4="$WORK/flutter"; mkdir -p "$P4"; (cd "$P4" && git init -q)
+printf 'Reglas\n- Corré solo las pruebas de lo que tocaste.\n' >"$P4/CLAUDE.md"
+run "$P4"
+has "regla de solo lo que tocaste: cuenta como tests relacionados" "Tiene un comando para correr solo los tests relacionados"
+printf 'Reglas\n- La prueba de lib/<ruta>/<archivo>.dart está en test/<ruta>/<archivo>_test.dart.\n' >"$P4/CLAUDE.md"
+run "$P4"
+has "dónde está el test de cada archivo: cuenta como tests relacionados" "Tiene un comando para correr solo los tests relacionados"
+mkdir -p "$P4/.github/workflows"
+run "$P4"
+has "CI: solo si corre en los PR de ticket" "en los PR que abre la oficina"
 
 [ "$FAILED" -eq 0 ] && echo "Todo bien." || echo "Hubo fallas."
 exit "$FAILED"

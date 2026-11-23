@@ -61,7 +61,7 @@ Si el encargo no trae las rutas, o necesitás algo más: primero el mapa del pro
 
 Antes de cambiar algo que usan otros archivos (una función, un tipo, un componente o un endpoint compartido), mirá quién depende de eso con `project-index.sh --impact <archivo>` (skill `office:project-map`). No gasta tokens, y te dice qué más podés romper sin buscarlo a mano.
 
-Si agregaste, moviste o borraste archivos o carpetas y el proyecto tiene mapa, actualizá sus líneas siguiendo la skill `office:project-map` ("Actualizar el mapa") y decilo en tu reporte.
+Si agregaste, moviste o borraste archivos o carpetas y el proyecto tiene mapa, corregí las líneas de esas carpetas siguiendo la skill `office:project-map` ("Actualizar el mapa"), sin agregar una entrada con el ticket ni la lista de archivos de la tarea, y decilo en tu reporte.
 
 ## Cuando es un bug
 
