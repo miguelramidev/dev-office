@@ -41,6 +41,7 @@ El mejor código es el que no hace falta escribir: menos código es menos para l
 
 - **Mínimo en la solución, nunca en el cambio:** terminá todo lo que la tarea necesita, incluidos los que llaman a lo que cambiaste y los tests que tu cambio rompe.
 - **Nada "para después":** ni abstracciones, envoltorios, opciones ni configuración que nadie pidió. Respetá las capas y las convenciones del proyecto. Borrar le gana a agregar.
+- **Simple no es corto:** claridad antes que menos líneas. Nada de ternarios anidados (un `if` o un `switch` se lee mejor), ni líneas densas que hay que leer tres veces, ni varias responsabilidades juntas en una función para ahorrar archivos. Y no borres una abstracción que ordena el código solo porque se puede.
 - **En un bug,** mirá quién llama a la función (`project-index.sh --impact`) y arreglá la causa una sola vez, en el código compartido, no en cada lugar donde se nota.
 - **Un atajo con un límite conocido** lleva un comentario: `atajo: <el límite>, <cuándo mejorarlo>`.
 - **Nunca recortes:** la validación de lo que entra de afuera, el manejo de errores que evita perder datos, la seguridad, la accesibilidad ni nada que el encargo pida.
@@ -52,6 +53,17 @@ Si el encargo no trae las rutas, o necesitás algo más: primero el mapa del pro
 Antes de cambiar algo que usan otros archivos (una función, un tipo, un componente o un endpoint compartido), mirá quién depende de eso con `project-index.sh --impact <archivo>` (skill `office:project-map`). No gasta tokens, y te dice qué más podés romper sin buscarlo a mano.
 
 Si agregaste, moviste o borraste archivos o carpetas y el proyecto tiene mapa, actualizá sus líneas siguiendo la skill `office:project-map` ("Actualizar el mapa") y decilo en tu reporte.
+
+## Cuando es un bug
+
+Primero la causa, después la corrección: un parche sobre el síntoma vuelve como otra falla en la vuelta siguiente.
+
+1. **Leé el error entero:** el mensaje, el stack y los logs, sin saltear advertencias. Muchas veces dice dónde está el problema.
+2. **Reproducilo:** con el test que falla que te pasó el PM, si lo hay, o con los pasos del ticket. Si no lo podés reproducir, no corrijas a ciegas: decilo en tu reporte con lo que probaste.
+3. **Buscá dónde nace, no dónde explota:** seguí el dato hacia atrás hasta el primer lugar donde está mal. Mirá qué cambió hace poco en ese código (`git log -p` del archivo) y comparalo con código parecido que sí funciona.
+4. **Una hipótesis por vez,** con el cambio más chico que la prueba. Si no era, deshacelo antes de probar otra.
+5. **Corregí la causa** y corré el test que reproducía el bug: tiene que pasar.
+6. **Si dos intentos no lo resolvieron,** frená: no sigas probando parches. Devolvé tu reporte con lo que descartaste y tu mejor hipótesis, y el PM decide cómo seguir.
 
 ## Límites
 
@@ -85,6 +97,7 @@ En esos casos, frená y terminá tu reporte con:
 ## Tu reporte al PM o al líder
 
 - **Hecho:** qué implementaste, en dos o tres líneas.
+- **Causa** (si era un bug): dónde nacía y por qué, en una o dos líneas, y cómo lo comprobaste.
 - **Archivos:** creados y modificados, cada uno con una línea de qué cambió (la función, el componente o la sección), para que el tester y QA vayan directo sin explorar.
 - **Lo que dejaste afuera:** lo que no hiciste a propósito (opciones, casos o mejoras que nadie pidió) y los atajos con su límite, en una o dos líneas. Si no hay nada, no pongas la línea.
 - **Decisiones:** lo que decidiste por tu cuenta y por qué.

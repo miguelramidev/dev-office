@@ -22,7 +22,8 @@ Para ver en qué se fueron los tokens, usá `/office:usage`. Para que la oficina
 
 - **Qué depende de cada cambio:** el PM le pasa al tester y a QA la salida de `project-index.sh --impact`, que dice sin gastar tokens qué archivos dependen de lo que cambió y qué tests lo cubren. No exploran el código para averiguarlo.
 
-- **Lo mínimo que resuelve:** los developers siguen una escalera antes de escribir código nuevo: ¿hace falta?, ¿ya existe en el proyecto?, ¿lo resuelve la plataforma o una dependencia instalada?, ¿alcanza con una línea? Menos código es menos para escribir, probar y revisar. Está adaptado de [Ponytail](https://github.com/DietrichGebert/ponytail) (MIT), de Dietrich Gebert.
+- **Lo mínimo que resuelve:** los developers siguen una escalera antes de escribir código nuevo: ¿hace falta?, ¿ya existe en el proyecto?, ¿lo resuelve la plataforma o una dependencia instalada?, ¿alcanza con una línea? Menos código es menos para escribir, probar y revisar. Está adaptado de [Ponytail](https://github.com/DietrichGebert/ponytail) (MIT), de Dietrich Gebert. La regla "Simple no es corto" (sin ternarios anidados, claridad antes que menos líneas, no borrar abstracciones que ordenan) viene del agente [code-simplifier](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/code-simplifier) (Apache 2.0), de Anthropic.
+- **Bugs: la causa primero y un test que falla.** Ante un bug, el tester primero lo reproduce con un test que falla, y el developer busca dónde nace antes de corregir, prueba una hipótesis por vez y frena después de dos intentos en vez de seguir parchando. Cada parche sobre el síntoma es una vuelta más de tester y QA. Está adaptado de las skills `systematic-debugging` y `test-driven-development` de [Superpowers](https://github.com/obra/superpowers) (MIT), de Jesse Vincent.
 
 ## Lo que hacés vos
 

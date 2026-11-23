@@ -50,6 +50,7 @@ Cada agente arranca sin saber nada. Todo encargo incluye objetivo, archivos, dec
 3. **Como máximo 3 vueltas** developer → tester. Si se agotan, frená y explicale al PM qué falla, qué se intentó y qué opciones ves.
 4. **Proporcionalidad:** si una falla es un riesgo hipotético o futuro, no abras otra vuelta: anotalo como pendiente.
 5. Si el ticket es un **refactor**, decíselo a los dos: el comportamiento no cambia y los tests existentes pasan sin tocarlos.
+6. Si es un **bug** que se puede reproducir con un test, antes del developer pedile al tester que lo reproduzca ("Reproducir un bug" en sus instrucciones) y pasale al developer el test que falla: el bug está corregido cuando pasa.
 
 Si alguno termina con **"Necesito aprobación"**, frená ese trabajo: no lo podés aprobar vos. Mandale al PM qué se pide, por qué y las alternativas, y esperá su respuesta.
 
