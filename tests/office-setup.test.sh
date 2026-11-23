@@ -30,8 +30,11 @@ expect "local: la configuración va a settings.local.json" '[ "$(jq -r .agent "$
 expect "local: con las reglas base y las extra" 'jq -e ".permissions.allow | index(\"Bash(git status)\") and index(\"Bash(pnpm test)\")" "$PROJ/.claude/settings.local.json" >/dev/null'
 expect "local: no crea settings.json" '[ ! -f "$PROJ/.claude/settings.json" ]'
 expect "local: no toca .gitignore" '[ "$(cat "$PROJ/.gitignore")" = "node_modules/" ]'
-expect "local: ignora con .git/info/exclude" 'ex | grep -qxF ".office/" && ex | grep -qxF ".claude/settings.local.json" && ex | grep -qxF ".claude/office-agents.sh"'
+expect "local: ignora con .git/info/exclude" 'ex | grep -qxF ".office/" && ex | grep -qxF ".claude/" && ex | grep -qxF ".mcp.json"'
 expect "local: git no ve ningún cambio" '[ -z "$(tracked_changes)" ]'
+mkdir -p "$PROJ/.claude/commands" && echo x >"$PROJ/.claude/commands/mio.md" && echo '{}' >"$PROJ/.mcp.json"
+expect "local: tampoco ve .mcp.json ni lo nuevo en .claude/" '[ -z "$(tracked_changes)" ]'
+rm -rf "$PROJ/.claude/commands" "$PROJ/.mcp.json"
 expect "local: los documentos van a git por defecto" '! ex | grep -qxF "docs/decisions/"'
 setup
 expect "local: correrlo otra vez no duplica el bloque" '[ "$(ex | grep -c "^# >>> dev-office: oficina$")" = 1 ] && [ "$(ex | grep -cxF ".office/")" = 1 ]'
@@ -81,6 +84,41 @@ expect "mover: saca las líneas de la oficina de .gitignore" '[ "$(cat "$PROJ/.g
 expect "mover: y las pone en .git/info/exclude" 'ex | grep -qxF ".office/"'
 expect "mover: dice cómo pasar los plugins a local" 'printf "%s" "$out" | grep -q "claude plugin install office@dev-office --scope local" && ! printf "%s" "$out" | grep -q "otro@x"'
 expect "mover: el diff queda para commitear" 'tracked_changes | grep -q ".claude/settings.json" && tracked_changes | grep -q ".claude/office-agents.json"'
+
+# --- Jira con una cuenta por proyecto (jira-account.sh) -----------------------------
+JIRA="$ROOT/plugins/office/skills/office-setup/jira-account.sh"
+FB="$WORK/fakebin"; mkdir -p "$FB"
+cat >"$FB/claude" <<'FAKE'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$FAKE_LOG"
+[ "${FAKE_ADD_FAIL:-}" = 1 ] && [ "$2" = add ] && exit 1
+exit 0
+FAKE
+cat >"$FB/curl" <<'FAKE'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$FAKE_LOG.curl"
+printf '%s' "${FAKE_HTTP:-200}"
+FAKE
+chmod +x "$FB/claude" "$FB/curl"
+export FAKE_LOG="$WORK/claude.log"
+jira() { rm -f "$FAKE_LOG" "$FAKE_LOG.curl"; out=$(cd "$PROJ" && PATH="$FB:$PATH" OFFICE_JIRA_EMAIL="$1" OFFICE_JIRA_TOKEN="$2" OFFICE_JIRA_SITE="$3" bash "$JIRA" 2>&1); code=$?; }
+fresh
+jira yo@trabajo.com 'tok-secreto-123' miempresa.atlassian.net
+B64=$(printf '%s' 'yo@trabajo.com:tok-secreto-123' | base64 | tr -d '\n')
+expect "jira: termina bien" '[ $code -eq 0 ]'
+expect "jira: saca la conexión anterior del proyecto" 'grep -qx "mcp remove atlassian -s local" "$FAKE_LOG"'
+expect "jira: registra atlassian solo para el proyecto, con el token en la cabecera" 'grep -qxF "mcp add --transport http --scope local --header Authorization: Basic $B64 atlassian https://mcp.atlassian.com/v2/mcp" "$FAKE_LOG"'
+expect "jira: comprueba el token contra el sitio" 'grep -q "https://miempresa.atlassian.net/rest/api/3/myself" "$FAKE_LOG.curl"'
+expect "jira: nunca muestra el token" '! printf "%s" "$out" | grep -q "tok-secreto-123" && ! printf "%s" "$out" | grep -qF "$B64"'
+expect "jira: dice qué anotar en las reglas" 'printf "%s" "$out" | grep -q "Sitio de Jira: miempresa.atlassian.net"'
+FAKE_HTTP=401 jira yo@trabajo.com malo https://miempresa.atlassian.net/
+expect "jira: si Jira rechaza el token, no registra nada" '[ $code -ne 0 ] && [ ! -f "$FAKE_LOG" ] && printf "%s" "$out" | grep -q "rechazó"'
+jira yo@personal.com 'otro' ''
+expect "jira: sin sitio, no comprueba y registra igual" '[ $code -eq 0 ] && [ ! -f "$FAKE_LOG.curl" ] && grep -q "mcp add" "$FAKE_LOG"'
+jira sin-arroba 'x' ''
+expect "jira: email inválido" '[ $code -ne 0 ] && [ ! -f "$FAKE_LOG" ]'
+FAKE_ADD_FAIL=1 jira yo@personal.com 'otro' ''
+expect "jira: si claude mcp add falla, lo dice sin mostrar el token" '[ $code -ne 0 ] && printf "%s" "$out" | grep -q "falló" && ! printf "%s" "$out" | grep -q "otro@\|b3Ry"'
 
 echo
 if [ "$FAILED" -eq 0 ]; then echo "Todas las pruebas pasan."; else echo "Hay pruebas que fallan."; fi

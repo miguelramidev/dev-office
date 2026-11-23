@@ -38,7 +38,7 @@ Corré `git status`. Si hay cambios sin commitear, frená: mostrale al CEO qué 
 
 Usá las herramientas del servidor MCP de Atlassian:
 
-1. `getAccessibleAtlassianResources` para obtener el `cloudId` del sitio (si hay varios, el que nombre el proyecto).
+1. `getAccessibleAtlassianResources` para obtener el `cloudId` del sitio. Si hay varios, el que nombran las reglas del proyecto (`Sitio de Jira: ...`); si no lo nombran, preguntale al CEO cuál y proponé anotarlo.
 2. `getJiraIssue` con ese `cloudId` y la clave del ticket. Necesitás: título, tipo, estado, etiquetas, responsable, descripción y **padre** (el campo `parent`, con su clave y su tipo).
 
 Si las herramientas de Atlassian no están disponibles, decíselo al CEO: tiene que conectar Jira con `/mcp` (servidor `atlassian`, opción de autenticar). Sin Jira no se puede saber el tipo ni la épica del ticket: frená. Si el ticket no existe, decilo y frená.
