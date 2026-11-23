@@ -14,10 +14,14 @@
 # API, investigaciones) van a git por defecto. Con --docs local quedan solo en tu computadora,
 # en las mismas carpetas, ignorados con .git/info/exclude. --docs git lo vuelve atrás.
 # --move-to-local pasa a lo local lo que una configuración compartida anterior dejó en git.
+# --remove hace lo contrario de todo esto: saca de los dos settings lo que puso la oficina (sus
+# permisos base, el modo de permisos, sus variables y el PM por defecto), sus bloques de
+# .git/info/exclude y sus líneas de .gitignore. Las reglas propias del proyecto quedan.
 #
 # Uso:
 #   bash setup.sh [--shared] [--docs git|local] [--move-to-local] [--mode acceptEdits|auto|default]
 #                 [--timezone Zona/Ciudad] [--protected "main dev epic/*"] [--allow "Regla"]...
+#   bash setup.sh --remove
 # Ejemplo:
 #   bash setup.sh --mode acceptEdits --timezone America/Bogota --allow "Bash(pnpm test)" --allow "Bash(pnpm test *)"
 
@@ -30,6 +34,7 @@ EXTRA_ALLOW=()
 SCOPE="local"
 DOCS=""
 MOVE=0
+REMOVE=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -37,6 +42,7 @@ while [ $# -gt 0 ]; do
     --local) SCOPE="local"; shift ;;
     --docs) DOCS="$2"; shift 2 ;;
     --move-to-local) MOVE=1; SCOPE="local"; shift ;;
+    --remove) REMOVE=1; shift ;;
     --mode) MODE="$2"; shift 2 ;;
     --timezone) TIMEZONE="$2"; shift 2 ;;
     --protected) PROTECTED="$2"; shift 2 ;;
@@ -80,15 +86,13 @@ fi
 
 # --- settings ------------------------------------------------------------------
 
-mkdir -p "$PROJECT_DIR/.claude"
+[ "$REMOVE" -eq 1 ] || mkdir -p "$PROJECT_DIR/.claude"
 for f in "$SHARED_SETTINGS" "$LOCAL_SETTINGS"; do
   if [ -f "$f" ] && ! jq empty "$f" 2>/dev/null; then
     echo "$f no es un JSON válido. Corregilo y volvé a ejecutar." >&2
     exit 1
   fi
 done
-[ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
-cp "$SETTINGS" "$SETTINGS.bak"
 
 # Comandos de solo lectura de git y de gh, los que usa start-ticket para crear la
 # rama de trabajo y la limpieza de la carpeta de QA.
@@ -141,6 +145,83 @@ DENY='[
   "Bash(terraform destroy *)", "Bash(pulumi destroy *)", "Bash(cdk destroy *)", "Bash(npx cdk destroy *)"
 ]'
 
+# Lo que la oficina genera mientras trabaja y tu configuración personal.
+WORK_FILES=(".qa/" ".office/" ".claude/office-activity.log" ".claude/settings.json.bak" ".claude/settings.local.json.bak" ".claude/office-agents.local.json")
+# En el modo local, toda la carpeta .claude/ que no esté ya en git (los settings, los scripts que
+# copia la oficina, las reglas locales) y .mcp.json: es configuración de cada persona. Lo que el
+# equipo ya subió a git sigue en git.
+LOCAL_FILES=(".claude/" ".mcp.json")
+# Los documentos que genera la oficina, si el proyecto los quiere locales.
+DOC_FILES=("docs/project-map.md" "docs/project-map/" "docs/decisions/" "docs/design/" "docs/api/" "docs/research/")
+
+# Saca de un settings lo que puso la oficina: sus reglas base, el modo de permisos, sus
+# variables y el PM por defecto. Las reglas propias del proyecto quedan.
+strip_office() {
+  local f="$1"
+  [ -f "$f" ] || return 0
+  cp "$f" "$f.bak"
+  jq --argjson allow "$ALLOW" --argjson ask "$ASK" --argjson deny "$DENY" '
+    def drop($l; $x): if $l == null then null else ($l - $x) end;
+    .permissions.allow = drop(.permissions.allow; $allow)
+    | .permissions.ask = drop(.permissions.ask; $ask)
+    | .permissions.deny = drop(.permissions.deny; $deny)
+    | del(.permissions.defaultMode)
+    | .permissions |= with_entries(select(.value != null and .value != []))
+    | if (.permissions | length) == 0 then del(.permissions) else . end
+    | if .env then .env |= with_entries(select(.key | test("^(OFFICE_|CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS$)") | not)) else . end
+    | if (.env // {}) == {} then del(.env) else . end
+    | if .agent == "office:pm" then del(.agent) else . end
+  ' "$f.bak" | tr -d '\r' > "$f"
+}
+
+# Escribe un bloque con marcas en un archivo de ignorados, reemplazando el anterior.
+# $1: archivo; $2: nombre del bloque; el resto: las líneas (sin líneas, solo borra el bloque).
+ignore_block() {
+  local file="$1" name="$2"; shift 2
+  local begin="# >>> dev-office: $name" end="# <<< dev-office: $name"
+  [ $# -eq 0 ] && [ ! -f "$file" ] && return 0
+  mkdir -p "$(dirname "$file")"
+  touch "$file"
+  awk -v b="$begin" -v e="$end" '$0 == b { skip = 1; next } $0 == e { skip = 0; next } !skip' "$file" > "$file.tmp"
+  if [ $# -gt 0 ]; then
+    if [ -s "$file.tmp" ] && [ "$(tail -c1 "$file.tmp")" != "" ]; then echo >> "$file.tmp"; fi
+    { echo "$begin"; printf '%s\n' "$@"; echo "$end"; } >> "$file.tmp"
+  fi
+  mv "$file.tmp" "$file"
+}
+
+# Saca de .gitignore las líneas de la oficina. Devuelve 0 si cambió algo.
+strip_gitignore() {
+  [ -f "$GITIGNORE" ] || return 1
+  local args=() l
+  for l in "${WORK_FILES[@]}"; do args+=(-e "$l"); done
+  grep -vxF "${args[@]}" "$GITIGNORE" > "$GITIGNORE.tmp" || true
+  if ! cmp -s "$GITIGNORE" "$GITIGNORE.tmp"; then mv "$GITIGNORE.tmp" "$GITIGNORE"; return 0; fi
+  rm -f "$GITIGNORE.tmp"; return 1
+}
+
+# --- Sacar la oficina del proyecto (--remove) ------------------------------------------
+
+if [ "$REMOVE" -eq 1 ]; then
+  echo "Saqué la configuración de la oficina:"
+  for f in "$LOCAL_SETTINGS" "$SHARED_SETTINGS"; do
+    [ -f "$f" ] || continue
+    strip_office "$f"
+    echo "  - ${f#"$PROJECT_DIR"/}: permisos base, modo de permisos, variables y el PM por defecto (copia: ${f#"$PROJECT_DIR"/}.bak)."
+  done
+  if [ -n "$EXCLUDE" ] && [ -f "$EXCLUDE" ] && grep -q '^# >>> dev-office: ' "$EXCLUDE"; then
+    ignore_block "$EXCLUDE" "oficina"
+    ignore_block "$EXCLUDE" "documentos locales"
+    echo "  - .git/info/exclude: los bloques de la oficina."
+  fi
+  strip_gitignore && echo "  - .gitignore: las líneas de la oficina."
+  [ -f "$SHARED_SETTINGS" ] && echo "  Las reglas propias del proyecto quedan. Si .claude/settings.json o .gitignore están en git, revisá el cambio y commitealo."
+  exit 0
+fi
+
+[ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
+cp "$SETTINGS" "$SETTINGS.bak"
+
 if [ ${#EXTRA_ALLOW[@]} -gt 0 ]; then
   EXTRA=$(printf '%s\n' "${EXTRA_ALLOW[@]}" | jq -R . | jq -s .)
 else
@@ -174,21 +255,8 @@ jq \
 
 MOVED=""
 if [ "$MOVE" -eq 1 ] && [ -f "$SHARED_SETTINGS" ]; then
-  cp "$SHARED_SETTINGS" "$SHARED_SETTINGS.bak"
-  # Del archivo del equipo salen solo las cosas de la oficina: sus reglas base, el modo de
-  # permisos, sus variables y el PM por defecto. Las reglas propias del proyecto quedan.
-  jq --argjson allow "$ALLOW" --argjson ask "$ASK" --argjson deny "$DENY" '
-    def drop($l; $x): if $l == null then null else ($l - $x) end;
-    .permissions.allow = drop(.permissions.allow; $allow)
-    | .permissions.ask = drop(.permissions.ask; $ask)
-    | .permissions.deny = drop(.permissions.deny; $deny)
-    | del(.permissions.defaultMode)
-    | .permissions |= with_entries(select(.value != null and .value != []))
-    | if (.permissions | length) == 0 then del(.permissions) else . end
-    | if .env then .env |= with_entries(select(.key | test("^(OFFICE_|CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS$)") | not)) else . end
-    | if (.env // {}) == {} then del(.env) else . end
-    | if .agent == "office:pm" then del(.agent) else . end
-  ' "$SHARED_SETTINGS.bak" | tr -d '\r' > "$SHARED_SETTINGS"
+  # Del archivo del equipo salen solo las cosas de la oficina; las reglas del proyecto quedan.
+  strip_office "$SHARED_SETTINGS"
   # Las variables de la oficina que tenía el equipo pasan a las tuyas, si no las tenías.
   jq -s '.[0] as $mine | .[1] as $team
     | $mine | .env = (($team.env // {} | with_entries(select(.key | test("^(OFFICE_|CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS$)")))) + (.env // {}))
@@ -202,37 +270,10 @@ if [ "$MOVE" -eq 1 ] && [ -f "$SHARED_SETTINGS" ]; then
     MOVED="$MOVED .claude/office-agents.json"
   fi
   # Las líneas de la oficina en .gitignore pasan a .git/info/exclude (más abajo).
-  if [ -f "$GITIGNORE" ]; then
-    grep -vxF -e ".qa/" -e ".office/" -e ".claude/office-activity.log" -e ".claude/settings.json.bak" -e ".claude/settings.local.json.bak" -e ".claude/office-agents.local.json" "$GITIGNORE" > "$GITIGNORE.tmp" || true
-    if ! cmp -s "$GITIGNORE" "$GITIGNORE.tmp"; then mv "$GITIGNORE.tmp" "$GITIGNORE"; MOVED="$MOVED .gitignore"; else rm -f "$GITIGNORE.tmp"; fi
-  fi
+  strip_gitignore && MOVED="$MOVED .gitignore"
 fi
 
 # --- Archivos que git ignora ------------------------------------------------------
-
-# Escribe un bloque con marcas en un archivo de ignorados, reemplazando el anterior.
-# $1: archivo; $2: nombre del bloque; el resto: las líneas (sin líneas, solo borra el bloque).
-ignore_block() {
-  local file="$1" name="$2"; shift 2
-  local begin="# >>> dev-office: $name" end="# <<< dev-office: $name"
-  mkdir -p "$(dirname "$file")"
-  touch "$file"
-  awk -v b="$begin" -v e="$end" '$0 == b { skip = 1; next } $0 == e { skip = 0; next } !skip' "$file" > "$file.tmp"
-  if [ $# -gt 0 ]; then
-    if [ -s "$file.tmp" ] && [ "$(tail -c1 "$file.tmp")" != "" ]; then echo >> "$file.tmp"; fi
-    { echo "$begin"; printf '%s\n' "$@"; echo "$end"; } >> "$file.tmp"
-  fi
-  mv "$file.tmp" "$file"
-}
-
-# Lo que la oficina genera mientras trabaja y tu configuración personal.
-WORK_FILES=(".qa/" ".office/" ".claude/office-activity.log" ".claude/settings.json.bak" ".claude/settings.local.json.bak" ".claude/office-agents.local.json")
-# En el modo local, toda la carpeta .claude/ que no esté ya en git (los settings, los scripts que
-# copia la oficina, las reglas locales) y .mcp.json: es configuración de cada persona. Lo que el
-# equipo ya subió a git sigue en git.
-LOCAL_FILES=(".claude/" ".mcp.json")
-# Los documentos que genera la oficina, si el proyecto los quiere locales.
-DOC_FILES=("docs/project-map.md" "docs/project-map/" "docs/decisions/" "docs/design/" "docs/api/" "docs/research/")
 
 IGNORED_IN=""
 if [ "$SCOPE" = "local" ]; then

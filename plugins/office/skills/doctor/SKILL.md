@@ -44,7 +44,7 @@ No cambies nada sin preguntarle. Cuando termine, corré el diagnóstico de nuevo
 
 ## Desde la terminal
 
-El CEO también lo puede correr sin Claude Code, desde la carpeta del proyecto (en Windows, con Git Bash):
+El CEO también lo puede correr sin Claude Code: el instalador (`dev-office.sh`, en la raíz del repositorio de dev-office) tiene la opción **Diagnóstico**. O directo, desde la carpeta del proyecto (en Windows, con Git Bash):
 
 ```bash
 bash "$(find ~/.claude/plugins/cache -path '*office*/skills/doctor/doctor.sh' | sort | tail -n1)"

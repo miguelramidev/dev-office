@@ -22,6 +22,33 @@ La oficina funciona en **Linux, macOS y Windows**. En Windows podés usarla de f
 
 ## 2. Instalar los plugins
 
+### Con el instalador
+
+En la carpeta del proyecto, corré el instalador. Revisa las herramientas (te ofrece instalar las que faltan), agrega el marketplace, te pregunta lo necesario, instala, configura el proyecto y al final corre el diagnóstico (`/office:doctor`):
+
+```bash
+# macOS, Linux o Git Bash
+bash <(curl -fsSL https://raw.githubusercontent.com/miguelramidev/dev-office/main/dev-office.sh)
+```
+
+```powershell
+# Windows (PowerShell): busca el bash de Git for Windows y corre el mismo script
+irm https://raw.githubusercontent.com/miguelramidev/dev-office/main/dev-office.ps1 | iex
+```
+
+Empieza con un menú:
+
+| Opción | Qué hace |
+| --- | --- |
+| **Instalar** | Te pregunta para quién (solo vos, por defecto, o todo el equipo), los departamentos (te sugiere según lo que tiene el proyecto), las ramas protegidas, si los documentos van a git y si conectás Jira (con la etiqueta de tu cuenta y el sitio). Si la oficina ya estaba, actualiza lo instalado y suma los departamentos nuevos. |
+| **Desinstalar** | Saca de este proyecto los plugins (primero los departamentos, después `office`), la configuración de la oficina (deja las reglas propias del proyecto), sus archivos de trabajo, los scripts que copió y Jira. Pregunta antes de borrar los documentos (por defecto quedan) y las reglas que anotó la oficina. Si después git ve archivos que antes ignoraba la oficina, te ofrece ignorarlos en `.git/info/exclude`, así no aparece nada en un repositorio donde no se puede ver la oficina. Si ya no queda la oficina en ningún proyecto, te ofrece borrar el actualizador del Escritorio, Telegram y el marketplace. |
+| **Reinstalar desde 0** | Desinstala y vuelve a instalar, proponiendo lo que tenías (alcance, departamentos, ramas, documentos). Los documentos y la conexión con Jira quedan. |
+| **Diagnóstico** | Corre `/office:doctor` desde la terminal. |
+
+Para saltear el menú o alguna pregunta: `bash dev-office.sh install --scope local --departments "backend frontend" --jira trabajo`. `--yes` acepta lo de por defecto en todo; la lista completa, con `--help`.
+
+### A mano
+
 Desde la terminal, en la carpeta del proyecto:
 
 ```bash
@@ -209,7 +236,11 @@ claude plugin update office@dev-office --scope local
 
 En los dos casos, reiniciá Claude Code en los proyectos abiertos o usá `/reload-plugins`, y corré `/office:doctor` para ver si la versión nueva pide algo (por ejemplo, una versión más nueva de Antigravity). Revisá el [registro de cambios](../CHANGELOG.md) antes de actualizar una versión mayor.
 
-## 7. Desactivar un departamento en un proyecto
+## 7. Desinstalar
+
+Con el instalador (sección 2), opción **Desinstalar**: saca la oficina de este proyecto y pregunta antes de borrar los documentos. Para volver a empezar, **Reinstalar desde 0**.
+
+### Desactivar un departamento en un proyecto
 
 En tus settings del proyecto (`.claude/settings.local.json`; en el modo compartido, `.claude/settings.json`):
 
