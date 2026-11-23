@@ -127,7 +127,9 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
 
 12. **Mapa del proyecto.** Explicale al CEO que, con un mapa corto de dónde está cada cosa y un índice de archivos que se arma sin gastar tokens, los agentes van directo a los archivos en vez de buscarlos, y que eso es lo que más ahorra a medida que el proyecto crece. Sirve igual si el proyecto recién empieza o si ya es grande. El índice ya está activo: se arma solo al empezar cada sesión. El mapa lo creás en la primera tarea; si el CEO prefiere tenerlo ya, seguí ahora la skill `office:project-map` ("Crear el mapa").
 
-13. **Cerrá con los próximos pasos:**
+13. **Diagnóstico.** Corré el diagnóstico de la oficina (skill `office:doctor`, el script `doctor.sh` de su carpeta) y mostrale al CEO lo que quedó pendiente: lo que tiene que hacer él (instalar `gh`, iniciar sesión en Jira, reinstalar un plugin con otro alcance) sale con el comando listo para copiar.
+
+14. **Cerrá con los próximos pasos:**
    - En el compartido, o si pasó a local con `--move-to-local`, revisar los cambios y commitearlos. En el local, no hay nada que commitear.
    - Instalar las skills de la comunidad que haya elegido.
    - Si conectó Jira, autenticarse con `/mcp` y probar con `/office:start-ticket <TICKET>`.
@@ -137,3 +139,4 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
    - Para actualizar la oficina con un doble click en todos sus proyectos, `/office:update`.
    - Borrar la copia de los settings (`.bak`) cuando esté conforme.
    - Reiniciar Claude Code para que tome la configuración nueva.
+   - Cuando algo de la oficina no ande, o después de actualizarla, `/office:doctor`.

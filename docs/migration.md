@@ -82,7 +82,7 @@ En el modo local, git ignora `.mcp.json` y todo lo que haya en `.claude/` que no
    git check-ignore -v .office .claude/settings.local.json
    ```
 
-   Los plugins de la oficina tienen que decir `local`, `git status` no tiene que mostrar nada de la oficina y `check-ignore` tiene que nombrar `.git/info/exclude`. Al abrir `claude`, el encabezado dice `@office:pm`.
+   Los plugins de la oficina tienen que decir `local`, `git status` no tiene que mostrar nada de la oficina y `check-ignore` tiene que nombrar `.git/info/exclude`. Al abrir `claude`, el encabezado dice `@office:pm`. `/office:doctor` revisa todo esto junto, y también Jira.
 
 ## 2. Un proyecto donde no se puede ver nada de la oficina
 

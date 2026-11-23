@@ -51,6 +51,28 @@ claude plugin install dept-docs@dev-office --scope local
    - Hace que git ignore las carpetas de trabajo de la oficina (`.qa/`, `.office/` y el registro de actividad).
    - Revisa que exista `CLAUDE.md` y te avisa si falta.
 3. **En el modo compartido, revisá y commiteá** los cambios de `.claude/settings.json` y `.gitignore`. En el local no hay nada que commitear.
+4. **Comprobá la instalación** con `/office:doctor` (`office-setup` lo corre al final). Es como `flutter doctor`: revisa las herramientas (git, jq, gh), los plugins y sus versiones, la configuración del proyecto, Codex y Gemini si los usás, Jira y lo opcional, y para cada cosa que falta te dice cómo arreglarla:
+
+   ```text
+   [✓] Herramientas
+       ✓ Claude Code 2.1.330
+       ✓ git 2.47.1
+       ✓ jq 1.7.1
+       ✓ gh con sesión
+
+   [!] Configuración del proyecto
+       ✓ CLAUDE.md
+       ✓ Modo local: la configuración está solo en tu computadora (.claude/settings.local.json)
+       ✓ El PM arranca solo al abrir claude
+       ! No hay comandos de tests, lint ni typecheck permitidos: el developer y el tester te van a pedir permiso para cada uno.
+         → /office:office-setup (paso de comandos de verificación), o sumá reglas como "Bash(pnpm test *)" a los permisos
+
+   [-] Jira (Atlassian)
+       - No conectado (opcional).
+         → /office:office-setup (paso de Jira)
+   ```
+
+   `[✓]` listo, `[!]` aviso, `[✗]` falta algo que la oficina necesita y `[-]` opcional. El PM te ofrece arreglar lo que puede hacer él, y lo que se corre en tu terminal te lo da listo para copiar.
 
 **Si el proyecto ya tenía la oficina en git** y querés pasarla a local (paso a paso completo en [Migrar la oficina](migration.md)), `office-setup` lo hace por vos: saca del repositorio lo de la oficina (deja las reglas propias del proyecto), lo pasa a tus archivos locales y te dice cómo reinstalar los plugins con `--scope local`. Ese cambio sí se commitea una vez: conviene acordarlo con el equipo.
 
@@ -185,7 +207,7 @@ claude plugin update office@dev-office --scope local
 
 (y lo mismo con cada departamento instalado; con `--scope project` si los instalaste para el equipo).
 
-En los dos casos, reiniciá Claude Code en los proyectos abiertos o usá `/reload-plugins`. Revisá el [registro de cambios](../CHANGELOG.md) antes de actualizar una versión mayor.
+En los dos casos, reiniciá Claude Code en los proyectos abiertos o usá `/reload-plugins`, y corré `/office:doctor` para ver si la versión nueva pide algo (por ejemplo, una versión más nueva de Antigravity). Revisá el [registro de cambios](../CHANGELOG.md) antes de actualizar una versión mayor.
 
 ## 7. Desactivar un departamento en un proyecto
 
@@ -200,6 +222,8 @@ En tus settings del proyecto (`.claude/settings.local.json`; en el modo comparti
 En el modo compartido, para desactivarlo solo para vos, poné lo mismo en `.claude/settings.local.json`. `office` no se puede desactivar mientras haya departamentos activos, porque dependen de él.
 
 ## 8. Problemas comunes
+
+Antes de mirar la tabla, corré `/office:doctor`: encuentra la mayoría de estos problemas y te dice cómo arreglarlos.
 
 | Síntoma                                                                                | Causa                                                                  | Solución                                                                         |
 | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------- |

@@ -37,6 +37,6 @@ Los archivos están en la misma carpeta que este archivo:
    - Actualiza todos los proyectos donde tenga la oficina, no solo este.
    - Al terminar, hay que reiniciar Claude Code en los proyectos abiertos (o usar `/reload-plugins`).
 
-4. **Si quiere actualizar ahora**, corré `bash .claude/update-office.sh --yes` y mostrale el resumen de versiones. Avisale que la sesión actual sigue con la versión vieja hasta que reinicie.
+4. **Si quiere actualizar ahora**, corré `bash .claude/update-office.sh --yes` y mostrale el resumen de versiones. Avisale que la sesión actual sigue con la versión vieja hasta que reinicie. Después de reiniciar, que corra `/office:doctor` para ver si la versión nueva pide algo.
 
 Si el proyecto lo comparte con el equipo, puede hacer commit de los tres archivos de `.claude/` para que todos tengan el botón.
