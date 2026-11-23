@@ -8,6 +8,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.65.0] - 2026-11-23
+
+### Agregado
+
+- **Bugs: la causa primero y un test que falla** (`office` 0.61.0, `dept-backend` 0.6.0, `dept-frontend` 0.9.0, `dept-database` 0.5.0, `dept-scraper` 0.5.0, `dept-devops` 0.6.0). Adaptado de las skills `systematic-debugging` y `test-driven-development` de [Superpowers](https://github.com/obra/superpowers) (MIT).
+  - **El PM (y el líder, en el modo equipos)** encarga primero al tester que reproduzca el bug con un test que falla, si se puede. El developer recibe el test, el comando y la falla como reproducción, y el bug está corregido cuando el test pasa. Se salta en bugs triviales o que no se pueden reproducir con un test.
+  - **Los testers** tienen una sección "Reproducir un bug": el test más chico que lo muestra, que falle por el bug y no por un error del test, sin tocar el código de la aplicación.
+  - **Los developers** tienen una sección "Cuando es un bug": leer el error entero, reproducirlo, buscar dónde nace y no dónde explota, una hipótesis por vez y frenar después de dos intentos en vez de seguir parchando. Su reporte suma la causa.
+- **"Simple no es corto"** en "Lo mínimo que resuelve" de los developers: sin ternarios anidados, claridad antes que menos líneas y sin borrar abstracciones que ordenan el código. Adaptado del agente [code-simplifier](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/code-simplifier) (Apache 2.0), de Anthropic.
+
 ## [0.64.0] - 2026-11-22
 
 ### Cambiado

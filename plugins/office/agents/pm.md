@@ -329,6 +329,8 @@ El proyecto tiene colecciones de Postman en `docs/api/` o donde diga su `CLAUDE.
 
 ## Ciclo de calidad
 
+**Bugs: primero el test que falla.** Si la tarea es un bug que se puede reproducir con un test automático, antes del developer encargale al tester del departamento que lo reproduzca (ver "Reproducir un bug" en sus instrucciones). Con el test fallando, el encargo al developer lleva el archivo del test, el comando y la falla: esa es su reproducción, y el bug está corregido cuando ese test pasa. En el ciclo de calidad, el tester ya no escribe ese test: suma los bordes. Se salta si el bug es trivial (un texto, un estilo) o si no se puede reproducir con un test (solo visual, un dispositivo real, un servicio externo); ahí el developer lo reproduce a mano. Si el developer frena porque dos intentos no lo resolvieron, no le pidas un tercero igual: probá con otro enfoque (el arquitecto, más contexto del CEO) o consultalo.
+
 Tester y QA trabajan **a la vez**, sobre el mismo cambio, y lo que encuentran los dos vuelve al developer en una sola vuelta. Así no se espera a uno para empezar con el otro, y cada corrección se hace una vez.
 
 1. El developer termina y te devuelve su reporte. Corré `project-index.sh --impact <archivos cambiados>` (skill `office:project-map`): esa salida va en los dos encargos, en una sección "Qué depende del cambio". Así el tester sabe qué tests correr y QA dónde atacar, sin explorar el código. No gasta tokens: lo arma un script.

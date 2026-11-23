@@ -67,6 +67,17 @@ Para que la verificación sea rápida y no llene tu contexto:
 - **En las vueltas siguientes** (después de una corrección), solo los tests relacionados con la corrección, el typecheck y el lint de esos archivos.
 - **Usá la salida corta del runner** si la tiene (`--reporter=dot`, `--silent`, `-q`): las fallas se ven igual. En el reporte copiá solo las fallas y el resumen (cuántos pasaron y cuántos fallaron), nunca la salida entera.
 
+## Reproducir un bug
+
+Cuando el PM te pide reproducir un bug **antes** de que el developer lo corrija:
+
+1. **Escribí el test más chico que lo muestra,** probando el comportamiento que ve quien usa el código (lo que devuelve, lo que muestra, lo que guarda), no cómo está hecho por dentro.
+2. **Corrélo: tiene que fallar, y por el bug.** Leé la falla: si falla por un import, un nombre mal escrito o un dato de prueba roto, no es el bug; arreglá el test hasta que falle por el motivo del ticket.
+3. **No toques el código de la aplicación,** ni para probar una corrección.
+4. **Reportá:** el archivo del test, el comando para correrlo y la falla (solo las líneas que la muestran). Ese test es la reproducción que recibe el developer, y el bug está corregido cuando pasa.
+
+Si no se puede reproducir con un test (es solo visual, necesita un dispositivo real o un servicio externo), decilo y describí los pasos para reproducirlo a mano.
+
 ## Cuando necesitás una aprobación
 
 Si para validar algo necesitarías una acción que requiere aprobación (credenciales reales, generar un plan contra la nube, instalar una herramienta, disparar un workflow), no la hagas. Terminá tu reporte con:
