@@ -3,7 +3,9 @@
 # .office/observer/index.html (la oficina en pixel art).
 #
 # Escucha SessionStart, UserPromptSubmit, PreToolUse, PostToolUse y PostToolUseFailure (de
-# Bash: cuánto tardó cada comando, y el PR que abre gh), SubagentStart, SubagentStop,
+# Bash: cuánto tardó cada comando, y el PR que abre gh), PermissionRequest (de Bash: qué
+# comandos esperaron la aprobación del CEO, para no contar esa espera como si fuera el
+# comando), SubagentStart, SubagentStop,
 # Notification y Stop, y en el modo equipos TeammateIdle, TaskCreated y TaskCompleted.
 # Cada evento es una línea "OFFICE_EVENT({...});" en .office/observer/events.js, que la
 # página lee sin servidor. Los tokens salen de las transcripciones que Claude Code ya
@@ -34,6 +36,11 @@ NOW=$(date +%s)
 AGENT_ID=$(json_get '.agent_id // empty')
 
 emit() { [ -n "$1" ] && printf 'OFFICE_EVENT(%s);\n' "$1" >>"$EVENTS"; }
+
+# Huella de un comando de Bash, igual en PreToolUse y en PermissionRequest.
+cmd_print() {
+  json_get '.tool_input.command // empty' | cksum | cut -d' ' -f1
+}
 
 # Tope del texto completo que se guarda por evento (encargos, respuestas y mensajes).
 CLIP='def clip: tostring | if length > 4000 then .[0:4000] + "\n[…]" else . end;'
@@ -98,10 +105,11 @@ case "$EVENT" in
 
   PreToolUse)
     TOOL=$(json_get '.tool_name // empty')
-    # Cuándo arrancó cada comando, para saber cuánto tardó (PostToolUse).
+    # Cuándo arrancó cada comando, para saber cuánto tardó (PostToolUse), y una huella
+    # del comando, para reconocerlo si pide aprobación (PermissionRequest no trae el id).
     if [ "$TOOL" = "Bash" ]; then
       TID=$(json_get '.tool_use_id // empty' | tr -cd 'A-Za-z0-9_-')
-      [ -n "$TID" ] && mkdir -p "$DIR/cmd" && printf '%s\n' "$NOW" >"$DIR/cmd/$TID"
+      [ -n "$TID" ] && mkdir -p "$DIR/cmd" && printf '%s\n%s\n' "$NOW" "$(cmd_print)" >"$DIR/cmd/$TID"
     fi
     if [ "$TOOL" = "Agent" ] || [ "$TOOL" = "Task" ]; then
       # Alguien encarga trabajo: el PM, o en el modo equipos un líder de departamento
@@ -144,14 +152,34 @@ case "$EVENT" in
     fi
     ;;
 
+  PermissionRequest)
+    # Un comando pidió aprobación: su tiempo incluye la espera del CEO. Se marca el
+    # comando pendiente con la misma huella (el más reciente que no esté marcado).
+    [ "$(json_get '.tool_name // empty')" = "Bash" ] && [ -d "$DIR/cmd" ] || exit 0
+    FP=$(cmd_print)
+    BEST="" BEST_T=0
+    for f in "$DIR/cmd"/*; do
+      [ -f "$f" ] || continue
+      [ "$(sed -n 2p "$f" | tr -d '\r')" = "$FP" ] || continue
+      [ "$(sed -n 3p "$f" | tr -d '\r')" = "asked" ] && continue
+      T=$(sed -n 1p "$f" | tr -cd '0-9')
+      [ -n "$T" ] && [ "$T" -ge "$BEST_T" ] && BEST="$f" BEST_T="$T"
+    done
+    [ -n "$BEST" ] && printf 'asked\n' >>"$BEST"
+    ;;
+
   PostToolUse | PostToolUseFailure)
     # Cuánto tardó el comando. Solo se anotan los de 2 segundos o más: los que pesan.
+    # waited: el comando esperó la aprobación del CEO, así que su tiempo incluye esa espera.
     TID=$(json_get '.tool_use_id // empty' | tr -cd 'A-Za-z0-9_-')
     if [ -n "$TID" ] && [ -f "$DIR/cmd/$TID" ]; then
-      T0=$(tr -cd '0-9' <"$DIR/cmd/$TID"); rm -f "$DIR/cmd/$TID"
+      T0=$(sed -n 1p "$DIR/cmd/$TID" | tr -cd '0-9')
+      WAITED=false
+      [ "$(sed -n 3p "$DIR/cmd/$TID" | tr -d '\r')" = "asked" ] && WAITED=true
+      rm -f "$DIR/cmd/$TID"
       if [ -n "$T0" ] && [ $((NOW - T0)) -ge 2 ]; then
-        emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" --argjson d "$((NOW - T0))" --arg ev "$EVENT" '
-          { type: "cmd", t: $t, agent: (.agent_id // null), agent_type: (.agent_type // null), dur: $d,
+        emit "$(printf '%s' "$INPUT" | jq -c --argjson t "$NOW" --argjson d "$((NOW - T0))" --arg ev "$EVENT" --argjson w "$WAITED" '
+          { type: "cmd", t: $t, agent: (.agent_id // null), agent_type: (.agent_type // null), dur: $d, waited: $w,
             cmd: ((.tool_input.command // "") | tostring | gsub("[\\r\\n]+"; " ") | .[0:160]),
             failed: ($ev == "PostToolUseFailure"),
             interrupted: ((.tool_response | if type == "object" then (.interrupted // false) else false end) == true) }' | tr -d '\r')"
