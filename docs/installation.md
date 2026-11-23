@@ -52,7 +52,7 @@ claude plugin install dept-docs@dev-office --scope local
    - Revisa que exista `CLAUDE.md` y te avisa si falta.
 3. **En el modo compartido, revisá y commiteá** los cambios de `.claude/settings.json` y `.gitignore`. En el local no hay nada que commitear.
 
-**Si el proyecto ya tenía la oficina en git** y querés pasarla a local, `office-setup` lo hace por vos: saca del repositorio lo de la oficina (deja las reglas propias del proyecto), lo pasa a tus archivos locales y te dice cómo reinstalar los plugins con `--scope local`. Ese cambio sí se commitea una vez: conviene acordarlo con el equipo.
+**Si el proyecto ya tenía la oficina en git** y querés pasarla a local (paso a paso completo en [Migrar la oficina](migration.md)), `office-setup` lo hace por vos: saca del repositorio lo de la oficina (deja las reglas propias del proyecto), lo pasa a tus archivos locales y te dice cómo reinstalar los plugins con `--scope local`. Ese cambio sí se commitea una vez: conviene acordarlo con el equipo.
 
 Los permisos van en los settings del proyecto (los tuyos o los del equipo) porque Claude Code no permite que un plugin los defina.
 
@@ -78,19 +78,28 @@ El servidor tiene que llamarse `atlassian`, porque el PM tiene acceso a las herr
 
 #### Dos cuentas de Atlassian (trabajo y personal)
 
-Con el inicio de sesión de `/mcp`, Claude Code guarda **una sola sesión de Atlassian para toda la computadora**: si conectás la cuenta personal en un proyecto, el del trabajo pasa a usarla también. Para que cada proyecto use su cuenta, conectalo con un **token de API** de esa cuenta, que queda guardado solo para ese proyecto:
+El paso a paso completo, con ejemplos y problemas comunes, está en [Migrar la oficina](migration.md#3-una-cuenta-de-atlassian-por-proyecto).
 
-1. **Creá un token con alcances** en [id.atlassian.com](https://id.atlassian.com/manage-profile/security/api-tokens), con la cuenta del proyecto. La organización tiene que tener habilitada la autenticación con token para el servidor MCP de Atlassian: en la del trabajo se lo pedís al administrador; en tu cuenta personal, el administrador sos vos.
-2. **En tu terminal** (Git Bash en Windows), en la carpeta del proyecto, corré el script de `office-setup` (el PM te da la ruta completa):
+Claude Code guarda **una sesión de Atlassian por dirección del servidor**, para toda la computadora. Con la dirección de siempre, si te logueás con la cuenta personal en un proyecto, el del trabajo pasa a usarla también. La salida es que cada cuenta use su propia dirección, agregándole `?cuenta=<etiqueta>`, sin cambiar el nombre del servidor (tiene que seguir siendo `atlassian`):
+
+1. **Si ya tenías Atlassian conectado,** fijate dónde con `claude mcp get atlassian` y sacalo: `claude mcp remove atlassian -s user` (o `-s local`), o la entrada `atlassian` de `.mcp.json`.
+2. **En cada proyecto,** desde su carpeta, conectalo con la etiqueta de su cuenta:
 
    ```bash
-   bash <carpeta de la skill office-setup>/jira-account.sh
+   # proyecto del trabajo
+   claude mcp add --transport http --scope local atlassian "https://mcp.atlassian.com/v2/mcp?cuenta=trabajo"
+   # proyecto personal
+   claude mcp add --transport http --scope local atlassian "https://mcp.atlassian.com/v2/mcp?cuenta=personal"
    ```
 
-   Te pide el email, el token (no se muestra al escribirlo) y el sitio (`miempresa.atlassian.net`). Comprueba el token contra Jira y registra el servidor `atlassian` solo para este proyecto (`claude mcp add --scope local`, con el token en la cabecera). Queda en `~/.claude.json` de tu usuario, no en el repositorio.
-3. **Reiniciá Claude Code.** No hace falta `/mcp`.
+3. **Logueate en cada uno:** abrí `claude`, corré `/mcp` → `atlassian` → autenticar, y entrá en el navegador con la cuenta que corresponde. Si el navegador ya tiene abierta la otra cuenta, cerrá esa sesión o usá una ventana privada.
+4. **Comprobalo:** preguntale al PM "¿con qué cuenta de Atlassian estás conectado?" en cada proyecto.
 
-Repetilo en cada proyecto con su cuenta. Anotá el sitio en las reglas del proyecto (`Sitio de Jira: miempresa.atlassian.net`), así el PM usa ese aunque tu cuenta vea varios. Con token, algunas herramientas de Atlassian no están disponibles (las que piden alcances que un token no puede tener); las de Jira y Confluence sí.
+**La etiqueta es de la cuenta, no del proyecto.** Con dos proyectos personales y uno del trabajo, los dos personales usan `?cuenta=personal` y comparten el login (te logueás una vez), y el del trabajo usa `?cuenta=trabajo`. Con dos cuentas de trabajo distintas, cada una lleva la suya (`?cuenta=empresa-a`, `?cuenta=empresa-b`). Si te logueás con otra cuenta en un proyecto, cambia en todos los que usan esa etiqueta.
+
+Anotá el sitio en las reglas de cada proyecto (`Sitio de Jira: miempresa.atlassian.net`), así el PM usa ese aunque tu cuenta vea varios.
+
+**Sin navegador, con token.** Si el login por navegador no te sirve, cada proyecto se puede conectar con un token de API de su cuenta: creá el token en [id.atlassian.com](https://id.atlassian.com/manage-profile/security/api-tokens) y corré en la carpeta del proyecto `bash <carpeta de la skill office-setup>/jira-account.sh` (te pide el email, el token sin mostrarlo y el sitio, y lo registra solo para ese proyecto). La organización tiene que tener habilitada la autenticación con token, y con token faltan algunas herramientas de Atlassian (Jira y Confluence están).
 
 En el modo local, git ignora `.mcp.json` y lo que no esté en git dentro de `.claude/`: son configuración de cada persona.
 
@@ -199,7 +208,7 @@ En el modo compartido, para desactivarlo solo para vos, poné lo mismo en `.clau
 | Pide permiso para escribir en `.claude/` o `.git/`                                     | Son rutas protegidas de Claude Code                                    | Es lo esperado: aprobalo solo si corresponde                                     |
 | "no se edita el código en la rama protegida"                                         | Estás en una rama protegida (por ejemplo `dev`)                         | Pedile al PM que trabaje en un ticket o creá una rama con `git switch -c`         |
 | El PM no puede traer el ticket de Jira                                                 | Jira no está conectado o no iniciaste sesión                           | `/mcp`, servidor `atlassian`, autenticar                                         |
-| Un proyecto usa la cuenta de Atlassian de otro                                          | La sesión de `/mcp` es una sola para toda la computadora                | Conectá cada proyecto con su token: [Dos cuentas de Atlassian](#dos-cuentas-de-atlassian-trabajo-y-personal) |
+| Un proyecto usa la cuenta de Atlassian de otro                                          | Los dos usan la misma dirección del servidor, y la sesión es una por dirección | Una etiqueta por cuenta (`?cuenta=...`): [Dos cuentas de Atlassian](#dos-cuentas-de-atlassian-trabajo-y-personal) |
 | `open-pr` o `review-fixes` dicen que falta `gh`                                         | `gh` no está instalado o no tiene sesión                               | Instalarlo según tu sistema (sección 1) y `gh auth login`                        |
 | "falta 'jq'" y se bloquea todo                                                         | `jq` no está instalado o la terminal no lo encuentra                   | Instalarlo según tu sistema (sección 1) y reiniciar la terminal y Claude Code    |
 | Un hook falla con `command not found` (código 127)                                     | Finales de línea de Windows (CRLF) en el script del plugin            | Reinstalar el plugin; si persiste, revisar que git no tenga `core.autocrlf` forzando CRLF en `.sh` |

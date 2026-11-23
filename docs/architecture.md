@@ -218,7 +218,7 @@ PM → developer ─┬─→ tester ─┐
 ## Ramas y tickets
 
 - **Ramas protegidas.** Cada proyecto define en `OFFICE_PROTECTED_BRANCHES` (en el `env` de los settings: `.claude/settings.local.json` en el modo local, `.claude/settings.json` en el compartido) las ramas donde nunca se trabaja directamente, con nombres o patrones, por ejemplo `main dev epic/*`. Si no la define, se protegen `main` y `master`. El hook `branch-guard.sh` bloquea editar archivos del proyecto, commitear o mergear sobre esas ramas, y hacer push hacia ellas desde cualquier rama.
-- **Tickets de Jira.** La skill `start-ticket` trae el ticket con el servidor MCP de Atlassian (con el nombre `atlassian`: en el modo local se conecta con `claude mcp add --scope local`, y en el compartido va en `.mcp.json`; con dos cuentas de Atlassian, cada proyecto se conecta con un token de API de su cuenta usando `jira-account.sh`, porque la sesión de `/mcp` es una sola para toda la computadora) y decide todo a partir de él. Con la rama lista, pasa el ticket a "en curso" sin preguntar. El PM la usa cuando el CEO nombra un ticket.
+- **Tickets de Jira.** La skill `start-ticket` trae el ticket con el servidor MCP de Atlassian (con el nombre `atlassian`: en el modo local se conecta con `claude mcp add --scope local`, y en el compartido va en `.mcp.json`; con dos cuentas de Atlassian, cada cuenta usa su propia dirección del servidor, `https://mcp.atlassian.com/v2/mcp?cuenta=<etiqueta>`, porque Claude Code guarda una sesión por dirección; sin navegador, `jira-account.sh` lo conecta con un token de API) y decide todo a partir de él. Con la rama lista, pasa el ticket a "en curso" sin preguntar. El PM la usa cuando el CEO nombra un ticket.
 
   | Lo que dice el ticket | Decide |
   | --- | --- |

@@ -66,12 +66,20 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
 
 8. **Jira (si el equipo lo usa).** Preguntale al CEO si gestionan las tareas en Jira. Si dice que sí, preguntale **si usa más de una cuenta de Atlassian** en su computadora (por ejemplo, la del trabajo y una personal, en proyectos distintos):
    - **Una sola cuenta:** en el modo local, dale el comando para conectarlo solo en este proyecto (lo corre en su terminal, en la carpeta del proyecto): `claude mcp add --transport http --scope local atlassian https://mcp.atlassian.com/v2/mcp`, y después inicia sesión con `/mcp`. Claude Code guarda esa sesión para toda la computadora.
-   - **Más de una cuenta:** con el inicio de sesión normal, la última cuenta que conecta pisa a la otra en todos los proyectos. Por eso, cada proyecto se conecta con un **token de API** de su cuenta, que queda guardado solo para ese proyecto. Pasale al CEO estos pasos, que hace él (el token nunca pasa por el chat):
+   - **Más de una cuenta** (por ejemplo, trabajo y personal): Claude Code guarda una sesión por dirección del servidor, así que cada cuenta se conecta con su propia dirección, agregándole `?cuenta=<etiqueta>`. Preguntale qué etiqueta usa para la cuenta de este proyecto (por ejemplo `trabajo`, `personal` o el nombre de la empresa) y dale el comando:
+
+     ```bash
+     claude mcp add --transport http --scope local atlassian "https://mcp.atlassian.com/v2/mcp?cuenta=<etiqueta>"
+     ```
+
+     Después, `/mcp` → `atlassian` → autenticar, entrando en el navegador con la cuenta de esa etiqueta (si el navegador tiene abierta otra cuenta de Atlassian, que cierre esa sesión o use una ventana privada). La etiqueta es **de la cuenta, no del proyecto**: todos los proyectos con la misma cuenta usan la misma etiqueta y comparten el login (se loguea una vez), y cada cuenta distinta lleva la suya. Si después se loguea con otra cuenta en un proyecto, cambia en todos los que usan esa etiqueta. Para comprobarlo, pedile que te pregunte "¿con qué cuenta de Atlassian estás conectado?" (`atlassianUserInfo`).
+   - **Si el login por navegador no le sirve** (por ejemplo, en una máquina sin navegador), cada proyecto se puede conectar con un **token de API** de su cuenta, que queda guardado solo para ese proyecto. Pasale al CEO estos pasos, que hace él (el token nunca pasa por el chat):
      1. Crear un token con alcances en https://id.atlassian.com/manage-profile/security/api-tokens, con la cuenta de este proyecto. La organización tiene que tener habilitada la autenticación con token para el servidor MCP de Atlassian; si da error, se lo pide al administrador (en su cuenta personal, el administrador es él).
      2. En su terminal (Git Bash en Windows), en la carpeta del proyecto: `bash "<carpeta de esta skill>/jira-account.sh"` con la ruta completa. Le pide el email, el token (no se muestra) y el sitio (`miempresa.atlassian.net`), comprueba el token y registra el servidor `atlassian` solo para este proyecto.
      3. Reiniciar Claude Code. No hace falta `/mcp`.
 
-     Repite lo mismo en cada proyecto con la cuenta que corresponda. Con token, algunas herramientas de Atlassian no están (las que piden alcances que un token no puede tener); Jira y Confluence funcionan.
+     Con token, algunas herramientas de Atlassian no están (las que piden alcances que un token no puede tener); Jira y Confluence funcionan.
+   - **Antes de conectar,** si `claude mcp get atlassian` muestra uno con alcance user o en `.mcp.json`, que lo saque (`claude mcp remove atlassian -s user`, o la entrada del archivo): si no, aparece en todos los proyectos o pisa al local.
    - **Anotá el sitio** en las reglas del proyecto (`Sitio de Jira: miempresa.atlassian.net`): una cuenta puede ver varios sitios, y así el PM usa el de este proyecto.
    - En el compartido, ofrecé crear `.mcp.json` en la raíz con el servidor oficial de Atlassian. En los dos, el nombre `atlassian` es obligatorio, porque el PM tiene acceso a las herramientas de ese servidor:
 

@@ -15,6 +15,7 @@ Si es la primera vez que usás la oficina, seguí estos pasos en orden:
 5. **Opcional, un líder por departamento:** `bash .claude/office-agents.sh teams on`. → [Modo equipos](docs/architecture.md#modo-equipos-un-líder-por-departamento)
 6. **Opcional, manejala desde el celular:** `/office:telegram`. → [La oficina remota por Telegram](docs/telegram.md)
 7. **Mantenela al día:** `/office:update` o la lista de comandos. → [Actualizar](docs/installation.md#6-actualizar)
+8. **¿Ya la usabas compartida, o tenés dos cuentas de Atlassian?** Pasala a local y separá las cuentas. → [Migrar la oficina](docs/migration.md)
 
 Si algo no anda: [Problemas comunes](docs/installation.md#8-problemas-comunes). Para entender cómo trabaja todo por dentro: [Arquitectura](docs/architecture.md).
 
