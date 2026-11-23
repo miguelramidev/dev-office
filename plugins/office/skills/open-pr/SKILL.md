@@ -53,7 +53,11 @@ Si el CEO la dijo en `$ARGUMENTS`, usá esa. Si no:
 
 ## 5. Corré las verificaciones
 
-Corré las del proyecto (por ejemplo lint, typecheck y tests), de a una. **Acá se corre la suite completa, una sola vez por tarea:** durante la tarea, el developer y el tester corrieron solo los tests relacionados con el cambio.
+Corré las del proyecto (por ejemplo lint, typecheck y tests), de a una. Durante la tarea, el developer y el tester corrieron solo los tests relacionados con el cambio. Cuándo se corre la suite completa depende del destino:
+
+- **PR a una rama de épica** (un ticket que va a su épica): **no se corre la suite completa.** Corré el lint, el typecheck y los tests relacionados con todo el cambio del PR: los archivos de `git diff --name-only origin/<destino>...HEAD`, con el modo "related" del runner o con los tests que lista `project-index.sh --impact` para esos archivos (skill `office:project-map`). Si el proyecto tiene paquetes (un monorepo), sumá la suite de cada paquete que el cambio tocó, no la de los demás. En la descripción del PR, escribí que la suite completa se corre en el PR de la épica. Así cada ticket no paga la suite entera, que en un proyecto grande puede llevar media hora.
+- **PR a la rama base, a producción, o el PR de la épica completa:** acá se corre **la suite completa**, una vez. Es la que junta lo de todos los tickets. Si falla, mirá en qué archivos fallan los tests y, con `git log` de esos archivos en la épica, qué ticket los cambió: proponele al CEO arreglarlo en la épica antes de abrir el PR.
+- **Si el `CLAUDE.md` del proyecto (o `.claude/rules/`) pide la suite completa en cada PR,** corréla también en los de épica.
 
 - **Si el proyecto tiene CI que corre la suite en los PR que abre la oficina** (los de cada ticket, no solo los que van a la rama base o a producción) y su `CLAUDE.md` (o `.claude/rules/`) lo dice, corré solo el lint y el typecheck, abrí el PR y decí en la descripción que los tests los corre CI. Después del PR, revisá el resultado con `gh pr checks <número>` y, si falla, avisale al CEO.
 - **Nunca en modo watch** (`vitest run`, `jest --ci`). Si la suite puede tardar más de 2 minutos, pedile a Bash un tiempo límite mayor (hasta 10 minutos). Si la suite no termina en 10 minutos, corréla en segundo plano y esperala, o pedile al CEO que la corra él; no la repitas igual.

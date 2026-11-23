@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# token-check-version: 5
+# token-check-version: 6
 # Revisa la configuración del proyecto y de la oficina en busca de lo que más tokens hace
 # gastar a cada agente. No llama a ningún modelo: no gasta tokens.
 #
@@ -51,7 +51,7 @@ if [ -f "$MD" ]; then
   if printf '%s' "$RULES_TXT" | grep -qiE 'CI.{0,60}(suite|tests)|(suite|tests).{0,60}\bCI\b'; then
     echo "  - ✅ Dice si la suite completa la corre CI."
   elif [ -d "$PROJECT/.github/workflows" ] || [ -f "$PROJECT/.gitlab-ci.yml" ]; then
-    echo "  - 💡 El proyecto tiene CI. Si corre la suite completa en los PR que abre la oficina (los de cada ticket, no solo los que van a la rama base o a producción), decilo en las reglas (\`La suite completa la corre CI en los PR de ticket\`): así \`open-pr\` no la vuelve a correr en local. Si no corre en esos PR, la verificación local tiene que seguir: no cambies nada."
+    echo "  - 💡 El proyecto tiene CI. Si corre la suite completa en los PR que abre la oficina (los de cada ticket, no solo los que van a la rama base o a producción), decilo en las reglas (\`La suite completa la corre CI en los PR de ticket\`): así \`open-pr\` no la vuelve a correr en local. Si no corre en esos PR, no cambies nada: en local, la suite completa se corre en el PR de la épica (o en el del ticket, si no tiene épica)."
   fi
   if [ -f "$PROJECT/package.json" ] && [ "$HAS_JQ" -eq 1 ] && jq -r '.scripts.test // ""' "$PROJECT/package.json" 2>/dev/null | tr -d '\r' | grep -qE '(^|[ &;])vitest( |$)|--watch' \
      && ! printf '%s' "$RULES_TXT" | grep -qiE 'vitest run|--run|watchAll=false|--ci'; then

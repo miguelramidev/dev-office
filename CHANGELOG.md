@@ -8,6 +8,21 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.68.0] - 2026-11-23
+
+### Cambiado
+
+- **La suite completa se corre en el PR de la épica, no en el de cada ticket** (`office` 0.64.0 y los testers: `dept-backend` 0.6.2, `dept-frontend` 0.9.2, `dept-database` 0.5.2, `dept-scraper` 0.5.2, `dept-devops` 0.6.2). En un proyecto grande, la suite completa antes de cada PR de ticket llevaba 26 minutos y ocupaba la computadora.
+  - **`open-pr`:** si el PR va a una rama de épica, corre el lint, el typecheck y los tests relacionados con todo el cambio del PR (y la suite de cada paquete tocado, en un monorepo), y dice en la descripción que la suite completa va en el PR de la épica. Si va a la rama base o a producción, o es el PR de la épica completa, corre la suite completa una vez; si falla, busca qué ticket cambió esos archivos.
+  - **Si el proyecto quiere la suite en cada PR,** lo dice en su `CLAUDE.md` o en `.claude/rules/`.
+  - **El PM, los testers, la arquitectura y `save-tokens`** lo dicen igual.
+
+### Arreglado
+
+- **El tiempo de los comandos ya no cuenta la espera de tu aprobación** (`office` 0.64.0). Un `git commit` figuraba con 31 minutos: era lo que había esperado a que lo aprobaras.
+  - **El observer** escucha `PermissionRequest` de Bash y marca el comando que la pidió (`waited`).
+  - **`/office:usage`** pone esos comandos aparte, en "Esperando tu aprobación", y no los suma al tiempo por tipo ni a los más lentos.
+
 ## [0.67.0] - 2026-11-23
 
 ### Cambiado

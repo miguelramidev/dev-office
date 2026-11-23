@@ -222,6 +222,23 @@ hook "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_use_id:"to
 hook "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_use_id:"toolu_A3", tool_input:{command:"git status"}, tool_response:{stdout:""}}')"
 [ "$(grep -c '^OFFICE_EVENT' "$EVENTS")" -eq "$((LINES + 1))" ] && ! tail -n1 "$EVENTS" | grep -q '"type":"cmd"' && ok "comandos: los rápidos (menos de 2 s) no se anotan" || fail "comandos: los rápidos (menos de 2 s) no se anotan"
 jq -e '.hooks.PostToolUseFailure | any(.matcher == "Bash")' "$REPO/plugins/office/hooks/hooks.json" >/dev/null && ok "hooks.json escucha PostToolUseFailure de Bash" || fail "hooks.json escucha PostToolUseFailure de Bash"
+# Un comando que pidió aprobación: su tiempo incluye la espera del CEO.
+CMDDIR="$PROJ/.office/observer/cmd"
+hook "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_use_id:"toolu_W1", agent_id:"a9", tool_input:{command:"git commit -m \"feat: x\""}}')"
+hook "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_use_id:"toolu_W2", tool_input:{command:"pnpm build"}}')"
+hook "$(jq -cn '{hook_event_name:"PermissionRequest", tool_name:"Bash", agent_id:"a9", tool_input:{command:"git commit -m \"feat: x\""}}')"
+quiet "PermissionRequest"
+[ "$(sed -n 3p "$CMDDIR/toolu_W1")" = "asked" ] && ok "aprobación: marca el comando que la pidió" || fail "aprobación: marca el comando que la pidió"
+[ -z "$(sed -n 3p "$CMDDIR/toolu_W2")" ] && ok "aprobación: no marca otros comandos" || fail "aprobación: no marca otros comandos"
+hook "$(jq -cn '{hook_event_name:"PermissionRequest", tool_name:"Edit", tool_input:{file_path:"a.ts"}}')"
+[ -z "$(sed -n 3p "$CMDDIR/toolu_W2")" ] && ok "aprobación: ignora lo que no es Bash" || fail "aprobación: ignora lo que no es Bash"
+for id in W1 W2; do { echo $(( $(date +%s) - 1860 )); sed -n '2,$p' "$CMDDIR/toolu_$id"; } >"$CMDDIR/t" && mv "$CMDDIR/t" "$CMDDIR/toolu_$id"; done
+hook "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_use_id:"toolu_W1", agent_id:"a9", tool_input:{command:"git commit -m \"feat: x\""}, tool_response:{stdout:""}}')"
+expect '.type == "cmd" and .waited == true and .dur >= 1860' "aprobación: el comando se anota con waited"
+hook "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_use_id:"toolu_W2", tool_input:{command:"pnpm build"}, tool_response:{stdout:""}}')"
+expect '.type == "cmd" and .waited == false and .cmd == "pnpm build"' "aprobación: sin pedirla, waited es false"
+jq -e '.hooks.PermissionRequest | any(.matcher == "Bash" and (.hooks | any(.command | test("observer.sh"))))' "$REPO/plugins/office/hooks/hooks.json" >/dev/null && ok "hooks.json escucha PermissionRequest de Bash" || fail "hooks.json escucha PermissionRequest de Bash"
+jq -e '.hooks.PermissionRequest | any(.hooks | any(.command | test("office-telegram")))' "$REPO/plugins/office/hooks/hooks.json" >/dev/null && ok "hooks.json mantiene el hook de Telegram en PermissionRequest" || fail "hooks.json mantiene el hook de Telegram en PermissionRequest"
 
 # --- open-observer.sh en WSL ---------------------------------------------------------
 OPEN="$REPO/plugins/office/skills/observer/open-observer.sh"
@@ -277,6 +294,12 @@ echo "$OUT" | grep -q '^\*\*Tiempo en comandos:\*\* Tests 6m 10s (2) · Typechec
 echo "$OUT" | grep -q '| Tester de backend | `pnpm vitest run` | 4m 0s |' && ok "resumen: el comando más lento primero" || { fail "resumen: el comando más lento primero"; echo "$OUT" | grep -A8 "más lentos"; }
 echo "$OUT" | grep -q '`pnpm test` (falló o se cortó) | 2m 10s |' && ok "resumen: marca los que fallaron o se cortaron" || fail "resumen: marca los que fallaron o se cortaron"
 echo "$OUT" | grep -q '| PM | `pnpm lint` | 6s |' && ok "resumen: los comandos del PM" || fail "resumen: los comandos del PM"
+echo "$OUT" | grep -q 'Esperando tu aprobación' && fail "resumen: sin esperas, no hay línea de aprobación" || ok "resumen: sin esperas, no hay línea de aprobación"
+echo 'OFFICE_EVENT({"type":"cmd","t":9,"agent":null,"agent_type":null,"dur":1860,"cmd":"git commit -m x","failed":false,"interrupted":false,"waited":true});' >>"$TP/.office/observer/events.js"
+OUT=$(cd "$TP" && bash "$REPORT")
+echo "$OUT" | grep -q '^\*\*Tiempo en comandos:\*\* Tests 6m 10s (2) · Typecheck 45s (1) · Lint y formato 6s (1)$' && ok "resumen: la espera de aprobación no suma al tiempo en comandos" || { fail "resumen: la espera de aprobación no suma"; echo "$OUT" | grep -A1 "Tiempo en"; }
+echo "$OUT" | grep -q '^\*\*Esperando tu aprobación:\*\* 1 comando, 31m 0s\.' && ok "resumen: los comandos que esperaron aprobación, aparte" || { fail "resumen: los comandos que esperaron aprobación, aparte"; echo "$OUT" | grep -i aprob; }
+echo "$OUT" | grep -q '`git commit -m x`' && fail "resumen: la espera no entra en los más lentos" || ok "resumen: la espera no entra en los más lentos"
 # Modo equipos: Claude Code identifica al líder como "<área>-lead", no como "dept-<área>:lead".
 cat >"$TP/.office/observer/events.js" <<'EVS'
 OFFICE_EVENT({"type":"delegate","t":1,"name":"backend-lead","subagent_type":"dept-backend:lead","description":"[backend-lead] Pedidos"});
