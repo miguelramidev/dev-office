@@ -64,8 +64,16 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
 
    Si recomendás el plugin de MongoDB, avisale que trae un servidor MCP que se conecta a la base con `MDB_MCP_CONNECTION_STRING`: si lo configura, que sea solo con una base local o de pruebas y con `MDB_MCP_READ_ONLY=true`, nunca con producción. Sin esa variable, las skills funcionan igual.
 
-8. **Jira (si el equipo lo usa).** Preguntale al CEO si gestionan las tareas en Jira. Si dice que sí:
-   - En el modo local, dale al CEO el comando para conectarlo solo para él (lo corre en su terminal, en la carpeta del proyecto): `claude mcp add --transport http --scope local atlassian https://mcp.atlassian.com/v2/mcp`. En el compartido, ofrecé crear `.mcp.json` en la raíz con el servidor oficial de Atlassian. En los dos, el nombre `atlassian` es obligatorio, porque el PM tiene acceso a las herramientas de ese servidor:
+8. **Jira (si el equipo lo usa).** Preguntale al CEO si gestionan las tareas en Jira. Si dice que sí, preguntale **si usa más de una cuenta de Atlassian** en su computadora (por ejemplo, la del trabajo y una personal, en proyectos distintos):
+   - **Una sola cuenta:** en el modo local, dale el comando para conectarlo solo en este proyecto (lo corre en su terminal, en la carpeta del proyecto): `claude mcp add --transport http --scope local atlassian https://mcp.atlassian.com/v2/mcp`, y después inicia sesión con `/mcp`. Claude Code guarda esa sesión para toda la computadora.
+   - **Más de una cuenta:** con el inicio de sesión normal, la última cuenta que conecta pisa a la otra en todos los proyectos. Por eso, cada proyecto se conecta con un **token de API** de su cuenta, que queda guardado solo para ese proyecto. Pasale al CEO estos pasos, que hace él (el token nunca pasa por el chat):
+     1. Crear un token con alcances en https://id.atlassian.com/manage-profile/security/api-tokens, con la cuenta de este proyecto. La organización tiene que tener habilitada la autenticación con token para el servidor MCP de Atlassian; si da error, se lo pide al administrador (en su cuenta personal, el administrador es él).
+     2. En su terminal (Git Bash en Windows), en la carpeta del proyecto: `bash "<carpeta de esta skill>/jira-account.sh"` con la ruta completa. Le pide el email, el token (no se muestra) y el sitio (`miempresa.atlassian.net`), comprueba el token y registra el servidor `atlassian` solo para este proyecto.
+     3. Reiniciar Claude Code. No hace falta `/mcp`.
+
+     Repite lo mismo en cada proyecto con la cuenta que corresponda. Con token, algunas herramientas de Atlassian no están (las que piden alcances que un token no puede tener); Jira y Confluence funcionan.
+   - **Anotá el sitio** en las reglas del proyecto (`Sitio de Jira: miempresa.atlassian.net`): una cuenta puede ver varios sitios, y así el PM usa el de este proyecto.
+   - En el compartido, ofrecé crear `.mcp.json` en la raíz con el servidor oficial de Atlassian. En los dos, el nombre `atlassian` es obligatorio, porque el PM tiene acceso a las herramientas de ese servidor:
 
      ```json
      {
@@ -77,7 +85,7 @@ Si falla, mostrale el error al CEO tal cual y no intentes arreglar los archivos 
 
      Si `.mcp.json` ya existe, agregá solo esa entrada sin tocar las demás.
    - Pedile la clave del proyecto de Jira (por ejemplo `PROJ`), la rama base (por ejemplo `dev`), la de producción (por ejemplo `main`), si usan ramas de épica, si los prefijos por tipo de ticket de `start-ticket` (`epic/`, `feature/`, `task/`, `fix/`, `hotfix/`) le sirven, y **los nombres exactos de los estados** a los que pasa un ticket al empezar (por ejemplo "En curso") y al abrir el PR (por ejemplo "En revisión"): `start-ticket` y `open-pr` mueven el ticket a esos estados sin preguntar. Preguntale también **qué clientes usan la API** (por ejemplo front web y app móvil), **cómo se reconocen sus tickets** (un componente, una etiqueta o un prefijo en el título) y **qué tipo de ticket** usan para el trabajo nuevo: con eso `handoff-ticket` encuentra o crea el ticket de cada equipo cuando cambia la API. Podés listarlos con las herramientas de Atlassian para ofrecérselos. Proponé agregar esos datos a una sección "Flujo de trabajo" y mostrale el texto antes de escribirlo. En el modo local va a `.claude/rules/office-project.md` (Claude Code lo lee igual que el `CLAUDE.md`, y git lo ignora); en el compartido, al `CLAUDE.md` o a `.claude/rules/git-workflow.md`. Si el CEO prefiere que el equipo también lo vea, va al `CLAUDE.md` aunque el modo sea local. Lo mismo vale para las otras secciones que propone esta skill (diseños, colección de API).
-   - Cada persona inicia sesión en Jira una vez con `/mcp`: servidor `atlassian`, opción de autenticar.
+   - En el compartido, cada persona inicia sesión en Jira una vez con `/mcp` (servidor `atlassian`, opción de autenticar), o usa `jira-account.sh` si tiene más de una cuenta.
 
 9. **Diseños (si hay frontend).** Preguntale al CEO si los diseños de las pantallas los entrega otro (un cliente o un equipo de diseño) y si están en Figma.
    - Si los entrega otro, proponé agregar al `CLAUDE.md` una línea que lo diga y la carpeta de imágenes de referencia (por defecto `docs/design/references/`), y mostrale el texto antes de escribirlo.

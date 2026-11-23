@@ -8,6 +8,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.66.0] - 2026-11-23
+
+### Agregado
+
+- **Una cuenta de Atlassian por proyecto** (`office` 0.62.0). Con el inicio de sesión de `/mcp`, Claude Code guarda una sola sesión de Atlassian para toda la computadora: con una cuenta del trabajo y otra personal, la última que conectabas pisaba a la otra en todos los proyectos.
+  - **`office-setup/jira-account.sh`** (nuevo) conecta Jira a un proyecto con un token de API de la cuenta que corresponde: lo corre el CEO en su terminal, pide el email, el token (sin mostrarlo) y el sitio, comprueba el token contra Jira y registra el servidor `atlassian` solo para ese proyecto (`claude mcp add --scope local`, con el token en la cabecera). El token nunca pasa por el chat ni queda en el repositorio.
+  - **`office-setup`** pregunta si el CEO usa más de una cuenta y, si es así, lo guía con el token; también anota el sitio de Jira en las reglas del proyecto. **`start-ticket`** usa ese sitio cuando la cuenta ve varios, y si no está anotado pregunta.
+
+### Cambiado
+
+- **En el modo local, git ignora `.mcp.json` y la carpeta `.claude/`** (lo que no esté ya en git): son configuración de cada persona. Lo que el equipo ya subió sigue en git.
+
 ## [0.65.0] - 2026-11-23
 
 ### Agregado

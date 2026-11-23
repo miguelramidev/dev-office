@@ -227,8 +227,10 @@ ignore_block() {
 
 # Lo que la oficina genera mientras trabaja y tu configuración personal.
 WORK_FILES=(".qa/" ".office/" ".claude/office-activity.log" ".claude/settings.json.bak" ".claude/settings.local.json.bak" ".claude/office-agents.local.json")
-# En el modo local, también la configuración y los scripts que la oficina copia en .claude/.
-LOCAL_FILES=(".claude/settings.local.json" ".claude/office-agents.json" ".claude/office-agents.sh" ".claude/office-agents.cmd" ".claude/office-telegram.sh" ".claude/office-telegram.cmd" ".claude/update-office.sh" ".claude/update-office.cmd" ".claude/update-office.command" ".claude/rules/office-project.md")
+# En el modo local, toda la carpeta .claude/ que no esté ya en git (los settings, los scripts que
+# copia la oficina, las reglas locales) y .mcp.json: es configuración de cada persona. Lo que el
+# equipo ya subió a git sigue en git.
+LOCAL_FILES=(".claude/" ".mcp.json")
 # Los documentos que genera la oficina, si el proyecto los quiere locales.
 DOC_FILES=("docs/project-map.md" "docs/project-map/" "docs/decisions/" "docs/design/" "docs/api/" "docs/research/")
 
@@ -273,7 +275,7 @@ else
 fi
 echo "  - $SETTINGS: permisos base, modo '$MODE', el PM como agente por defecto${TIMEZONE:+, zona horaria $TIMEZONE}${PROTECTED:+, ramas protegidas: $PROTECTED}."
 echo "  - Copia del archivo anterior: $SETTINGS.bak"
-[ -n "$IGNORED_IN" ] && echo "  - $IGNORED_IN: .qa/, .office/, el registro de actividad, las copias de seguridad y tu configuración personal$( [ "$SCOPE" = "local" ] && echo ', más los settings y los scripts de la oficina en .claude/')."
+[ -n "$IGNORED_IN" ] && echo "  - $IGNORED_IN: .qa/, .office/, el registro de actividad, las copias de seguridad y tu configuración personal$( [ "$SCOPE" = "local" ] && echo ', más la carpeta .claude/ y .mcp.json (lo que ya está en git sigue en git)')."
 [ -n "$DOCS_NOTE" ] && echo "  - Documentos: $DOCS_NOTE"
 if [ -n "$MOVED" ]; then
   echo "  - Pasé a lo local lo que la oficina tenía en:$MOVED. Revisá esos cambios y commitealos: así la oficina deja de estar en el repositorio."
