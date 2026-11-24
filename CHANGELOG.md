@@ -8,6 +8,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.71.0] - 2026-11-24
+
+### Agregado
+
+- **Descubrir la API interna de un sitio** (`dept-scraper` 0.6.0, skill `discover-api`). Un script de Node abre la página con Playwright (o lee un HAR grabado a mano en Chrome, para los sitios que bloquean al navegador automático) y devuelve un resumen corto de los pedidos JSON: método, ruta con `{id}`, parámetros, si pide autenticación, encabezados propios, GraphQL y la forma de la respuesta, con la lista principal y sus campos. Guarda cada respuesta para usarla de fixture. Nunca muestra ni guarda valores de cookies, tokens, claves ni encabezados de autenticación, y descarta la analítica y la publicidad. Inspirado en [reverse-api-engineer](https://github.com/kalil0321/reverse-api-engineer), que queda documentado como herramienta manual.
+- **Modo anti-bloqueo, por proyecto** (`dept-scraper` 0.6.0, skill `anti-blocking`). Se activa en las reglas del proyecto (`Scraping: anti-bloqueo con huella` o `con huella y proxies`), solo para datos públicos:
+  - **Diagnóstico** del bloqueo por sus señales (ritmo, Cloudflare, Akamai, DataDome, HUMAN, Imperva, AWS WAF, IP).
+  - **Nivel 1, huella:** pedidos con la huella TLS y HTTP/2 de Chrome (`impit` en Node, `curl_cffi` en Python, `tls-client` o `httpcloak` en Go), encabezados coherentes y una sesión por sitio.
+  - **Nivel 2, proxies:** desde variables de entorno, IP fija por sitio en cada corrida, rotación con sesión nueva solo ante un bloqueo y con tope, proxies del país del sitio y control de GB.
+  - **Siempre:** el ritmo por sitio se mantiene, sin captchas ni cuentas, y lo que no se puede pasar (desafíos de JavaScript) vuelve al CEO.
+
+### Cambiado
+
+- **`responsible-scraping`:** la API interna y el JSON embebido entran en el orden de fuentes, antes del HTML. La sección de bloqueos deja de prohibir siempre: por defecto se avisa, y con el anti-bloqueo activo se sigue su skill.
+- **El developer y el tester de scraping** usan las dos skills nuevas: el developer busca la API interna en cada sitio nuevo, y el tester prueba el anti-bloqueo y las APIs internas.
+
 ## [0.70.0] - 2026-11-23
 
 ### Agregado

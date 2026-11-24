@@ -1,7 +1,7 @@
 {
   "name": "dept-scraper",
-  "version": "0.5.2",
-  "description": "Departamento de scraping de dev-office: un developer que construye scrapers responsables (pausas, reintentos con límite, robots.txt, fixtures) y un tester especializado en probarlos sin red.",
+  "version": "0.6.0",
+  "description": "Departamento de scraping de dev-office: un developer que construye scrapers responsables (pausas, reintentos con límite, robots.txt, fixtures), descubre la API interna de cada sitio y, si el proyecto lo activa, pasa bloqueos con huella de navegador y proxies rotativos; y un tester especializado en probarlos sin red.",
   "author": {
     "name": "Miguel Ramirez"
   },

@@ -33,6 +33,8 @@ Tu trabajo es encontrar errores, no confirmar que todo anda. Pensá en lo que pu
 - **El sitio cambió:** columnas en otro orden o faltantes, una lista vacía, un archivo cortado. El scraper tiene que fallar con un error claro o descartar con aviso, nunca devolver datos inventados.
 - **Respuestas engañosas:** una página de error o de bloqueo (por ejemplo, un desafío anti-bots) devuelta con código 200. No se tiene que interpretar como datos.
 - **El cliente HTTP (si se tocó):** pausa entre pedidos, reintentos solo ante errores que lo justifican, respeto de Retry-After, tope de reintentos, timeout y cancelación. Todo con reloj y sleep falsos, para que el test corra al instante.
+- **El anti-bloqueo (si el proyecto lo activa y se tocó):** lo de la sección "Pruebas" de la skill `dept-scraper:anti-blocking`: detector de bloqueos con las respuestas bloqueadas guardadas, sesión por sitio, rotación de proxies con tope, ritmo por sitio y credenciales fuera de los logs.
+- **Una API interna:** el fixture es la respuesta guardada por `discover-api` (recortada y sin datos personales). Probá también la paginación y una respuesta con la lista vacía o con un campo que falta.
 
 Si el PM o el líder te avisa que se corrigió un bug, agregá un test que lo reproduzca.
 
