@@ -100,7 +100,7 @@ Se actualizan cada vez que cambia un endpoint, así siempre tenés la API de tu 
 | `dept-backend` | Arquitecto, developer y tester de backend, skills de backend sólido y de colección de Postman | Arquitecto: Opus; developer y tester: Sonnet |
 | `dept-frontend` | Arquitecto, designer de UI/UX, developer y tester de web (Next.js, React) y móvil (React Native), skills de frontend sólido, de lectura de diseños entregados (imágenes o Figma) y de pruebas visuales y de accesibilidad | Arquitecto: Opus; el resto: Sonnet |
 | `dept-database` | Developer (DB manager) y tester de Postgres y MongoDB, skill de base de datos sólida | Sonnet |
-| `dept-scraper` | Developer y tester de scraping, skill de scraping responsable             | Sonnet        |
+| `dept-scraper` | Developer y tester de scraping, skills de scraping responsable, descubrir la API interna de un sitio y anti-bloqueo (huella y proxies, si el proyecto lo activa) | Sonnet        |
 | `dept-docs` | Redactor y revisor de documentación (README, guías, referencia, changelog), skill de documentación sólida | Sonnet |
 | `dept-devops` | Arquitecto, developer y tester de CI/CD, despliegues, infraestructura como código, contenedores y servidores, skill de DevOps sólido | Arquitecto: Opus; developer y tester: Sonnet |
 | `dept-research` | Investigador y verificador: buscan en internet, en el navegador, en el código y en las herramientas conectadas, y entregan un informe con fuentes en `docs/research/`. Antes de una funcionalidad nueva, buscan si una librería ya resuelve lo que habría que programar; skill de investigación sólida | Sonnet |

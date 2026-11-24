@@ -1,6 +1,6 @@
 ---
 name: responsible-scraping
-description: Reglas para construir y probar scrapers responsables - elegir la fuente, identificarse, ritmo de pedidos, reintentos con límite, no evadir bloqueos, controlar costos, separar descarga y parseo, fixtures, validación de lo extraído, codificación y dinero. Usar al crear, corregir o probar cualquier scraper.
+description: Reglas para construir y probar scrapers responsables - elegir la fuente (oficial, API interna del sitio, HTML), identificarse, ritmo de pedidos, reintentos con límite, qué hacer ante un bloqueo (avisar, o el anti-bloqueo si el proyecto lo activa), controlar costos, separar descarga y parseo, fixtures, validación de lo extraído, codificación y dinero. Usar al crear, corregir o probar cualquier scraper.
 ---
 
 # Scraping responsable
@@ -11,12 +11,12 @@ Un buen scraper no molesta al sitio, no se hace bloquear, no inventa datos y no 
 
 1. Buscá primero una fuente oficial: API, feed, exportación o lista de precios en TXT, CSV o JSON. Es más estable, más liviana y más respetuosa que el HTML.
 2. Revisá `robots.txt` y los términos del sitio. Si prohíben el acceso automatizado a lo que necesitás, frená y pedí aprobación.
-3. Elegí el formato más simple que tenga los datos, en este orden: archivo plano (TXT, CSV, JSON) → HTML estático → navegador automatizado. Un navegador es lento y caro: solo si no hay otra forma.
+3. Elegí el formato más simple que tenga los datos, en este orden: archivo plano (TXT, CSV, JSON) → **la API interna del sitio** (el JSON que pide la propia página; encontralo con la skill `discover-api`) → JSON embebido en el HTML → HTML estático → navegador automatizado. Un navegador es lento y caro: solo si no hay otra forma.
 
 ## 2. Identificarse
 
 - Usá un User-Agent propio con el nombre del proyecto y una URL o email de contacto (por ejemplo `MiProyectoBot/1.0 (+https://miproyecto.com/bot)`).
-- Nunca te hagas pasar por un navegador real para esconderte.
+- Nunca te hagas pasar por un navegador real para esconderte, salvo que las reglas del proyecto activen el anti-bloqueo (sección 5): ahí el cliente usa la identidad del navegador que imita.
 
 ## 3. Ritmo de pedidos
 
@@ -31,11 +31,11 @@ Un buen scraper no molesta al sitio, no se hace bloquear, no inventa datos y no 
 - Tope de reintentos por pedido (por ejemplo, 3) y por sitio en cada corrida (por ejemplo, 10). Al agotarlo, se corta la corrida de ese sitio con un error claro.
 - Nunca reintentar otros 4xx. Un 403 o un 401 es una respuesta del sitio, no un error pasajero.
 
-## 5. Bloqueos: no evadir
+## 5. Bloqueos
 
-- Si un sitio bloquea (403, desafío anti-bots, captcha), se registra y se avisa. No se intenta evadir.
-- Prohibido: rotar IPs o proxies, cambiar el User-Agent para engañar, resolver captchas o simular comportamiento humano para pasar un bloqueo.
-- Un bloqueo es una decisión para el CEO, no un problema técnico a esquivar.
+- **Por defecto:** si un sitio bloquea (403, desafío anti-bots, captcha), se registra y se avisa. No se intenta pasar: rotar IPs o proxies, cambiar el User-Agent para engañar o imitar la huella de un navegador queda para cuando el proyecto lo activa. Un bloqueo es una decisión para el CEO.
+- **Si las reglas del proyecto activan el anti-bloqueo** (por ejemplo, `Scraping: anti-bloqueo con huella y proxies`), seguí la skill `anti-blocking`: huella TLS y HTTP/2 de navegador y, si está activado, proxies rotativos. Solo para datos públicos.
+- **Nunca, ni con el anti-bloqueo:** resolver captchas, entrar con cuentas (propias o ajenas) para sacar datos, ni subir el ritmo de pedidos a un sitio repartiéndolos entre IPs.
 
 ## 6. Costos
 
@@ -78,11 +78,11 @@ Un buen scraper no molesta al sitio, no se hace bloquear, no inventa datos y no 
 
 ## Checklist antes de dar un scraper por terminado
 
-- [ ] Fuente elegida con criterio (oficial o la más simple) y `robots.txt` revisado.
+- [ ] Fuente elegida con criterio (oficial, API interna o la más simple) y `robots.txt` revisado.
 - [ ] User-Agent propio con contacto.
 - [ ] Un pedido a la vez, con pausa y respeto de `Retry-After`.
 - [ ] Reintentos con tope por pedido y por corrida; sin reintentar 4xx.
-- [ ] Sin evasión de bloqueos.
+- [ ] Bloqueos registrados y avisados; anti-bloqueo solo si el proyecto lo activa, y según la skill `anti-blocking`.
 - [ ] Descarga y parseo separados; parseo probado con fixture real.
 - [ ] Validación con esquema; descartes con aviso; respuestas engañosas detectadas.
 - [ ] Codificación correcta y dinero como entero con su moneda.
