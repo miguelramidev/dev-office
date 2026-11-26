@@ -52,6 +52,8 @@ case "${FAKE_MODE:-ok}" in
   auth) echo "Error: Not logged in. Run 'codex login'." >&2; exit 1 ;;
   crash) echo "panic: algo se rompió" >&2; exit 2 ;;
   sleep) sleep 10; report ;;
+  # Entrega el reporte y no se cierra: deja un proceso hijo corriendo y espera.
+  linger) echo "// cambio" >>src/app.ts; report; sleep 300 & echo $! >"$FAKE_ARGS.child"; wait ;;
   slow) sleep 4; echo "// cambio" >>src/app.ts; report ;;
   tokens) echo "// cambio" >>src/app.ts; echo "tokens used: 12,345" >&2; report ;;
   tokens-nextline) echo "// cambio" >>src/app.ts; printf 'tokens used\n2.318\n' >&2; report ;;
@@ -102,6 +104,7 @@ case "${FAKE_MODE:-ok}" in
     echo 'Tool "run_command" (pnpm format) was soft-denied: headless mode cannot prompt. Allow it with a command(...) rule under permissions.allow in ~/.gemini/antigravity-cli/settings.json' >&2
     result "Hecho: listo, sin formatear." ;;
   silent) ;;
+  linger) echo "// cambio" >>src/app.ts; result "Hecho: listo."; sleep 300 ;;
   auth) echo "Error: authentication required. Run agy to sign in." >&2; exit 1 ;;
   badmodel) echo "ERROR: unknown model 'gemini-4-argon'" >&2; exit 1 ;;
 esac
@@ -309,6 +312,15 @@ new_project
 FAKE_MODE=noreport check 3 "codex sin reporte" backend.developer codex
 new_project
 FAKE_MODE=sleep OFFICE_EXTERNAL_TIMEOUT=2 check 5 "tiempo agotado" backend.developer codex
+new_project
+T0=$(date +%s)
+FAKE_MODE=linger OFFICE_EXTERNAL_EXIT_GRACE=2 check 0 "codex entrega el reporte y no se cierra: se cierra solo y termina bien" backend.developer codex
+[ $(( $(date +%s) - T0 )) -lt 30 ] && echo "ok    codex colgado: no espera al tope" || { echo "FALLA codex colgado: esperó demasiado"; FAILED=1; }
+expect "$PROJ/.office/runs/r1/log.txt" "no se cerró solo" "codex colgado: queda anotado en el registro"
+CHILD=$(cat "$FAKE_ARGS.child" 2>/dev/null)
+if [ -n "$CHILD" ] && kill -0 "$CHILD" 2>/dev/null; then echo "FALLA codex colgado: el proceso hijo sigue vivo"; kill "$CHILD"; FAILED=1; else echo "ok    codex colgado: también cierra el proceso hijo"; fi
+new_project
+FAKE_MODE=slow OFFICE_EXTERNAL_EXIT_GRACE=1 check 0 "un proveedor lento que no entregó nada no se corta" backend.developer codex
 
 # Antes de correr
 new_project
@@ -616,6 +628,13 @@ expect_not "$FAKE_ARGS" "writable_roots" "el asesor del PM (solo lectura) no tie
 
 # Codex no espera a un comando que se cuelga.
 expect "$FAKE_STDIN" "No esperes a un comando que se cuelga" "codex: le avisa que no espere a un comando colgado"
+
+# Gemini manda el resultado y no se cierra.
+new_project
+T0=$(date +%s)
+FAKE_MODE=linger OFFICE_EXTERNAL_EXIT_GRACE=2 check 0 "gemini manda el resultado y no se cierra: se cierra solo y termina bien" frontend.developer gemini
+[ $(( $(date +%s) - T0 )) -lt 30 ] && echo "ok    gemini colgado: no espera al tope" || { echo "FALLA gemini colgado: esperó demasiado"; FAILED=1; }
+expect "$PROJ/.office/runs/r1/output.md" "Hecho: listo." "gemini colgado: el reporte llega igual"
 
 if [ "$FAILED" -ne 0 ]; then
   echo "Hay pruebas que fallan."

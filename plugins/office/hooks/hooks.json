@@ -15,6 +15,15 @@
         ]
       },
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hang-guard.sh\""
+          }
+        ]
+      },
+      {
         "matcher": "Edit|Write|NotebookEdit|MultiEdit",
         "hooks": [
           {
