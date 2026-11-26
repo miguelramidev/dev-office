@@ -273,3 +273,4 @@ Antes de mirar la tabla, corré `/office:doctor`: encuentra la mayoría de estos
 | El PM dice "PROVEEDOR NO DISPONIBLE" | El CLI de Codex o Gemini no está instalado, no tiene sesión o se quedó sin cuota | `bash .claude/office-agents.sh check` y seguir lo que indique |
 | El PM dice "REGLAS ROTAS" | Codex o Gemini tocó un archivo prohibido, commiteó o cambió de rama | Revisá `git status` y `.office/runs/` y decidí vos qué deshacer |
 | Codex o Gemini se cortan con "tiempo agotado" | El encargo tardó más de 30 minutos | Pedile al PM que lo divida, o subí `OFFICE_EXTERNAL_TIMEOUT` (en segundos) |
+| Un agente termina su trabajo y queda "trabajando" sin avanzar | Un comando que no termina solo (un servidor, un test en modo watch) o un proveedor que no se cierra | La oficina frena esos comandos y el puente cierra al proveedor que no sale. Si igual pasa, cortalo con Esc y pasale al PM el último comando que se ve |

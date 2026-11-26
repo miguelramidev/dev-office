@@ -8,6 +8,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - **Menor** (0.1.0 → 0.2.0): departamentos o funciones nuevas.
 - **Parche** (0.1.0 → 0.1.1): correcciones de instrucciones o hooks.
 
+## [0.72.0] - 2026-11-26
+
+### Arreglado
+
+- **Agentes que terminan su trabajo y quedan colgados** (`office` 0.67.0; developers y testers de `dept-backend` 0.6.3, `dept-database` 0.5.3, `dept-devops` 0.6.3, `dept-frontend` 0.9.3 y `dept-scraper` 0.6.1).
+  - **Codex y Gemini que no se cierran:** el puente detecta que el proveedor ya entregó su resultado (el reporte de Codex en `-o`, el evento `result` de Gemini). Si el proceso sigue vivo 20 segundos después (`OFFICE_EXTERNAL_EXIT_GRACE`), lo cierra con todo lo que lanzó (en Windows, con `taskkill /T`) y da el encargo por terminado, en vez de esperar al tope de 30 minutos.
+  - **Comandos que no terminan solos:** un hook nuevo, `hang-guard.sh`, los frena antes de correrlos y le dice al agente cómo hacerlo. Frena:
+    - los servidores de desarrollo y los procesos que se quedan corriendo, salvo con `run_in_background: true` o con la salida redirigida;
+    - algo mandado a segundo plano con `&` sin redirigir su salida;
+    - los tests y compiladores en modo watch (`--watch`, `ng test`, `react-scripts test`);
+    - `tail -f` y el reporte de Playwright que se queda sirviendo;
+    - lo interactivo: `git commit` sin mensaje, `git rebase -i`, `git add -p`, `npm init` sin `-y` y los editores.
+
+    Usa las expresiones regulares de bash, sin procesos aparte, para no sumar demora en Windows. `OFFICE_HANG_GUARD=off` lo apaga.
+  - **Los developers, testers y QA** cierran antes de entregar su reporte lo que hayan levantado en segundo plano.
+
 ## [0.71.0] - 2026-11-24
 
 ### Agregado

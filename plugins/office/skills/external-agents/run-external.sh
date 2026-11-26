@@ -24,7 +24,9 @@
 #      (tomadas de los plugins de dev-office instalados) y el encargo.
 #   3. Corre el CLI en la carpeta del proyecto, con el modelo y el razonamiento de la tabla
 #      de office-agents.sh y con tope de tiempo
-#      (OFFICE_EXTERNAL_TIMEOUT, en segundos; por defecto 1800).
+#      (OFFICE_EXTERNAL_TIMEOUT, en segundos; por defecto 1800). Si entrega su resultado y el
+#      proceso no se cierra solo (por ejemplo, porque dejó un servidor o un test en modo watch
+#      corriendo), lo cierra con todo lo que lanzó a los 20 segundos (OFFICE_EXTERNAL_EXIT_GRACE).
 #   4. Revisa lo que cambió: archivos de secretos, claves o lockfiles, archivos fuera de lo
 #      que el rol puede tocar, commits y cambios de rama. No deshace nada: lo informa.
 #
@@ -611,19 +613,62 @@ EOF
   esac
 }
 
+# Ya entregó su resultado: Codex escribe el archivo de -o al terminar y Antigravity manda el
+# evento "result". Si el proceso sigue vivo después, quedó colgado (por ejemplo, esperando a un
+# proceso hijo que dejó corriendo, como un servidor o un test en modo watch).
+delivered() {
+  case "$PROVIDER" in
+    codex) [ -s "$OUTPUT" ] ;;
+    gemini) grep -q '"event"[[:space:]]*:[[:space:]]*"result"' "$STDOUT_FILE" 2>/dev/null ;;
+    *) return 1 ;;
+  esac
+}
+
+# Cierra el proceso y lo que haya lanzado (sus hijos, que si no quedarían corriendo solos).
+# En Windows, el árbol es de Windows: lo cierra taskkill /T con el PID de Windows del proceso.
+stop_tree() {
+  local pid="$1" kids k winpid
+  case "${OSTYPE:-}" in
+    msys* | cygwin*)
+      winpid=$(ps 2>/dev/null | awk -v p="$pid" '$1 == p { print $4; exit }')
+      [ -n "$winpid" ] && taskkill //PID "$winpid" //T //F >/dev/null 2>&1
+      kill "-$2" "$pid" 2>/dev/null
+      return 0
+      ;;
+  esac
+  if command -v pgrep >/dev/null 2>&1; then
+    kids=$(pgrep -P "$pid" 2>/dev/null)
+  else
+    kids=$(ps -A -o pid= -o ppid= 2>/dev/null | awk -v p="$pid" '$2 == p { print $1 }')
+  fi
+  for k in $kids; do stop_tree "$k" "$2"; done
+  kill "-$2" "$pid" 2>/dev/null
+}
+
 # Corre el comando armado, con tope de $1 segundos.
 run_once() {
-  local start
+  local start done_at=0 grace="${OFFICE_EXTERNAL_EXIT_GRACE:-20}"
+  case "$grace" in '' | *[!0-9]*) grace=20 ;; esac
   echo "\$ ${CMD[*]} < ${STDIN_FILE#"$PROJECT"/}" >>"$LOG"
   start=$(date +%s)
   "${CMD[@]}" <"$STDIN_FILE" >"$STDOUT_FILE" 2>"$STDERR_FILE" &
   PID=$!
+  LINGERED=0
   while kill -0 "$PID" 2>/dev/null; do
     if [ $(( $(date +%s) - start )) -ge "$1" ]; then
       TIMED_OUT=1
-      kill "$PID" 2>/dev/null
+      stop_tree "$PID" TERM
       sleep 2
-      kill -9 "$PID" 2>/dev/null
+      stop_tree "$PID" KILL
+      break
+    fi
+    if [ "$done_at" -eq 0 ]; then
+      delivered && done_at=$(date +%s)
+    elif [ $(( $(date +%s) - done_at )) -ge "$grace" ]; then
+      LINGERED=1
+      stop_tree "$PID" TERM
+      sleep 2
+      stop_tree "$PID" KILL
       break
     fi
     sleep 1
@@ -632,6 +677,11 @@ run_once() {
   RC=$?
   cat "$STDERR_FILE" >>"$LOG" 2>/dev/null
   echo "(código de salida: $RC)" >>"$LOG"
+  if [ "$LINGERED" -eq 1 ]; then
+    # Terminó su trabajo: el cierre forzado no es una falla.
+    echo "(entregó el resultado pero el proceso no se cerró solo: lo cerré a los ${grace}s)" >>"$LOG"
+    RC=0
+  fi
 }
 
 # Antigravity (stream-json) escribe un evento JSON por línea: cada paso, con la herramienta y
